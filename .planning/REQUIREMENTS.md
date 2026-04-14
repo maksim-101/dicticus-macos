@@ -87,31 +87,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRNS-01 | TBD | Pending |
-| TRNS-02 | TBD | Pending |
-| TRNS-03 | TBD | Pending |
-| TRNS-04 | TBD | Pending |
-| TRNS-05 | TBD | Pending |
-| AICLEAN-01 | TBD | Pending |
-| AICLEAN-02 | TBD | Pending |
-| AICLEAN-03 | TBD | Pending |
-| AICLEAN-04 | TBD | Pending |
-| APP-01 | TBD | Pending |
-| APP-02 | TBD | Pending |
-| APP-03 | TBD | Pending |
-| APP-04 | TBD | Pending |
-| APP-05 | TBD | Pending |
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| INFRA-03 | TBD | Pending |
-| INFRA-04 | TBD | Pending |
-| INFRA-05 | TBD | Pending |
+| TRNS-01 | Phase 3 | Pending |
+| TRNS-02 | Phase 2 | Pending |
+| TRNS-03 | Phase 2 | Pending |
+| TRNS-04 | Phase 2 | Pending |
+| TRNS-05 | Phase 3 | Pending |
+| AICLEAN-01 | Phase 4 | Pending |
+| AICLEAN-02 | Phase 4 | Pending |
+| AICLEAN-03 | Phase 4 | Pending |
+| AICLEAN-04 | Phase 4 | Pending |
+| APP-01 | Phase 1 | Pending |
+| APP-02 | Phase 1 | Pending |
+| APP-03 | Phase 3 | Pending |
+| APP-04 | Phase 3 | Pending |
+| APP-05 | Phase 5 | Pending |
+| INFRA-01 | Phase 2 | Pending |
+| INFRA-02 | Phase 4 | Pending |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 5 | Pending |
+| INFRA-05 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 (pending roadmap creation)
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-14*
-*Last updated: 2026-04-14 after initial definition*
+*Last updated: 2026-04-14 after roadmap creation*
