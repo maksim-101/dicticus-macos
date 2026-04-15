@@ -12,7 +12,7 @@ Dicticus is a fully local macOS dictation app that replaces native dictation wit
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & App Shell** - Xcode project, unsandboxed entitlements, menu bar presence, permissions onboarding, model warm-up infrastructure
+- [x] **Phase 1: Foundation & App Shell** - Xcode project, unsandboxed entitlements, menu bar presence, permissions onboarding, model warm-up infrastructure (completed 2026-04-15)
 - [ ] **Phase 2: ASR Pipeline** - Audio capture, VAD, Whisper large-v3-turbo transcription, auto language detection (de/en)
 - [ ] **Phase 3: System-Wide Dictation** - Push-to-talk hotkeys, paste-at-cursor, recording indicator, per-mode hotkey routing
 - [ ] **Phase 4: AI Cleanup** - Local LLM integration (Gemma 3 1B via llama.cpp), light cleanup mode, bilingual cleanup, latency validation
@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Xcode project scaffold with MenuBarExtra shell, entitlements, and WhisperKit SPM dependency
 - [x] 01-02-PLAN.md — Permissions onboarding (PermissionManager, sequential flow, dropdown status rows)
-- [ ] 01-03-PLAN.md — Model warm-up infrastructure (WhisperKit CoreML init, icon animation, progress UI)
+- [x] 01-03-PLAN.md — Model warm-up infrastructure (WhisperKit CoreML init, icon animation, progress UI)
 
 ### Phase 2: ASR Pipeline
 **Goal**: The app can capture microphone audio, detect speech via VAD, and transcribe it accurately in German and English -- the core inference engine
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & App Shell | 1/3 | In Progress|  |
+| 1. Foundation & App Shell | 3/3 | Complete   | 2026-04-15 |
 | 2. ASR Pipeline | 0/3 | Not started | - |
 | 3. System-Wide Dictation | 0/3 | Not started | - |
 | 4. AI Cleanup | 0/3 | Not started | - |
