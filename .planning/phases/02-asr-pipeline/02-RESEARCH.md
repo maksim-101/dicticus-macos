@@ -401,22 +401,16 @@ let pipe = try await WhisperKit(config)
 | A4 | `DecodingOptions(language: nil, detectLanguage: true)` auto-detects language per-transcription without explicit `detectLanguage()` call | Code Examples | May need separate `detectLanguage()` call before `transcribe()` to get language probabilities for filtering |
 | A5 | WhisperKit 0.18.0 is compatible with the `large-v3-turbo` model identifier | Standard Stack | If not, may need to upgrade WhisperKit or use a different model name format |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact model identifier format**
+1. **Exact model identifier format** — RESOLVED: Use `"large-v3-turbo"` short form; fall back to `"openai_whisper-large-v3_turbo"` if download fails at implementation time.
    - What we know: The HuggingFace repo contains `openai_whisper-large-v3_turbo` and `openai_whisper-large-v3_turbo_954MB`. WhisperKit docs say short forms like `"large-v3-turbo"` work via glob matching.
-   - What's unclear: Whether `"large-v3-turbo"` resolves to the 954MB compressed variant or the full-size variant.
-   - Recommendation: Test at implementation time. If ambiguous, use the explicit full identifier `"openai_whisper-large-v3_turbo"`.
 
-2. **Optimal silence threshold value**
+2. **Optimal silence threshold value** — RESOLVED: Start with 0.3 (matching WhisperAX example app); tune during development per D-07.
    - What we know: EnergyVAD default threshold is 0.02. WhisperAX example app uses 0.3 for `silenceThreshold` in `isVoiceDetected()`. These are different parameters on different scales.
-   - What's unclear: The right threshold for typical desktop microphone input in a dictation context.
-   - Recommendation: Start with 0.3 (matching WhisperAX example) and tune during development per D-07.
 
-3. **Language detection accuracy for de/en with auto-detect**
+3. **Language detection accuracy for de/en with auto-detect** — RESOLVED: Use single-step auto-detect (`language: nil`); add two-step `detectLanguage()` only if accuracy is insufficient during integration testing.
    - What we know: Whisper large-v3-turbo supports 99 languages with auto-detection. The `language` field in TranscriptionResult reports detected language.
-   - What's unclear: Whether setting `language: nil` with `detectLanguage: true` is sufficient, or if explicit two-step detection (call `detectLanguage()` first, then `transcribe()` with `language: bestLanguage`) produces better results.
-   - Recommendation: Start with single-step auto-detect (`language: nil`). Add two-step detection only if accuracy is insufficient in testing.
 
 ## Environment Availability
 
