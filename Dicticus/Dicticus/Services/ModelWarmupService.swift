@@ -1,0 +1,80 @@
+import SwiftUI
+import WhisperKit
+
+/// Manages WhisperKit initialization and CoreML warm-up state.
+///
+/// Called once at app launch (D-03) to trigger background CoreML model compilation.
+/// First-launch compilation can take 2-10+ minutes (Research Pitfall 2).
+/// Subsequent launches use cached compilation and are fast.
+///
+/// Threat T-03-02: Compilation runs on Task.detached(priority: .utility) to avoid
+/// blocking the main thread. [weak self] prevents retain cycles on app quit.
+@MainActor
+class ModelWarmupService: ObservableObject {
+    @Published var isWarming = false
+    @Published var isReady = false
+    @Published var error: String?
+
+    private var whisperKit: WhisperKit?
+
+    /// Whether the warm-up row should be visible in the dropdown.
+    /// True while compiling (isWarming) or when compilation failed (error != nil).
+    /// False when ready — row disappears entirely per UI-SPEC.
+    var showWarmupRow: Bool {
+        isWarming || error != nil
+    }
+
+    /// Status text for the dropdown warm-up row.
+    /// Returns nil when ready (row is hidden). Returns error string on failure.
+    var statusText: String? {
+        if isWarming {
+            return "Preparing models\u{2026}"  // "Preparing models…" — ellipsis character (UI-SPEC copywriting)
+        } else if let error = error {
+            return error
+        }
+        return nil
+    }
+
+    /// Start WhisperKit initialization in a background Task.
+    ///
+    /// Per D-03: called immediately at app launch, not on first hotkey press.
+    /// WhisperKit downloads the model from HuggingFace on first launch and compiles
+    /// CoreML graphs for the device hardware. This can take 2-10+ minutes on first run.
+    /// Subsequent launches use cached compilation and are fast (Research Pitfall 2).
+    ///
+    /// Guard prevents duplicate calls — safe to call multiple times.
+    func warmup() {
+        guard !isWarming && !isReady else { return }
+        isWarming = true
+        error = nil
+
+        Task.detached(priority: .utility) { [weak self] in
+            do {
+                // WhisperKit auto-selects the best model for this hardware.
+                // Phase 1 uses default model selection (Research Open Question 3 — resolved).
+                // Phase 2 will specify "large-v3-turbo" explicitly when building the ASR pipeline.
+                let pipe = try await WhisperKit(
+                    WhisperKitConfig()
+                )
+                await MainActor.run {
+                    self?.whisperKit = pipe
+                    self?.isWarming = false
+                    self?.isReady = true
+                }
+            } catch {
+                await MainActor.run {
+                    self?.isWarming = false
+                    // Error message matches UI-SPEC copywriting contract exactly
+                    self?.error = "Model load failed. Restart app."
+                }
+            }
+        }
+    }
+
+    /// Expose the initialized WhisperKit instance for Phase 2 ASR pipeline.
+    /// Returns nil until warm-up completes. Phase 2 will consume this instance
+    /// directly to avoid redundant initialization.
+    var whisperKitInstance: WhisperKit? {
+        whisperKit
+    }
+}
