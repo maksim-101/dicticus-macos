@@ -1,4 +1,5 @@
 import XCTest
+@testable import Dicticus
 
 // Tests for SystemSettingsURL URL constants
 // Verifies each URL contains the correct Privacy anchor and uses the expected scheme

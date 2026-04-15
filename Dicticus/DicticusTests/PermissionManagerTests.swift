@@ -1,4 +1,5 @@
 import XCTest
+@testable import Dicticus
 
 // Tests for PermissionStatus enum and PermissionManager logic
 // Uses direct enum value checks and computed property verification.
