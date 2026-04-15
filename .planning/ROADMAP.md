@@ -46,12 +46,11 @@ Plans:
   3. VAD discards silence and sub-0.3s clips -- no hallucinated text on empty recordings
   4. Transcription of a typical utterance (< 30s) completes in under 3 seconds on Apple Silicon
   5. Language is auto-detected between German and English (restricted to de/en set) without manual switching
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md — TranscriptionService + DicticusTranscriptionResult model with three-layer VAD, language detection, and unit tests
+- [ ] 02-02-PLAN.md — Pin large-v3-turbo model in ModelWarmupService, wire TranscriptionService into app, integration checkpoint
 
 ### Phase 3: System-Wide Dictation
 **Goal**: User can hold a hotkey, speak, release, and transcribed text appears at the cursor in any app -- the core user-facing workflow
@@ -110,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & App Shell | 3/3 | Complete   | 2026-04-15 |
-| 2. ASR Pipeline | 0/3 | Not started | - |
+| 2. ASR Pipeline | 0/2 | Not started | - |
 | 3. System-Wide Dictation | 0/3 | Not started | - |
 | 4. AI Cleanup | 0/3 | Not started | - |
 | 5. Polish & Distribution | 0/2 | Not started | - |
