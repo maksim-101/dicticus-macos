@@ -29,12 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. First launch guides user through Microphone, Accessibility, and Menu Bar permission grants with direct links to System Settings
   3. App shows a "warming up" indicator on first launch while Core ML compiles; subsequent launches are fast
   4. App is distributed as an unsigned/notarized DMG that runs outside the App Store sandbox
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md — Xcode project scaffold with MenuBarExtra shell, entitlements, and WhisperKit SPM dependency
+- [ ] 01-02-PLAN.md — Permissions onboarding (PermissionManager, sequential flow, dropdown status rows)
+- [ ] 01-03-PLAN.md — Model warm-up infrastructure (WhisperKit CoreML init, icon animation, progress UI)
 
 ### Phase 2: ASR Pipeline
 **Goal**: The app can capture microphone audio, detect speech via VAD, and transcribe it accurately in German and English -- the core inference engine
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & App Shell | 0/3 | Not started | - |
+| 1. Foundation & App Shell | 0/3 | Planned | - |
 | 2. ASR Pipeline | 0/3 | Not started | - |
 | 3. System-Wide Dictation | 0/3 | Not started | - |
 | 4. AI Cleanup | 0/3 | Not started | - |
