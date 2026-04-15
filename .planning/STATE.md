@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-foundation-app-shell/01-01-PLAN.md
-last_updated: "2026-04-15T04:24:26.294Z"
+stopped_at: Completed 01-foundation-app-shell/01-02-PLAN.md
+last_updated: "2026-04-15T04:31:23.062Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Current Position
 
 Phase: 01 (Foundation & App Shell) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-15
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01-foundation-app-shell P01 | 3 | 2 tasks | 11 files |
+| Phase 01-foundation-app-shell P02 | 5 minutes | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Roadmap]: WhisperKit for macOS ASR with Core ML warm-up at launch
 - [Phase 01-01]: xcodegen used to generate reproducible project.pbxproj from project.yml declarative spec
 - [Phase 01-01]: menuBarExtraStyle(.window) chosen for dropdown to support future custom UI components in Plans 02/03
+- [Phase 01-02]: @preconcurrency import ApplicationServices used for Swift 6 concurrency compliance with kAXTrustedCheckOptionPrompt C global
+- [Phase 01-02]: startPolling() called from MenuBarView.onAppear so timer lifecycle is tied to dropdown visibility
 
 ### Pending Todos
 
@@ -79,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T04:24:26.291Z
-Stopped at: Completed 01-foundation-app-shell/01-01-PLAN.md
+Last session: 2026-04-15T04:31:23.060Z
+Stopped at: Completed 01-foundation-app-shell/01-02-PLAN.md
 Resume file: None

@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Xcode project scaffold with MenuBarExtra shell, entitlements, and WhisperKit SPM dependency
-- [ ] 01-02-PLAN.md — Permissions onboarding (PermissionManager, sequential flow, dropdown status rows)
+- [x] 01-02-PLAN.md — Permissions onboarding (PermissionManager, sequential flow, dropdown status rows)
 - [ ] 01-03-PLAN.md — Model warm-up infrastructure (WhisperKit CoreML init, icon animation, progress UI)
 
 ### Phase 2: ASR Pipeline

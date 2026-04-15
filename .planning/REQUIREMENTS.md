@@ -25,7 +25,7 @@ Requirements for initial release. macOS only. Each maps to roadmap phases.
 ### App Shell
 
 - [x] **APP-01**: Menu bar app with minimal UI (no main window)
-- [ ] **APP-02**: First-run onboarding guides user through Microphone and Accessibility permissions
+- [x] **APP-02**: First-run onboarding guides user through Microphone and Accessibility permissions
 - [ ] **APP-03**: Visual recording indicator while push-to-talk is active
 - [ ] **APP-04**: Different hotkey combos for plain dictation vs AI cleanup mode
 - [ ] **APP-05**: App launches at login (optional, configurable)
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AICLEAN-03 | Phase 4 | Pending |
 | AICLEAN-04 | Phase 4 | Pending |
 | APP-01 | Phase 1 | Complete |
-| APP-02 | Phase 1 | Pending |
+| APP-02 | Phase 1 | Complete |
 | APP-03 | Phase 3 | Pending |
 | APP-04 | Phase 3 | Pending |
 | APP-05 | Phase 5 | Pending |
