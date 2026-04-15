@@ -12,6 +12,7 @@ import SwiftUI
 /// to the dropdown being visible, not the app lifetime (avoids timer leaks).
 struct MenuBarView: View {
     @EnvironmentObject var permissionManager: PermissionManager
+    @EnvironmentObject var warmupService: ModelWarmupService
     @State private var showOnboarding = false
 
     var body: some View {
@@ -20,7 +21,13 @@ struct MenuBarView: View {
                 OnboardingView(isPresented: $showOnboarding)
                     .environmentObject(permissionManager)
             } else {
-                // Warm-up status row will be added here by Plan 03
+                // Warm-up status row — hidden after models are ready (UI-SPEC Model Warm-up Row)
+                WarmupRow()
+                    .environmentObject(warmupService)
+
+                if warmupService.showWarmupRow {
+                    Divider()
+                }
 
                 // Permission rows — always visible per D-05
                 VStack(spacing: 4) {
