@@ -10,9 +10,12 @@
 		12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */; };
 		1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */; };
 		22A84736FD3182B120F7D8DF /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = ACBA2FF2659A87A9C159580E /* WhisperKit */; };
+		2A0BC6A9E3318985B054375B /* PermissionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */; };
+		2CCDDDB512E51308F0A0D6D5 /* SystemSettingsURLs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9323B1AD9E85950CAD77E332 /* SystemSettingsURLs.swift */; };
 		69578D031785C73255C05ECF /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0AE4167DCE62A3BC1B6392 /* MenuBarView.swift */; };
 		B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6403E7E893BEB40EABCBD /* DicticusApp.swift */; };
 		BFDB87F665D7FFABF0692E1A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 65F840B6DAF4061FED6C7E20 /* Assets.xcassets */; };
+		D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */; };
 		D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2499A2640576B94D1BA5CD41 /* DicticusTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -32,9 +35,12 @@
 		2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsURLTests.swift; sourceTree = "<group>"; };
 		51DD0C4B358C8AFB21749F27 /* Dicticus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Dicticus.entitlements; sourceTree = "<group>"; };
 		65F840B6DAF4061FED6C7E20 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRow.swift; sourceTree = "<group>"; };
 		6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManagerTests.swift; sourceTree = "<group>"; };
 		72B1ACD1925702919C34DB3A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7C0AE4167DCE62A3BC1B6392 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		9323B1AD9E85950CAD77E332 /* SystemSettingsURLs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsURLs.swift; sourceTree = "<group>"; };
 		960860ACFBAA1B6980CAC734 /* DicticusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DicticusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0781F7C404244283FCD9224 /* Dicticus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dicticus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -67,6 +73,8 @@
 				51DD0C4B358C8AFB21749F27 /* Dicticus.entitlements */,
 				00A6403E7E893BEB40EABCBD /* DicticusApp.swift */,
 				72B1ACD1925702919C34DB3A /* Info.plist */,
+				F2BDD31317F7D53FF9069687 /* Services */,
+				A274C9243C48A5F2EC63FC43 /* Utilities */,
 				740B53ABA8F4E33530DA2A48 /* Views */,
 			);
 			path = Dicticus;
@@ -86,8 +94,17 @@
 			isa = PBXGroup;
 			children = (
 				7C0AE4167DCE62A3BC1B6392 /* MenuBarView.swift */,
+				698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A274C9243C48A5F2EC63FC43 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				9323B1AD9E85950CAD77E332 /* SystemSettingsURLs.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		EE4B51AC07CF5D595B3EC54B = {
@@ -97,6 +114,14 @@
 				5FDD026702632D8277248E0B /* DicticusTests */,
 				25F3ED5DD24C1FE0234A468D /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		F2BDD31317F7D53FF9069687 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -196,6 +221,9 @@
 			files = (
 				B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */,
 				69578D031785C73255C05ECF /* MenuBarView.swift in Sources */,
+				D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */,
+				2A0BC6A9E3318985B054375B /* PermissionRow.swift in Sources */,
+				2CCDDDB512E51308F0A0D6D5 /* SystemSettingsURLs.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
