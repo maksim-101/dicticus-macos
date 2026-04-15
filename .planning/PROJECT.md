@@ -12,7 +12,7 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Mac menu bar app (SwiftBar-style, minimal UI) — Validated in Phase 1: Foundation & App Shell
 
 ### Active
 
@@ -83,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-14 after initialization*
+*Last updated: 2026-04-15 after Phase 1 completion*
