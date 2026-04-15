@@ -488,27 +488,15 @@ enum PermissionStatus {
 | A5 | WhisperKit `large-v3-turbo` model identifier works as `"large-v3-turbo"` in WhisperKitConfig | Code Examples | Medium -- model identifier format may differ; verify against WhisperKit model list |
 | A6 | `.symbolEffect(.pulse)` works on template images in menu bar | Code Examples | Medium -- may need fallback for menu bar rendering context |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **WhisperKit vs whisper.cpp for macOS ASR**
-   - What we know: STATE.md says WhisperKit; CLAUDE.md stack table says whisper.cpp; CONTEXT.md D-08 says whisper.cpp SPM
-   - What's unclear: Which is the definitive decision for macOS ASR
-   - Recommendation: Use WhisperKit -- it matches the "Core ML warm-up" requirement (INFRA-03) and provides native Swift API. Flag to user for confirmation before Phase 2 implementation.
+1. **WhisperKit vs whisper.cpp for macOS ASR** — RESOLVED: WhisperKit chosen. It provides native Swift SPM integration, CoreML Neural Engine acceleration, and matches INFRA-03 "Core ML warm-up" requirement. Plans 01-01 and 01-03 use WhisperKit throughout. whisper.cpp reference in CLAUDE.md applies to Windows target (future).
 
-2. **Apple Developer Account for Notarization**
-   - What we know: 0 code signing identities on machine; notarization requires Developer ID certificate ($99/year Apple Developer Program)
-   - What's unclear: Whether user has or plans to get an Apple Developer account
-   - Recommendation: Phase 1 runs from Xcode (personal team signing). INFRA-05 (DMG distribution) is listed as Phase 1 requirement but Phase 5 also covers DMG packaging. Recommend treating INFRA-05 as "establish entitlements and project configuration for unsigned distribution" in Phase 1, with actual DMG packaging in Phase 5.
+2. **Apple Developer Account for Notarization** — RESOLVED: Phase 1 establishes entitlements (sandbox disabled, Hardened Runtime enabled) and runs from Xcode with personal team signing. Actual DMG packaging and notarization deferred to Phase 5, which already covers this on the roadmap.
 
-3. **WhisperKit Model Identifier for large-v3-turbo**
-   - What we know: WhisperKit README shows model format like `"large-v3-v20240930_626MB"`
-   - What's unclear: Exact identifier string for large-v3-turbo GGML-equivalent in WhisperKit's CoreML model catalog
-   - Recommendation: Use WhisperKit's auto-recommendation (`WhisperKit()` with no model specified) for Phase 1 warm-up; specify exact model in Phase 2 when ASR pipeline is built
+3. **WhisperKit Model Identifier for large-v3-turbo** — RESOLVED: Phase 1 uses WhisperKit's auto-recommendation (`WhisperKit()` with no model specified) for warm-up infrastructure. Exact model identifier will be specified in Phase 2 when ASR pipeline is built and tested.
 
-4. **First-Launch Model Download Size and Duration**
-   - What we know: large-v3-turbo is ~626 MB as CoreML model; download + CoreML compilation on first launch
-   - What's unclear: Total first-launch time (download + compilation) on typical connection
-   - Recommendation: Show download progress separately from compilation progress; handle offline case
+4. **First-Launch Model Download Size and Duration** — RESOLVED: Plans handle this via warm-up UI (icon animation + "Preparing models..." status text) that supports multi-minute waits. Error state displayed if download/compilation fails. Specific timing will be measured in Phase 2.
 
 ## Environment Availability
 

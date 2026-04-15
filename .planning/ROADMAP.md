@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. App appears as a menu bar icon with a dropdown menu (no main window)
   2. First launch guides user through Microphone, Accessibility, and Menu Bar permission grants with direct links to System Settings
   3. App shows a "warming up" indicator on first launch while Core ML compiles; subsequent launches are fast
-  4. App is distributed as an unsigned/notarized DMG that runs outside the App Store sandbox
+  4. App entitlements configured for unsandboxed distribution (Hardened Runtime enabled, sandbox disabled); DMG packaging deferred to Phase 5
 **Plans**: 3 plans
 
 Plans:
