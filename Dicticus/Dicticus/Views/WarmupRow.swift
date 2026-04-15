@@ -20,10 +20,10 @@ struct WarmupRow: View {
                     Text("Preparing models\u{2026}")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                } else if warmupService.error != nil {
+                } else if let errorMessage = warmupService.error {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.red)
-                    Text(warmupService.error ?? "")
+                    Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(.red)
                 }

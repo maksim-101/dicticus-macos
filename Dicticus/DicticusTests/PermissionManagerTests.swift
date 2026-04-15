@@ -77,12 +77,14 @@ final class PermissionManagerTests: XCTestCase {
     // MARK: - UserDefaults onboarding persistence tests
 
     func testLoadOnboardingStateReadsFalseByDefault() {
-        // Use a fresh UserDefaults key to avoid test pollution
-        let key = "hasCompletedOnboarding_test_\(UUID().uuidString)"
-        UserDefaults.standard.removeObject(forKey: key)
-        // Default state is false
-        let value = UserDefaults.standard.bool(forKey: key)
-        XCTAssertFalse(value)
+        // Ensure clean state, then verify loadOnboardingState() returns false
+        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+        let manager = PermissionManager()
+        manager.loadOnboardingState()
+        XCTAssertFalse(manager.hasCompletedOnboarding,
+                       "hasCompletedOnboarding should be false when key is absent")
+        // Cleanup
+        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
     }
 
     func testMarkOnboardingCompleteSetsFlag() {

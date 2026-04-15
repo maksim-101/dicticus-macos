@@ -11,16 +11,16 @@ struct DicticusApp: App {
             MenuBarView()
                 .environmentObject(permissionManager)
                 .environmentObject(warmupService)
-                .onAppear {
-                    // D-03: warm-up starts immediately at app launch, not on first hotkey press.
-                    // Called here so warm-up begins as soon as the MenuBarExtra content is first shown.
-                    warmupService.warmup()
-                }
         } label: {
             // Icon state logic per D-04 (pulsing during warm-up) and D-06 (SF Symbol monochrome).
             // symbolEffect(.pulse) requires macOS 14+ — verified in Research Pattern 1.
             Image(systemName: iconName)
                 .symbolEffect(.pulse, isActive: warmupService.isWarming)
+                .task {
+                    // D-03: warm-up starts at app launch (label renders immediately),
+                    // not on first popover open. Guard in warmup() prevents duplicate calls.
+                    warmupService.warmup()
+                }
         }
         .menuBarExtraStyle(.window)
     }

@@ -37,7 +37,8 @@ struct MenuBarView: View {
                         grantAction: {
                             Task { await permissionManager.requestMicrophone() }
                         },
-                        settingsURL: SystemSettingsURL.microphone
+                        settingsURL: SystemSettingsURL.microphone,
+                        showRestartHint: true
                     )
                     PermissionRow(
                         title: "Accessibility",
@@ -62,7 +63,7 @@ struct MenuBarView: View {
             }
         }
         .padding()
-        .frame(width: 300)
+        .frame(width: 360)
         .onAppear {
             // Start permission polling so changes in System Settings are detected live
             permissionManager.startPolling()
