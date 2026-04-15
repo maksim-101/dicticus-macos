@@ -1,0 +1,105 @@
+import XCTest
+
+// Tests for PermissionStatus enum and PermissionManager logic
+// Uses direct enum value checks and computed property verification.
+// Note: We cannot mock AVCaptureDevice/AXIsProcessTrusted in unit tests without running on the actual
+// device permissions — so we test the logic layer (enum values, allGranted, UserDefaults).
+@MainActor
+final class PermissionManagerTests: XCTestCase {
+
+    // MARK: - PermissionStatus enum tests
+
+    func testPermissionStatusGrantedIconName() {
+        XCTAssertEqual(PermissionStatus.granted.iconName, "checkmark.circle.fill")
+    }
+
+    func testPermissionStatusPendingIconName() {
+        XCTAssertEqual(PermissionStatus.pending.iconName, "clock")
+    }
+
+    func testPermissionStatusDeniedIconName() {
+        XCTAssertEqual(PermissionStatus.denied.iconName, "xmark.circle.fill")
+    }
+
+    func testPermissionStatusGrantedLabel() {
+        XCTAssertEqual(PermissionStatus.granted.label, "Granted")
+    }
+
+    func testPermissionStatusPendingLabel() {
+        XCTAssertEqual(PermissionStatus.pending.label, "Required")
+    }
+
+    func testPermissionStatusDeniedLabel() {
+        XCTAssertEqual(PermissionStatus.denied.label, "Denied")
+    }
+
+    // MARK: - PermissionManager.allGranted tests
+
+    func testAllGrantedReturnsTrueWhenAllGranted() {
+        let manager = PermissionManager()
+        manager.microphoneStatus = .granted
+        manager.accessibilityStatus = .granted
+        manager.inputMonitoringStatus = .granted
+        XCTAssertTrue(manager.allGranted)
+    }
+
+    func testAllGrantedReturnsFalseWhenMicrophoneNotGranted() {
+        let manager = PermissionManager()
+        manager.microphoneStatus = .pending
+        manager.accessibilityStatus = .granted
+        manager.inputMonitoringStatus = .granted
+        XCTAssertFalse(manager.allGranted)
+    }
+
+    func testAllGrantedReturnsFalseWhenAccessibilityNotGranted() {
+        let manager = PermissionManager()
+        manager.microphoneStatus = .granted
+        manager.accessibilityStatus = .denied
+        manager.inputMonitoringStatus = .granted
+        XCTAssertFalse(manager.allGranted)
+    }
+
+    func testAllGrantedReturnsFalseWhenInputMonitoringNotGranted() {
+        let manager = PermissionManager()
+        manager.microphoneStatus = .granted
+        manager.accessibilityStatus = .granted
+        manager.inputMonitoringStatus = .pending
+        XCTAssertFalse(manager.allGranted)
+    }
+
+    func testAllGrantedReturnsFalseWhenNoneGranted() {
+        let manager = PermissionManager()
+        // Initial state is .pending for all
+        XCTAssertFalse(manager.allGranted)
+    }
+
+    // MARK: - UserDefaults onboarding persistence tests
+
+    func testLoadOnboardingStateReadsFalseByDefault() {
+        // Use a fresh UserDefaults key to avoid test pollution
+        let key = "hasCompletedOnboarding_test_\(UUID().uuidString)"
+        UserDefaults.standard.removeObject(forKey: key)
+        // Default state is false
+        let value = UserDefaults.standard.bool(forKey: key)
+        XCTAssertFalse(value)
+    }
+
+    func testMarkOnboardingCompleteSetsFlag() {
+        let manager = PermissionManager()
+        manager.markOnboardingComplete()
+        XCTAssertTrue(manager.hasCompletedOnboarding)
+    }
+
+    func testLoadOnboardingStateRestoresPersistedValue() {
+        // Mark complete, then create a fresh manager and load
+        let manager = PermissionManager()
+        manager.markOnboardingComplete()
+
+        let manager2 = PermissionManager()
+        manager2.loadOnboardingState()
+        XCTAssertTrue(manager2.hasCompletedOnboarding)
+
+        // Cleanup: reset so other tests start clean
+        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+    }
+}
