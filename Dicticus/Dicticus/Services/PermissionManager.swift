@@ -76,11 +76,16 @@ class PermissionManager: ObservableObject {
         @unknown default:           microphoneStatus = .pending
         }
 
-        // Accessibility: AXIsProcessTrusted() reflects current TCC state
-        accessibilityStatus = AXIsProcessTrusted() ? .granted : .denied
+        // Accessibility: AXIsProcessTrusted() reflects current TCC state.
+        // Always show .pending when not granted — the "Grant Access" button handles
+        // both first-time prompts and re-requests via AXIsProcessTrustedWithOptions.
+        let axTrusted = AXIsProcessTrusted()
+        accessibilityStatus = axTrusted ? .granted : .pending
 
-        // Input Monitoring: CGPreflightListenEventAccess() checks without requesting
-        inputMonitoringStatus = CGPreflightListenEventAccess() ? .granted : .pending
+        // Input Monitoring: same approach — always .pending when not granted.
+        // CGRequestListenEventAccess() handles both first-time and re-request scenarios.
+        let imAccess = CGPreflightListenEventAccess()
+        inputMonitoringStatus = imAccess ? .granted : .pending
     }
 
     /// Trigger the OS microphone permission prompt. Updates status after user responds.
@@ -102,12 +107,18 @@ class PermissionManager: ObservableObject {
     /// Trigger the OS Input Monitoring permission prompt.
     func requestInputMonitoring() {
         let granted = CGRequestListenEventAccess()
-        inputMonitoringStatus = granted ? .granted : .pending
+        // Only update on success — CGRequestListenEventAccess() returns false
+        // immediately after showing the OS prompt, before the user responds.
+        // Polling will detect the actual grant within 2 seconds.
+        if granted {
+            inputMonitoringStatus = .granted
+        }
     }
 
     /// Start polling all permissions every 2 seconds.
     /// Call this once from the UI entry point (MenuBarView.onAppear).
     func startPolling() {
+        guard pollTimer == nil else { return }  // WR-01: prevent duplicate timers on repeated popover opens
         checkAll()
         // [weak self] prevents retain cycle (T-02-03 mitigation)
         pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
