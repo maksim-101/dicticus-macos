@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */; };
+		1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */; };
 		22A84736FD3182B120F7D8DF /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = ACBA2FF2659A87A9C159580E /* WhisperKit */; };
 		69578D031785C73255C05ECF /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0AE4167DCE62A3BC1B6392 /* MenuBarView.swift */; };
 		B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6403E7E893BEB40EABCBD /* DicticusApp.swift */; };
@@ -27,8 +29,10 @@
 /* Begin PBXFileReference section */
 		00A6403E7E893BEB40EABCBD /* DicticusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusApp.swift; sourceTree = "<group>"; };
 		2499A2640576B94D1BA5CD41 /* DicticusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusTests.swift; sourceTree = "<group>"; };
+		2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsURLTests.swift; sourceTree = "<group>"; };
 		51DD0C4B358C8AFB21749F27 /* Dicticus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Dicticus.entitlements; sourceTree = "<group>"; };
 		65F840B6DAF4061FED6C7E20 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManagerTests.swift; sourceTree = "<group>"; };
 		72B1ACD1925702919C34DB3A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7C0AE4167DCE62A3BC1B6392 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		960860ACFBAA1B6980CAC734 /* DicticusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DicticusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,6 +76,8 @@
 			isa = PBXGroup;
 			children = (
 				2499A2640576B94D1BA5CD41 /* DicticusTests.swift */,
+				6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */,
+				2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */,
 			);
 			path = DicticusTests;
 			sourceTree = "<group>";
@@ -198,6 +204,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */,
+				1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */,
+				12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,6 +271,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -281,6 +290,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

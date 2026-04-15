@@ -61,5 +61,6 @@ targets:
       base:
         SWIFT_VERSION: "6.0"
         MACOSX_DEPLOYMENT_TARGET: "15.0"
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dicticus
