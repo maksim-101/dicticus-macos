@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-04-15T04:16:49.079Z"
-last_activity: 2026-04-15 -- Phase 1 planning complete
+stopped_at: Completed 01-foundation-app-shell/01-01-PLAN.md
+last_updated: "2026-04-15T04:24:26.294Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Press a key, speak, release -- accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 1: Foundation & App Shell
+**Current focus:** Phase 01 — Foundation & App Shell
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation & App Shell)
-Plan: 0 of 3 in current phase
+Phase: 01 (Foundation & App Shell) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-15 -- Phase 1 planning complete
+Last activity: 2026-04-15
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01-foundation-app-shell P01 | 3 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [Roadmap]: Unsandboxed distribution (DMG) -- App Store sandbox blocks global hotkeys and text injection
 - [Roadmap]: VAD mandatory in ASR pipeline to prevent Whisper silence hallucinations
 - [Roadmap]: WhisperKit for macOS ASR with Core ML warm-up at launch
+- [Phase 01-01]: xcodegen used to generate reproducible project.pbxproj from project.yml declarative spec
+- [Phase 01-01]: menuBarExtraStyle(.window) chosen for dropdown to support future custom UI components in Plans 02/03
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T03:48:59.148Z
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-foundation-app-shell/01-UI-SPEC.md
+Last session: 2026-04-15T04:24:26.291Z
+Stopped at: Completed 01-foundation-app-shell/01-01-PLAN.md
+Resume file: None

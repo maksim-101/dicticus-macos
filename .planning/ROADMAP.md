@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Xcode project scaffold with MenuBarExtra shell, entitlements, and WhisperKit SPM dependency
+- [x] 01-01-PLAN.md — Xcode project scaffold with MenuBarExtra shell, entitlements, and WhisperKit SPM dependency
 - [ ] 01-02-PLAN.md — Permissions onboarding (PermissionManager, sequential flow, dropdown status rows)
 - [ ] 01-03-PLAN.md — Model warm-up infrastructure (WhisperKit CoreML init, icon animation, progress UI)
 
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & App Shell | 0/3 | Planned | - |
+| 1. Foundation & App Shell | 1/3 | In Progress|  |
 | 2. ASR Pipeline | 0/3 | Not started | - |
 | 3. System-Wide Dictation | 0/3 | Not started | - |
 | 4. AI Cleanup | 0/3 | Not started | - |

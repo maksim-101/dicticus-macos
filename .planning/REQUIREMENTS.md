@@ -24,7 +24,7 @@ Requirements for initial release. macOS only. Each maps to roadmap phases.
 
 ### App Shell
 
-- [ ] **APP-01**: Menu bar app with minimal UI (no main window)
+- [x] **APP-01**: Menu bar app with minimal UI (no main window)
 - [ ] **APP-02**: First-run onboarding guides user through Microphone and Accessibility permissions
 - [ ] **APP-03**: Visual recording indicator while push-to-talk is active
 - [ ] **APP-04**: Different hotkey combos for plain dictation vs AI cleanup mode
@@ -36,7 +36,7 @@ Requirements for initial release. macOS only. Each maps to roadmap phases.
 - [ ] **INFRA-02**: LLM model (Gemma 3 1B or equivalent) loads at startup, stays warm
 - [ ] **INFRA-03**: Core ML warm-up happens in background at launch (not on first hotkey press)
 - [ ] **INFRA-04**: Total memory usage stays under 3 GB on 16 GB Apple Silicon Mac
-- [ ] **INFRA-05**: App distributed as unsigned/notarized DMG (not App Store — sandbox incompatible)
+- [x] **INFRA-05**: App distributed as unsigned/notarized DMG (not App Store — sandbox incompatible)
 
 ## v2 Requirements
 
@@ -96,7 +96,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AICLEAN-02 | Phase 4 | Pending |
 | AICLEAN-03 | Phase 4 | Pending |
 | AICLEAN-04 | Phase 4 | Pending |
-| APP-01 | Phase 1 | Pending |
+| APP-01 | Phase 1 | Complete |
 | APP-02 | Phase 1 | Pending |
 | APP-03 | Phase 3 | Pending |
 | APP-04 | Phase 3 | Pending |
@@ -105,7 +105,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-02 | Phase 4 | Pending |
 | INFRA-03 | Phase 1 | Pending |
 | INFRA-04 | Phase 5 | Pending |
-| INFRA-05 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 19 total
