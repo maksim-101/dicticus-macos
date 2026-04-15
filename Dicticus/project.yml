@@ -1,0 +1,65 @@
+name: Dicticus
+options:
+  bundleIdPrefix: com.dicticus
+  deploymentTarget:
+    macOS: "15.0"
+  xcodeVersion: "16.0"
+  groupSortPosition: none
+  createIntermediateGroups: true
+  defaultConfig: Debug
+
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit.git
+    from: 0.18.0
+
+targets:
+  Dicticus:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Dicticus
+    resources:
+      - path: Dicticus/Assets.xcassets
+    info:
+      path: Dicticus/Info.plist
+      properties:
+        LSUIElement: true
+        NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
+        CFBundleIdentifier: com.dicticus.app
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "0.1.0"
+    entitlements:
+      path: Dicticus/Dicticus.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.device.audio-input: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.app
+        SWIFT_VERSION: "6.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
+        INFOPLIST_FILE: Dicticus/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    dependencies:
+      - package: WhisperKit
+        product: WhisperKit
+
+  DicticusTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: DicticusTests
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+    dependencies:
+      - target: Dicticus
