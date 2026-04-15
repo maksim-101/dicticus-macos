@@ -37,9 +37,9 @@ enum PermissionStatus: Equatable {
 }
 
 // Capture the AX prompt key at module load time to avoid Swift 6 shared-mutable-state
-// warning when accessing the C global `kAXTrustedCheckOptionPrompt` from an actor.
-// `nonisolated(unsafe)` marks this as explicitly owner-managed (read-only after init).
-private nonisolated(unsafe) let axTrustedPromptKey: String =
+// warning when accessing the C global `kAXTrustedCheckOptionPrompt` from an actor context.
+// String is Sendable so no nonisolated(unsafe) annotation is needed.
+private let axTrustedPromptKey: String =
     kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
 
 /// ObservableObject that checks and requests all three required macOS permissions:
