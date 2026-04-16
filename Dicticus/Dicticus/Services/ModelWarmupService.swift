@@ -17,6 +17,13 @@ class ModelWarmupService: ObservableObject {
 
     private var whisperKit: WhisperKit?
 
+    /// Reference to the in-flight warmup Task for cancellation support (WR-05).
+    private var warmupTask: Task<Void, Never>?
+
+    /// Maximum time (seconds) to wait for model download/compilation before failing.
+    /// 10-minute ceiling covers first-launch CoreML compilation on slower hardware.
+    private let warmupTimeoutSeconds: UInt64 = 600
+
     /// Whether the warm-up row should be visible in the dropdown.
     /// True while compiling (isWarming) or when compilation failed (error != nil).
     /// False when ready — row disappears entirely per UI-SPEC.
@@ -48,23 +55,53 @@ class ModelWarmupService: ObservableObject {
         isWarming = true
         error = nil
 
-        Task.detached(priority: .utility) { [weak self] in
+        warmupTask = Task.detached(priority: .utility) { [weak self] in
             do {
-                // D-08: Pin large-v3-turbo explicitly for predictable quality.
-                // D-09: WhisperKit handles download/caching via HuggingFace Hub automatically.
-                // Model identifier "large-v3-turbo" resolves via glob match to
-                // openai_whisper-large-v3_turbo in the argmaxinc/whisperkit-coreml repo (Pitfall 5).
-                let pipe = try await WhisperKit(
-                    WhisperKitConfig(
-                        model: "large-v3-turbo",  // D-08: Pin model explicitly for predictable quality
-                        verbose: false,
-                        logLevel: .error          // Reduce console noise in production
-                    )
-                )
+                // WR-05: Race the WhisperKit init against a timeout to prevent indefinite blocking
+                // on network failure (first-launch HuggingFace download).
+                let pipe = try await withThrowingTaskGroup(of: WhisperKit.self) { group in
+                    let timeoutSeconds = await self?.warmupTimeoutSeconds ?? 600
+
+                    // Child 1: Actual WhisperKit initialization
+                    group.addTask {
+                        // D-08: Pin large-v3-turbo explicitly for predictable quality.
+                        // D-09: WhisperKit handles download/caching via HuggingFace Hub automatically.
+                        // Model identifier "large-v3-turbo" resolves via glob match to
+                        // openai_whisper-large-v3_turbo in the argmaxinc/whisperkit-coreml repo (Pitfall 5).
+                        return try await WhisperKit(
+                            WhisperKitConfig(
+                                model: "large-v3-turbo",  // D-08: Pin model explicitly for predictable quality
+                                verbose: false,
+                                logLevel: .error          // Reduce console noise in production
+                            )
+                        )
+                    }
+
+                    // Child 2: Timeout watchdog
+                    group.addTask {
+                        try await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
+                        throw CancellationError()
+                    }
+
+                    // First to finish wins; cancel the other
+                    guard let result = try await group.next() else {
+                        throw CancellationError()
+                    }
+                    group.cancelAll()
+                    return result
+                }
+
+                try Task.checkCancellation()
+
                 await MainActor.run {
                     self?.whisperKit = pipe
                     self?.isWarming = false
                     self?.isReady = true
+                }
+            } catch is CancellationError {
+                await MainActor.run {
+                    self?.isWarming = false
+                    self?.error = "Model load timed out or was cancelled. Restart app."
                 }
             } catch {
                 await MainActor.run {
@@ -74,6 +111,14 @@ class ModelWarmupService: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Cancel an in-flight warmup task (WR-05).
+    /// After cancellation, the guard in warmup() passes again (isWarming == false, isReady == false),
+    /// so calling warmup() again will retry.
+    func cancelWarmup() {
+        warmupTask?.cancel()
+        warmupTask = nil
     }
 
     /// Expose the initialized WhisperKit instance for Phase 2 ASR pipeline.
