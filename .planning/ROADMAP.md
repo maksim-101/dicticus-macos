@@ -14,6 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & App Shell** - Xcode project, unsandboxed entitlements, menu bar presence, permissions onboarding, model warm-up infrastructure (completed 2026-04-15)
 - [ ] **Phase 2: ASR Pipeline** - Audio capture, VAD, Whisper large-v3-turbo transcription, auto language detection (de/en)
+- [ ] **Phase 2.1: ASR Engine Swap** - Replace WhisperKit with FluidAudio + Parakeet TDT v3 for better de/en quality and ANE performance (INSERTED)
 - [ ] **Phase 3: System-Wide Dictation** - Push-to-talk hotkeys, paste-at-cursor, recording indicator, per-mode hotkey routing
 - [ ] **Phase 4: AI Cleanup** - Local LLM integration (Gemma 3 1B via llama.cpp), light cleanup mode, bilingual cleanup, latency validation
 - [ ] **Phase 5: Polish & Distribution** - Memory budget validation, launch-at-login, DMG packaging, end-to-end testing
@@ -51,6 +52,16 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — TranscriptionService + DicticusTranscriptionResult model with three-layer VAD, language detection, and unit tests
 - [x] 02-02-PLAN.md — Pin large-v3-turbo model in ModelWarmupService, wire TranscriptionService into app, integration checkpoint
+
+### Phase 2.1: ASR Engine Swap: WhisperKit to FluidAudio + Parakeet TDT v3 (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
 
 ### Phase 3: System-Wide Dictation
 **Goal**: User can hold a hotkey, speak, release, and transcribed text appears at the cursor in any app -- the core user-facing workflow
