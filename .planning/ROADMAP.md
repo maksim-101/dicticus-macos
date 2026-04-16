@@ -55,13 +55,14 @@ Plans:
 
 ### Phase 2.1: ASR Engine Swap: WhisperKit to FluidAudio + Parakeet TDT v3 (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Replace WhisperKit + Whisper large-v3-turbo with FluidAudio + Parakeet TDT v3 as the sole ASR engine, preserving the TranscriptionService public API so Phase 3 can consume it unchanged
+**Requirements**: TRNS-02, TRNS-03, TRNS-04, INFRA-01, INFRA-03
 **Depends on:** Phase 2
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 02.1 to break down)
+- [ ] 02.1-01-PLAN.md — Replace WhisperKit SPM dependency with FluidAudio, rewrite ModelWarmupService for AsrManager + VadManager
+- [ ] 02.1-02-PLAN.md — Rewrite TranscriptionService with AVAudioEngine + FluidAudio + NLLanguageRecognizer, adapt tests, zero WhisperKit remnants
 
 ### Phase 3: System-Wide Dictation
 **Goal**: User can hold a hotkey, speak, release, and transcribed text appears at the cursor in any app -- the core user-facing workflow
@@ -115,12 +116,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 2.1 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & App Shell | 3/3 | Complete   | 2026-04-15 |
-| 2. ASR Pipeline | 1/2 | In Progress|  |
+| 2. ASR Pipeline | 2/2 | Complete |  |
+| 2.1. ASR Engine Swap | 0/2 | Not started | - |
 | 3. System-Wide Dictation | 0/3 | Not started | - |
 | 4. AI Cleanup | 0/3 | Not started | - |
 | 5. Polish & Distribution | 0/2 | Not started | - |
