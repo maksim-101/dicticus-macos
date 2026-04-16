@@ -57,39 +57,17 @@ class ModelWarmupService: ObservableObject {
 
         warmupTask = Task.detached(priority: .utility) { [weak self] in
             do {
-                // WR-05: Race the WhisperKit init against a timeout to prevent indefinite blocking
-                // on network failure (first-launch HuggingFace download).
-                let pipe = try await withThrowingTaskGroup(of: WhisperKit.self) { group in
-                    let timeoutSeconds = await self?.warmupTimeoutSeconds ?? 600
-
-                    // Child 1: Actual WhisperKit initialization
-                    group.addTask {
-                        // D-08: Pin large-v3-turbo explicitly for predictable quality.
-                        // D-09: WhisperKit handles download/caching via HuggingFace Hub automatically.
-                        // Model identifier "large-v3-turbo" resolves via glob match to
-                        // openai_whisper-large-v3_turbo in the argmaxinc/whisperkit-coreml repo (Pitfall 5).
-                        return try await WhisperKit(
-                            WhisperKitConfig(
-                                model: "large-v3-turbo",  // D-08: Pin model explicitly for predictable quality
-                                verbose: false,
-                                logLevel: .error          // Reduce console noise in production
-                            )
-                        )
-                    }
-
-                    // Child 2: Timeout watchdog
-                    group.addTask {
-                        try await Task.sleep(nanoseconds: timeoutSeconds * 1_000_000_000)
-                        throw CancellationError()
-                    }
-
-                    // First to finish wins; cancel the other
-                    guard let result = try await group.next() else {
-                        throw CancellationError()
-                    }
-                    group.cancelAll()
-                    return result
-                }
+                // D-08: Pin large-v3-turbo explicitly for predictable quality.
+                // D-09: WhisperKit handles download/caching via HuggingFace Hub automatically.
+                // Model identifier "large-v3-turbo" resolves via glob match to
+                // openai_whisper-large-v3_turbo in the argmaxinc/whisperkit-coreml repo (Pitfall 5).
+                let pipe = try await WhisperKit(
+                    WhisperKitConfig(
+                        model: "large-v3-turbo",
+                        verbose: false,
+                        logLevel: .error
+                    )
+                )
 
                 try Task.checkCancellation()
 
@@ -106,9 +84,19 @@ class ModelWarmupService: ObservableObject {
             } catch {
                 await MainActor.run {
                     self?.isWarming = false
-                    // Error message matches UI-SPEC copywriting contract exactly
                     self?.error = "Model load failed. Restart app."
                 }
+            }
+        }
+
+        // WR-05: Timeout watchdog — cancels warmupTask if init hangs (e.g. network failure
+        // during first-launch HuggingFace download). Runs separately to avoid Swift 6
+        // Sendable issues with WhisperKit in task groups.
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: self?.warmupTimeoutSeconds ?? 600 * 1_000_000_000)
+            guard let self else { return }
+            if self.isWarming {
+                self.cancelWarmup()
             }
         }
     }
