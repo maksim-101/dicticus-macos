@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2.1 context gathered
-last_updated: "2026-04-16T15:53:08.253Z"
-last_activity: 2026-04-16 -- Phase 2.1 planning complete
+stopped_at: Completed 02.1-01-PLAN.md
+last_updated: "2026-04-16T16:00:33.780Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Press a key, speak, release -- accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 02 — ASR Pipeline
+**Current focus:** Phase 02.1 — asr-engine-swap-whisperkit-to-fluidaudio-parakeet-tdt-v3
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
+Phase: 02.1 (asr-engine-swap-whisperkit-to-fluidaudio-parakeet-tdt-v3) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-04-16 -- Phase 2.1 planning complete
+Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-foundation-app-shell P03 | 2 minutes | 2 tasks | 6 files |
 | Phase 02-asr-pipeline P01 | 30 minutes | 1 tasks | 5 files |
 | Phase 02-asr-pipeline P02 | 2 minutes | 2 tasks | 3 files |
+| Phase 02.1-asr-engine-swap P01 | 3 minutes | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 02-asr-pipeline]: XCTSkipUnless pattern for WhisperKit model-dependent tests — 6 tests skip gracefully in CI without 954MB model download
 - [Phase 02-asr-pipeline]: WhisperKitConfig(model:'large-v3-turbo') pins model explicitly — auto-select replaced with deterministic model choice (D-08, D-09)
 - [Phase 02-asr-pipeline]: TranscriptionService wired via @State + onChange(of:warmupService.isReady) — Phase 3 hotkey wiring can immediately consume the service (D-10, D-13)
+- [Phase 02.1-asr-engine-swap]: FluidAudio 0.13.6 replaces WhisperKit 0.18.0 as sole ASR SPM dependency in project.yml
+- [Phase 02.1-asr-engine-swap]: ModelWarmupService initializes AsrManager + VadManager via FluidAudio; whisperKitInstance renamed to asrManagerInstance, vadManagerInstance added
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T14:49:04.728Z
-Stopped at: Phase 2.1 context gathered
-Resume file: .planning/phases/02.1-asr-engine-swap-whisperkit-to-fluidaudio-parakeet-tdt-v3/02.1-CONTEXT.md
+Last session: 2026-04-16T16:00:33.778Z
+Stopped at: Completed 02.1-01-PLAN.md
+Resume file: None
