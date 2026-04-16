@@ -1,12 +1,12 @@
 import SwiftUI
-import WhisperKit
+import FluidAudio
 
 @main
 struct DicticusApp: App {
     @StateObject private var permissionManager = PermissionManager()
     @StateObject private var warmupService = ModelWarmupService()
 
-    // D-10, D-13: TranscriptionService is created once from the warm WhisperKit instance.
+    // TranscriptionService is created once from the warm FluidAudio ASR and VAD managers.
     // Held here so Phase 3 hotkey wiring can access it without re-initialization.
     // Optional because it cannot be created until warmup completes.
     @State private var transcriptionService: TranscriptionService?
@@ -17,8 +17,13 @@ struct DicticusApp: App {
                 .environmentObject(permissionManager)
                 .environmentObject(warmupService)
                 .onChange(of: warmupService.isReady) { _, isReady in
-                    if isReady, let whisperKit = warmupService.whisperKitInstance {
-                        transcriptionService = TranscriptionService(whisperKit: whisperKit)
+                    if isReady,
+                       let asrManager = warmupService.asrManagerInstance,
+                       let vadManager = warmupService.vadManagerInstance {
+                        transcriptionService = TranscriptionService(
+                            asrManager: asrManager,
+                            vadManager: vadManager
+                        )
                     }
                 }
         } label: {
