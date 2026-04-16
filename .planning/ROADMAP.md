@@ -50,7 +50,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — TranscriptionService + DicticusTranscriptionResult model with three-layer VAD, language detection, and unit tests
-- [ ] 02-02-PLAN.md — Pin large-v3-turbo model in ModelWarmupService, wire TranscriptionService into app, integration checkpoint
+- [x] 02-02-PLAN.md — Pin large-v3-turbo model in ModelWarmupService, wire TranscriptionService into app, integration checkpoint
 
 ### Phase 3: System-Wide Dictation
 **Goal**: User can hold a hotkey, speak, release, and transcribed text appears at the cursor in any app -- the core user-facing workflow

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-asr-pipeline 02-01-PLAN.md
-last_updated: "2026-04-16T03:44:53.045Z"
+status: verifying
+stopped_at: Completed 02-asr-pipeline 02-02-PLAN.md
+last_updated: "2026-04-16T04:00:32.164Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 Phase: 02 (ASR Pipeline) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-foundation-app-shell P02 | 5 minutes | 2 tasks | 9 files |
 | Phase 01-foundation-app-shell P03 | 2 minutes | 2 tasks | 6 files |
 | Phase 02-asr-pipeline P01 | 30 minutes | 1 tasks | 5 files |
+| Phase 02-asr-pipeline P02 | 2 minutes | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 02-asr-pipeline]: nonisolated(unsafe) on TranscriptionService.whisperKit property for Swift 6 concurrency compliance with WhisperKit.transcribe() nonisolated async method
 - [Phase 02-asr-pipeline]: #if DEBUG static test helpers on TranscriptionService instead of protocol abstraction — avoids overhead for Phase 2 scope
 - [Phase 02-asr-pipeline]: XCTSkipUnless pattern for WhisperKit model-dependent tests — 6 tests skip gracefully in CI without 954MB model download
+- [Phase 02-asr-pipeline]: WhisperKitConfig(model:'large-v3-turbo') pins model explicitly — auto-select replaced with deterministic model choice (D-08, D-09)
+- [Phase 02-asr-pipeline]: TranscriptionService wired via @State + onChange(of:warmupService.isReady) — Phase 3 hotkey wiring can immediately consume the service (D-10, D-13)
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T03:44:53.043Z
-Stopped at: Completed 02-asr-pipeline 02-01-PLAN.md
+Last session: 2026-04-16T04:00:32.161Z
+Stopped at: Completed 02-asr-pipeline 02-02-PLAN.md
 Resume file: None

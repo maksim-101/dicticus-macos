@@ -32,7 +32,7 @@ Requirements for initial release. macOS only. Each maps to roadmap phases.
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: ASR model (Whisper large-v3-turbo) loads at app startup, stays warm in memory
+- [x] **INFRA-01**: ASR model (Whisper large-v3-turbo) loads at app startup, stays warm in memory
 - [ ] **INFRA-02**: LLM model (Gemma 3 1B or equivalent) loads at startup, stays warm
 - [x] **INFRA-03**: Core ML warm-up happens in background at launch (not on first hotkey press)
 - [ ] **INFRA-04**: Total memory usage stays under 3 GB on 16 GB Apple Silicon Mac
@@ -101,7 +101,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | APP-03 | Phase 3 | Pending |
 | APP-04 | Phase 3 | Pending |
 | APP-05 | Phase 5 | Pending |
-| INFRA-01 | Phase 2 | Pending |
+| INFRA-01 | Phase 2 | Complete |
 | INFRA-02 | Phase 4 | Pending |
 | INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 5 | Pending |
