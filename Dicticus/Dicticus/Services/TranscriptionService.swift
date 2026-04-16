@@ -139,10 +139,14 @@ class TranscriptionService: ObservableObject {
 
         // D-05: Energy-based pre-filter before inference.
         // AudioProcessor.isVoiceDetected() uses relativeEnergy already computed during recording.
+        // WR-04: nextBufferInSeconds expects a chunk window size, not the full recording duration.
+        // Using the full duration could inflate the energy window and cause incorrect VAD behavior.
+        // A fixed 1.0s window aligns with WhisperKit's internal chunking granularity.
+        let vadWindowSeconds: Float = 1.0
         let energy = whisperKit.audioProcessor.relativeEnergy
         let hasVoice = AudioProcessor.isVoiceDetected(
             in: energy,
-            nextBufferInSeconds: durationSeconds,
+            nextBufferInSeconds: vadWindowSeconds,
             silenceThreshold: silenceThreshold
         )
         guard hasVoice else {
