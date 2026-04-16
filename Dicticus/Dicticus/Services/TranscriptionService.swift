@@ -234,7 +234,13 @@ class TranscriptionService: ObservableObject {
         }
 
         var conversionError: NSError?
+        var didProvideData = false
         converter.convert(to: outputBuffer, error: &conversionError) { inNumPackets, outStatus in
+            if didProvideData {
+                outStatus.pointee = .endOfStream
+                return nil
+            }
+            didProvideData = true
             outStatus.pointee = .haveData
             return sourceBuffer
         }
