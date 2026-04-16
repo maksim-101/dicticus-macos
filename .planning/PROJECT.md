@@ -13,16 +13,15 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 ### Validated
 
 - [x] Mac menu bar app (SwiftBar-style, minimal UI) — Validated in Phase 1: Foundation & App Shell
+- [x] Fully local ASR (Parakeet V3 or equivalent quality) — Validated in Phase 2.1: FluidAudio + Parakeet TDT v3 via CoreML/ANE
+- [x] Auto-detect German/English without manual switching — Validated in Phase 2.1: NLLanguageRecognizer post-hoc detection
 
 ### Active
 
 - [ ] Push-to-talk dictation on Mac via configurable hotkey — text pastes at cursor in any app
 - [ ] AI cleanup mode on Mac via separate hotkey — grammar, punctuation, filler removal
 - [ ] Heavier rewrite mode available (second AI cleanup tier)
-- [ ] Auto-detect German/English without manual switching
-- [ ] Fully local ASR (Parakeet V3 or equivalent quality)
 - [ ] Fully local LLM for AI cleanup (no cloud calls)
-- [ ] Mac menu bar app (SwiftBar-style, minimal UI)
 - [ ] iPhone dictation replacement (custom keyboard or Shortcut)
 - [ ] Windows support for business laptop
 - [ ] Multiple hotkey combos for different modes (plain, light cleanup, rewrite)
@@ -83,4 +82,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-15 after Phase 1 completion*
+*Last updated: 2026-04-16 after Phase 2.1 completion — ASR engine swapped to FluidAudio + Parakeet TDT v3*
