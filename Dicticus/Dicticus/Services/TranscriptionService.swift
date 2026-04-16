@@ -111,6 +111,11 @@ class TranscriptionService: ObservableObject {
         whisperKit.audioProcessor.stopRecording()
         state = .transcribing
 
+        // Ensure state is always reset to .idle, even if whisperKit.transcribe() throws
+        // (WR-01: without this, a WhisperKit/CoreML error leaves state stuck as .transcribing
+        // and all subsequent startRecording() calls silently no-op).
+        defer { if state == .transcribing { state = .idle } }
+
         // Copy audio samples after stop — safe to read now (Pitfall 3)
         let audioSamples = Array(whisperKit.audioProcessor.audioSamples)
         let durationSeconds = Float(audioSamples.count) / Float(WhisperKit.sampleRate)
