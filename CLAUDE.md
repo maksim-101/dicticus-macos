@@ -19,19 +19,19 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 <!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
-## Critical Pre-Stack Finding: Parakeet V3 is English-Only
 ## Recommended Stack
 ### 1. ASR Engine
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| whisper.cpp | v1.8.4 (Homebrew) | Primary ASR inference on macOS + Windows | C library, Apple Silicon first-class, CoreML/Metal acceleration, large-v3-turbo runs at <2s latency, 99 languages including German with auto-detection |
-| whisper-large-v3-turbo (GGML) | - | Default model | 809M params, q5_0 quantization = 547 MiB on disk, 6.3x faster than large-v3 with <2% WER degradation; multilingual including German |
-| WhisperKit | current | iOS ASR via CoreML | Swift-native wrapper over Whisper CoreML models, iOS 18.0+, Swift Package Manager, the only practical path for on-device ASR on iPhone without a Python stack |
-- **NVIDIA Parakeet TDT** as primary: English-only, no German, requires NVIDIA GPU or heavy Python/NeMo stack on CPU, no Apple Silicon optimization path
-- **faster-whisper**: CUDA-only GPU acceleration, no native Apple Silicon support; CPU fallback works but defeats the purpose
-- **Apple SFSpeechRecognizer**: Offline mode has poor German quality vs Whisper, no auto-detection between languages, not controllable at the model level
-- **distil-whisper large-v3**: English-only (explicitly stated in model card)
-- **sherpa-onnx**: Supports Parakeet ONNX exports (English-only) and some multilingual models, but the Swift API is lower-level and less mature than WhisperKit; viable fallback if WhisperKit proves insufficient
+| FluidAudio | 0.13.6+ (SPM) | Primary ASR inference SDK on macOS + iOS | Open-source Swift SDK (Apache 2.0), runs Parakeet TDT v3 on Apple Neural Engine via CoreML, ~190-210x realtime, ~66 MB memory per inference, 35+ production apps use it |
+| Parakeet TDT v3 (CoreML) | nvidia/parakeet-tdt-0.6b-v3 | Default ASR model | 600M params, ~1.24 GB CoreML package, 25 European languages including German (5.04% WER) and English (6.34% WER), automatic language detection |
+| FluidAudio | same | iOS ASR via CoreML | Same SDK works on iOS 17+, same Parakeet model runs on Neural Engine |
+- **Previous choice: WhisperKit + Whisper large-v3-turbo** — worked but user prefers Parakeet v3 quality for de/en dictation. Whisper is ~5-10x slower and uses ~8x more memory than Parakeet via FluidAudio on ANE. Phase 2 was built with WhisperKit; Phase 2.1 swaps to FluidAudio.
+- **Note on earlier Parakeet research:** Initial research (pre-project) incorrectly concluded "Parakeet is English-only" based on the older parakeet-tdt-1.1b model card. Parakeet TDT v3 (0.6b-v3, released Aug 2025) is multilingual with 25 languages.
+- **whisper.cpp**: Still viable for Windows app (no FluidAudio on Windows). Cross-platform model sharing no longer applies — Windows uses whisper.cpp, macOS/iOS use FluidAudio.
+- **faster-whisper**: CUDA-only GPU acceleration, no native Apple Silicon support
+- **Apple SFSpeechRecognizer**: Poor German offline quality, no auto-detection
+- **sherpa-onnx**: Supports Parakeet ONNX but CPU-only on macOS (no ANE); viable fallback for Windows if whisper.cpp is insufficient
 ### 2. Local LLM for Text Cleanup
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
@@ -69,7 +69,7 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
 | Swift + SwiftUI | Swift 6 / iOS 18 | Container app | Required host for keyboard extension |
-| WhisperKit | current | On-device ASR | Swift-native, iOS 18+, CoreML models run on Neural Engine, Swift Package Manager integration |
+| FluidAudio | 0.13.6+ | On-device ASR (Parakeet TDT v3) | Swift-native, iOS 17+, CoreML models run on Neural Engine, Swift Package Manager integration |
 | UIInputViewController | iOS built-in | Custom keyboard extension | The ONLY supported approach for third-party dictation keyboards on iOS |
 | App Groups | iOS entitlement | Shared model storage | Allows keyboard extension to access model files downloaded by main app |
 - A standalone iOS app without the keyboard or Shortcut integration: it cannot paste at cursor in third-party apps
@@ -80,19 +80,19 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 | KeyboardShortcuts | macOS | current | User-configurable global hotkeys | All hotkey registration on Mac |
 | AVFoundation | macOS/iOS | built-in | Audio capture | Push-to-talk buffer management |
 | LaunchAtLogin-Modern | macOS | current (macOS 13+) | Login item registration | When adding "launch at login" to menu bar app |
-| whisper.cpp C API | macOS + Windows | v1.8.4 | ASR inference | Wrap in Swift (macOS) or C# P/Invoke (Windows) |
-| llama.cpp C API | macOS + Windows | current | LLM text cleanup | Same wrapping strategy as whisper.cpp |
-| WhisperKit | iOS | current | ASR on iPhone | Swift Package Manager only |
+| FluidAudio | macOS + iOS | 0.13.6+ | ASR inference (Parakeet TDT v3) | Swift Package Manager, runs on Apple Neural Engine |
+| whisper.cpp C API | Windows | v1.8.4 | ASR inference (Windows only) | C# P/Invoke wrapping |
+| llama.cpp C API | macOS + Windows | current | LLM text cleanup | Swift wrapping (macOS) or C# P/Invoke (Windows) |
 | tray-icon (Rust crate) | Windows | v0.22.0 | System tray icon | If Rust is chosen for Windows app |
 | global-hotkey (Rust crate) | Windows | v0.7.0 | Global hotkeys on Windows | If Rust is chosen for Windows app |
 ## Architecture: 2-App Split With Shared Models
 ## Alternatives Considered and Rejected
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| ASR | whisper.cpp + large-v3-turbo | Parakeet TDT | English-only, no German, requires NVIDIA GPU or heavy Python stack |
-| ASR | whisper.cpp + large-v3-turbo | faster-whisper | CUDA-only acceleration, no Apple Silicon native path |
-| ASR | whisper.cpp + large-v3-turbo | Apple SFSpeechRecognizer | Poor German offline quality, no auto-detection between languages |
-| ASR | whisper.cpp + large-v3-turbo | distil-whisper | English-only explicitly |
+| ASR (macOS/iOS) | FluidAudio + Parakeet TDT v3 | WhisperKit + Whisper large-v3-turbo | User prefers Parakeet quality; Whisper is 5-10x slower and 8x more memory on ANE |
+| ASR (macOS/iOS) | FluidAudio + Parakeet TDT v3 | faster-whisper | CUDA-only acceleration, no Apple Silicon native path |
+| ASR (macOS/iOS) | FluidAudio + Parakeet TDT v3 | Apple SFSpeechRecognizer | Poor German offline quality, no auto-detection between languages |
+| ASR (macOS/iOS) | FluidAudio + Parakeet TDT v3 | distil-whisper | English-only explicitly |
 | LLM | llama.cpp | MLX / mlx-lm | macOS-only, Windows target rules it out |
 | LLM | llama.cpp | Ollama | Daemon architecture adds latency, not embeddable |
 | Mac app shell | Swift + SwiftUI | Tauri | Web-view overhead for a background-only tool; global hotkey + text injection in Tauri requires significant native plugin code anyway |
@@ -108,12 +108,13 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 # huggingface-cli download google/gemma-3-1b-it-qat-q4_0-gguf
 ## Open Questions for Phase-Specific Research
 ## Sources
-- Parakeet TDT 1.1B model card: https://huggingface.co/nvidia/parakeet-tdt-1.1b (MEDIUM confidence)
-- whisper.cpp README + Homebrew formula: https://github.com/ggerganov/whisper.cpp (HIGH confidence)
-- distil-whisper large-v3 model card (English-only finding): https://huggingface.co/distil-whisper/distil-large-v3 (HIGH confidence)
-- whisper-large-v3-turbo model card: https://huggingface.co/openai/whisper-large-v3-turbo (HIGH confidence)
-- GGML pre-converted models list: https://huggingface.co/ggerganov/whisper.cpp (HIGH confidence)
-- WhisperKit README: https://github.com/argmaxinc/WhisperKit (HIGH confidence)
+- FluidAudio SDK: https://github.com/FluidInference/FluidAudio (HIGH confidence — Apache 2.0, 1,868 stars, 35+ production apps)
+- FluidAudio CoreML models: https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml (HIGH confidence — 440k+ downloads)
+- Parakeet TDT v3 model card: https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3 (HIGH confidence — 25 languages, German 5.04% WER)
+- mobius conversion scripts: https://github.com/FluidInference/mobius (HIGH confidence — Apache 2.0, open-source CoreML conversion)
+- Parakeet TDT 1.1B model card (SUPERSEDED — English-only): https://huggingface.co/nvidia/parakeet-tdt-1.1b (MEDIUM confidence)
+- whisper.cpp README + Homebrew formula: https://github.com/ggerganov/whisper.cpp (HIGH confidence — Windows ASR only now)
+- WhisperKit README (SUPERSEDED by FluidAudio): https://github.com/argmaxinc/WhisperKit (HIGH confidence)
 - Gemma 3 1B IT QAT GGUF: https://huggingface.co/google/gemma-3-1b-it-qat-q4_0-gguf (HIGH confidence)
 - Phi-3 Mini GGUF: https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf (MEDIUM confidence)
 - llama.cpp README: https://github.com/ggerganov/llama.cpp (HIGH confidence)
