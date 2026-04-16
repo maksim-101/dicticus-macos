@@ -49,7 +49,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — TranscriptionService + DicticusTranscriptionResult model with three-layer VAD, language detection, and unit tests
+- [x] 02-01-PLAN.md — TranscriptionService + DicticusTranscriptionResult model with three-layer VAD, language detection, and unit tests
 - [ ] 02-02-PLAN.md — Pin large-v3-turbo model in ModelWarmupService, wire TranscriptionService into app, integration checkpoint
 
 ### Phase 3: System-Wide Dictation
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & App Shell | 3/3 | Complete   | 2026-04-15 |
-| 2. ASR Pipeline | 0/2 | Not started | - |
+| 2. ASR Pipeline | 1/2 | In Progress|  |
 | 3. System-Wide Dictation | 0/3 | Not started | - |
 | 4. AI Cleanup | 0/3 | Not started | - |
 | 5. Polish & Distribution | 0/2 | Not started | - |

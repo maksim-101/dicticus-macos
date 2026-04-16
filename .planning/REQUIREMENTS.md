@@ -10,9 +10,9 @@ Requirements for initial release. macOS only. Each maps to roadmap phases.
 ### Transcription
 
 - [ ] **TRNS-01**: User can push-to-talk via configurable hotkey and text appears at cursor in any app
-- [ ] **TRNS-02**: Transcription completes in under 3 seconds for typical utterances (< 30s speech)
-- [ ] **TRNS-03**: Auto-detect German and English without manual language switching
-- [ ] **TRNS-04**: Voice Activity Detection discards silence to prevent hallucinated output
+- [x] **TRNS-02**: Transcription completes in under 3 seconds for typical utterances (< 30s speech)
+- [x] **TRNS-03**: Auto-detect German and English without manual language switching
+- [x] **TRNS-04**: Voice Activity Detection discards silence to prevent hallucinated output
 - [ ] **TRNS-05**: Transcription works in any text field (browser, native apps, terminal)
 
 ### AI Cleanup
@@ -88,9 +88,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | TRNS-01 | Phase 3 | Pending |
-| TRNS-02 | Phase 2 | Pending |
-| TRNS-03 | Phase 2 | Pending |
-| TRNS-04 | Phase 2 | Pending |
+| TRNS-02 | Phase 2 | Complete |
+| TRNS-03 | Phase 2 | Complete |
+| TRNS-04 | Phase 2 | Complete |
 | TRNS-05 | Phase 3 | Pending |
 | AICLEAN-01 | Phase 4 | Pending |
 | AICLEAN-02 | Phase 4 | Pending |

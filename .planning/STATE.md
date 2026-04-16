@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-15T20:52:15.614Z"
-last_activity: 2026-04-15 -- Phase 02 planning complete
+stopped_at: Completed 02-asr-pipeline 02-01-PLAN.md
+last_updated: "2026-04-16T03:44:53.045Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Press a key, speak, release -- accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 01 — Foundation & App Shell
+**Current focus:** Phase 02 — ASR Pipeline
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (ASR Pipeline) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-04-15 -- Phase 02 planning complete
+Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-foundation-app-shell P01 | 3 | 2 tasks | 11 files |
 | Phase 01-foundation-app-shell P02 | 5 minutes | 2 tasks | 9 files |
 | Phase 01-foundation-app-shell P03 | 2 minutes | 2 tasks | 6 files |
+| Phase 02-asr-pipeline P01 | 30 minutes | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 01-02]: startPolling() called from MenuBarView.onAppear so timer lifecycle is tied to dropdown visibility
 - [Phase 01-03]: warmup() called in MenuBarView.onAppear (not App.init) — consistent with Plan 02 permission polling pattern, both tied to dropdown lifetime
 - [Phase 01-03]: WhisperKitConfig() auto-recommendation for Phase 1; Phase 2 will pin large-v3-turbo after ASR pipeline integration
+- [Phase 02-asr-pipeline]: nonisolated(unsafe) on TranscriptionService.whisperKit property for Swift 6 concurrency compliance with WhisperKit.transcribe() nonisolated async method
+- [Phase 02-asr-pipeline]: #if DEBUG static test helpers on TranscriptionService instead of protocol abstraction — avoids overhead for Phase 2 scope
+- [Phase 02-asr-pipeline]: XCTSkipUnless pattern for WhisperKit model-dependent tests — 6 tests skip gracefully in CI without 954MB model download
 
 ### Pending Todos
 
@@ -85,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T20:25:53.128Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-asr-pipeline/02-CONTEXT.md
+Last session: 2026-04-16T03:44:53.043Z
+Stopped at: Completed 02-asr-pipeline 02-01-PLAN.md
+Resume file: None
