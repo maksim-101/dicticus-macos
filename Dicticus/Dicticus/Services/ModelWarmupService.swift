@@ -24,6 +24,10 @@ class ModelWarmupService: ObservableObject {
     /// Reference to the in-flight warmup Task for cancellation support.
     private var warmupTask: Task<Void, Never>?
 
+    /// Reference to the timeout watchdog Task — cancelled when warmup succeeds
+    /// to avoid a 600-second sleeping Task lingering after fast warm loads (~162 ms).
+    private var watchdogTask: Task<Void, Never>?
+
     /// Maximum time (seconds) to wait for model download/compilation before failing.
     /// 10-minute ceiling covers first-launch ~2.69 GB Parakeet CoreML download on slower hardware
     /// and initial CoreML compilation.
@@ -85,16 +89,22 @@ class ModelWarmupService: ObservableObject {
                     self?.vadManager = vad
                     self?.isWarming = false
                     self?.isReady = true
+                    self?.watchdogTask?.cancel()
+                    self?.watchdogTask = nil
                 }
             } catch is CancellationError {
                 await MainActor.run {
                     self?.isWarming = false
                     self?.error = "Model load timed out or was cancelled. Restart app."
+                    self?.watchdogTask?.cancel()
+                    self?.watchdogTask = nil
                 }
             } catch {
                 await MainActor.run {
                     self?.isWarming = false
                     self?.error = "Model load failed. Restart app."
+                    self?.watchdogTask?.cancel()
+                    self?.watchdogTask = nil
                 }
             }
         }
@@ -102,7 +112,9 @@ class ModelWarmupService: ObservableObject {
         // Timeout watchdog — cancels warmupTask if download/compilation hangs (e.g. network
         // failure during first-launch HuggingFace download). Runs separately to avoid Swift 6
         // Sendable issues with FluidAudio actors in task groups.
-        Task { [weak self] in
+        // Stored in watchdogTask so it can be cancelled when warmup succeeds (avoids a
+        // 600-second sleeping Task lingering after fast warm loads).
+        watchdogTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: (self?.warmupTimeoutSeconds ?? 600) * 1_000_000_000)
             guard let self else { return }
             if self.isWarming {
