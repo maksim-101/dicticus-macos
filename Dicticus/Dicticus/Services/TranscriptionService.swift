@@ -11,6 +11,8 @@ enum TranscriptionError: Error, Sendable {
     case noResult
     /// WhisperKit instance not available (model not warmed up).
     case modelNotReady
+    /// stopRecordingAndTranscribe() called when not recording.
+    case notRecording
 }
 
 /// Core ASR pipeline: record audio via WhisperKit AudioProcessor, apply three-layer VAD,
@@ -107,6 +109,12 @@ class TranscriptionService: ObservableObject {
     /// - Returns: DicticusTranscriptionResult with text, language, and confidence
     /// - Throws: TranscriptionError for pipeline failures (tooShort, silenceOnly, noResult)
     func stopRecordingAndTranscribe() async throws -> DicticusTranscriptionResult {
+        // WR-02: Guard against calling stop when not recording.
+        // Without this, stale audioSamples from a prior session could produce spurious transcription.
+        guard state == .recording else {
+            throw TranscriptionError.notRecording
+        }
+
         // Pitfall 3: Always stop before accessing audioSamples
         whisperKit.audioProcessor.stopRecording()
         state = .transcribing
