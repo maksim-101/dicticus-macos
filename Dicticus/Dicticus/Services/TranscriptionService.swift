@@ -13,6 +13,8 @@ enum TranscriptionError: Error, Sendable {
     case modelNotReady
     /// stopRecordingAndTranscribe() called when not recording.
     case notRecording
+    /// startRecording() called while already recording or transcribing.
+    case busy
 }
 
 /// Core ASR pipeline: record audio via WhisperKit AudioProcessor, apply three-layer VAD,
@@ -83,7 +85,8 @@ class TranscriptionService: ObservableObject {
     ///
     /// - Throws: AVFoundation error if microphone access is denied or hardware unavailable.
     func startRecording() throws {
-        guard state == .idle else { return }
+        // WR-03: Throw instead of silently returning so callers know the call was ignored.
+        guard state == .idle else { throw TranscriptionError.busy }
         // The startRecordingLive closure runs on the audio thread (Pitfall 6: Swift 6 Sendable).
         // We intentionally do nothing in the callback to stay Swift 6-compliant.
         // Energy monitoring (relativeEnergy) is polled from the main actor when needed.
