@@ -2,7 +2,7 @@ import XCTest
 @testable import Dicticus
 
 // Tests for ModelWarmupService state machine.
-// We do NOT test actual WhisperKit initialization (requires network + model download).
+// We do NOT test actual FluidAudio initialization (requires network + model download).
 // These tests verify the state transitions, computed properties, and guard logic.
 @MainActor
 final class ModelWarmupServiceTests: XCTestCase {
