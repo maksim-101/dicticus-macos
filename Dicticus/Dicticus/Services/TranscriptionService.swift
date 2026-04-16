@@ -157,24 +157,21 @@ class TranscriptionService: ObservableObject {
 
         // Layer 1: Minimum duration guard (D-11)
         guard durationSeconds >= minimumDurationSeconds else {
-            state = .idle
-            throw TranscriptionError.tooShort
+            throw TranscriptionError.tooShort  // defer resets to .idle
         }
 
         // Layer 2: Silero VAD pre-filter (VadManager replaces energy-based VAD per D-10)
         let vadResults = try await vadManager.process(resampledSamples)
         let hasVoice = vadResults.contains { $0.probability > silenceThreshold }
         guard hasVoice else {
-            state = .idle
-            throw TranscriptionError.silenceOnly
+            throw TranscriptionError.silenceOnly  // defer resets to .idle
         }
 
         // Layer 3: Transcribe via Parakeet TDT v3
         let result = try await asrManager.transcribe(resampledSamples)
 
         guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            state = .idle
-            throw TranscriptionError.noResult
+            throw TranscriptionError.noResult  // defer resets to .idle
         }
 
         // Post-hoc language detection (Parakeet outputs no language code — D-13)
