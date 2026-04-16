@@ -50,11 +50,16 @@ class ModelWarmupService: ObservableObject {
 
         Task.detached(priority: .utility) { [weak self] in
             do {
-                // WhisperKit auto-selects the best model for this hardware.
-                // Phase 1 uses default model selection (Research Open Question 3 — resolved).
-                // Phase 2 will specify "large-v3-turbo" explicitly when building the ASR pipeline.
+                // D-08: Pin large-v3-turbo explicitly for predictable quality.
+                // D-09: WhisperKit handles download/caching via HuggingFace Hub automatically.
+                // Model identifier "large-v3-turbo" resolves via glob match to
+                // openai_whisper-large-v3_turbo in the argmaxinc/whisperkit-coreml repo (Pitfall 5).
                 let pipe = try await WhisperKit(
-                    WhisperKitConfig()
+                    WhisperKitConfig(
+                        model: "large-v3-turbo",  // D-08: Pin model explicitly for predictable quality
+                        verbose: false,
+                        logLevel: .error          // Reduce console noise in production
+                    )
                 )
                 await MainActor.run {
                     self?.whisperKit = pipe
