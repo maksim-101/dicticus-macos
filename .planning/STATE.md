@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 02-asr-pipeline 02-02-PLAN.md
-last_updated: "2026-04-16T04:09:22.590Z"
+stopped_at: Phase 2.1 context gathered
+last_updated: "2026-04-16T14:49:04.730Z"
 last_activity: 2026-04-16
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 2
   total_plans: 5
   completed_plans: 5
@@ -87,12 +87,16 @@ Recent decisions affecting current work:
 
 None yet.
 
+### Roadmap Evolution
+
+- Phase 02.1 inserted after Phase 2: ASR Engine Swap: WhisperKit to FluidAudio + Parakeet TDT v3 (URGENT)
+
 ### Blockers/Concerns
 
 None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T04:00:32.161Z
-Stopped at: Completed 02-asr-pipeline 02-02-PLAN.md
-Resume file: None
+Last session: 2026-04-16T14:49:04.728Z
+Stopped at: Phase 2.1 context gathered
+Resume file: .planning/phases/02.1-asr-engine-swap-whisperkit-to-fluidaudio-parakeet-tdt-v3/02.1-CONTEXT.md
