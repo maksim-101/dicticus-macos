@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02.1-01-PLAN.md
-last_updated: "2026-04-16T16:00:33.780Z"
+status: verifying
+stopped_at: Completed 02.1-02-PLAN.md
+last_updated: "2026-04-16T16:07:25.543Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 Phase: 02.1 (asr-engine-swap-whisperkit-to-fluidaudio-parakeet-tdt-v3) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-asr-pipeline P01 | 30 minutes | 1 tasks | 5 files |
 | Phase 02-asr-pipeline P02 | 2 minutes | 2 tasks | 3 files |
 | Phase 02.1-asr-engine-swap P01 | 3 minutes | 2 tasks | 4 files |
+| Phase 02.1-asr-engine-swap P02 | 4 minutes | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,10 @@ Recent decisions affecting current work:
 - [Phase 02-asr-pipeline]: TranscriptionService wired via @State + onChange(of:warmupService.isReady) — Phase 3 hotkey wiring can immediately consume the service (D-10, D-13)
 - [Phase 02.1-asr-engine-swap]: FluidAudio 0.13.6 replaces WhisperKit 0.18.0 as sole ASR SPM dependency in project.yml
 - [Phase 02.1-asr-engine-swap]: ModelWarmupService initializes AsrManager + VadManager via FluidAudio; whisperKitInstance renamed to asrManagerInstance, vadManagerInstance added
+- [Phase 02.1-asr-engine-swap]: AVAudioConverter chosen as primary resampler with linear interpolation fallback
+- [Phase 02.1-asr-engine-swap]: silenceThreshold default changed from 0.3 (energy-based) to 0.5 (Silero VAD probability)
+- [Phase 02.1-asr-engine-swap]: NLLanguageRecognizer constrained to [.german, .english] for post-hoc language detection since Parakeet TDT v3 outputs no language code
+- [Phase 02.1-asr-engine-swap]: nonisolated(unsafe) removed from TranscriptionService — not needed for actor-based AsrManager
 
 ### Pending Todos
 
@@ -100,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T16:00:33.778Z
-Stopped at: Completed 02.1-01-PLAN.md
+Last session: 2026-04-16T16:07:25.541Z
+Stopped at: Completed 02.1-02-PLAN.md
 Resume file: None

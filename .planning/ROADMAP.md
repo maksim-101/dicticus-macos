@@ -62,7 +62,7 @@ Plans:
 
 Plans:
 - [x] 02.1-01-PLAN.md — Replace WhisperKit SPM dependency with FluidAudio, rewrite ModelWarmupService for AsrManager + VadManager
-- [ ] 02.1-02-PLAN.md — Rewrite TranscriptionService with AVAudioEngine + FluidAudio + NLLanguageRecognizer, adapt tests, zero WhisperKit remnants
+- [x] 02.1-02-PLAN.md — Rewrite TranscriptionService with AVAudioEngine + FluidAudio + NLLanguageRecognizer, adapt tests, zero WhisperKit remnants
 
 ### Phase 3: System-Wide Dictation
 **Goal**: User can hold a hotkey, speak, release, and transcribed text appears at the cursor in any app -- the core user-facing workflow
