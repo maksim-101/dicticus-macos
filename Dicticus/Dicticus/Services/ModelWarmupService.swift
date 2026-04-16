@@ -1,31 +1,36 @@
 import SwiftUI
-import WhisperKit
+import FluidAudio
 
-/// Manages WhisperKit initialization and CoreML warm-up state.
+/// Manages FluidAudio initialization and Parakeet TDT v3 CoreML warm-up state.
 ///
-/// Called once at app launch (D-03) to trigger background CoreML model compilation.
-/// First-launch compilation can take 2-10+ minutes (Research Pitfall 2).
-/// Subsequent launches use cached compilation and are fast.
+/// Called once at app launch to trigger background CoreML model compilation and download.
+/// First-launch download is ~2.69 GB (Parakeet CoreML package) plus ~1.8 MB (Silero VAD).
+/// CoreML encoder compilation takes ~3.4 s on first run; subsequent launches use cached
+/// compilation and are fast (~162 ms warm load).
 ///
-/// Threat T-03-02: Compilation runs on Task.detached(priority: .utility) to avoid
+/// Threat T-02.1-03: Compilation runs on Task.detached(priority: .utility) to avoid
 /// blocking the main thread. [weak self] prevents retain cycles on app quit.
+/// Threat T-02.1-02: Audio samples are never persisted; only held in memory during
+/// a single recording session.
 @MainActor
 class ModelWarmupService: ObservableObject {
     @Published var isWarming = false
     @Published var isReady = false
     @Published var error: String?
 
-    private var whisperKit: WhisperKit?
+    private var asrManager: AsrManager?
+    private var vadManager: VadManager?
 
-    /// Reference to the in-flight warmup Task for cancellation support (WR-05).
+    /// Reference to the in-flight warmup Task for cancellation support.
     private var warmupTask: Task<Void, Never>?
 
     /// Maximum time (seconds) to wait for model download/compilation before failing.
-    /// 10-minute ceiling covers first-launch CoreML compilation on slower hardware.
+    /// 10-minute ceiling covers first-launch ~2.69 GB Parakeet CoreML download on slower hardware
+    /// and initial CoreML compilation.
     private let warmupTimeoutSeconds: UInt64 = 600
 
     /// Whether the warm-up row should be visible in the dropdown.
-    /// True while compiling (isWarming) or when compilation failed (error != nil).
+    /// True while loading (isWarming) or when loading failed (error != nil).
     /// False when ready — row disappears entirely per UI-SPEC.
     var showWarmupRow: Bool {
         isWarming || error != nil
@@ -42,12 +47,12 @@ class ModelWarmupService: ObservableObject {
         return nil
     }
 
-    /// Start WhisperKit initialization in a background Task.
+    /// Start FluidAudio + Parakeet TDT v3 initialization in a background Task.
     ///
-    /// Per D-03: called immediately at app launch, not on first hotkey press.
-    /// WhisperKit downloads the model from HuggingFace on first launch and compiles
-    /// CoreML graphs for the device hardware. This can take 2-10+ minutes on first run.
-    /// Subsequent launches use cached compilation and are fast (Research Pitfall 2).
+    /// Per D-08: called immediately at app launch, not on first hotkey press.
+    /// Downloads and compiles Parakeet TDT v3 CoreML models from HuggingFace on first launch
+    /// via AsrModels.downloadAndLoad(). Also initializes Silero VAD via VadManager.
+    /// Subsequent launches use cached CoreML compilation and are fast.
     ///
     /// Guard prevents duplicate calls — safe to call multiple times.
     func warmup() {
@@ -57,22 +62,27 @@ class ModelWarmupService: ObservableObject {
 
         warmupTask = Task.detached(priority: .utility) { [weak self] in
             do {
-                // D-08: Pin large-v3-turbo explicitly for predictable quality.
-                // D-09: WhisperKit handles download/caching via HuggingFace Hub automatically.
-                // Model identifier "large-v3-turbo" resolves via glob match to
-                // openai_whisper-large-v3_turbo in the argmaxinc/whisperkit-coreml repo (Pitfall 5).
-                let pipe = try await WhisperKit(
-                    WhisperKitConfig(
-                        model: "large-v3-turbo",
-                        verbose: false,
-                        logLevel: .error
-                    )
-                )
+                // Step 1: Download + load Parakeet TDT v3 CoreML models from HuggingFace.
+                // First run downloads ~2.69 GB; subsequent runs use cached CoreML package.
+                // AsrModels.downloadAndLoad handles caching, progress, and CoreML compilation.
+                let models = try await AsrModels.downloadAndLoad(version: .v3)
+
+                // Step 2: Create actor-based AsrManager and load models into it.
+                // CoreML encoder compilation takes ~3.4 s on first run, ~162 ms on warm loads.
+                // AsrManager is an actor — all subsequent calls require await.
+                let manager = AsrManager(config: .default)
+                try await manager.loadModels(models)
+
+                // Step 3: Initialize Silero VAD v6 CoreML model (~1.8 MB).
+                // VadManager provides frame-based voice activity detection to filter silence.
+                // Initialized alongside ASR models to ensure VAD is ready for first transcription.
+                let vad = try await VadManager(config: VadConfig(defaultThreshold: 0.75))
 
                 try Task.checkCancellation()
 
                 await MainActor.run {
-                    self?.whisperKit = pipe
+                    self?.asrManager = manager
+                    self?.vadManager = vad
                     self?.isWarming = false
                     self?.isReady = true
                 }
@@ -89,11 +99,11 @@ class ModelWarmupService: ObservableObject {
             }
         }
 
-        // WR-05: Timeout watchdog — cancels warmupTask if init hangs (e.g. network failure
-        // during first-launch HuggingFace download). Runs separately to avoid Swift 6
-        // Sendable issues with WhisperKit in task groups.
+        // Timeout watchdog — cancels warmupTask if download/compilation hangs (e.g. network
+        // failure during first-launch HuggingFace download). Runs separately to avoid Swift 6
+        // Sendable issues with FluidAudio actors in task groups.
         Task { [weak self] in
-            try? await Task.sleep(nanoseconds: self?.warmupTimeoutSeconds ?? 600 * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: (self?.warmupTimeoutSeconds ?? 600) * 1_000_000_000)
             guard let self else { return }
             if self.isWarming {
                 self.cancelWarmup()
@@ -101,7 +111,7 @@ class ModelWarmupService: ObservableObject {
         }
     }
 
-    /// Cancel an in-flight warmup task (WR-05).
+    /// Cancel an in-flight warmup task.
     /// After cancellation, the guard in warmup() passes again (isWarming == false, isReady == false),
     /// so calling warmup() again will retry.
     func cancelWarmup() {
@@ -109,10 +119,17 @@ class ModelWarmupService: ObservableObject {
         warmupTask = nil
     }
 
-    /// Expose the initialized WhisperKit instance for Phase 2 ASR pipeline.
-    /// Returns nil until warm-up completes. Phase 2 will consume this instance
+    /// Expose the initialized AsrManager for TranscriptionService.
+    /// Returns nil until warm-up completes. TranscriptionService consumes this instance
     /// directly to avoid redundant initialization.
-    var whisperKitInstance: WhisperKit? {
-        whisperKit
+    var asrManagerInstance: AsrManager? {
+        asrManager
+    }
+
+    /// Expose the initialized VadManager for TranscriptionService.
+    /// Returns nil until warm-up completes. VadManager provides Silero VAD v6 for
+    /// voice activity detection during transcription.
+    var vadManagerInstance: VadManager? {
+        vadManager
     }
 }
