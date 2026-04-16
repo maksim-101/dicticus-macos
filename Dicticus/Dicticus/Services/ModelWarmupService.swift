@@ -124,11 +124,14 @@ class ModelWarmupService: ObservableObject {
     }
 
     /// Cancel an in-flight warmup task.
-    /// After cancellation, the guard in warmup() passes again (isWarming == false, isReady == false),
-    /// so calling warmup() again will retry.
+    /// Immediately resets isWarming to false for responsive UI feedback.
+    /// The guard in warmup() then passes again (isWarming == false, isReady == false),
+    /// so calling warmup() again will retry. The task's CancellationError handler
+    /// becomes a no-op since isWarming is already false.
     func cancelWarmup() {
         warmupTask?.cancel()
         warmupTask = nil
+        isWarming = false
     }
 
     /// Expose the initialized AsrManager for TranscriptionService.
