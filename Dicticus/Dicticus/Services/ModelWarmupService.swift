@@ -80,7 +80,7 @@ class ModelWarmupService: ObservableObject {
                 // Step 3: Initialize Silero VAD v6 CoreML model (~1.8 MB).
                 // VadManager provides frame-based voice activity detection to filter silence.
                 // Initialized alongside ASR models to ensure VAD is ready for first transcription.
-                let vad = try await VadManager(config: VadConfig(defaultThreshold: 0.75))
+                let vad = try await VadManager(config: VadConfig(defaultThreshold: Double(TranscriptionService.vadProbabilityThreshold)))
 
                 try Task.checkCancellation()
 

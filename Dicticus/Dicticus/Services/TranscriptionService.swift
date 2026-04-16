@@ -51,10 +51,16 @@ class TranscriptionService: ObservableObject {
 
     // MARK: - Configuration
 
+    /// Shared VAD probability threshold used by both VadManager (internal decision
+    /// boundary via VadConfig.defaultThreshold) and TranscriptionService (post-filter
+    /// on frame probabilities). Keeping these in sync avoids a split where VadManager
+    /// classifies a frame as silence but TranscriptionService passes it as voice.
+    static let vadProbabilityThreshold: Float = 0.75
+
     /// Silero VAD probability threshold. Higher = more strict voice detection.
-    /// Starting at 0.5 per RESEARCH.md recommendation for push-to-talk.
+    /// Defaults to vadProbabilityThreshold (0.75) to stay aligned with VadManager.
     /// Range 0.0 to 1.0; values above this probability are classified as voice.
-    var silenceThreshold: Float = 0.5
+    var silenceThreshold: Float = TranscriptionService.vadProbabilityThreshold
 
     /// Minimum recording duration in seconds (D-11 in 02.1-CONTEXT.md).
     /// Sub-0.3s clips are noise or accidental key presses, not speech.
@@ -354,7 +360,7 @@ extension TranscriptionService {
             let models = try await AsrModels.downloadAndLoad(version: .v3)
             let manager = AsrManager(config: .default)
             try await manager.loadModels(models)
-            let vad = try await VadManager(config: VadConfig(defaultThreshold: 0.75))
+            let vad = try await VadManager(config: VadConfig(defaultThreshold: Double(vadProbabilityThreshold)))
             return TranscriptionService(asrManager: manager, vadManager: vad)
         } catch {
             return nil
