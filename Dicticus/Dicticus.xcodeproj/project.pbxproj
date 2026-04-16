@@ -10,7 +10,7 @@
 		12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */; };
 		18668EE01D6AAE03785B0B5B /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */; };
 		1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */; };
-		22A84736FD3182B120F7D8DF /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = ACBA2FF2659A87A9C159580E /* WhisperKit */; };
+		22A84736FD3182B120F7D8DF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 383C33859A15C6735C57D628 /* FluidAudio */; };
 		2A0BC6A9E3318985B054375B /* PermissionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */; };
 		2CCDDDB512E51308F0A0D6D5 /* SystemSettingsURLs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9323B1AD9E85950CAD77E332 /* SystemSettingsURLs.swift */; };
 		4EBD2D2867D12C548A2E7593 /* ModelWarmupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */; };
@@ -66,7 +66,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				22A84736FD3182B120F7D8DF /* WhisperKit in Frameworks */,
+				22A84736FD3182B120F7D8DF /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,7 +173,7 @@
 			);
 			name = Dicticus;
 			packageProductDependencies = (
-				ACBA2FF2659A87A9C159580E /* WhisperKit */,
+				383C33859A15C6735C57D628 /* FluidAudio */,
 			);
 			productName = Dicticus;
 			productReference = C0781F7C404244283FCD9224 /* Dicticus.app */;
@@ -222,7 +222,7 @@
 			mainGroup = EE4B51AC07CF5D595B3EC54B;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DABED81C33003EF6FDDE12B2 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				C2D43E6A153D7B70CE02FC46 /* XCRemoteSwiftPackageReference "FluidAudio" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 25F3ED5DD24C1FE0234A468D /* Products */;
@@ -524,21 +524,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DABED81C33003EF6FDDE12B2 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+		C2D43E6A153D7B70CE02FC46 /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			repositoryURL = "https://github.com/FluidInference/FluidAudio.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.18.0;
+				minimumVersion = 0.13.6;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		ACBA2FF2659A87A9C159580E /* WhisperKit */ = {
+		383C33859A15C6735C57D628 /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DABED81C33003EF6FDDE12B2 /* XCRemoteSwiftPackageReference "WhisperKit" */;
-			productName = WhisperKit;
+			package = C2D43E6A153D7B70CE02FC46 /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
