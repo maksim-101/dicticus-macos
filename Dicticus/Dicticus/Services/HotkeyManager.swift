@@ -161,6 +161,12 @@ class HotkeyManager: ObservableObject {
                     break  // D-02: Silent discard
                 case .silenceOnly:
                     break  // D-16: No notification for silence
+                case .unexpectedLanguage:
+                    // Non-Latin script detected — notify user (not silent, user needs to know
+                    // why text was not injected)
+                    let notification = DicticusNotification.unexpectedLanguage
+                    self.lastPostedNotification = notification
+                    NotificationService.shared.post(notification)
                 default:
                     let notification = DicticusNotification.transcriptionFailed(error)
                     self.lastPostedNotification = notification

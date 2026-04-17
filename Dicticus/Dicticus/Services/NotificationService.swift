@@ -15,6 +15,8 @@ enum DicticusNotification {
     case transcriptionFailed(Error)
     /// Recording could not start (mic unavailable, permission denied)
     case recordingFailed(Error)
+    /// ASR output contained non-Latin script (Cyrillic, CJK, Arabic, etc.)
+    case unexpectedLanguage
 
     /// Notification title — always "Dicticus" per UI-SPEC copywriting contract.
     var title: String { "Dicticus" }
@@ -31,6 +33,8 @@ enum DicticusNotification {
             return "Transcription failed. Check that models are loaded."
         case .recordingFailed:
             return "Could not start recording. Check microphone permission."
+        case .unexpectedLanguage:
+            return "Unexpected language detected. Please try again."
         }
     }
 }
