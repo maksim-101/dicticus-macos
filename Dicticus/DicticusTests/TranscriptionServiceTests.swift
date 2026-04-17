@@ -130,8 +130,8 @@ final class TranscriptionServiceTests: XCTestCase {
 
     func testDefaultSilenceThreshold() async throws {
         let service = try await makeServiceOrSkip()
-        XCTAssertEqual(service.silenceThreshold, 0.5, accuracy: 0.001,
-                       "default silenceThreshold should be 0.5 for Silero VAD probability")
+        XCTAssertEqual(service.silenceThreshold, TranscriptionService.vadProbabilityThreshold, accuracy: 0.001,
+                       "default silenceThreshold should match vadProbabilityThreshold (0.75)")
     }
 
     func testSilenceThresholdIsConfigurable() async throws {
