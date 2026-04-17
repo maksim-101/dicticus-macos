@@ -37,7 +37,10 @@ class TextInjector {
 
         // Step 2: Write transcription text
         pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        // Prepend space before injected text so consecutive dictation segments
+        // don't merge into one word. A leading space in an empty field is harmless
+        // and far less disruptive than missing inter-segment whitespace.
+        pasteboard.setString(" " + text, forType: .string)
 
         // Step 3: Synthesize Cmd+V
         synthesizePaste()
