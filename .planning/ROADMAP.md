@@ -81,7 +81,7 @@ Plans:
 - [x] 03-01-PLAN.md — KeyboardShortcuts SPM dependency, hotkey name definitions, TextInjector clipboard service, NotificationService
 - [x] 03-02-PLAN.md — HotkeyManager push-to-talk state machine, DicticusApp icon state machine, service wiring
 - [x] 03-03-PLAN.md — Menu bar dropdown UI (hotkey config section, last transcription preview), end-to-end verification checkpoint
-- [ ] 03-04-PLAN.md — UAT gap closure: non-Latin script rejection, inter-segment spacing, launch permission check, copy feedback
+- [x] 03-04-PLAN.md — UAT gap closure: non-Latin script rejection, inter-segment spacing, launch permission check, copy feedback
 
 ### Phase 4: AI Cleanup
 **Goal**: User can dictate with a separate hotkey and receive grammar-corrected, punctuation-fixed text that preserves their original meaning -- AI-enhanced dictation
