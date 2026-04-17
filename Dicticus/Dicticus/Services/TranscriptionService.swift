@@ -18,6 +18,9 @@ enum TranscriptionError: Error, Sendable {
     case notRecording
     /// startRecording() called while already recording or transcribing.
     case busy
+    /// ASR output contains non-Latin script (Cyrillic, CJK, Arabic, etc.) — likely a
+    /// Parakeet hallucination when the spoken language doesn't match model expectations.
+    case unexpectedLanguage
 }
 
 /// Thread-safe audio sample buffer for real-time AVAudioEngine tap callbacks.
@@ -216,15 +219,22 @@ class TranscriptionService: ObservableObject {
         // Layer 3: Transcribe via Parakeet TDT v3
         let result = try await asrManager.transcribe(resampledSamples)
 
-        guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let trimmedText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else {
             throw TranscriptionError.noResult  // defer resets to .idle
+        }
+
+        // Script validation: reject non-Latin output (Parakeet may output Cyrillic/CJK/Arabic
+        // when spoken language doesn't match expectations — T-03-13 mitigation)
+        guard !Self.containsNonLatinScript(trimmedText) else {
+            throw TranscriptionError.unexpectedLanguage
         }
 
         // Post-hoc language detection (Parakeet outputs no language code — D-13)
         let detectedLanguage = detectLanguage(result.text)
 
         let transcriptionResult = DicticusTranscriptionResult(
-            text: result.text.trimmingCharacters(in: .whitespacesAndNewlines),
+            text: trimmedText,
             language: detectedLanguage,
             confidence: result.confidence
         )
@@ -318,6 +328,46 @@ class TranscriptionService: ObservableObject {
         }
 
         return output
+    }
+
+    // MARK: - Script validation
+
+    /// Latin Unicode scalar ranges that are allowed in transcription output.
+    /// Covers Basic Latin, Latin Extended-A/B, Latin Extended Additional,
+    /// Latin Extended-C, and Latin Extended-D blocks.
+    private static let latinRanges: [ClosedRange<UInt32>] = [
+        0x0000...0x007F,   // Basic Latin (ASCII)
+        0x0080...0x00FF,   // Latin-1 Supplement (umlauts, accented chars)
+        0x0100...0x024F,   // Latin Extended-A + B
+        0x1E00...0x1EFF,   // Latin Extended Additional
+        0x2C60...0x2C7F,   // Latin Extended-C
+        0xA720...0xA7FF,   // Latin Extended-D
+        0x0300...0x036F,   // Combining Diacritical Marks (accents on Latin base)
+    ]
+
+    /// Check if text contains non-Latin script characters (Cyrillic, CJK, Arabic, etc.).
+    ///
+    /// Parakeet TDT v3 may output characters from unexpected scripts when the spoken
+    /// language doesn't match well. This guard prevents garbled text from being injected
+    /// at the user's cursor.
+    ///
+    /// Logic: any Unicode letter that is NOT in the Latin character sets is flagged.
+    /// Numbers, punctuation, symbols, and combining marks are always allowed.
+    ///
+    /// Static so it can be unit tested without a FluidAudio instance.
+    static func containsNonLatinScript(_ text: String) -> Bool {
+        let letters = CharacterSet.letters
+        for scalar in text.unicodeScalars {
+            // Skip non-letter scalars (numbers, punctuation, symbols, whitespace, combining marks)
+            guard letters.contains(scalar) else { continue }
+            // Check if this letter scalar falls within any Latin range
+            let value = scalar.value
+            let isLatin = latinRanges.contains { $0.contains(value) }
+            if !isLatin {
+                return true  // Found a non-Latin letter
+            }
+        }
+        return false
     }
 
     // MARK: - Language detection
