@@ -29,6 +29,10 @@ struct DicticusApp: App {
                 .symbolEffect(.pulse, isActive: warmupService.isWarming || (transcriptionService?.state == .transcribing))
                 .foregroundStyle(hotkeyManager.isRecording ? .red : .primary)
                 .task {
+                    // Check permissions at launch so iconName reads correct state immediately
+                    // (prevents mic.slash showing when permissions are already granted but
+                    // status is still .pending from init)
+                    permissionManager.checkAll()
                     warmupService.warmup()
                 }
                 .onChange(of: warmupService.isReady) { _, isReady in

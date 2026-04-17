@@ -12,6 +12,9 @@ import SwiftUI
 struct LastTranscriptionView: View {
     let text: String?
 
+    /// Tracks whether "Copied!" feedback is currently showing.
+    @State private var showCopied = false
+
     var body: some View {
         if let text, !text.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
@@ -29,13 +32,18 @@ struct LastTranscriptionView: View {
 
                     Spacer()
 
-                    Button("Copy") {
+                    Button(showCopied ? "Copied!" : "Copy") {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(text, forType: .string)
+                        showCopied = true
+                        // Reset after 1.5 seconds
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            showCopied = false
+                        }
                     }
                     .controlSize(.small)
                     .buttonStyle(.bordered)
-                    .accessibilityLabel("Copy last transcription")
+                    .accessibilityLabel(showCopied ? "Copied to clipboard" : "Copy last transcription")
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 4)
