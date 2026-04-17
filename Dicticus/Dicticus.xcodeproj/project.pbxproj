@@ -17,6 +17,7 @@
 		359481C22526F910DD910C0A /* KeyboardShortcuts+Names.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A0E6E52D5145B754E1607B /* KeyboardShortcuts+Names.swift */; };
 		45D038611054F1572E02B007 /* CleanupPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D58759873E2741453F8005F /* CleanupPrompt.swift */; };
 		46698DBA511869A97C904712 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B67D618B3FC76641FCD5FF5A /* LlamaSwift */; };
+		46B52C3C05E290F9EF02A653 /* ModelDownloadServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */; };
 		4EBD2D2867D12C548A2E7593 /* ModelWarmupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */; };
 		62DF49673ACC5EB9F14ABB40 /* TranscriptionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AF3680DF47913CE527C5F1 /* TranscriptionResult.swift */; };
 		651F32E3BC46F1B9053994C4 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */; };
@@ -33,6 +34,7 @@
 		B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6403E7E893BEB40EABCBD /* DicticusApp.swift */; };
 		BFDB87F665D7FFABF0692E1A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 65F840B6DAF4061FED6C7E20 /* Assets.xcassets */; };
 		C524718AC8111D53B30A01FD /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F103886FBBE1F7D287929D /* NotificationService.swift */; };
+		C88A581C1776F2B4EFC2C57C /* CleanupPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */; };
 		D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */; };
 		D40E4EE4B8E09E3462AA5918 /* ModelWarmupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */; };
 		D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2499A2640576B94D1BA5CD41 /* DicticusTests.swift */; };
@@ -55,6 +57,7 @@
 /* Begin PBXFileReference section */
 		00A6403E7E893BEB40EABCBD /* DicticusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusApp.swift; sourceTree = "<group>"; };
 		143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
+		174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPromptTests.swift; sourceTree = "<group>"; };
 		190A391B6BC042BE1B56011B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		2499A2640576B94D1BA5CD41 /* DicticusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusTests.swift; sourceTree = "<group>"; };
 		2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsURLTests.swift; sourceTree = "<group>"; };
@@ -83,6 +86,7 @@
 		C0781F7C404244283FCD9224 /* Dicticus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dicticus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelWarmupServiceTests.swift; sourceTree = "<group>"; };
 		D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
+		E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadServiceTests.swift; sourceTree = "<group>"; };
 		E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadService.swift; sourceTree = "<group>"; };
 		E8A0E6E52D5145B754E1607B /* KeyboardShortcuts+Names.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcuts+Names.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -155,8 +159,10 @@
 		5FDD026702632D8277248E0B /* DicticusTests */ = {
 			isa = PBXGroup;
 			children = (
+				174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */,
 				2499A2640576B94D1BA5CD41 /* DicticusTests.swift */,
 				70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */,
+				E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */,
 				CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */,
 				143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */,
 				6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */,
@@ -339,8 +345,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C88A581C1776F2B4EFC2C57C /* CleanupPromptTests.swift in Sources */,
 				D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */,
 				2CBB9E936439E4D8CA60F825 /* HotkeyManagerTests.swift in Sources */,
+				46B52C3C05E290F9EF02A653 /* ModelDownloadServiceTests.swift in Sources */,
 				D40E4EE4B8E09E3462AA5918 /* ModelWarmupServiceTests.swift in Sources */,
 				651F32E3BC46F1B9053994C4 /* NotificationServiceTests.swift in Sources */,
 				1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */,
