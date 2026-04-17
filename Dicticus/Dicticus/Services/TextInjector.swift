@@ -9,6 +9,9 @@ import CoreGraphics
 /// Per D-06: Clipboard + Cmd+V paste strategy.
 /// Per D-07: Original clipboard contents preserved after injection (~50ms delay).
 /// Per D-08: Single Cmd+V code path for all apps including terminal emulators.
+/// @MainActor isolation ensures all NSPasteboard and CGEvent calls happen on the main thread.
+/// NSPasteboard.general and CGEvent.post are both main-thread-only AppKit/CoreGraphics APIs.
+@MainActor
 class TextInjector {
 
     /// Saved clipboard state — array of items, each with multiple type+data pairs.
