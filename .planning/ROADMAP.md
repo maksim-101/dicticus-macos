@@ -74,13 +74,13 @@ Plans:
   3. Menu bar icon changes visually while recording is active (recording indicator)
   4. Different hotkey combos are registered for plain dictation vs AI cleanup mode (mode routing by hotkey identity, not state toggle)
   5. Original clipboard contents are preserved after text injection (clipboard restore)
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — KeyboardShortcuts SPM dependency, hotkey name definitions, TextInjector clipboard service, NotificationService
+- [ ] 03-02-PLAN.md — HotkeyManager push-to-talk state machine, DicticusApp icon state machine, service wiring
+- [ ] 03-03-PLAN.md — Menu bar dropdown UI (hotkey config section, last transcription preview), end-to-end verification checkpoint
 
 ### Phase 4: AI Cleanup
 **Goal**: User can dictate with a separate hotkey and receive grammar-corrected, punctuation-fixed text that preserves their original meaning -- AI-enhanced dictation
@@ -116,7 +116,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 2.1 → 3 → 4 → 5
+Phases execute in numeric order: 1 -> 2 -> 2.1 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
