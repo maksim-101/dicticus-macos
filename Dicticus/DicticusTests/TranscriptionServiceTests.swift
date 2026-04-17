@@ -19,10 +19,11 @@ final class TranscriptionServiceTests: XCTestCase {
         let modelNotReady: TranscriptionError = .modelNotReady
         let notRecording: TranscriptionError = .notRecording
         let busy: TranscriptionError = .busy
+        let unexpectedLanguage: TranscriptionError = .unexpectedLanguage
 
         // Use XCTAssertNotNil with Optional wrapping to avoid "always true" warning
-        let errors: [TranscriptionError] = [tooShort, silenceOnly, noResult, modelNotReady, notRecording, busy]
-        XCTAssertEqual(errors.count, 6, "All six TranscriptionError cases should be constructible")
+        let errors: [TranscriptionError] = [tooShort, silenceOnly, noResult, modelNotReady, notRecording, busy, unexpectedLanguage]
+        XCTAssertEqual(errors.count, 7, "All seven TranscriptionError cases should be constructible")
     }
 
     // MARK: - Language restriction tests
@@ -86,6 +87,64 @@ final class TranscriptionServiceTests: XCTestCase {
         let validLanguages = ["de", "en"]
         XCTAssertTrue(validLanguages.contains(result),
                       "Short text should return either 'de' or 'en', got: \(result)")
+    }
+
+    // MARK: - Non-Latin script detection tests (TRNS-01, containsNonLatinScript)
+
+    func testContainsNonLatinScriptPureLatinReturnsFalse() {
+        XCTAssertFalse(
+            TranscriptionService.containsNonLatinScript("Hello world"),
+            "Pure ASCII Latin text should not be flagged as non-Latin"
+        )
+    }
+
+    func testContainsNonLatinScriptGermanUmlautsReturnsFalse() {
+        XCTAssertFalse(
+            TranscriptionService.containsNonLatinScript("Guten Tag"),
+            "German text with extended Latin characters (umlauts) should not be flagged"
+        )
+    }
+
+    func testContainsNonLatinScriptCyrillicReturnsTrue() {
+        XCTAssertTrue(
+            TranscriptionService.containsNonLatinScript("Привет мир"),
+            "Cyrillic text should be detected as non-Latin"
+        )
+    }
+
+    func testContainsNonLatinScriptCJKReturnsTrue() {
+        XCTAssertTrue(
+            TranscriptionService.containsNonLatinScript("你好世界"),
+            "CJK text should be detected as non-Latin"
+        )
+    }
+
+    func testContainsNonLatinScriptArabicReturnsTrue() {
+        XCTAssertTrue(
+            TranscriptionService.containsNonLatinScript("مرحبا"),
+            "Arabic text should be detected as non-Latin"
+        )
+    }
+
+    func testContainsNonLatinScriptEmptyReturnsFalse() {
+        XCTAssertFalse(
+            TranscriptionService.containsNonLatinScript(""),
+            "Empty string should not be flagged as non-Latin"
+        )
+    }
+
+    func testContainsNonLatinScriptNumbersAndPunctuationReturnsFalse() {
+        XCTAssertFalse(
+            TranscriptionService.containsNonLatinScript("123 !@#"),
+            "Numbers and punctuation should not be flagged as non-Latin"
+        )
+    }
+
+    func testContainsNonLatinScriptCombiningAccentsReturnsFalse() {
+        XCTAssertFalse(
+            TranscriptionService.containsNonLatinScript("cafe\u{0301}"),
+            "Combining accents on Latin base characters should not be flagged"
+        )
     }
 
     // MARK: - VadManager integration test (TRNS-04 coverage)
