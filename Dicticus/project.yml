@@ -15,6 +15,9 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts.git
     from: 2.4.0
+  llama:
+    url: https://github.com/mattt/llama.swift.git
+    from: 2.8832.0
 
 targets:
   Dicticus:
@@ -55,6 +58,8 @@ targets:
         product: FluidAudio
       - package: KeyboardShortcuts
         product: KeyboardShortcuts
+      - package: llama
+        product: LlamaSwift
 
   DicticusTests:
     type: bundle.unit-test
@@ -71,3 +76,5 @@ targets:
       - target: Dicticus
       - package: KeyboardShortcuts
         product: KeyboardShortcuts
+      - package: llama
+        product: LlamaSwift
