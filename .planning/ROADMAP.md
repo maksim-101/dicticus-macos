@@ -74,13 +74,14 @@ Plans:
   3. Menu bar icon changes visually while recording is active (recording indicator)
   4. Different hotkey combos are registered for plain dictation vs AI cleanup mode (mode routing by hotkey identity, not state toggle)
   5. Original clipboard contents are preserved after text injection (clipboard restore)
-**Plans**: 3 plans
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
 - [x] 03-01-PLAN.md — KeyboardShortcuts SPM dependency, hotkey name definitions, TextInjector clipboard service, NotificationService
 - [x] 03-02-PLAN.md — HotkeyManager push-to-talk state machine, DicticusApp icon state machine, service wiring
 - [x] 03-03-PLAN.md — Menu bar dropdown UI (hotkey config section, last transcription preview), end-to-end verification checkpoint
+- [ ] 03-04-PLAN.md — UAT gap closure: non-Latin script rejection, inter-segment spacing, launch permission check, copy feedback
 
 ### Phase 4: AI Cleanup
 **Goal**: User can dictate with a separate hotkey and receive grammar-corrected, punctuation-fixed text that preserves their original meaning -- AI-enhanced dictation
@@ -107,11 +108,13 @@ Plans:
   1. Total memory usage stays under 3 GB with both ASR and LLM models loaded on a 16 GB Apple Silicon Mac
   2. App can optionally launch at login (configurable in settings)
   3. App is packaged as a DMG that a user can download, drag to Applications, and run without additional setup beyond permission grants
+  4. Modifier-only hotkeys (Fn+Shift, Ctrl+Shift) are available as push-to-talk activation options alongside standard key combos
 **Plans**: TBD
 
 Plans:
 - [ ] 05-01: TBD
 - [ ] 05-02: TBD
+- [ ] 05-03: Modifier-only hotkey support via CGEventTap flagsChanged listener (Fn+Shift, Ctrl+Shift without a letter key) — parallel to KeyboardShortcuts
 
 ## Progress
 
@@ -123,6 +126,6 @@ Phases execute in numeric order: 1 -> 2 -> 2.1 -> 3 -> 4 -> 5
 | 1. Foundation & App Shell | 3/3 | Complete   | 2026-04-15 |
 | 2. ASR Pipeline | 2/2 | Complete | 2026-04-15 |
 | 2.1. ASR Engine Swap | 2/2 | Complete | 2026-04-16 |
-| 3. System-Wide Dictation | 3/3 | Complete | 2026-04-17 |
+| 3. System-Wide Dictation | 3/4 | Gap closure | - |
 | 4. AI Cleanup | 0/3 | Not started | - |
-| 5. Polish & Distribution | 0/2 | Not started | - |
+| 5. Polish & Distribution | 0/3 | Not started | - |
