@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Phase 1 contents per D-05:
 /// - Onboarding panel (first launch only, replaces content until dismissed)
-/// - Permission status rows (Microphone, Accessibility, Input Monitoring)
+/// - Permission status rows (Microphone, Accessibility)
 /// - Warm-up status row
 ///
 /// Phase 3 additions per D-20/D-21/D-22:
@@ -49,12 +49,6 @@ struct MenuBarView: View {
                         status: permissionManager.accessibilityStatus,
                         grantAction: { permissionManager.requestAccessibility() },
                         settingsURL: SystemSettingsURL.accessibility
-                    )
-                    PermissionRow(
-                        title: "Input Monitoring",
-                        status: permissionManager.inputMonitoringStatus,
-                        grantAction: { permissionManager.requestInputMonitoring() },
-                        settingsURL: SystemSettingsURL.inputMonitoring
                     )
                 }
 

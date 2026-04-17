@@ -3,7 +3,7 @@ import SwiftUI
 /// Sequential first-launch permission onboarding flow.
 ///
 /// Guides the user through three permissions one at a time (D-01):
-/// Microphone → Accessibility → Input Monitoring
+/// Microphone → Accessibility
 ///
 /// The user can skip any step with "I'll do this later" (D-02 — non-blocking).
 /// After all steps, onboarding is marked complete and the panel dismisses.
@@ -30,11 +30,6 @@ struct OnboardingView: View {
             icon: "accessibility",
             title: "Accessibility",
             body: "Accessibility access lets Dicticus type at your cursor in any app."
-        ),
-        PermissionStep(
-            icon: "keyboard",
-            title: "Input Monitoring",
-            body: "Input Monitoring allows Dicticus to detect your hotkey while another app is in focus."
         )
     ]
 
@@ -94,9 +89,6 @@ struct OnboardingView: View {
             // Accessibility prompt is async — user goes to System Settings.
             // Advance immediately; polling detects the grant within 2 seconds.
             permissionManager.requestAccessibility()
-            advanceStep()
-        case 2:
-            permissionManager.requestInputMonitoring()
             advanceStep()
         default:
             break
