@@ -19,6 +19,18 @@ struct DicticusApp: App {
                 .environmentObject(permissionManager)
                 .environmentObject(warmupService)
                 .environmentObject(hotkeyManager)
+        } label: {
+            // Icon state logic per UI-SPEC three-state machine:
+            //   recording -> mic.fill (red) per D-09
+            //   transcribing -> waveform.circle (pulsing) per D-11
+            //   idle/warming -> mic (pulsing during warm-up per D-04)
+            // symbolEffect(.pulse) requires macOS 14+ — verified in Research Pattern 1.
+            Image(systemName: iconName)
+                .symbolEffect(.pulse, isActive: warmupService.isWarming || (transcriptionService?.state == .transcribing))
+                .foregroundStyle(hotkeyManager.isRecording ? .red : .primary)
+                .task {
+                    warmupService.warmup()
+                }
                 .onChange(of: warmupService.isReady) { _, isReady in
                     if isReady,
                        let asrManager = warmupService.asrManagerInstance,
@@ -30,20 +42,6 @@ struct DicticusApp: App {
                         transcriptionService = service
                         hotkeyManager.setup(transcriptionService: service, warmupService: warmupService)
                     }
-                }
-        } label: {
-            // Icon state logic per UI-SPEC three-state machine:
-            //   recording -> mic.fill (red) per D-09
-            //   transcribing -> waveform.circle (pulsing) per D-11
-            //   idle/warming -> mic (pulsing during warm-up per D-04)
-            // symbolEffect(.pulse) requires macOS 14+ — verified in Research Pattern 1.
-            Image(systemName: iconName)
-                .symbolEffect(.pulse, isActive: warmupService.isWarming || (transcriptionService?.state == .transcribing))
-                .foregroundStyle(hotkeyManager.isRecording ? .red : .primary)
-                .task {
-                    // D-03: warm-up starts at app launch (label renders immediately),
-                    // not on first popover open. Guard in warmup() prevents duplicate calls.
-                    warmupService.warmup()
                 }
         }
         .menuBarExtraStyle(.window)

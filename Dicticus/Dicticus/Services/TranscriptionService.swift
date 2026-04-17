@@ -2,6 +2,7 @@ import SwiftUI
 import FluidAudio
 import AVFoundation
 import NaturalLanguage
+import os
 
 /// Errors thrown by TranscriptionService during the record-transcribe cycle.
 enum TranscriptionError: Error, Sendable {
@@ -17,6 +18,36 @@ enum TranscriptionError: Error, Sendable {
     case notRecording
     /// startRecording() called while already recording or transcribing.
     case busy
+}
+
+/// Thread-safe audio sample buffer for real-time AVAudioEngine tap callbacks.
+/// Extracted as a standalone Sendable class so the tap closure doesn't inherit
+/// @MainActor isolation from TranscriptionService — Swift 6 enforces actor
+/// isolation on closures defined inside @MainActor methods even when self
+/// isn't captured, causing a runtime crash on the audio thread.
+final class AudioSampleBuffer: @unchecked Sendable {
+    private var samples: [Float] = []
+    private let lock = NSLock()
+
+    func append(_ newSamples: [Float]) {
+        lock.lock()
+        samples.append(contentsOf: newSamples)
+        lock.unlock()
+    }
+
+    func drain() -> [Float] {
+        lock.lock()
+        let result = samples
+        samples.removeAll()
+        lock.unlock()
+        return result
+    }
+
+    func clear() {
+        lock.lock()
+        samples.removeAll()
+        lock.unlock()
+    }
 }
 
 /// Core ASR pipeline: record audio via AVAudioEngine, apply three-layer VAD,
@@ -71,8 +102,8 @@ class TranscriptionService: ObservableObject {
     private let asrManager: AsrManager
     private let vadManager: VadManager
     private let audioEngine = AVAudioEngine()
-    /// Accumulated raw audio samples at the hardware sample rate during recording.
-    private var audioSamples: [Float] = []
+    /// Thread-safe buffer for audio samples — see AudioSampleBuffer doc comment.
+    private let sampleBuffer = AudioSampleBuffer()
     /// Target sample rate for Parakeet TDT v3 (16kHz mono).
     private let sampleRate: Double = 16000
 
@@ -98,27 +129,36 @@ class TranscriptionService: ObservableObject {
     /// - Throws: AVFoundation error if microphone access is denied or hardware unavailable.
     func startRecording() throws {
         guard state == .idle else { throw TranscriptionError.busy }
-        audioSamples = []
+        sampleBuffer.clear()
 
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
 
-        // Install tap on input node to capture audio buffers.
-        // We capture at the hardware's native format and resample later.
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) {
-            [weak self] buffer, _ in
-            guard let self else { return }
-            if let channelData = buffer.floatChannelData?[0] {
-                let frameCount = Int(buffer.frameLength)
-                let samples = Array(UnsafeBufferPointer(start: channelData, count: frameCount))
-                Task { @MainActor in
-                    self.audioSamples.append(contentsOf: samples)
-                }
-            }
-        }
+        // Install tap via nonisolated helper to prevent the closure from
+        // inheriting @MainActor isolation (Swift 6 strict concurrency).
+        Self.installTap(on: inputNode, format: inputFormat, buffer: sampleBuffer)
 
         try audioEngine.start()
         state = .recording
+    }
+
+    /// Install audio tap in a nonisolated context so the closure has no actor affinity.
+    /// Swift 6 strict concurrency makes closures inside @MainActor methods inherit
+    /// that isolation — even @Sendable closures check actor identity at runtime,
+    /// crashing when AVAudioEngine calls them on the real-time audio thread.
+    nonisolated private static func installTap(
+        on inputNode: AVAudioInputNode,
+        format: AVAudioFormat,
+        buffer: AudioSampleBuffer
+    ) {
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) {
+            pcmBuffer, _ in
+            if let channelData = pcmBuffer.floatChannelData?[0] {
+                let frameCount = Int(pcmBuffer.frameLength)
+                let samples = Array(UnsafeBufferPointer(start: channelData, count: frameCount))
+                buffer.append(samples)
+            }
+        }
     }
 
     // MARK: - Transcription
@@ -147,7 +187,7 @@ class TranscriptionService: ObservableObject {
         // Ensure state always resets to .idle even if transcription throws
         defer { if state == .transcribing { state = .idle } }
 
-        let samples = audioSamples
+        let samples = sampleBuffer.drain()
 
         // Resample to 16kHz mono if hardware sample rate differs.
         // Parakeet TDT v3 requires 16kHz Float32 mono input.

@@ -51,18 +51,18 @@ private let axTrustedPromptKey: String =
 class PermissionManager: ObservableObject {
     @Published var microphoneStatus: PermissionStatus = .pending
     @Published var accessibilityStatus: PermissionStatus = .pending
-    @Published var inputMonitoringStatus: PermissionStatus = .pending
     @Published var hasCompletedOnboarding = false
 
     private static let onboardingKey = "hasCompletedOnboarding"
 
     private var pollTimer: Timer?
 
-    /// True only when all three permissions are .granted.
+    /// True when both required permissions are .granted.
+    /// Input Monitoring is NOT needed — KeyboardShortcuts uses Carbon RegisterEventHotKey,
+    /// not NSEvent.addGlobalMonitorForEventsMatchingMask.
     var allGranted: Bool {
         microphoneStatus == .granted &&
-        accessibilityStatus == .granted &&
-        inputMonitoringStatus == .granted
+        accessibilityStatus == .granted
     }
 
     /// Check current permission states without triggering OS prompts.
@@ -81,11 +81,6 @@ class PermissionManager: ObservableObject {
         // both first-time prompts and re-requests via AXIsProcessTrustedWithOptions.
         let axTrusted = AXIsProcessTrusted()
         accessibilityStatus = axTrusted ? .granted : .pending
-
-        // Input Monitoring: same approach — always .pending when not granted.
-        // CGRequestListenEventAccess() handles both first-time and re-request scenarios.
-        let imAccess = CGPreflightListenEventAccess()
-        inputMonitoringStatus = imAccess ? .granted : .pending
     }
 
     /// Trigger the OS microphone permission prompt. Updates status after user responds.
@@ -102,17 +97,6 @@ class PermissionManager: ObservableObject {
         let options: NSDictionary = [axTrustedPromptKey: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
         // Do not update status here — polling picks it up within 2 seconds
-    }
-
-    /// Trigger the OS Input Monitoring permission prompt.
-    func requestInputMonitoring() {
-        let granted = CGRequestListenEventAccess()
-        // Only update on success — CGRequestListenEventAccess() returns false
-        // immediately after showing the OS prompt, before the user responds.
-        // Polling will detect the actual grant within 2 seconds.
-        if granted {
-            inputMonitoringStatus = .granted
-        }
     }
 
     /// Start polling all permissions every 2 seconds.
