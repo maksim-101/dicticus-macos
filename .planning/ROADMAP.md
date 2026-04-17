@@ -93,12 +93,12 @@ Plans:
   3. Cleanup works correctly for both German and English text (language-appropriate grammar rules)
   4. LLM (Gemma 3 1B) runs fully locally via llama.cpp with no network calls
   5. Total latency for cleanup mode (ASR + LLM) stays under 4 seconds for typical utterances
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — llama.swift SPM dependency, ModelDownloadService for GGUF caching, CleanupPrompt language-specific templates, unit tests
+- [ ] 04-02-PLAN.md — CleanupService with llama.cpp inference pipeline (tokenize, decode, sample, detokenize), state machine, timeout/fallback, tests
+- [ ] 04-03-PLAN.md — Wire LLM into warmup, HotkeyManager AI cleanup pipeline, DicticusApp icon state with cleanup indicator, notifications
 
 ### Phase 5: Polish & Distribution
 **Goal**: The app is reliable, memory-efficient, and ready for daily use as a packaged DMG
@@ -127,5 +127,5 @@ Phases execute in numeric order: 1 -> 2 -> 2.1 -> 3 -> 4 -> 5
 | 2. ASR Pipeline | 2/2 | Complete | 2026-04-15 |
 | 2.1. ASR Engine Swap | 2/2 | Complete | 2026-04-16 |
 | 3. System-Wide Dictation | 3/4 | Gap closure | - |
-| 4. AI Cleanup | 0/3 | Not started | - |
+| 4. AI Cleanup | 0/3 | Planned | - |
 | 5. Polish & Distribution | 0/3 | Not started | - |
