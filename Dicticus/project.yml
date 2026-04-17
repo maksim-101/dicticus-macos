@@ -12,6 +12,9 @@ packages:
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio.git
     from: 0.13.6
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts.git
+    from: 2.4.0
 
 targets:
   Dicticus:
@@ -50,6 +53,8 @@ targets:
     dependencies:
       - package: FluidAudio
         product: FluidAudio
+      - package: KeyboardShortcuts
+        product: KeyboardShortcuts
 
   DicticusTests:
     type: bundle.unit-test
@@ -64,3 +69,5 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dicticus
+      - package: KeyboardShortcuts
+        product: KeyboardShortcuts
