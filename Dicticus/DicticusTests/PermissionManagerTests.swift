@@ -40,7 +40,6 @@ final class PermissionManagerTests: XCTestCase {
         let manager = PermissionManager()
         manager.microphoneStatus = .granted
         manager.accessibilityStatus = .granted
-        manager.inputMonitoringStatus = .granted
         XCTAssertTrue(manager.allGranted)
     }
 
@@ -48,7 +47,6 @@ final class PermissionManagerTests: XCTestCase {
         let manager = PermissionManager()
         manager.microphoneStatus = .pending
         manager.accessibilityStatus = .granted
-        manager.inputMonitoringStatus = .granted
         XCTAssertFalse(manager.allGranted)
     }
 
@@ -56,15 +54,6 @@ final class PermissionManagerTests: XCTestCase {
         let manager = PermissionManager()
         manager.microphoneStatus = .granted
         manager.accessibilityStatus = .denied
-        manager.inputMonitoringStatus = .granted
-        XCTAssertFalse(manager.allGranted)
-    }
-
-    func testAllGrantedReturnsFalseWhenInputMonitoringNotGranted() {
-        let manager = PermissionManager()
-        manager.microphoneStatus = .granted
-        manager.accessibilityStatus = .granted
-        manager.inputMonitoringStatus = .pending
         XCTAssertFalse(manager.allGranted)
     }
 
