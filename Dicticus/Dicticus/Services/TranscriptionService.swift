@@ -360,7 +360,7 @@ extension TranscriptionService {
             let models = try await AsrModels.downloadAndLoad(version: .v3)
             let manager = AsrManager(config: .default)
             try await manager.loadModels(models)
-            let vad = try await VadManager(config: VadConfig(defaultThreshold: Double(vadProbabilityThreshold)))
+            let vad = try await VadManager(config: VadConfig(defaultThreshold: Float(vadProbabilityThreshold)))
             return TranscriptionService(asrManager: manager, vadManager: vad)
         } catch {
             return nil
