@@ -8,14 +8,13 @@
 #
 # Per D-05: Uses xcodebuild build (not archive) since archive requires a team ID.
 # Per D-06: Ad-hoc signing with CODE_SIGN_IDENTITY="-" (required on Apple Silicon).
-# Per D-07: Styled DMG with background image and Applications symlink.
+# Per D-07: Styled DMG with Applications symlink (uses native Finder theme).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")/Dicticus"
 OUTPUT_DIR="$(dirname "$SCRIPT_DIR")"
 DMG_NAME="Dicticus.dmg"
-BACKGROUND="$SCRIPT_DIR/dmg-background.png"
 
 echo "=== Step 1: Generate Xcode project ==="
 cd "$PROJECT_DIR"
@@ -54,21 +53,18 @@ trap "rm -rf '$STAGING_DIR'" EXIT
 EXIT_CODE=0
 create-dmg \
     --volname "Dicticus" \
-    --background "$BACKGROUND" \
     --window-size 660 400 \
     --icon-size 128 \
     --icon "Dicticus.app" 180 200 \
     --app-drop-link 480 200 \
     --no-internet-enable \
+    --hide-extension "Dicticus.app" \
     "$OUTPUT_DIR/$DMG_NAME" \
     "$STAGING_DIR/" || EXIT_CODE=$?
 
-# create-dmg returns exit code 2 if it created the DMG but could not
-# set the background image (e.g., running in CI without a display).
+# create-dmg returns exit code 2 for non-fatal warnings (e.g. missing Finder AppleScript).
 # The DMG is still valid.
-if [ $EXIT_CODE -eq 2 ] && [ -f "$OUTPUT_DIR/$DMG_NAME" ]; then
-    echo "WARNING: DMG created but background image may not be set (headless environment)"
-elif [ $EXIT_CODE -ne 0 ]; then
+if [ $EXIT_CODE -ne 0 ] && [ ! -f "$OUTPUT_DIR/$DMG_NAME" ]; then
     echo "ERROR: create-dmg failed (exit code $EXIT_CODE)"
     exit 1
 fi
