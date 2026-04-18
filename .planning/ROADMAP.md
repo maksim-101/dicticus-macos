@@ -113,7 +113,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — LaunchAtLogin-Modern SPM dependency, ModifierCombo model, ModifierHotkeyListener CGEventTap service with unit tests
-- [ ] 05-02-PLAN.md — Settings section UI (launch-at-login toggle, modifier hotkey pickers), HotkeyManager + DicticusApp wiring
+- [x] 05-02-PLAN.md — Settings section UI (launch-at-login toggle, modifier hotkey pickers), HotkeyManager + DicticusApp wiring
 - [x] 05-03-PLAN.md — DMG build pipeline (build-dmg.sh, styled background), memory profiling script (verify-memory.sh), human verification
 
 ## Progress
