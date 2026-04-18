@@ -8,13 +8,14 @@
 #
 # Per D-05: Uses xcodebuild build (not archive) since archive requires a team ID.
 # Per D-06: Ad-hoc signing with CODE_SIGN_IDENTITY="-" (required on Apple Silicon).
-# Per D-07: Styled DMG with Applications symlink (uses native Finder theme).
+# Per D-07: Styled DMG with arrow background and Applications symlink.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")/Dicticus"
 OUTPUT_DIR="$(dirname "$SCRIPT_DIR")"
 DMG_NAME="Dicticus.dmg"
+BACKGROUND="$SCRIPT_DIR/dmg-background.png"
 
 echo "=== Step 1: Generate Xcode project ==="
 cd "$PROJECT_DIR"
@@ -53,6 +54,7 @@ trap "rm -rf '$STAGING_DIR'" EXIT
 EXIT_CODE=0
 create-dmg \
     --volname "Dicticus" \
+    --background "$BACKGROUND" \
     --window-size 660 400 \
     --icon-size 128 \
     --icon "Dicticus.app" 180 200 \
@@ -68,6 +70,20 @@ if [ $EXIT_CODE -ne 0 ] && [ ! -f "$OUTPUT_DIR/$DMG_NAME" ]; then
     echo "ERROR: create-dmg failed (exit code $EXIT_CODE)"
     exit 1
 fi
+
+# Post-process: hide .background folder (visible when Finder "Show All Files" is on)
+echo "=== Step 5: Hide .background folder ==="
+TEMP_RW="$OUTPUT_DIR/rw_temp.dmg"
+hdiutil convert "$OUTPUT_DIR/$DMG_NAME" -format UDRW -o "$TEMP_RW" -quiet
+MOUNT_POINT=$(hdiutil attach "$TEMP_RW" -nobrowse -noverify -quiet | tail -1 | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
+if [ -d "$MOUNT_POINT/.background" ]; then
+    chflags hidden "$MOUNT_POINT/.background" 2>/dev/null || true
+    SetFile -a V "$MOUNT_POINT/.background" 2>/dev/null || true
+fi
+hdiutil detach "$MOUNT_POINT" -quiet
+rm -f "$OUTPUT_DIR/$DMG_NAME"
+hdiutil convert "$TEMP_RW" -format UDZO -o "$OUTPUT_DIR/$DMG_NAME" -quiet
+rm -f "$TEMP_RW"
 
 echo "=== Done ==="
 echo "DMG created: $OUTPUT_DIR/$DMG_NAME"
