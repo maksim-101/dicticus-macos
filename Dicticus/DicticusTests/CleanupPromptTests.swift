@@ -20,27 +20,48 @@ final class CleanupPromptTests: XCTestCase {
 
     // MARK: - Language context
 
-    func testGermanLanguagePassedAsContext() {
-        let prompt = CleanupPrompt.build(for: "test", language: "de")
-        XCTAssertTrue(prompt.contains("Language: German"), "German language must be passed as context")
+    func testGermanLanguagePassedForSingleLanguageText() {
+        // Short single-language text should include Language: line
+        let prompt = CleanupPrompt.build(for: "Das ist ein Test", language: "de")
+        XCTAssertTrue(prompt.contains("Language: German"), "Single-language German must include Language: context")
     }
 
-    func testEnglishLanguagePassedAsContext() {
-        let prompt = CleanupPrompt.build(for: "test", language: "en")
-        XCTAssertTrue(prompt.contains("Language: English"), "English language must be passed as context")
+    func testEnglishLanguagePassedForSingleLanguageText() {
+        let prompt = CleanupPrompt.build(for: "This is a test", language: "en")
+        XCTAssertTrue(prompt.contains("Language: English"), "Single-language English must include Language: context")
     }
 
-    func testUnknownLanguageDefaultsToEnglish() {
-        let prompt = CleanupPrompt.build(for: "test", language: "fr")
-        XCTAssertTrue(prompt.contains("Language: English"), "Unknown language must default to English")
+    func testMixedLanguageOmitsLanguageLine() {
+        // Text with both German and English should omit Language: line
+        let mixedText = "Ich spreche jetzt Deutsch. Now I am speaking English. Das ist ein gemischter Text."
+        let prompt = CleanupPrompt.build(for: mixedText, language: "de")
+        XCTAssertFalse(prompt.contains("Language:"),
+                        "Mixed-language text must NOT include Language: to avoid translation")
     }
 
     func testSameInstructionForBothLanguages() {
         let de = CleanupPrompt.build(for: "same text", language: "de")
         let en = CleanupPrompt.build(for: "same text", language: "en")
-        // Both use the same instruction, only the Language: line differs
         XCTAssertTrue(de.contains("Polish the following"), "German prompt uses same instruction")
         XCTAssertTrue(en.contains("Polish the following"), "English prompt uses same instruction")
+    }
+
+    // MARK: - Mixed language detection
+
+    func testIsMixedLanguageDetectsGermanAndEnglish() {
+        // Needs distinct sentences so per-sentence detection works
+        let text = "Ich spreche jetzt Deutsch und das sollte verständlich sein. Now I am speaking English and this should be clear."
+        XCTAssertTrue(CleanupPrompt.isMixedLanguage(text), "Must detect mixed German/English")
+    }
+
+    func testIsMixedLanguageReturnsFalseForPureEnglish() {
+        let text = "This is a completely English sentence about testing."
+        XCTAssertFalse(CleanupPrompt.isMixedLanguage(text), "Pure English must not be detected as mixed")
+    }
+
+    func testIsMixedLanguageReturnsFalseForPureGerman() {
+        let text = "Das ist ein komplett deutscher Satz zum Testen."
+        XCTAssertFalse(CleanupPrompt.isMixedLanguage(text), "Pure German must not be detected as mixed")
     }
 
     // MARK: - Default instruction content
@@ -66,6 +87,24 @@ final class CleanupPromptTests: XCTestCase {
         let instruction = CleanupPrompt.defaultInstruction
         XCTAssertTrue(instruction.lowercased().contains("preserve the original meaning"),
                        "Default must instruct meaning preservation")
+    }
+
+    func testDefaultInstructionPreservesMultipleLanguages() {
+        let instruction = CleanupPrompt.defaultInstruction
+        XCTAssertTrue(instruction.contains("never translate between languages"),
+                       "Default must instruct against cross-language translation")
+    }
+
+    func testDefaultInstructionHandlesSelfCorrections() {
+        let instruction = CleanupPrompt.defaultInstruction
+        XCTAssertTrue(instruction.lowercased().contains("corrects themselves"),
+                       "Default must instruct handling of mid-sentence self-corrections")
+    }
+
+    func testDefaultInstructionForbidsPreamble() {
+        let instruction = CleanupPrompt.defaultInstruction
+        XCTAssertTrue(instruction.contains("no preamble"),
+                       "Default must forbid LLM preamble in output")
     }
 
     func testDefaultInstructionRequestsPlainTextOnly() {
@@ -100,9 +139,14 @@ final class CleanupPromptTests: XCTestCase {
 
     // MARK: - User text placement
 
-    func testUserTextAppearsAfterDelimiter() {
+    func testUserTextAppearsAfterInputLabel() {
         let userText = "my dictated words"
         let prompt = CleanupPrompt.build(for: userText, language: "en")
-        XCTAssertTrue(prompt.contains("Text: \(userText)"), "User text must follow 'Text: ' delimiter")
+        XCTAssertTrue(prompt.contains("Input: \(userText)"), "User text must follow 'Input: ' label")
+    }
+
+    func testPromptEndsWithOutputPrimer() {
+        let prompt = CleanupPrompt.build(for: "hello", language: "en")
+        XCTAssertTrue(prompt.hasSuffix("Output: "), "Prompt must end with 'Output: ' to prime model response")
     }
 }
