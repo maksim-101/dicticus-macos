@@ -43,7 +43,9 @@
 		D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2499A2640576B94D1BA5CD41 /* DicticusTests.swift */; };
 		DB9DA58FA9B5498FEC5F1394 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E1AE1705DB37CB26927A4AEB /* LlamaSwift */; };
 		DCE6FEB9117C3D3A4AC2893C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190A391B6BC042BE1B56011B /* OnboardingView.swift */; };
+		E3A6345E30D9044A3B74F2C1 /* ModifierHotkeyListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4604034FBFBEA9E58ED356E9 /* ModifierHotkeyListener.swift */; };
 		EFF84B780F9C7013E638D533 /* CleanupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30BA4C657A1C41682A689F5 /* CleanupServiceTests.swift */; };
+		F02F9ADF3A14E1893A9FB86C /* ModifierHotkeyListenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9ACE74779B554BB24700B58 /* ModifierHotkeyListenerTests.swift */; };
 		F091E0461FF34468152BD434 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C2109BE8A6945F9B0A118D59 /* KeyboardShortcuts */; };
 		F649510C18EE78D7333FB9C5 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 09CF30D7134E0AFC4C73F1EB /* LaunchAtLogin */; };
 		F6BB8CBCCE3B9B70756B6C39 /* TextInjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEF465F3ABEBBFD0389EB5 /* TextInjectorTests.swift */; };
@@ -71,6 +73,7 @@
 		3D58759873E2741453F8005F /* CleanupPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPrompt.swift; sourceTree = "<group>"; };
 		41F13903D57CF4BA4E734A3C /* AiCleanupInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiCleanupInfoView.swift; sourceTree = "<group>"; };
 		44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelWarmupService.swift; sourceTree = "<group>"; };
+		4604034FBFBEA9E58ED356E9 /* ModifierHotkeyListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModifierHotkeyListener.swift; sourceTree = "<group>"; };
 		48F103886FBBE1F7D287929D /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		49FEF465F3ABEBBFD0389EB5 /* TextInjectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInjectorTests.swift; sourceTree = "<group>"; };
 		516F18D70F7720AD0779EA74 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
@@ -90,6 +93,7 @@
 		A4711E5E2A1A90B0A7DC48F3 /* TranscriptionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceTests.swift; sourceTree = "<group>"; };
 		A7AF3680DF47913CE527C5F1 /* TranscriptionResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionResult.swift; sourceTree = "<group>"; };
 		B6356DF22A67C2BF0B6EF82B /* WarmupRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupRow.swift; sourceTree = "<group>"; };
+		B9ACE74779B554BB24700B58 /* ModifierHotkeyListenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModifierHotkeyListenerTests.swift; sourceTree = "<group>"; };
 		BC0CAF13337A0AF85CB46BC3 /* LastTranscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastTranscriptionView.swift; sourceTree = "<group>"; };
 		C0781F7C404244283FCD9224 /* Dicticus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dicticus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C30BA4C657A1C41682A689F5 /* CleanupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupServiceTests.swift; sourceTree = "<group>"; };
@@ -176,6 +180,7 @@
 				70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */,
 				E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */,
 				CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */,
+				B9ACE74779B554BB24700B58 /* ModifierHotkeyListenerTests.swift */,
 				143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */,
 				6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */,
 				2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */,
@@ -224,6 +229,7 @@
 				516F18D70F7720AD0779EA74 /* HotkeyManager.swift */,
 				E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */,
 				44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */,
+				4604034FBFBEA9E58ED356E9 /* ModifierHotkeyListener.swift */,
 				48F103886FBBE1F7D287929D /* NotificationService.swift */,
 				67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */,
 				66BF5BACDC7437ABA6D177B9 /* TextInjector.swift */,
@@ -348,6 +354,7 @@
 				9BA32438B0BD5B32F6E6C80D /* ModelDownloadService.swift in Sources */,
 				4EBD2D2867D12C548A2E7593 /* ModelWarmupService.swift in Sources */,
 				1208F945E6BABF2AFD3362B9 /* ModifierCombo.swift in Sources */,
+				E3A6345E30D9044A3B74F2C1 /* ModifierHotkeyListener.swift in Sources */,
 				C524718AC8111D53B30A01FD /* NotificationService.swift in Sources */,
 				DCE6FEB9117C3D3A4AC2893C /* OnboardingView.swift in Sources */,
 				D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */,
@@ -370,6 +377,7 @@
 				2CBB9E936439E4D8CA60F825 /* HotkeyManagerTests.swift in Sources */,
 				46B52C3C05E290F9EF02A653 /* ModelDownloadServiceTests.swift in Sources */,
 				D40E4EE4B8E09E3462AA5918 /* ModelWarmupServiceTests.swift in Sources */,
+				F02F9ADF3A14E1893A9FB86C /* ModifierHotkeyListenerTests.swift in Sources */,
 				651F32E3BC46F1B9053994C4 /* NotificationServiceTests.swift in Sources */,
 				1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */,
 				12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */,
