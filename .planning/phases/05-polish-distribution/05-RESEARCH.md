@@ -493,22 +493,22 @@ echo "DMG created: Dicticus.dmg"
 | A3 | `CODE_SIGN_IDENTITY="-"` produces a working ad-hoc signed app on Apple Silicon | Pattern 3, Pitfall 6 | If the app doesn't launch, may need to use `codesign -s -` post-build instead |
 | A4 | Parakeet CoreML ~1.24 GB + Gemma GGUF ~722 MB together stay under 3 GB total footprint | Phase Requirements | If runtime overhead is larger than ~1 GB, may need lazy unloading |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **CGEventTap and Fn key on external keyboards without Fn**
    - What we know: The Fn key is represented by `CGEventFlags.maskSecondaryFn`. All Mac laptops have an Fn key. Apple external keyboards (Magic Keyboard) have a Globe/Fn key.
    - What's unclear: Behavior with third-party external keyboards that lack an Fn key.
-   - Recommendation: This is an edge case. The picker in D-10 offers Fn+Shift, Fn+Control, Fn+Option. Users with keyboards lacking Fn can use the standard KeyboardShortcuts combos (Ctrl+Shift+S, Ctrl+Shift+D) which remain functional in parallel. Document this in the UI or tooltip.
+   - RESOLVED: Edge case; users without Fn key use standard KeyboardShortcuts combos (Ctrl+Shift+S, Ctrl+Shift+D) which remain functional in parallel. External keyboard note included in UI-SPEC.md caption below pickers.
 
 2. **xcodebuild build vs archive: entitlements in Release builds**
    - What we know: `xcodebuild build` with Release configuration produces a .app bundle. The project uses hardened runtime (`ENABLE_HARDENED_RUNTIME: YES`).
    - What's unclear: Whether entitlements (audio-input, non-sandboxed) are correctly embedded in the .app when using `build` instead of `archive`.
-   - Recommendation: Test the build output. Entitlements should be embedded via the `CODE_SIGN_ENTITLEMENTS` build setting which is already in project.yml. Verify with `codesign -d --entitlements :- Dicticus.app`.
+   - RESOLVED: Test with `codesign -d --entitlements :- Dicticus.app` in build script. Plan 03 Task 1 includes entitlement verification in acceptance criteria. Archive approach (D-05) replaced by `xcodebuild build` per Pitfall 6 (archive requires team ID).
 
 3. **Memory budget margin**
    - What we know: Parakeet CoreML package is ~1.24 GB on disk. Gemma 3 1B GGUF is ~722 MB. CLAUDE.md says FluidAudio uses ~66 MB per inference.
    - What's unclear: Actual runtime dirty memory with both models loaded. CoreML models may use more memory than their on-disk size due to intermediate buffers. llama.cpp memory-maps the GGUF file, so dirty memory may be less than file size.
-   - Recommendation: Profile first, optimize if needed. If over budget, consider: (a) unloading LLM between uses, (b) using a smaller quantization, (c) reducing CoreML batch size.
+   - RESOLVED: Profile first with `footprint -p Dicticus`. Plan 03 Task 2 creates verify-memory.sh + human checkpoint. If over 3 GB budget, lazy-unload LLM between uses.
 
 ## Environment Availability
 
