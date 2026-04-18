@@ -67,7 +67,21 @@ struct CleanupPrompt {
             languageLine = "Language: \(languageName)\n"
         }
 
-        return "<start_of_turn>user\n\(instruction)\n\n\(languageLine)Input: \(text)<end_of_turn>\n<start_of_turn>model\nOutput: "
+        // Sanitize control tokens from ASR text to prevent prompt injection
+        let sanitizedText = sanitizeControlTokens(text)
+
+        return "<start_of_turn>user\n\(instruction)\n\n\(languageLine)Input: \(sanitizedText)<end_of_turn>\n<start_of_turn>model\nOutput: "
+    }
+
+    /// Strip Gemma control tokens from user text to prevent prompt injection.
+    /// ASR output rarely contains angle-bracket sequences, but if it does,
+    /// these could be parsed as format tokens by the LLM tokenizer.
+    static func sanitizeControlTokens(_ text: String) -> String {
+        var result = text
+        for token in ["<start_of_turn>", "<end_of_turn>", "<bos>", "<eos>"] {
+            result = result.replacingOccurrences(of: token, with: "")
+        }
+        return result
     }
 
     /// Detect whether the text contains multiple languages via per-sentence analysis.
