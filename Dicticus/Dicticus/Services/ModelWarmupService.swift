@@ -1,13 +1,17 @@
 import SwiftUI
 import FluidAudio
 
-/// Manages FluidAudio initialization and Parakeet TDT v3 CoreML warm-up state.
+/// Manages FluidAudio initialization and Parakeet TDT v3 CoreML warm-up state,
+/// plus sequential LLM (Gemma 3 1B via llama.cpp) initialization for AI cleanup.
 ///
 /// Called once at app launch to trigger background CoreML model compilation and download.
 /// First-launch download is ~2.69 GB (Parakeet CoreML package) plus ~1.8 MB (Silero VAD).
 /// CoreML encoder compilation takes ~3.4 s on first run; subsequent launches use cached
 /// compilation and are fast (~162 ms warm load).
 ///
+/// D-07/D-08: LLM warmup runs sequentially after ASR to avoid memory pressure spikes.
+/// D-09: Gemma 3 1B GGUF (~722 MB) downloaded from HuggingFace on first run.
+/// Threat T-04-08: Sequential loading + existing 600-second watchdog covers combined warmup.
 /// Threat T-02.1-03: Compilation runs on Task.detached(priority: .utility) to avoid
 /// blocking the main thread. [weak self] prevents retain cycles on app quit.
 /// Threat T-02.1-02: Audio samples are never persisted; only held in memory during
@@ -20,6 +24,7 @@ class ModelWarmupService: ObservableObject {
 
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
+    private var cleanupService: CleanupService?
 
     /// Reference to the in-flight warmup Task for cancellation support.
     private var warmupTask: Task<Void, Never>?
@@ -82,11 +87,28 @@ class ModelWarmupService: ObservableObject {
                 // Initialized alongside ASR models to ensure VAD is ready for first transcription.
                 let vad = try await VadManager(config: VadConfig(defaultThreshold: Float(TranscriptionService.vadProbabilityThreshold)))
 
+                // Step 4: Download + initialize LLM for AI cleanup (D-07, D-08).
+                // Sequential after ASR to avoid memory pressure spikes (D-08).
+                // Downloads ~722 MB GGUF on first run from HuggingFace CDN (D-09).
+                // Threat T-04-09: llama.cpp validates GGUF magic bytes on load.
+                try await ModelDownloadService.downloadIfNeeded()
+
+                // CleanupService is @MainActor-isolated — create and load on MainActor.
+                // loadModel() is a throwing function so we capture success/failure explicitly.
+                let modelPath = ModelDownloadService.modelPath().path
+                let cleanup = try await MainActor.run { () throws -> CleanupService in
+                    CleanupService.initializeBackend()
+                    let service = CleanupService()
+                    try service.loadModel(from: modelPath)
+                    return service
+                }
+
                 try Task.checkCancellation()
 
                 await MainActor.run {
                     self?.asrManager = manager
                     self?.vadManager = vad
+                    self?.cleanupService = cleanup
                     self?.isWarming = false
                     self?.isReady = true
                     self?.watchdogTask?.cancel()
@@ -146,5 +168,12 @@ class ModelWarmupService: ObservableObject {
     /// voice activity detection during transcription.
     var vadManagerInstance: VadManager? {
         vadManager
+    }
+
+    /// Expose the initialized CleanupService for DicticusApp wiring.
+    /// Returns nil until LLM warm-up completes (Step 4 of warmup sequence).
+    /// DicticusApp passes this to HotkeyManager.setup() for AI cleanup pipeline (D-07, D-14).
+    var cleanupServiceInstance: CleanupService? {
+        cleanupService
     }
 }
