@@ -74,6 +74,7 @@ struct SettingsSection: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
