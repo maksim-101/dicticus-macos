@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import Combine
 
 /// CGEventTap-based listener for modifier-only hotkeys (Fn+Shift, Fn+Control, Fn+Option).
 ///
@@ -12,46 +13,61 @@ import Foundation
 /// Requires Accessibility permission; silently does not start if missing (T-05-02).
 /// Callback performs O(1) flag comparison only — no blocking (T-05-03).
 ///
-/// NOT @MainActor: runs on a dedicated background CFRunLoop thread.
-/// Communication back to HotkeyManager happens via closures dispatched to MainActor.
+/// ObservableObject so SettingsSection can bind to combo properties via @EnvironmentObject.
+/// @Published properties publish on MainActor (objectWillChange fires on main thread).
 ///
 /// @unchecked Sendable: thread safety is managed manually.
 /// - `previousFlags` is accessed only from the single CGEventTap callback thread.
 /// - `onComboActivated`/`onComboReleased` closures are set before `start()` and called
 ///   only via DispatchQueue.main.async, ensuring they always run on the main thread.
-/// - Combo config reads hit UserDefaults (which is internally thread-safe).
-class ModifierHotkeyListener: @unchecked Sendable {
+/// - @Published mutations must occur on main thread — enforced by DispatchQueue.main.async
+///   in callback and by @MainActor callers (DicticusApp, HotkeyManager).
+/// - Combo config reads in the CGEventTap callback thread hit @Published backing storage,
+///   which is safe because @Published uses internal locking and reads are value types.
+class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
 
     // MARK: - Configuration
 
     /// The modifier combo mapped to plain dictation mode.
-    /// Default: .fnShift per D-09. Persisted in UserDefaults.
-    var plainDictationCombo: ModifierCombo {
-        get {
+    /// Default: .fnShift per D-09. @Published for SwiftUI Picker binding in SettingsSection.
+    /// Persisted to UserDefaults via didSet so selections survive app restarts.
+    @Published var plainDictationCombo: ModifierCombo {
+        didSet {
+            UserDefaults.standard.set("\(plainDictationCombo)", forKey: "modifierPlainDictation")
+        }
+    }
+
+    /// The modifier combo mapped to AI cleanup mode.
+    /// Default: .fnControl per D-09. @Published for SwiftUI Picker binding in SettingsSection.
+    /// Persisted to UserDefaults via didSet so selections survive app restarts.
+    @Published var cleanupCombo: ModifierCombo {
+        didSet {
+            UserDefaults.standard.set("\(cleanupCombo)", forKey: "modifierAiCleanup")
+        }
+    }
+
+    // MARK: - Init
+
+    init() {
+        // Load persisted combo selections from UserDefaults; fall back to defaults (D-09).
+        // T-05-04: Invalid UserDefaults values fall through to default — no crash.
+        let savedPlain: ModifierCombo = {
             if let raw = UserDefaults.standard.string(forKey: "modifierPlainDictation"),
                let combo = ModifierCombo.allCases.first(where: { "\($0)" == raw }) {
                 return combo
             }
             return .fnShift
-        }
-        set {
-            UserDefaults.standard.set("\(newValue)", forKey: "modifierPlainDictation")
-        }
-    }
-
-    /// The modifier combo mapped to AI cleanup mode.
-    /// Default: .fnControl per D-09. Persisted in UserDefaults.
-    var cleanupCombo: ModifierCombo {
-        get {
+        }()
+        let savedCleanup: ModifierCombo = {
             if let raw = UserDefaults.standard.string(forKey: "modifierAiCleanup"),
                let combo = ModifierCombo.allCases.first(where: { "\($0)" == raw }) {
                 return combo
             }
             return .fnControl
-        }
-        set {
-            UserDefaults.standard.set("\(newValue)", forKey: "modifierAiCleanup")
-        }
+        }()
+        // Assign directly (bypass didSet) to avoid redundant UserDefaults writes on launch.
+        self._plainDictationCombo = Published(initialValue: savedPlain)
+        self._cleanupCombo = Published(initialValue: savedCleanup)
     }
 
     // MARK: - Closures for HotkeyManager wiring

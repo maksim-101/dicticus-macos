@@ -7,6 +7,7 @@ struct DicticusApp: App {
     @StateObject private var permissionManager = PermissionManager()
     @StateObject private var warmupService = ModelWarmupService()
     @StateObject private var hotkeyManager = HotkeyManager()
+    @StateObject private var modifierListener = ModifierHotkeyListener()
 
     // TranscriptionService is created once from the warm FluidAudio ASR and VAD managers.
     // Held here so Phase 3 hotkey wiring can access it without re-initialization.
@@ -24,6 +25,7 @@ struct DicticusApp: App {
                 .environmentObject(permissionManager)
                 .environmentObject(warmupService)
                 .environmentObject(hotkeyManager)
+                .environmentObject(modifierListener)
         } label: {
             // Icon state logic per UI-SPEC three-state machine:
             //   recording -> mic.fill (red) per D-09
@@ -62,6 +64,10 @@ struct DicticusApp: App {
                             warmupService: warmupService,
                             cleanupService: cleanup
                         )
+
+                        // D-08: Wire modifier hotkey listener after ASR is ready so
+                        // Fn+Shift / Fn+Control only activate when the app can record.
+                        hotkeyManager.setupModifierListener(modifierListener)
                     }
                 }
                 .onChange(of: warmupService.isLlmReady) { _, ready in

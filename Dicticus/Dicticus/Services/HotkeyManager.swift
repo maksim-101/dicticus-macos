@@ -50,6 +50,10 @@ class HotkeyManager: ObservableObject {
     /// Isolated to @MainActor via HotkeyManager's own isolation.
     private let textInjector = TextInjector()
 
+    /// Reference to ModifierHotkeyListener — set via setupModifierListener().
+    /// Retains the listener for the app lifetime; closures route events to push-to-talk state machine.
+    private var modifierListener: ModifierHotkeyListener?
+
     /// Configure the manager with required service references and start listening for hotkey events.
     ///
     /// Must be called after TranscriptionService is created (after warmup completes).
@@ -92,6 +96,24 @@ class HotkeyManager: ObservableObject {
 
         // Request notification permission on setup
         NotificationService.shared.setup()
+    }
+
+    /// Wire ModifierHotkeyListener into the push-to-talk state machine and start the CGEventTap.
+    ///
+    /// Called after ASR warmup completes (same point as setup()) so modifier hotkeys only
+    /// activate when the app is ready to record. The listener's CGEventTap events are routed
+    /// directly into handleKeyDown/handleKeyUp — identical pipeline to KeyboardShortcuts combos.
+    ///
+    /// Per D-08: modifier listener runs in parallel with KeyboardShortcuts (not replacing it).
+    func setupModifierListener(_ listener: ModifierHotkeyListener) {
+        self.modifierListener = listener
+        listener.onComboActivated = { [weak self] mode in
+            self?.handleKeyDown(mode: mode)
+        }
+        listener.onComboReleased = { [weak self] mode in
+            self?.handleKeyUp(mode: mode)
+        }
+        listener.start()
     }
 
     /// Handle hotkey key-down event — start recording if conditions met.
