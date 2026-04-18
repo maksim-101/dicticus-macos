@@ -54,6 +54,12 @@ struct MenuBarView: View {
 
                 Divider()
 
+                // AI Cleanup model info — always visible
+                AiCleanupInfoView()
+                    .environmentObject(warmupService)
+
+                Divider()
+
                 // D-20: Hotkey configuration section — always visible
                 HotkeySettingsView()
 

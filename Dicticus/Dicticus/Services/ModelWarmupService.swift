@@ -16,6 +16,29 @@ import FluidAudio
 /// blocking the main thread. [weak self] prevents retain cycles on app quit.
 /// Threat T-02.1-02: Audio samples are never persisted; only held in memory during
 /// a single recording session.
+/// LLM loading status — observable by the menu bar dropdown for progress indication.
+enum LlmStatus: Equatable {
+    case idle
+    case downloading
+    case loading
+    case ready
+    case failed(String)
+
+    var label: String {
+        switch self {
+        case .idle:                return "Waiting"
+        case .downloading:         return "Downloading model\u{2026}"
+        case .loading:             return "Loading model\u{2026}"
+        case .ready:               return "Ready"
+        case .failed(let reason):  return reason
+        }
+    }
+
+    var isActive: Bool {
+        self == .downloading || self == .loading
+    }
+}
+
 @MainActor
 class ModelWarmupService: ObservableObject {
     @Published var isWarming = false
@@ -24,6 +47,8 @@ class ModelWarmupService: ObservableObject {
 
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
+    @Published var isLlmReady = false
+    @Published var llmStatus: LlmStatus = .idle
     private var cleanupService: CleanupService?
 
     /// Reference to the in-flight warmup Task for cancellation support.
@@ -87,32 +112,53 @@ class ModelWarmupService: ObservableObject {
                 // Initialized alongside ASR models to ensure VAD is ready for first transcription.
                 let vad = try await VadManager(config: VadConfig(defaultThreshold: Float(TranscriptionService.vadProbabilityThreshold)))
 
-                // Step 4: Download + initialize LLM for AI cleanup (D-07, D-08).
-                // Sequential after ASR to avoid memory pressure spikes (D-08).
-                // Downloads ~722 MB GGUF on first run from HuggingFace CDN (D-09).
-                // Threat T-04-09: llama.cpp validates GGUF magic bytes on load.
-                try await ModelDownloadService.downloadIfNeeded()
-
-                // CleanupService is @MainActor-isolated — create and load on MainActor.
-                // loadModel() is a throwing function so we capture success/failure explicitly.
-                let modelPath = ModelDownloadService.modelPath().path
-                let cleanup = try await MainActor.run { () throws -> CleanupService in
-                    CleanupService.initializeBackend()
-                    let service = CleanupService()
-                    try service.loadModel(from: modelPath)
-                    return service
-                }
-
                 try Task.checkCancellation()
 
+                // ASR is ready — publish immediately so plain dictation works
+                // even if LLM loading fails or takes a long time.
                 await MainActor.run {
                     self?.asrManager = manager
                     self?.vadManager = vad
-                    self?.cleanupService = cleanup
                     self?.isWarming = false
                     self?.isReady = true
                     self?.watchdogTask?.cancel()
                     self?.watchdogTask = nil
+                }
+
+                // Step 4: Download + initialize LLM for AI cleanup (D-07, D-08).
+                // Sequential after ASR to avoid memory pressure spikes (D-08).
+                // Downloads ~722 MB GGUF on first run from HuggingFace CDN (D-09).
+                // Non-fatal: if LLM fails, plain dictation still works.
+                do {
+                    let needsDownload = !ModelDownloadService.isModelCached()
+                    if needsDownload {
+                        await MainActor.run { self?.llmStatus = .downloading }
+                    }
+
+                    try await ModelDownloadService.downloadIfNeeded()
+
+                    await MainActor.run { self?.llmStatus = .loading }
+
+                    let modelPath = ModelDownloadService.modelPath().path
+                    let cleanup = try await MainActor.run { () throws -> CleanupService in
+                        CleanupService.initializeBackend()
+                        let service = CleanupService()
+                        try service.loadModel(from: modelPath)
+                        return service
+                    }
+
+                    await MainActor.run {
+                        self?.cleanupService = cleanup
+                        self?.isLlmReady = true
+                        self?.llmStatus = .ready
+                    }
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    await MainActor.run {
+                        self?.llmStatus = .failed("AI cleanup unavailable")
+                    }
+                    print("[Dicticus] LLM warmup failed (non-fatal): \(error.localizedDescription)")
                 }
             } catch is CancellationError {
                 await MainActor.run {
@@ -172,7 +218,7 @@ class ModelWarmupService: ObservableObject {
 
     /// Expose the initialized CleanupService for DicticusApp wiring.
     /// Returns nil until LLM warm-up completes (Step 4 of warmup sequence).
-    /// DicticusApp passes this to HotkeyManager.setup() for AI cleanup pipeline (D-07, D-14).
+    /// Now @Published — DicticusApp observes changes directly.
     var cleanupServiceInstance: CleanupService? {
         cleanupService
     }
