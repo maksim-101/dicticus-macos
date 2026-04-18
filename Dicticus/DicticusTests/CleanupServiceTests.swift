@@ -66,6 +66,60 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, "cleaned output")
     }
 
+    func testStripPreambleRemovesPleaseProvideRefusalWithContent() {
+        let input = "Please provide the text you would like me to polish. Okay, let me rephrase this."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Okay, let me rephrase this.")
+    }
+
+    func testStripPreambleReturnsEmptyForPleaseProvideOnly() {
+        let input = "Please provide the text you would like me to polish."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertTrue(result.isEmpty, "Full refusal with no content must return empty for raw text fallback")
+    }
+
+    func testStripPreambleRemovesPolishedTextPreamble() {
+        let input = "Here is the polished text: This reads much better now."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "This reads much better now.")
+    }
+
+    func testStripPreambleCollapsesDoubleSpaces() {
+        let input = "This  is  a  test  sentence."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "This is a test sentence.")
+    }
+
+    func testStripPreambleFixesSpacesBeforePunctuation() {
+        let input = "Hello , how are you ? I am fine ."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello, how are you? I am fine.")
+    }
+
+    func testStripPreambleCaseInsensitive() {
+        let input = "here is the corrected text: lowercase preamble works"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "lowercase preamble works")
+    }
+
+    func testStripPreambleRemovesSorryPreamble() {
+        let input = "Sorry ,  here ' s  a  polished  version  of  the  text :  This is clean output."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "This is clean output.")
+    }
+
+    func testStripPreambleRemovesSurroundingQuotes() {
+        let input = "\"One thing that gets on my nerves.\""
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "One thing that gets on my nerves.")
+    }
+
+    func testStripPreambleHandlesCombinedPreambleAndQuotes() {
+        let input = "Sorry ,  here ' s  a  polished  version :  \"Clean text here.\""
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Clean text here.")
+    }
+
     // MARK: - CleanupError
 
     func testCleanupErrorCasesExist() {

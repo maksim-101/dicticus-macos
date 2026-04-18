@@ -49,10 +49,10 @@ class TextInjector {
 
         // Step 2: Write transcription text
         pasteboard.clearContents()
-        // Prepend space before injected text so consecutive dictation segments
-        // don't merge into one word. A leading space in an empty field is harmless
-        // and far less disruptive than missing inter-segment whitespace.
-        let wrote = pasteboard.setString(" " + text, forType: .string)
+        // Append space after injected text so consecutive dictation segments
+        // don't merge into one word. A trailing space is standard for dictation
+        // (cursor sits after the space, ready for the next word or segment).
+        let wrote = pasteboard.setString(text + " ", forType: .string)
         if !wrote {
             restoreClipboard(pasteboard, saved: saved)
             return false

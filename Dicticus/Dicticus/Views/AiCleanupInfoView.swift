@@ -57,7 +57,7 @@ struct AiCleanupInfoView: View {
                     }
                     .buttonStyle(.link)
                     .popover(isPresented: $showPromptEditor, arrowEdge: .trailing) {
-                        PromptEditorView()
+                        PromptEditorView(isPresented: $showPromptEditor)
                     }
                 }
                 .padding(.horizontal)
@@ -94,8 +94,10 @@ struct AiCleanupInfoView: View {
 /// Shows a text editor with the current instruction, a reset button,
 /// and a note about language detection.
 struct PromptEditorView: View {
+    @Binding var isPresented: Bool
     @AppStorage(CleanupPrompt.customInstructionKey) private var customInstruction = ""
     @State private var editText = ""
+    @State private var showSaved = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -120,12 +122,24 @@ struct PromptEditorView: View {
 
                 Spacer()
 
+                if showSaved {
+                    Label("Saved", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                        .transition(.opacity)
+                }
+
                 Button("Save") {
                     let trimmed = editText.trimmingCharacters(in: .whitespacesAndNewlines)
                     if trimmed == CleanupPrompt.defaultInstruction.trimmingCharacters(in: .whitespacesAndNewlines) {
                         customInstruction = ""
                     } else {
                         customInstruction = trimmed
+                    }
+                    withAnimation { showSaved = true }
+                    // Brief confirmation then dismiss
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        isPresented = false
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -138,6 +152,7 @@ struct PromptEditorView: View {
             editText = customInstruction.isEmpty
                 ? CleanupPrompt.defaultInstruction
                 : customInstruction
+            showSaved = false
         }
     }
 }

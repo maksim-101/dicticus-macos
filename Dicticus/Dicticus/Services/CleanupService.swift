@@ -1,5 +1,6 @@
 import SwiftUI
 import LlamaSwift
+import os.log
 
 /// Local LLM cleanup service using Gemma 3 1B via llama.cpp.
 ///
@@ -123,12 +124,20 @@ class CleanupService: ObservableObject {
     /// Per D-18: 5-second timeout — returns raw text on timeout.
     /// Per D-19: On any failure, returns original text (never lose dictation).
     ///
+    /// **Known limitation:** Mixed-language text (e.g. German + English in one dictation)
+    /// is not reliably cleaned by Gemma 3 1B — the model translates the minority language
+    /// instead of preserving both. Single-language dictation works correctly for both
+    /// German and English. See `CleanupPrompt.isMixedLanguage` for details.
+    ///
     /// - Parameters:
     ///   - text: Raw ASR transcription from TranscriptionService
     ///   - language: "de" or "en" from DicticusTranscriptionResult.language
     /// - Returns: Cleaned text, or original text on failure/timeout
     func cleanup(text: String, language: String) async -> String {
+        let log = Logger(subsystem: "com.dicticus", category: "cleanup")
+
         guard isLoaded, let model = model, let context = context, let sampler = sampler else {
+            log.warning("cleanup: model not loaded, returning raw text")
             return text  // D-19: Fallback to raw text
         }
 
@@ -136,6 +145,8 @@ class CleanupService: ObservableObject {
         defer { state = .idle }
 
         let prompt = CleanupPrompt.build(for: text, language: language)
+        let isMixed = CleanupPrompt.isMixedLanguage(text)
+        log.info("Prompt (\(prompt.count, privacy: .public) chars, mixed=\(isMixed, privacy: .public), lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
 
         // Run inference in a detached task with timeout (D-18)
         // nonisolated(unsafe) for C pointer access in detached context (Pitfall 7)
@@ -165,6 +176,7 @@ class CleanupService: ObservableObject {
 
                 // Return whichever finishes first
                 guard let firstResult = try await group.next() else {
+                    log.warning("cleanup: task group returned nil")
                     return text
                 }
                 group.cancelAll()
@@ -172,10 +184,13 @@ class CleanupService: ObservableObject {
             }
 
             // Post-process: strip any preamble the model might add (Pitfall 4)
+            log.info("LLM raw (\(result.count, privacy: .public) chars): \(result.prefix(500), privacy: .public)")
             let cleaned = Self.stripPreamble(result)
+            log.info("After strip (\(cleaned.count, privacy: .public) chars): \(cleaned.prefix(500), privacy: .public)")
             return cleaned.isEmpty ? text : cleaned
 
         } catch {
+            log.error("cleanup error: \(error.localizedDescription, privacy: .public)")
             // D-19: Any failure -> return raw text
             return text
         }
@@ -306,41 +321,128 @@ class CleanupService: ObservableObject {
         var buffer = [CChar](repeating: 0, count: 256)
         let nChars = llama_token_to_piece(vocab, token, &buffer, 256, 0, false)
         guard nChars > 0 else { return "" }
-        // Build a null-terminated copy and convert to Swift String
-        var nullTerminated = Array(buffer.prefix(Int(nChars)))
-        nullTerminated.append(0)
-        return String(decoding: nullTerminated.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        // Convert exactly nChars bytes to a Swift String — do NOT append a null
+        // terminator. String(decoding:as:) includes ALL bytes, so an appended \0
+        // becomes a Unicode NULL (U+0000) embedded in the string, causing invisible
+        // gaps that render as double spaces.
+        return String(decoding: buffer.prefix(Int(nChars)).map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 
     // MARK: - Post-processing
 
     /// Strip common LLM preamble patterns from output (Pitfall 4 from RESEARCH.md).
     ///
-    /// Gemma may prepend "Here is the corrected text:" or similar despite
-    /// explicit "output ONLY" instructions. This strips known patterns.
+    /// Gemma 3 1B may prepend conversational text despite explicit "output ONLY"
+    /// instructions. This strips known patterns and normalizes whitespace from
+    /// token-by-token detokenization (leading spaces per token → double spaces).
     static func stripPreamble(_ text: String) -> String {
-        var result = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Step 0: Replace all Unicode whitespace variants with ASCII space.
+        // llama.cpp tokenizer may emit non-breaking spaces (U+00A0), SentencePiece
+        // block elements (U+2581 ▁), or other Unicode whitespace that looks like a
+        // space but doesn't match ASCII " " in string operations.
+        var result = text.unicodeScalars.reduce(into: "") { str, scalar in
+            if scalar.value == 0 {
+                // Strip null bytes — tokenToPiece bug produced \0 between tokens
+                return
+            } else if scalar.properties.isWhitespace && scalar != "\n" {
+                str.append(" ")
+            } else if scalar == "\u{2581}" {  // SentencePiece word boundary marker
+                str.append(" ")
+            } else {
+                str.append(Character(scalar))
+            }
+        }
+        result = result.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Common preamble patterns to strip
+        // Step 1: Normalize whitespace — collapse runs of spaces to single space.
+        while result.contains("  ") {
+            result = result.replacingOccurrences(of: "  ", with: " ")
+        }
+
+        // Fix spaces before punctuation (tokenizer artifact: "Hello , world" → "Hello, world")
+        for punct in [" .", " ,", " !", " ?", " ;", " :"] {
+            result = result.replacingOccurrences(of: punct, with: String(punct.last!))
+        }
+
+        // Fix split contractions: "here ' s" → "here's", "don ' t" → "don't"
+        // Tokenizer splits apostrophe-contractions into separate tokens with spaces.
+        // First remove space before apostrophe, then space between apostrophe and suffix.
+        result = result.replacingOccurrences(of: " '", with: "'")
+        for suffix in ["'s ", "'t ", "'d ", "'m ", "'ll ", "'ve ", "'re "] {
+            let split = "'" + " " + String(suffix.dropFirst())
+            result = result.replacingOccurrences(of: split, with: suffix)
+        }
+        // Handle contraction at end of string (no trailing space)
+        for suffix in ["'s", "'t", "'d", "'m", "'ll", "'ve", "'re"] {
+            let split = "'" + " " + String(suffix.dropFirst())
+            if result.hasSuffix(split) {
+                result = String(result.dropLast(split.count)) + suffix
+            }
+        }
+
+        // Step 2: Strip known preamble patterns (case-insensitive prefix match)
         let preambles = [
             "Here is the corrected text:",
             "Here is the corrected text",
             "Here's the corrected text:",
             "Here's the corrected text",
+            "Here is the polished text:",
+            "Here is the polished text",
+            "Here's the polished text:",
+            "Here's the polished text",
+            "Here's a polished version of the text:",
+            "Here's a polished version:",
+            "Sorry, here's a polished version of the text:",
+            "Sorry, here's a polished version:",
+            "Sorry, here is the polished text:",
             "Corrected text:",
+            "Polished text:",
             "Sure!",
             "Sure,",
+            "Sure.",
             "Hier ist der korrigierte Text:",
             "Hier ist der korrigierte Text",
             "Korrigierter Text:",
         ]
 
+        let lowered = result.lowercased()
         for preamble in preambles {
-            if result.hasPrefix(preamble) {
+            if lowered.hasPrefix(preamble.lowercased()) {
                 result = String(result.dropFirst(preamble.count))
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 break  // Only strip first match
             }
+        }
+
+        // Strip "Please provide/share..." refusal — model asked for input instead of processing.
+        // Also strip "Output:" prefix the model may echo from the Input/Output format.
+        let loweredAfterPreamble = result.lowercased()
+        if loweredAfterPreamble.hasPrefix("please provide") || loweredAfterPreamble.hasPrefix("please share") {
+            // Try to find content after the refusal sentence
+            if let dotRange = result.range(of: ".\n", options: .literal) {
+                result = String(result[dotRange.upperBound...])
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            } else if let dotRange = result.range(of: ". ", options: .literal),
+                      result.distance(from: result.startIndex, to: dotRange.lowerBound) < 80 {
+                result = String(result[result.index(after: dotRange.lowerBound)...])
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            } else {
+                // Entire output is a refusal with no content — return empty to trigger raw text fallback
+                result = ""
+            }
+        }
+
+        // Strip "Output:" prefix the model may echo from the prompt format
+        if loweredAfterPreamble.hasPrefix("output:") {
+            result = String(result.dropFirst("output:".count))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // Step 3: Strip surrounding quotation marks the model may wrap output in
+        if (result.hasPrefix("\"") && result.hasSuffix("\"")) ||
+           (result.hasPrefix("\u{201C}") && result.hasSuffix("\u{201D}")) {
+            result = String(result.dropFirst().dropLast())
+                .trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         return result

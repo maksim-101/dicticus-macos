@@ -1,5 +1,6 @@
 import SwiftUI
 import FluidAudio
+import os.log
 
 /// Manages FluidAudio initialization and Parakeet TDT v3 CoreML warm-up state,
 /// plus sequential LLM (Gemma 3 1B via llama.cpp) initialization for AI cleanup.
@@ -129,17 +130,21 @@ class ModelWarmupService: ObservableObject {
                 // Sequential after ASR to avoid memory pressure spikes (D-08).
                 // Downloads ~722 MB GGUF on first run from HuggingFace CDN (D-09).
                 // Non-fatal: if LLM fails, plain dictation still works.
+                let warmupLog = Logger(subsystem: "com.dicticus", category: "warmup")
                 do {
                     let needsDownload = !ModelDownloadService.isModelCached()
+                    warmupLog.info("LLM Step 4: cached=\(!needsDownload)")
                     if needsDownload {
                         await MainActor.run { self?.llmStatus = .downloading }
                     }
 
                     try await ModelDownloadService.downloadIfNeeded()
+                    warmupLog.info("LLM download complete, loading model...")
 
                     await MainActor.run { self?.llmStatus = .loading }
 
                     let modelPath = ModelDownloadService.modelPath().path
+                    warmupLog.info("LLM model path: \(modelPath)")
                     let cleanup = try await MainActor.run { () throws -> CleanupService in
                         CleanupService.initializeBackend()
                         let service = CleanupService()
@@ -147,18 +152,20 @@ class ModelWarmupService: ObservableObject {
                         return service
                     }
 
+                    warmupLog.info("LLM model loaded successfully")
                     await MainActor.run {
                         self?.cleanupService = cleanup
                         self?.isLlmReady = true
                         self?.llmStatus = .ready
                     }
                 } catch is CancellationError {
+                    warmupLog.error("LLM warmup cancelled")
                     throw CancellationError()
                 } catch {
+                    warmupLog.error("LLM warmup failed: \(error.localizedDescription)")
                     await MainActor.run {
                         self?.llmStatus = .failed("AI cleanup unavailable")
                     }
-                    print("[Dicticus] LLM warmup failed (non-fatal): \(error.localizedDescription)")
                 }
             } catch is CancellationError {
                 await MainActor.run {
