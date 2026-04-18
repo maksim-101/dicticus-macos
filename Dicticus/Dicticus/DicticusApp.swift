@@ -13,6 +13,11 @@ struct DicticusApp: App {
     // Optional because it cannot be created until warmup completes.
     @State private var transcriptionService: TranscriptionService?
 
+    // CleanupService is created during warmup (ModelWarmupService Step 4).
+    // Exposed here for icon state machine (D-14/D-15) and passed to HotkeyManager.
+    // Optional because it cannot be created until LLM warmup completes.
+    @State private var cleanupService: CleanupService?
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
@@ -26,7 +31,9 @@ struct DicticusApp: App {
             //   idle/warming -> mic (pulsing during warm-up per D-04)
             // symbolEffect(.pulse) requires macOS 14+ — verified in Research Pattern 1.
             Image(systemName: iconName)
-                .symbolEffect(.pulse, isActive: warmupService.isWarming || (transcriptionService?.state == .transcribing))
+                .symbolEffect(.pulse, isActive: warmupService.isWarming
+                    || (transcriptionService?.state == .transcribing)
+                    || (cleanupService?.state == .cleaning))
                 .foregroundStyle(hotkeyManager.isRecording ? .red : .primary)
                 .task {
                     // Check permissions at launch so iconName reads correct state immediately
@@ -44,20 +51,30 @@ struct DicticusApp: App {
                             vadManager: vadManager
                         )
                         transcriptionService = service
-                        hotkeyManager.setup(transcriptionService: service, warmupService: warmupService)
+
+                        // Wire CleanupService from warmup (D-07, D-14)
+                        let cleanup = warmupService.cleanupServiceInstance
+                        cleanupService = cleanup
+
+                        hotkeyManager.setup(
+                            transcriptionService: service,
+                            warmupService: warmupService,
+                            cleanupService: cleanup
+                        )
                     }
                 }
         }
         .menuBarExtraStyle(.window)
     }
 
-    /// Computed icon name combining permission, warm-up, recording, and transcription state.
+    /// Computed icon name combining permission, warm-up, recording, transcription, and cleanup state.
     ///
     /// State priority (highest first):
     ///   1. Permission missing -> mic.slash (degraded)
     ///   2. Recording -> mic.fill (D-09: red filled mic)
     ///   3. Transcribing -> waveform.circle (D-11/UI-SPEC: audio processing indicator)
-    ///   4. Default -> mic (ready or warming, pulse animation handles warming)
+    ///   4. AI cleanup -> sparkles (D-14/D-15: LLM processing indicator, pulsing)
+    ///   5. Default -> mic (ready or warming, pulse animation handles warming)
     private var iconName: String {
         if !permissionManager.allGranted {
             return "mic.slash"  // Degraded: missing permissions
@@ -67,6 +84,10 @@ struct DicticusApp: App {
         }
         if let service = transcriptionService, service.state == .transcribing {
             return "waveform.circle"  // D-11/UI-SPEC: Transcription in progress
+        }
+        // D-14/D-15: AI cleanup in progress — sparkles SF Symbol indicates AI processing
+        if let cleanup = cleanupService, cleanup.state == .cleaning {
+            return "sparkles"
         }
         return "mic"  // Ready or warming (pulse animation handles warming per Phase 1)
     }

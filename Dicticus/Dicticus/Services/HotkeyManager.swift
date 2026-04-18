@@ -41,6 +41,10 @@ class HotkeyManager: ObservableObject {
     /// Reference to ModelWarmupService to check isReady before recording.
     private weak var warmupService: ModelWarmupService?
 
+    /// Reference to CleanupService for AI cleanup mode (D-11).
+    /// Set via setup() after warmup completes. Weak to avoid retain cycle.
+    private weak var cleanupService: CleanupService?
+
     /// TextInjector for clipboard-based text injection.
     /// Isolated to @MainActor via HotkeyManager's own isolation.
     private let textInjector = TextInjector()
@@ -49,9 +53,14 @@ class HotkeyManager: ObservableObject {
     ///
     /// Must be called after TranscriptionService is created (after warmup completes).
     /// Safe to call multiple times — KeyboardShortcuts.events(for:) creates new async streams.
-    func setup(transcriptionService: TranscriptionService, warmupService: ModelWarmupService) {
+    func setup(
+        transcriptionService: TranscriptionService,
+        warmupService: ModelWarmupService,
+        cleanupService: CleanupService?
+    ) {
         self.transcriptionService = transcriptionService
         self.warmupService = warmupService
+        self.cleanupService = cleanupService
 
         // D-12: Register plain dictation hotkey with full push-to-talk.
         // Task inherits @MainActor isolation from the enclosing @MainActor class.
@@ -67,15 +76,15 @@ class HotkeyManager: ObservableObject {
             }
         }
 
-        // D-12/D-13: AI cleanup hotkey registered but silently ignored in Phase 3
+        // D-11: AI cleanup hotkey — full ASR + LLM cleanup + paste pipeline
         Task { [weak self] in
             for await event in KeyboardShortcuts.events(for: .aiCleanup) {
                 guard let self else { return }
                 switch event {
                 case .keyDown:
-                    break  // D-13: No action in Phase 3
+                    self.handleKeyDown(mode: .aiCleanup)
                 case .keyUp:
-                    break  // D-13: No action in Phase 3
+                    self.handleKeyUp(mode: .aiCleanup)
                 }
             }
         }
@@ -101,6 +110,17 @@ class HotkeyManager: ObservableObject {
             NotificationService.shared.post(notification)
             isKeyDown = false  // Reset so next press can try again
             return
+        }
+
+        // D-20: Check LLM readiness for AI cleanup mode
+        if mode == .aiCleanup {
+            guard let cleanupService, cleanupService.isLoaded else {
+                let notification = DicticusNotification.llmLoading
+                lastPostedNotification = notification
+                NotificationService.shared.post(notification)
+                isKeyDown = false
+                return
+            }
         }
 
         guard let service = transcriptionService else {
@@ -151,8 +171,29 @@ class HotkeyManager: ObservableObject {
             guard let self else { return }
             do {
                 let result = try await service.stopRecordingAndTranscribe()
-                // D-06: Inject text at cursor via clipboard + Cmd+V
-                await self.textInjector.injectText(result.text)
+
+                switch mode {
+                case .plain:
+                    // Existing plain dictation path — paste raw ASR text (D-06)
+                    await self.textInjector.injectText(result.text)
+
+                case .aiCleanup:
+                    // D-11: AI cleanup pipeline — ASR -> LLM cleanup -> paste
+                    if let cleanupService = self.cleanupService, cleanupService.isLoaded {
+                        let cleanedText = await cleanupService.cleanup(
+                            text: result.text,
+                            language: result.language
+                        )
+                        // D-19: Always paste something — cleaned text or original on failure/timeout
+                        await self.textInjector.injectText(cleanedText)
+                    } else {
+                        // D-19: Fallback — paste raw ASR text if cleanup service unavailable
+                        await self.textInjector.injectText(result.text)
+                        let notification = DicticusNotification.cleanupFailed
+                        self.lastPostedNotification = notification
+                        NotificationService.shared.post(notification)
+                    }
+                }
             } catch is CancellationError {
                 // Task cancelled — silent
             } catch let error as TranscriptionError {
