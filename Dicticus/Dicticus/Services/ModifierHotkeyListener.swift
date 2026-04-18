@@ -1,29 +1,28 @@
+import AppKit
 import CoreGraphics
 import Foundation
 import Combine
+import os.log
 
-/// CGEventTap-based listener for modifier-only hotkeys (Fn+Shift, Fn+Control, Fn+Option).
+/// NSEvent-based listener for modifier-only hotkeys (Fn+Shift, Fn+Control, Fn+Option).
 ///
 /// Runs in parallel with KeyboardShortcuts, which cannot capture modifier-only combos.
 /// Per D-08: parallel system architecture.
 /// Per D-09: Fn+Shift = plain dictation default, Fn+Control = AI cleanup default.
 ///
-/// Security: Uses `.listenOnly` option — never intercepts or modifies events.
-/// Only listens for `.flagsChanged` events — never sees keystrokes (T-05-01).
-/// Requires Accessibility permission; silently does not start if missing (T-05-02).
-/// Callback performs O(1) flag comparison only — no blocking (T-05-03).
+/// Uses NSEvent.addGlobalMonitorForEvents instead of CGEventTap because macOS 15
+/// disables CGEventTap for ad-hoc signed apps even with Accessibility permission.
+/// NSEvent global monitor works reliably within the app's security context.
+///
+/// Security: Only monitors `.flagsChanged` events — never sees keystrokes (T-05-01).
+/// Requires Accessibility permission for global monitoring (T-05-02).
+/// Handler performs O(1) flag comparison only — no blocking (T-05-03).
 ///
 /// ObservableObject so SettingsSection can bind to combo properties via @EnvironmentObject.
 /// @Published properties publish on MainActor (objectWillChange fires on main thread).
 ///
-/// @unchecked Sendable: thread safety is managed manually.
-/// - `previousFlags` is accessed only from the single CGEventTap callback thread.
-/// - `onComboActivated`/`onComboReleased` closures are set before `start()` and called
-///   only via DispatchQueue.main.async, ensuring they always run on the main thread.
-/// - @Published mutations must occur on main thread — enforced by DispatchQueue.main.async
-///   in callback and by @MainActor callers (DicticusApp, HotkeyManager).
-/// - Combo config reads in the CGEventTap callback thread hit @Published backing storage,
-///   which is safe because @Published uses internal locking and reads are value types.
+/// @unchecked Sendable: all mutable state is accessed on the main thread —
+/// NSEvent global monitor handler runs on the main thread.
 class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
 
     // MARK: - Configuration
@@ -80,127 +79,66 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
 
     // MARK: - Private state
 
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
-    private var runLoop: CFRunLoop?
+    private var monitor: Any?
 
-    /// Previous CGEventFlags state — updated in callback to detect transitions.
-    /// Accessed only from the callback thread (the dedicated background RunLoop).
-    private var previousFlags: CGEventFlags = []
-
-    // MARK: - C-compatible callback
-
-    /// Static C-compatible callback for CGEventTap.
-    ///
-    /// Must be static (not a closure or instance method) — CGEventTapCallBack is a
-    /// C function pointer and cannot capture context (Pitfall 3 in RESEARCH.md).
-    /// Instance access is via the userInfo pointer (Unmanaged passUnretained).
-    static let callback: CGEventTapCallBack = { proxy, type, event, userInfo in
-        // Handle tap-disabled-by-timeout: re-enable the tap (T-05-03)
-        if type == .tapDisabledByTimeout {
-            if let userInfo = userInfo {
-                let listener = Unmanaged<ModifierHotkeyListener>.fromOpaque(userInfo).takeUnretainedValue()
-                if let tap = listener.eventTap {
-                    CGEvent.tapEnable(tap: tap, enable: true)
-                }
-            }
-            return Unmanaged.passUnretained(event)
-        }
-
-        guard type == .flagsChanged, let userInfo = userInfo else {
-            return Unmanaged.passUnretained(event)
-        }
-
-        let listener = Unmanaged<ModifierHotkeyListener>.fromOpaque(userInfo).takeUnretainedValue()
-        let currentFlags = event.flags
-
-        // Capture previous/current and combo config atomically on this thread
-        let previous = listener.previousFlags
-        listener.previousFlags = currentFlags
-
-        let plain = listener.plainDictationCombo
-        let cleanup = listener.cleanupCombo
-
-        if let transition = ModifierHotkeyListener.detectTransition(
-            from: previous,
-            to: currentFlags,
-            plainCombo: plain,
-            cleanupCombo: cleanup
-        ) {
-            let mode = transition.mode
-            let isPress = transition.isPress
-
-            // Dispatch to MainActor for HotkeyManager interaction (non-blocking)
-            DispatchQueue.main.async {
-                if isPress {
-                    listener.onComboActivated?(mode)
-                } else {
-                    listener.onComboReleased?(mode)
-                }
-            }
-        }
-
-        return Unmanaged.passUnretained(event)
-    }
+    /// Previous modifier flags state — updated in handler to detect transitions.
+    /// Accessed only from the main thread (NSEvent handler runs on main thread).
+    private var previousNSFlags: NSEvent.ModifierFlags = []
 
     // MARK: - Lifecycle
 
-    /// Start the CGEventTap on a dedicated background thread.
+    /// Start monitoring modifier key changes via NSEvent global monitor.
     ///
-    /// Silently returns if Accessibility permission is not granted (T-05-02).
+    /// Requires Accessibility permission for global event monitoring (T-05-02).
     func start() {
-        // Only listen for flagsChanged events — never sees keystrokes (T-05-01)
-        let eventMask: CGEventMask = 1 << CGEventType.flagsChanged.rawValue
+        let log = Logger(subsystem: "com.dicticus", category: "modifier-hotkey")
 
-        // Pass self as userInfo — C-compatible pointer, unretained (self owns the tap)
-        let userInfo = Unmanaged.passUnretained(self).toOpaque()
-
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,        // T-05-01: never modifies events
-            eventsOfInterest: eventMask,
-            callback: Self.callback,
-            userInfo: userInfo
-        ) else {
-            // Accessibility permission not granted — silent failure (T-05-02)
-            return
-        }
-
-        self.eventTap = tap
-
-        let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
-        self.runLoopSource = source
-
-        // Run the tap on a dedicated background thread so the callback never
-        // blocks the main thread (T-05-03)
-        Thread.detachNewThread { [weak self] in
+        // Only monitor flagsChanged events — never sees keystrokes (T-05-01)
+        monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             guard let self else { return }
-            let rl = CFRunLoopGetCurrent()!
-            self.runLoop = rl
-            CFRunLoopAddSource(rl, source, .commonModes)
-            CGEvent.tapEnable(tap: tap, enable: true)
-            CFRunLoopRun()
+
+            let currentFlags = event.modifierFlags
+            let previous = self.previousNSFlags
+            self.previousNSFlags = currentFlags
+
+            let plain = self.plainDictationCombo
+            let cleanup = self.cleanupCombo
+
+            if let transition = ModifierHotkeyListener.detectNSTransition(
+                from: previous,
+                to: currentFlags,
+                plainCombo: plain,
+                cleanupCombo: cleanup
+            ) {
+                if transition.isPress {
+                    log.info("combo activated: \(String(describing: transition.mode), privacy: .public)")
+                    self.onComboActivated?(transition.mode)
+                } else {
+                    log.info("combo released: \(String(describing: transition.mode), privacy: .public)")
+                    self.onComboReleased?(transition.mode)
+                }
+            }
+        }
+
+        if monitor != nil {
+            log.info("NSEvent global monitor started for flagsChanged")
+        } else {
+            log.error("NSEvent global monitor creation FAILED — accessibility permission may not be granted")
         }
     }
 
-    /// Stop the CGEventTap and shut down the background run loop.
+    /// Stop the global monitor.
     func stop() {
-        if let tap = eventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
+        if let monitor = monitor {
+            NSEvent.removeMonitor(monitor)
         }
-        if let rl = runLoop {
-            CFRunLoopStop(rl)
-        }
-        eventTap = nil
-        runLoopSource = nil
-        runLoop = nil
-        previousFlags = []
+        monitor = nil
+        previousNSFlags = []
     }
 
-    // MARK: - Pure transition detection (testable)
+    // MARK: - Pure transition detection — NSEvent.ModifierFlags (testable)
 
-    /// Detect a combo press or release from a CGEventFlags transition.
+    /// Detect a combo press or release from an NSEvent.ModifierFlags transition.
     ///
     /// Pure function — no side effects, no hardware needed. Designed for unit testing.
     ///
@@ -210,28 +148,20 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
     /// 2. For each combo (plain, cleanup):
     ///    - Activation: current filtered flags EXACTLY match the combo flags AND
     ///      previous filtered flags did NOT fully contain the combo.
-    ///      The "exactly match" check prevents Fn+Shift+Control from activating fnShift.
     ///    - Release: previous filtered flags fully contained the combo AND
     ///      current filtered flags do NOT fully contain it.
-    ///
-    /// - Parameters:
-    ///   - previous: CGEventFlags before the transition
-    ///   - current: CGEventFlags after the transition
-    ///   - plainCombo: the combo assigned to plain dictation mode
-    ///   - cleanupCombo: the combo assigned to AI cleanup mode
-    /// - Returns: A `(mode, isPress)` tuple if a transition was detected, nil otherwise.
-    static func detectTransition(
-        from previous: CGEventFlags,
-        to current: CGEventFlags,
+    static func detectNSTransition(
+        from previous: NSEvent.ModifierFlags,
+        to current: NSEvent.ModifierFlags,
         plainCombo: ModifierCombo,
         cleanupCombo: ModifierCombo
     ) -> (mode: DictationMode, isPress: Bool)? {
         // Only consider these four modifier flags — ignore unrelated bits
-        let relevantMask: CGEventFlags = [
-            .maskSecondaryFn,
-            .maskShift,
-            .maskControl,
-            .maskAlternate
+        let relevantMask: NSEvent.ModifierFlags = [
+            .function,
+            .shift,
+            .control,
+            .option
         ]
 
         let prev = previous.intersection(relevantMask)
@@ -239,7 +169,7 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
 
         // Check each combo in priority order (plain first, then cleanup)
         for (combo, mode) in [(plainCombo, DictationMode.plain), (cleanupCombo, DictationMode.aiCleanup)] {
-            let comboFlags = combo.flags
+            let comboFlags = combo.nsFlags
 
             // Activation: current == exactly combo flags AND previous didn't have the full combo
             let comboActiveNow = curr == comboFlags
@@ -250,6 +180,44 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
             }
 
             // Release: previous had all combo flags AND current is missing at least one
+            if comboWasActive && !curr.isSuperset(of: comboFlags) {
+                return (mode: mode, isPress: false)
+            }
+        }
+
+        return nil
+    }
+
+    // MARK: - Pure transition detection — CGEventFlags (unit test compatibility)
+
+    /// CGEventFlags-based transition detection. Kept for existing unit tests.
+    /// The runtime now uses `detectNSTransition` via NSEvent global monitor.
+    static func detectTransition(
+        from previous: CGEventFlags,
+        to current: CGEventFlags,
+        plainCombo: ModifierCombo,
+        cleanupCombo: ModifierCombo
+    ) -> (mode: DictationMode, isPress: Bool)? {
+        let relevantMask: CGEventFlags = [
+            .maskSecondaryFn,
+            .maskShift,
+            .maskControl,
+            .maskAlternate
+        ]
+
+        let prev = previous.intersection(relevantMask)
+        let curr = current.intersection(relevantMask)
+
+        for (combo, mode) in [(plainCombo, DictationMode.plain), (cleanupCombo, DictationMode.aiCleanup)] {
+            let comboFlags = combo.flags
+
+            let comboActiveNow = curr == comboFlags
+            let comboWasActive = prev.isSuperset(of: comboFlags)
+
+            if comboActiveNow && !comboWasActive {
+                return (mode: mode, isPress: true)
+            }
+
             if comboWasActive && !curr.isSuperset(of: comboFlags) {
                 return (mode: mode, isPress: false)
             }

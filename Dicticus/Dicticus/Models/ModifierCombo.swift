@@ -1,10 +1,11 @@
+import AppKit
 import CoreGraphics
 
 /// Preset modifier-only hotkey combinations based on the Fn key.
 ///
-/// These combos are detected via CGEventTap (not KeyboardShortcuts, which cannot
-/// capture modifier-only combos). The listener runs in parallel with KeyboardShortcuts
-/// per D-08 in 05-CONTEXT.md.
+/// These combos are detected via NSEvent global monitor (not KeyboardShortcuts,
+/// which cannot capture modifier-only combos). The listener runs in parallel
+/// with KeyboardShortcuts per D-08 in 05-CONTEXT.md.
 ///
 /// Defaults: fnShift for plain dictation, fnControl for AI cleanup (D-09).
 enum ModifierCombo: CaseIterable, Identifiable, Codable, Equatable, Sendable {
@@ -28,6 +29,20 @@ enum ModifierCombo: CaseIterable, Identifiable, Codable, Equatable, Sendable {
             return [.maskSecondaryFn, .maskControl]
         case .fnOption:
             return [.maskSecondaryFn, .maskAlternate]
+        }
+    }
+
+    // MARK: - NSEvent.ModifierFlags Mapping
+
+    /// The NSEvent.ModifierFlags for this combo, used by NSEvent global monitor.
+    var nsFlags: NSEvent.ModifierFlags {
+        switch self {
+        case .fnShift:
+            return [.function, .shift]
+        case .fnControl:
+            return [.function, .control]
+        case .fnOption:
+            return [.function, .option]
         }
     }
 
