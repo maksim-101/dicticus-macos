@@ -15,16 +15,19 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 - [x] Mac menu bar app (SwiftBar-style, minimal UI) — Validated in Phase 1: Foundation & App Shell
 - [x] Fully local ASR (Parakeet V3 or equivalent quality) — Validated in Phase 2.1: FluidAudio + Parakeet TDT v3 via CoreML/ANE
 - [x] Auto-detect German/English without manual switching — Validated in Phase 2.1: NLLanguageRecognizer post-hoc detection
+- [x] Push-to-talk dictation on Mac via configurable hotkey — text pastes at cursor in any app — Validated in Phase 3: System-Wide Dictation
+- [x] AI cleanup mode on Mac via separate hotkey — grammar, punctuation, filler removal — Validated in Phase 4: AI Cleanup
+- [x] Fully local LLM for AI cleanup (no cloud calls) — Validated in Phase 4: Gemma 3 1B via llama.cpp
+- [x] Multiple hotkey combos for different modes (plain, light cleanup, rewrite) — Validated in Phase 5: KeyboardShortcuts + modifier-only hotkeys via CGEventTap
+- [x] Memory budget under 3 GB with both models loaded — Validated in Phase 5: 170 MB phys_footprint measured
+- [x] Launch at login (configurable) — Validated in Phase 5: LaunchAtLogin-Modern via SMAppService
+- [x] DMG distribution packaging — Validated in Phase 5: build-dmg.sh with ad-hoc signing
 
 ### Active
 
-- [ ] Push-to-talk dictation on Mac via configurable hotkey — text pastes at cursor in any app
-- [ ] AI cleanup mode on Mac via separate hotkey — grammar, punctuation, filler removal
-- [ ] Heavier rewrite mode available (second AI cleanup tier)
-- [ ] Fully local LLM for AI cleanup (no cloud calls)
 - [ ] iPhone dictation replacement (custom keyboard or Shortcut)
 - [ ] Windows support for business laptop
-- [ ] Multiple hotkey combos for different modes (plain, light cleanup, rewrite)
+- [ ] Heavier rewrite mode available (second AI cleanup tier)
 
 ### Out of Scope
 
@@ -82,4 +85,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after Phase 2.1 completion — ASR engine swapped to FluidAudio + Parakeet TDT v3*
+*Last updated: 2026-04-18 after Phase 5 completion — Polish & Distribution complete, v1.0 milestone feature-complete*
