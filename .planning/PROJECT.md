@@ -2,70 +2,90 @@
 
 ## What This Is
 
-A fully local, multi-platform dictation app that replaces native dictation on Mac, iPhone, and Windows. Uses on-device ASR and LLM to transcribe speech in German and English with optional AI cleanup — activated via system-wide hotkeys (Mac/Windows) or a custom keyboard/Shortcut (iPhone). Think "MacWhisper but system-wide, cross-platform, and with AI polish."
+A fully local macOS dictation app that replaces native dictation with system-wide push-to-talk hotkeys, on-device ASR (Parakeet TDT v3 via FluidAudio on Apple Neural Engine), and optional AI cleanup (Gemma 3 1B via llama.cpp). Works in any text field across any app — browser, native apps, terminal.
 
 ## Core Value
 
 Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
 
+## Current State
+
+**Shipped:** v1.0 MVP (2026-04-18)
+**Codebase:** 3,084 lines Swift, 6 phases, 17 plans
+**Memory:** 170 MB physical footprint with both ASR and LLM loaded
+**Distribution:** Ad-hoc signed DMG, drag-to-Applications install
+
 ## Requirements
 
 ### Validated
 
-- [x] Mac menu bar app (SwiftBar-style, minimal UI) — Validated in Phase 1: Foundation & App Shell
-- [x] Fully local ASR (Parakeet V3 or equivalent quality) — Validated in Phase 2.1: FluidAudio + Parakeet TDT v3 via CoreML/ANE
-- [x] Auto-detect German/English without manual switching — Validated in Phase 2.1: NLLanguageRecognizer post-hoc detection
-- [x] Push-to-talk dictation on Mac via configurable hotkey — text pastes at cursor in any app — Validated in Phase 3: System-Wide Dictation
-- [x] AI cleanup mode on Mac via separate hotkey — grammar, punctuation, filler removal — Validated in Phase 4: AI Cleanup
-- [x] Fully local LLM for AI cleanup (no cloud calls) — Validated in Phase 4: Gemma 3 1B via llama.cpp
-- [x] Multiple hotkey combos for different modes (plain, light cleanup, rewrite) — Validated in Phase 5: KeyboardShortcuts + modifier-only hotkeys via CGEventTap
-- [x] Memory budget under 3 GB with both models loaded — Validated in Phase 5: 170 MB phys_footprint measured
-- [x] Launch at login (configurable) — Validated in Phase 5: LaunchAtLogin-Modern via SMAppService
-- [x] DMG distribution packaging — Validated in Phase 5: build-dmg.sh with ad-hoc signing
+- ✓ Push-to-talk via configurable hotkey, text at cursor in any app — v1.0
+- ✓ Transcription < 3 seconds for typical utterances — v1.0
+- ✓ Auto-detect German/English without manual switching — v1.0
+- ✓ VAD discards silence to prevent hallucinated output — v1.0
+- ✓ Works in any text field (browser, native apps, terminal) — v1.0
+- ✓ Light cleanup mode via separate hotkey (grammar, punctuation, filler removal) — v1.0
+- ✓ Cleanup preserves original meaning — v1.0
+- ✓ Cleanup works for German and English (single-language) — v1.0
+- ✓ LLM runs fully locally with no cloud calls — v1.0
+- ✓ Menu bar app with minimal UI — v1.0
+- ✓ First-run onboarding for permissions — v1.0
+- ✓ Separate hotkeys per mode (plain dictation, AI cleanup) — v1.0
+- ✓ Launch at login (configurable) — v1.0
+- ✓ ASR and LLM warm at startup — v1.0
+- ✓ CoreML background warmup at launch — v1.0
+- ✓ Memory < 3 GB (achieved 170 MB) — v1.0
+- ✓ DMG distribution — v1.0
+- ✓ Modifier-only hotkeys (Fn+Shift, Fn+Control) — v1.0
+
+### Partially Validated
+
+- ⚠ Visual recording indicator — v1.0 (recording mic.fill works; transcribing/cleaning icon states not reactive due to @State vs @StateObject)
 
 ### Active
 
 - [ ] iPhone dictation replacement (custom keyboard or Shortcut)
 - [ ] Windows support for business laptop
-- [ ] Heavier rewrite mode available (second AI cleanup tier)
+- [ ] Heavier rewrite mode (second AI cleanup tier)
+- [ ] Prompt customization for cleanup behavior
+- [ ] Transcription history log with search
+- [ ] Auto-update via Sparkle
+- [ ] Fix APP-03 icon state reactivity (@StateObject refactor)
+- [ ] Model integrity check (SHA256 for GGUF downloads)
+- [ ] Apple Developer Program signing and notarization
 
 ### Out of Scope
 
-- Email formatting / summarization — future use case, not v1
-- Real-time streaming transcription — nice-to-have, not required (batch processing is acceptable)
-- Cloud-based ASR/LLM fallback — fully local is a hard requirement
-- Custom voice training / speaker profiles — unnecessary for single-user
-- GUI-heavy app — this lives in the menu bar / background, not a windowed app
-
-## Context
-
-- User currently uses MacWhisper with Parakeet V3 and is happy with its quality and performance
-- MacWhisper limitation: not system-wide, requires copy-paste workflow
-- Primary languages: German and English, with auto-detection
-- Mac is the primary platform, iPhone and Windows are stretch goals pending research feasibility
-- iPhone approach TBD: custom keyboard vs. iOS Shortcut (research will determine)
-- Windows approach TBD: may be a separate app with shared architecture
-- Whether this is 1, 2, or 3 separate apps depends on platform constraints — research will answer this
-- The user's MacBook has Apple Silicon (assumed — relevant for local model performance)
+- iOS custom keyboard — iOS blocks microphone access in keyboard extensions
+- Cloud ASR/LLM fallback — fully local is a hard requirement
+- App Store distribution — sandbox blocks global hotkeys and text injection
+- Always-listening mode — privacy risk, battery drain
+- Speaker diarization — single-user tool
+- Custom voice training — unnecessary for dictation
+- Real-time streaming (v1) — batch processing acceptable
+- Mixed-language AI cleanup — Gemma 3 1B too small for reliable multilingual instruction following
 
 ## Constraints
 
-- **Privacy**: All processing must happen on-device — no audio or text sent to any server
-- **Performance**: Transcription must feel near-instant after releasing the hotkey (< 2-3 seconds for typical utterances)
-- **Local models**: Both ASR and LLM must run locally with quality comparable to Parakeet V3
-- **System-wide**: Must work in any text field across any app (browser, native apps, etc.)
-- **Activation**: Push-to-talk (Mac/Windows), toggle (iPhone) — not always-listening
+- **Privacy**: All processing on-device — no audio or text sent to any server
+- **Performance**: Transcription < 2-3 seconds after releasing hotkey
+- **Local models**: ASR and LLM run locally with quality comparable to Parakeet V3
+- **System-wide**: Works in any text field across any app
+- **Activation**: Push-to-talk, not always-listening
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Fully local processing | Privacy + latency + cost — all three matter equally | — Pending |
-| Parakeet V3 as quality baseline | User knows and likes this model's accuracy | — Pending |
-| Different hotkeys per mode | Clean separation, no mode-switching UI needed | — Pending |
-| Paste-at-cursor for text output | Most reliable cross-app method | — Pending |
-| Menu bar app on Mac | Minimal footprint, always accessible, no window management | — Pending |
-| Auto-detect language | Simpler UX than manual switching | — Pending |
+| Fully local processing | Privacy + latency + cost | ✓ Good — 170 MB footprint, sub-second cleanup |
+| FluidAudio + Parakeet TDT v3 | Better de/en quality than Whisper, 5-10x faster | ✓ Good — German 5% WER, English 6% WER |
+| llama.cpp for LLM | Future Windows portability via C API | ✓ Good — Gemma 3 1B runs well on Metal |
+| Different hotkeys per mode | Clean separation, no mode-switching UI | ✓ Good — KeyboardShortcuts + modifier combos |
+| Paste-at-cursor via clipboard | Most reliable cross-app method | ✓ Good — works in all tested apps |
+| NSEvent global monitor | macOS 15 disables CGEventTap for ad-hoc signed apps | ✓ Good — simpler code, reliable |
+| Unsandboxed DMG distribution | Sandbox blocks global hotkeys and text injection | ✓ Good — Gatekeeper override needed |
+| xcodegen for project generation | Reproducible .pbxproj from declarative project.yml | ✓ Good — eliminates merge conflicts |
+| ASR engine swap (Phase 2.1) | User preferred Parakeet v3 quality over Whisper | ✓ Good — seamless API-level swap |
 
 ## Evolution
 
@@ -85,4 +105,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after Phase 5 completion — Polish & Distribution complete, v1.0 milestone feature-complete*
+*Last updated: 2026-04-18 after v1.0 milestone completion*
