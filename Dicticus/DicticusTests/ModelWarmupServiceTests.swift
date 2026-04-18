@@ -91,6 +91,14 @@ final class ModelWarmupServiceTests: XCTestCase {
                        "statusText should return the exact error string")
     }
 
+    // MARK: - Cleanup service instance (Phase 4 / INFRA-02)
+
+    func testCleanupServiceInstanceIsNilBeforeWarmup() {
+        let service = ModelWarmupService()
+        XCTAssertNil(service.cleanupServiceInstance,
+                      "cleanupServiceInstance must be nil before warmup (INFRA-02)")
+    }
+
     // MARK: - Guard logic test
 
     func testWarmupGuardPreventsDuplicateCalls() {

@@ -17,6 +17,10 @@ enum DicticusNotification {
     case recordingFailed(Error)
     /// ASR output contained non-Latin script (Cyrillic, CJK, Arabic, etc.)
     case unexpectedLanguage
+    /// D-19: LLM cleanup failed — raw ASR text was pasted as fallback
+    case cleanupFailed
+    /// D-20: AI cleanup hotkey pressed before LLM warmup completes
+    case llmLoading
 
     /// Notification title — always "Dicticus" per UI-SPEC copywriting contract.
     var title: String { "Dicticus" }
@@ -35,6 +39,10 @@ enum DicticusNotification {
             return "Could not start recording. Check microphone permission."
         case .unexpectedLanguage:
             return "Unexpected language detected. Please try again."
+        case .cleanupFailed:
+            return "AI cleanup failed. Raw text was pasted instead."
+        case .llmLoading:
+            return "AI model still loading, please wait a moment."
         }
     }
 }
