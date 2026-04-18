@@ -42,8 +42,9 @@ class HotkeyManager: ObservableObject {
     private weak var warmupService: ModelWarmupService?
 
     /// Reference to CleanupService for AI cleanup mode (D-11).
-    /// Set via setup() after warmup completes. Weak to avoid retain cycle.
-    private weak var cleanupService: CleanupService?
+    /// Set via setup() after warmup completes, or later when LLM finishes loading.
+    /// Weak to avoid retain cycle.
+    weak var cleanupService: CleanupService?
 
     /// TextInjector for clipboard-based text injection.
     /// Isolated to @MainActor via HotkeyManager's own isolation.

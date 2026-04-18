@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+@preconcurrency import ApplicationServices
 
 /// Injects text at the current cursor position via clipboard save + write + Cmd+V + restore.
 ///
@@ -7,7 +8,7 @@ import CoreGraphics
 /// Requires Accessibility permission for CGEvent posting (already checked by PermissionManager).
 ///
 /// Per D-06: Clipboard + Cmd+V paste strategy.
-/// Per D-07: Original clipboard contents preserved after injection (~50ms delay).
+/// Per D-07: Original clipboard contents preserved after injection (~100ms delay).
 /// Per D-08: Single Cmd+V code path for all apps including terminal emulators.
 /// @MainActor isolation ensures all NSPasteboard and CGEvent calls happen on the main thread.
 /// NSPasteboard.general and CGEvent.post are both main-thread-only AppKit/CoreGraphics APIs.
@@ -22,14 +23,25 @@ class TextInjector {
     /// Inject text at the current cursor position.
     ///
     /// Pipeline:
-    ///   1. Save current clipboard contents (all types per item)
-    ///   2. Clear clipboard and write transcription text as plain string
-    ///   3. Synthesize Cmd+V keystroke via CGEvent
-    ///   4. Wait ~50ms for target app to process paste (D-07)
-    ///   5. Restore original clipboard contents
+    ///   1. Guard: verify Accessibility permission (CGEvent.post fails silently without it)
+    ///   2. Save current clipboard contents (all types per item)
+    ///   3. Clear clipboard and write transcription text as plain string
+    ///   4. Synthesize Cmd+V keystroke via CGEvent
+    ///   5. Wait ~100ms for target app to process paste (D-07)
+    ///   6. Restore original clipboard contents
     ///
     /// - Parameter text: The transcription text to inject
-    func injectText(_ text: String) async {
+    /// - Returns: true if injection was attempted, false if blocked (e.g. missing permission)
+    @discardableResult
+    func injectText(_ text: String) async -> Bool {
+        // Guard: Accessibility must be granted or CGEvent.post silently fails
+        guard AXIsProcessTrusted() else {
+            NotificationService.shared.post(DicticusNotification.transcriptionFailed(
+                TextInjectionError.accessibilityNotGranted
+            ))
+            return false
+        }
+
         let pasteboard = NSPasteboard.general
 
         // Step 1: Save original clipboard contents
@@ -40,16 +52,22 @@ class TextInjector {
         // Prepend space before injected text so consecutive dictation segments
         // don't merge into one word. A leading space in an empty field is harmless
         // and far less disruptive than missing inter-segment whitespace.
-        pasteboard.setString(" " + text, forType: .string)
+        let wrote = pasteboard.setString(" " + text, forType: .string)
+        if !wrote {
+            restoreClipboard(pasteboard, saved: saved)
+            return false
+        }
 
         // Step 3: Synthesize Cmd+V
         synthesizePaste()
 
-        // Step 4: Wait for target app to process paste (D-07: ~50ms acceptable)
-        try? await Task.sleep(nanoseconds: 50_000_000)
+        // Step 4: Wait for target app to process paste
+        // 100ms is more reliable than 50ms across Electron apps and terminal emulators.
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Step 5: Restore original clipboard
         restoreClipboard(pasteboard, saved: saved)
+        return true
     }
 
     /// Save all items and types from the pasteboard.
@@ -88,20 +106,39 @@ class TextInjector {
     /// Synthesize Cmd+V keystroke via CGEvent for cross-app paste.
     ///
     /// V key = keyCode 9 (layout-independent, verified via macOS keycode mapping).
-    /// Posts to .cgAnnotatedSessionEventTap for cross-app delivery.
+    /// Uses a private CGEventSource to avoid inheriting stale modifier flags
+    /// from the hardware state (e.g. Ctrl+Shift still held from the hotkey combo).
+    /// Posts to .cgSessionEventTap for reliable cross-app delivery.
     /// Requires Accessibility permission — CGEvent.post silently fails without it.
     func synthesizePaste() {
         let vKeyCode: CGKeyCode = 9  // V key (layout-independent)
 
-        guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: vKeyCode, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: vKeyCode, keyDown: false) else {
+        // Use a private event source so the synthesized keystroke is independent
+        // of whatever physical keys the user may still be releasing.
+        let source = CGEventSource(stateID: .privateState)
+
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false) else {
             return
         }
 
+        // Set ONLY Command flag — explicitly clear any other modifiers
         keyDown.flags = .maskCommand
         keyUp.flags = .maskCommand
 
-        keyDown.post(tap: .cgAnnotatedSessionEventTap)
-        keyUp.post(tap: .cgAnnotatedSessionEventTap)
+        keyDown.post(tap: .cgSessionEventTap)
+        keyUp.post(tap: .cgSessionEventTap)
+    }
+}
+
+/// Errors specific to text injection.
+enum TextInjectionError: Error, LocalizedError {
+    case accessibilityNotGranted
+
+    var errorDescription: String? {
+        switch self {
+        case .accessibilityNotGranted:
+            return "Accessibility permission required to paste text."
+        }
     }
 }

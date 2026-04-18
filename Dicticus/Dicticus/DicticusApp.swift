@@ -52,7 +52,8 @@ struct DicticusApp: App {
                         )
                         transcriptionService = service
 
-                        // Wire CleanupService from warmup (D-07, D-14)
+                        // CleanupService may be nil here — LLM loads after ASR.
+                        // Plain dictation works immediately; AI cleanup wires later.
                         let cleanup = warmupService.cleanupServiceInstance
                         cleanupService = cleanup
 
@@ -61,6 +62,14 @@ struct DicticusApp: App {
                             warmupService: warmupService,
                             cleanupService: cleanup
                         )
+                    }
+                }
+                .onChange(of: warmupService.isLlmReady) { _, ready in
+                    // LLM finished loading after ASR was already ready.
+                    // Wire CleanupService into HotkeyManager and icon state.
+                    if ready, let cleanup = warmupService.cleanupServiceInstance {
+                        cleanupService = cleanup
+                        hotkeyManager.cleanupService = cleanup
                     }
                 }
         }
