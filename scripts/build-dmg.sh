@@ -37,11 +37,16 @@ if [ ! -d "$APP_DIR/Dicticus.app" ]; then
     exit 1
 fi
 
-# Verify entitlements are embedded
-echo "=== Step 3: Verify entitlements ==="
+# Re-sign the entire app bundle (including embedded frameworks) with ad-hoc identity.
+# Without this, embedded frameworks (e.g. llama.framework) retain their original Team ID
+# signatures, causing a Team ID mismatch crash on launch.
+echo "=== Step 3: Re-sign app bundle ==="
+codesign --force --deep --sign - "$APP_DIR/Dicticus.app"
+
+echo "=== Step 4: Verify entitlements ==="
 codesign -d --entitlements :- "$APP_DIR/Dicticus.app" 2>/dev/null || echo "WARNING: Could not read entitlements"
 
-echo "=== Step 4: Create styled DMG ==="
+echo "=== Step 5: Create styled DMG ==="
 # Remove existing DMG if present
 rm -f "$OUTPUT_DIR/$DMG_NAME"
 
