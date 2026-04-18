@@ -117,6 +117,10 @@ class CleanupService: ObservableObject {
 
     // MARK: - Cleanup
 
+    /// Whether inference is currently running. Guards against concurrent cleanup calls
+    /// that would race on the shared llama.cpp C pointers (model, context, sampler).
+    private var isInferring = false
+
     /// Clean up transcribed text using the local LLM.
     ///
     /// Per D-01: Conservative cleanup — grammar, punctuation, capitalization, filler removal.
@@ -141,8 +145,18 @@ class CleanupService: ObservableObject {
             return text  // D-19: Fallback to raw text
         }
 
+        // Reject concurrent calls — C pointers are not thread-safe
+        guard !isInferring else {
+            log.warning("cleanup: inference already in progress, returning raw text")
+            return text
+        }
+
+        isInferring = true
         state = .cleaning
-        defer { state = .idle }
+        defer {
+            state = .idle
+            isInferring = false
+        }
 
         let prompt = CleanupPrompt.build(for: text, language: language)
         let isMixed = CleanupPrompt.isMixedLanguage(text)
@@ -164,7 +178,7 @@ class CleanupService: ObservableObject {
                 }
 
                 group.addTask {
-                    // Inference task
+                    // Inference task — checks Task.isCancelled between tokens
                     return Self.runInference(
                         prompt: prompt,
                         model: unsafeModel,
@@ -253,10 +267,16 @@ class CleanupService: ObservableObject {
         guard llama_decode(context, batch) == 0 else { return "" }
 
         // Step 5: Sample output tokens
+        // Reuse a single batch for token-by-token generation (avoids alloc/free per token)
         var outputTokens: [llama_token] = []
         var currentPos = Int32(promptTokens.count)
+        var nextBatch = llama_batch_init(1, 0, 1)
+        defer { llama_batch_free(nextBatch) }
 
         while outputTokens.count < maxTokens {
+            // Check for cooperative cancellation (timeout task fired)
+            if Task.isCancelled { break }
+
             let newToken = llama_sampler_sample(sampler, context, -1)
 
             // Check for end of generation using vocab-based EOG check
@@ -264,10 +284,7 @@ class CleanupService: ObservableObject {
 
             outputTokens.append(newToken)
 
-            // Prepare next batch with single token
-            var nextBatch = llama_batch_init(1, 0, 1)
-            defer { llama_batch_free(nextBatch) }
-
+            // Prepare next batch with single token (reuse allocated batch)
             nextBatch.n_tokens = 1
             nextBatch.token[0] = newToken
             nextBatch.pos[0] = currentPos
