@@ -53,6 +53,13 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: ""
         ENABLE_USER_SCRIPT_SANDBOXING: NO
+        # Explicitly link llama.framework so that llama.cpp C symbols (_llama_*) are
+        # available at link time. CleanupService.swift calls the C API directly via
+        # `import LlamaSwift` (which re-exports `import llama`). The LlamaSwift
+        # wrapper framework has @rpath/llama.framework as a dependency, but the
+        # linker needs the framework explicitly listed to resolve the C symbols when
+        # building the test dylib variant (Dicticus.debug.dylib).
+        OTHER_LDFLAGS: "-framework llama"
     dependencies:
       - package: FluidAudio
         product: FluidAudio

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */; };
+		176BD3C640724979F26904A0 /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A6EC5970559A2E03C1B957 /* CleanupService.swift */; };
 		18668EE01D6AAE03785B0B5B /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */; };
 		1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */; };
 		22A84736FD3182B120F7D8DF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 383C33859A15C6735C57D628 /* FluidAudio */; };
@@ -39,6 +40,7 @@
 		D40E4EE4B8E09E3462AA5918 /* ModelWarmupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */; };
 		D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2499A2640576B94D1BA5CD41 /* DicticusTests.swift */; };
 		DCE6FEB9117C3D3A4AC2893C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190A391B6BC042BE1B56011B /* OnboardingView.swift */; };
+		EFF84B780F9C7013E638D533 /* CleanupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30BA4C657A1C41682A689F5 /* CleanupServiceTests.swift */; };
 		F091E0461FF34468152BD434 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C2109BE8A6945F9B0A118D59 /* KeyboardShortcuts */; };
 		F649510C18EE78D7333FB9C5 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E1AE1705DB37CB26927A4AEB /* LlamaSwift */; };
 		F6BB8CBCCE3B9B70756B6C39 /* TextInjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEF465F3ABEBBFD0389EB5 /* TextInjectorTests.swift */; };
@@ -56,6 +58,7 @@
 
 /* Begin PBXFileReference section */
 		00A6403E7E893BEB40EABCBD /* DicticusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusApp.swift; sourceTree = "<group>"; };
+		02A6EC5970559A2E03C1B957 /* CleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupService.swift; sourceTree = "<group>"; };
 		143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPromptTests.swift; sourceTree = "<group>"; };
 		190A391B6BC042BE1B56011B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -84,6 +87,7 @@
 		B6356DF22A67C2BF0B6EF82B /* WarmupRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupRow.swift; sourceTree = "<group>"; };
 		BC0CAF13337A0AF85CB46BC3 /* LastTranscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastTranscriptionView.swift; sourceTree = "<group>"; };
 		C0781F7C404244283FCD9224 /* Dicticus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dicticus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C30BA4C657A1C41682A689F5 /* CleanupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupServiceTests.swift; sourceTree = "<group>"; };
 		CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelWarmupServiceTests.swift; sourceTree = "<group>"; };
 		D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadServiceTests.swift; sourceTree = "<group>"; };
@@ -160,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */,
+				C30BA4C657A1C41682A689F5 /* CleanupServiceTests.swift */,
 				2499A2640576B94D1BA5CD41 /* DicticusTests.swift */,
 				70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */,
 				E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */,
@@ -207,6 +212,7 @@
 		F2BDD31317F7D53FF9069687 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				02A6EC5970559A2E03C1B957 /* CleanupService.swift */,
 				516F18D70F7720AD0779EA74 /* HotkeyManager.swift */,
 				E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */,
 				44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */,
@@ -321,6 +327,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				45D038611054F1572E02B007 /* CleanupPrompt.swift in Sources */,
+				176BD3C640724979F26904A0 /* CleanupService.swift in Sources */,
 				B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */,
 				6C8F73BDB45903BE78483A79 /* HotkeyManager.swift in Sources */,
 				8D907775FA002BFE1DC2F124 /* HotkeySettingsView.swift in Sources */,
@@ -346,6 +353,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C88A581C1776F2B4EFC2C57C /* CleanupPromptTests.swift in Sources */,
+				EFF84B780F9C7013E638D533 /* CleanupServiceTests.swift in Sources */,
 				D7921F2027C4C789D2D31A62 /* DicticusTests.swift in Sources */,
 				2CBB9E936439E4D8CA60F825 /* HotkeyManagerTests.swift in Sources */,
 				46B52C3C05E290F9EF02A653 /* ModelDownloadServiceTests.swift in Sources */,
@@ -387,6 +395,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = "-framework llama";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dicticus.app;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -410,6 +419,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = "-framework llama";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dicticus.app;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
