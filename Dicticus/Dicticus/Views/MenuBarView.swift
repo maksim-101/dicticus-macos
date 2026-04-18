@@ -11,12 +11,16 @@ import SwiftUI
 /// - Hotkey configuration section (KeyboardShortcuts recorder views)
 /// - Last transcription preview with copy button
 ///
+/// Phase 5 additions per D-02/D-03/D-09/D-10/D-11:
+/// - Settings section above Quit with LaunchAtLogin toggle and modifier hotkey pickers
+///
 /// Permission polling starts here via onAppear so the polling lifecycle is tied
 /// to the dropdown being visible, not the app lifetime (avoids timer leaks).
 struct MenuBarView: View {
     @EnvironmentObject var permissionManager: PermissionManager
     @EnvironmentObject var warmupService: ModelWarmupService
     @EnvironmentObject var hotkeyManager: HotkeyManager
+    @EnvironmentObject var modifierListener: ModifierHotkeyListener
     @State private var showOnboarding = false
 
     var body: some View {
@@ -72,6 +76,14 @@ struct MenuBarView: View {
                 if hotkeyManager.lastTranscriptionText != nil {
                     Divider()
                 }
+
+                // D-03: Settings section above Quit — launch at login + modifier hotkey pickers
+                SettingsSection(
+                    plainDictationCombo: $modifierListener.plainDictationCombo,
+                    cleanupCombo: $modifierListener.cleanupCombo
+                )
+
+                Divider()
 
                 Button("Quit Dicticus") {
                     NSApplication.shared.terminate(nil)
