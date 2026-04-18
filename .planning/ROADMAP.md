@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2.1: ASR Engine Swap** - Replace WhisperKit with FluidAudio + Parakeet TDT v3 for better de/en quality and ANE performance (INSERTED)
 - [ ] **Phase 3: System-Wide Dictation** - Push-to-talk hotkeys, paste-at-cursor, recording indicator, per-mode hotkey routing
 - [ ] **Phase 4: AI Cleanup** - Local LLM integration (Gemma 3 1B via llama.cpp), light cleanup mode, bilingual cleanup, latency validation
-- [ ] **Phase 5: Polish & Distribution** - Memory budget validation, launch-at-login, DMG packaging, end-to-end testing
+- [ ] **Phase 5: Polish & Distribution** - Memory budget validation, launch-at-login, DMG packaging, modifier-only hotkeys
 
 ## Phase Details
 
@@ -108,13 +108,13 @@ Plans:
   1. Total memory usage stays under 3 GB with both ASR and LLM models loaded on a 16 GB Apple Silicon Mac
   2. App can optionally launch at login (configurable in settings)
   3. App is packaged as a DMG that a user can download, drag to Applications, and run without additional setup beyond permission grants
-  4. Modifier-only hotkeys (Fn+Shift, Ctrl+Shift) are available as push-to-talk activation options alongside standard key combos
-**Plans**: TBD
+  4. Modifier-only hotkeys (Fn+Shift, Fn+Control) are available as push-to-talk activation options alongside standard key combos
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: Modifier-only hotkey support via CGEventTap flagsChanged listener (Fn+Shift, Ctrl+Shift without a letter key) — parallel to KeyboardShortcuts
+- [ ] 05-01-PLAN.md — LaunchAtLogin-Modern SPM dependency, ModifierCombo model, ModifierHotkeyListener CGEventTap service with unit tests
+- [ ] 05-02-PLAN.md — Settings section UI (launch-at-login toggle, modifier hotkey pickers), HotkeyManager + DicticusApp wiring
+- [ ] 05-03-PLAN.md — DMG build pipeline (build-dmg.sh, styled background), memory profiling script (verify-memory.sh), human verification
 
 ## Progress
 
