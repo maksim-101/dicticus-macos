@@ -14,6 +14,13 @@ import LlamaSwift
 /// KV cache cleared between calls to prevent context bleed (Pitfall 5 from RESEARCH.md).
 /// Memory is cleared via llama_memory_clear(llama_get_memory(ctx), false) which is the
 /// current llama.cpp API replacing the deprecated llama_kv_cache_clear.
+///
+/// Swift/C type mapping for llama.cpp:
+///   - llama_model* → OpaquePointer (forward-declared struct)
+///   - llama_context* → OpaquePointer (forward-declared struct)
+///   - llama_sampler* → UnsafeMutablePointer<llama_sampler> (fully defined struct)
+///   - llama_vocab* → OpaquePointer (forward-declared struct)
+///   - llama_memory_t → OpaquePointer (typedef of llama_memory_i*, forward-declared)
 @MainActor
 class CleanupService: ObservableObject {
 
@@ -32,11 +39,16 @@ class CleanupService: ObservableObject {
     // MARK: - llama.cpp resources (kept warm between calls)
 
     /// llama_model pointer — loaded once during warmup, freed in deinit.
-    private var model: OpaquePointer?      // llama_model*
+    /// llama_model is forward-declared only in llama.h → OpaquePointer in Swift.
+    /// nonisolated(unsafe): deinit is nonisolated in Swift 6, so non-Sendable C pointer
+    /// properties must be marked nonisolated(unsafe) to be accessible from deinit.
+    private nonisolated(unsafe) var model: OpaquePointer?
     /// llama_context pointer — created once during warmup, freed in deinit.
-    private var context: OpaquePointer?    // llama_context*
+    /// llama_context is forward-declared only in llama.h → OpaquePointer in Swift.
+    private nonisolated(unsafe) var context: OpaquePointer?
     /// Sampler chain — created once, reset between calls.
-    private var sampler: OpaquePointer?    // llama_sampler*
+    /// llama_sampler is a fully-defined struct in llama.h → UnsafeMutablePointer<llama_sampler> in Swift.
+    private nonisolated(unsafe) var sampler: UnsafeMutablePointer<llama_sampler>?
 
     // MARK: - Configuration
 
@@ -87,6 +99,7 @@ class CleanupService: ObservableObject {
         self.context = ctx
 
         // Sampler chain: conservative settings for text cleanup (AICLEAN-02)
+        // llama_sampler_chain_init returns UnsafeMutablePointer<llama_sampler>?
         let samplerChain = llama_sampler_chain_init(llama_sampler_chain_default_params())
         // Temperature 0.2: very low for deterministic corrections
         llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.2))
@@ -180,7 +193,7 @@ class CleanupService: ObservableObject {
     ///      Uses llama_memory_clear(llama_get_memory(ctx), false) — current API
     ///      replacing the removed llama_kv_cache_clear from older llama.cpp versions.
     ///   2. Reset sampler state
-    ///   3. Tokenize prompt
+    ///   3. Tokenize prompt (via llama_vocab* from llama_model_get_vocab)
     ///   4. Decode prompt tokens (batch processing)
     ///   5. Sample output tokens until EOS or max_tokens
     ///   6. Detokenize output
@@ -188,11 +201,13 @@ class CleanupService: ObservableObject {
         prompt: String,
         model: OpaquePointer,
         context: OpaquePointer,
-        sampler: OpaquePointer,
+        sampler: UnsafeMutablePointer<llama_sampler>,
         maxTokens: Int32
     ) -> String {
         // Step 1: Clear KV cache between calls (Pitfall 5)
         // llama_kv_cache_clear was removed; use llama_memory_clear instead.
+        // llama_get_memory returns llama_memory_t (typedef for llama_memory_i*).
+        // llama_memory_i is forward-declared only → OpaquePointer in Swift.
         let memory = llama_get_memory(context)
         llama_memory_clear(memory, false)
 
@@ -200,7 +215,8 @@ class CleanupService: ObservableObject {
         llama_sampler_reset(sampler)
 
         // Step 3: Tokenize prompt
-        // vocab functions take llama_vocab* obtained from llama_model_get_vocab
+        // vocab functions take llama_vocab* obtained from llama_model_get_vocab.
+        // llama_vocab is forward-declared only → OpaquePointer in Swift.
         let vocab = llama_model_get_vocab(model)
         let promptTokens = tokenize(text: prompt, vocab: vocab, addSpecial: true, parseSpecial: true)
         guard !promptTokens.isEmpty else { return "" }
@@ -257,6 +273,7 @@ class CleanupService: ObservableObject {
     /// Convert text to llama tokens.
     ///
     /// Uses llama_vocab* (not llama_model*) as required by the current llama.cpp API.
+    /// llama_vocab is forward-declared only → OpaquePointer in Swift.
     private nonisolated static func tokenize(
         text: String,
         vocab: OpaquePointer?,
@@ -283,15 +300,16 @@ class CleanupService: ObservableObject {
     /// Convert a single token to its string representation.
     ///
     /// Uses llama_vocab* (not llama_model*) as required by the current llama.cpp API.
+    /// llama_vocab is forward-declared only → OpaquePointer in Swift.
     private nonisolated static func tokenToPiece(token: llama_token, vocab: OpaquePointer?) -> String {
         guard let vocab else { return "" }
         var buffer = [CChar](repeating: 0, count: 256)
         let nChars = llama_token_to_piece(vocab, token, &buffer, 256, 0, false)
         guard nChars > 0 else { return "" }
-        // Append null terminator and convert to Swift String
+        // Build a null-terminated copy and convert to Swift String
         var nullTerminated = Array(buffer.prefix(Int(nChars)))
         nullTerminated.append(0)
-        return String(cString: nullTerminated)
+        return String(decoding: nullTerminated.map { UInt8(bitPattern: $0) }, as: UTF8.self)
     }
 
     // MARK: - Post-processing
@@ -328,7 +346,7 @@ class CleanupService: ObservableObject {
         return result
     }
 
-    // MARK: - Cleanup (resource deallocation)
+    // MARK: - Resource deallocation
 
     deinit {
         if let sampler { llama_sampler_free(sampler) }
