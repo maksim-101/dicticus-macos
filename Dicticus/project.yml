@@ -15,6 +15,9 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts.git
     from: 2.4.0
+  LaunchAtLogin:
+    url: https://github.com/sindresorhus/LaunchAtLogin-Modern.git
+    from: 1.1.0
   llama:
     url: https://github.com/mattt/llama.swift.git
     from: 2.8832.0
@@ -65,6 +68,8 @@ targets:
         product: FluidAudio
       - package: KeyboardShortcuts
         product: KeyboardShortcuts
+      - package: LaunchAtLogin
+        product: LaunchAtLogin
       - package: llama
         product: LlamaSwift
 
