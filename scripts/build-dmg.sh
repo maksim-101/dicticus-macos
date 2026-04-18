@@ -46,6 +46,11 @@ echo "=== Step 4: Create styled DMG ==="
 # Remove existing DMG if present
 rm -f "$OUTPUT_DIR/$DMG_NAME"
 
+# Stage only Dicticus.app (exclude loose .bundle files from SPM dependencies)
+STAGING_DIR=$(mktemp -d)
+cp -R "$APP_DIR/Dicticus.app" "$STAGING_DIR/"
+trap "rm -rf '$STAGING_DIR'" EXIT
+
 EXIT_CODE=0
 create-dmg \
     --volname "Dicticus" \
@@ -56,7 +61,7 @@ create-dmg \
     --app-drop-link 480 200 \
     --no-internet-enable \
     "$OUTPUT_DIR/$DMG_NAME" \
-    "$APP_DIR/" || EXIT_CODE=$?
+    "$STAGING_DIR/" || EXIT_CODE=$?
 
 # create-dmg returns exit code 2 if it created the DMG but could not
 # set the background image (e.g., running in CI without a display).
