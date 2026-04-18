@@ -104,6 +104,23 @@ final class HotkeyManagerTests: XCTestCase {
         if case .aiCleanup = cleanup { } else { XCTFail("Expected .aiCleanup case") }
     }
 
+    // MARK: - AI cleanup mode (Phase 4)
+
+    func testAICleanupKeyDownBeforeLLMReady() {
+        // Without setup() called, cleanupService is nil.
+        // handleKeyDown with .aiCleanup should not start recording.
+        let manager = HotkeyManager()
+        manager.handleKeyDown(mode: .aiCleanup)
+        XCTAssertFalse(manager.isRecording,
+                        "Should not record without setup() being called")
+    }
+
+    func testAICleanupModeEnumExists() {
+        // Verify DictationMode.aiCleanup case is available (not a stub)
+        let mode: DictationMode = .aiCleanup
+        XCTAssertNotEqual(mode, .plain, "AI cleanup must be a distinct mode from plain")
+    }
+
     // MARK: - Integration test (requires FluidAudio model)
 
     func testFullPushToTalkCycle() async throws {
