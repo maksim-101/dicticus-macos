@@ -71,29 +71,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLEAN-01 | — | Pending |
-| CLEAN-02 | — | Pending |
-| CLEAN-03 | — | Pending |
-| CLEAN-04 | — | Pending |
-| CLEAN-05 | — | Pending |
-| TEXT-01 | — | Pending |
-| TEXT-02 | — | Pending |
-| TEXT-03 | — | Pending |
-| DIST-01 | — | Pending |
-| DIST-02 | — | Pending |
-| DIST-03 | — | Pending |
-| DIST-04 | — | Pending |
-| DIST-05 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
-| UX-03 | — | Pending |
-| UX-04 | — | Pending |
+| CLEAN-01 | Phase 6: Bug Fixes & Reactivity | Pending |
+| CLEAN-02 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
+| CLEAN-03 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
+| CLEAN-04 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
+| CLEAN-05 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
+| TEXT-01 | Phase 10: Text Processing Pipeline | Pending |
+| TEXT-02 | Phase 10: Text Processing Pipeline | Pending |
+| TEXT-03 | Phase 10: Text Processing Pipeline | Pending |
+| DIST-01 | Phase 7: Code Signing & Notarization | Pending |
+| DIST-02 | Phase 7: Code Signing & Notarization | Pending |
+| DIST-03 | Phase 7: Code Signing & Notarization | Pending |
+| DIST-04 | Phase 8: Auto-Update via Sparkle | Pending |
+| DIST-05 | Phase 8: Auto-Update via Sparkle | Pending |
+| UX-01 | Phase 6: Bug Fixes & Reactivity | Pending |
+| UX-02 | Phase 11: Transcription History | Pending |
+| UX-03 | Phase 11: Transcription History | Pending |
+| UX-04 | Phase 11: Transcription History | Pending |
 
 **Coverage:**
 - v1.1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 ⚠️
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-19*
-*Last updated: 2026-04-19 after initial definition*
+*Last updated: 2026-04-19 after roadmap creation*

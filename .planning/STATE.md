@@ -6,7 +6,7 @@ status: active
 last_updated: "2026-04-19T00:00:00.000Z"
 last_activity: 2026-04-19
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,29 +20,55 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Press a key, speak, release -- accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** v1.1 Cleanup Intelligence & Distribution
+**Current focus:** Phase 6 - Bug Fixes & Reactivity
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-19 — Milestone v1.1 started
+Phase: 6 of 11 (Bug Fixes & Reactivity)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-19 — Roadmap created for v1.1 (6 phases, 17 requirements)
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 17 (v1.0)
+- Average duration: ~30 min (v1.0 baseline)
+- Total execution time: ~8.5 hours (v1.0)
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| v1.0 phases 1-5 | 17 | ~8.5h | ~30 min |
+| v1.1 phases 6-11 | TBD | - | - |
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.0]: NSEvent global monitor chosen over CGEventTap (macOS 15 blocks CGEventTap for ad-hoc signed)
+- [v1.0]: FluidAudio + Parakeet TDT v3 replaced WhisperKit (Phase 2.1 swap)
+- [v1.1]: Gemma 4 E2B selected as LLM upgrade target (~3.1 GB Q4_K_M, 2.3B effective params)
 
 ### Pending Todos
 
-None -- milestone just started.
-
-### Roadmap Evolution
-
-- Phase 02.1 inserted after Phase 2: ASR Engine Swap (WhisperKit to FluidAudio + Parakeet TDT v3) [v1.0]
+None yet.
 
 ### Blockers/Concerns
 
-None.
+- Phase 9 (Model Upgrade) is HIGH risk: meaning inference from broken German is at the frontier of 2-3B model capability. Accept partial success.
+- Phase 7 (Signing): Hardened runtime entitlements may affect llama.cpp Metal -- needs early testing.
+
+## Session Continuity
+
+Last session: 2026-04-19
+Stopped at: Roadmap created for v1.1 milestone
+Resume file: None
