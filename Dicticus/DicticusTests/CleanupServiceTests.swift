@@ -120,6 +120,18 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, "Clean text here.")
     }
 
+    func testStripPreambleRemovesMiddleQuotes() {
+        let input = "He said \"hello\" to me."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "He said hello to me.")
+    }
+
+    func testStripPreambleRemovesAllUnicodeQuoteVariants() {
+        let input = "“Smart quotes” and „German quotes“ and «Guillemets» and ‘Single’ quotes."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Smart quotes and German quotes and Guillemets and Single quotes.")
+    }
+
     // MARK: - CleanupError
 
     func testCleanupErrorCasesExist() {

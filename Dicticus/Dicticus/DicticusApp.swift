@@ -28,15 +28,17 @@ struct DicticusApp: App {
                 .environmentObject(modifierListener)
         } label: {
             // Icon state logic per UI-SPEC three-state machine:
-            //   recording -> mic.fill (red) per D-09
+            //   recording -> mic.circle.fill (red) per D-09
             //   transcribing -> waveform.circle (pulsing) per D-11
             //   idle/warming -> mic (pulsing during warm-up per D-04)
             // symbolEffect(.pulse) requires macOS 14+ — verified in Research Pattern 1.
-            Image(systemName: iconName)
+            //
+            // macOS renders menu bar icons as template images, stripping color.
+            // To show red during recording, we use NSImage with isTemplate=false.
+            menuBarIcon
                 .symbolEffect(.pulse, isActive: warmupService.isWarming
-                    || (transcriptionService?.state == .transcribing)
-                    || (cleanupService?.state == .cleaning))
-                .foregroundStyle(hotkeyManager.isRecording ? .red : .primary)
+                    || (hotkeyManager.pipelineState == .transcribing)
+                    || (hotkeyManager.pipelineState == .cleaning))
                 .task {
                     // Check permissions at launch so iconName reads correct state immediately
                     // (prevents mic.slash showing when permissions are already granted but
@@ -82,6 +84,22 @@ struct DicticusApp: App {
         .menuBarExtraStyle(.window)
     }
 
+    /// Menu bar icon view — uses a colored NSImage for recording (isTemplate=false bypasses
+    /// macOS template rendering), standard SF Symbol for all other states.
+    @ViewBuilder
+    private var menuBarIcon: some View {
+        if hotkeyManager.pipelineState == .recording {
+            let config = NSImage.SymbolConfiguration(paletteColors: [.systemRed])
+            let image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: "Recording")!
+                .withSymbolConfiguration(config)!
+            // isTemplate=false prevents macOS from stripping color in menu bar
+            let _ = (image.isTemplate = false)
+            Image(nsImage: image)
+        } else {
+            Image(systemName: iconName)
+        }
+    }
+
     /// Computed icon name combining permission, warm-up, recording, transcription, and cleanup state.
     ///
     /// State priority (highest first):
@@ -94,16 +112,15 @@ struct DicticusApp: App {
         if !permissionManager.allGranted {
             return "mic.slash"  // Degraded: missing permissions
         }
-        if hotkeyManager.isRecording {
-            return "mic.fill"  // D-09: Recording in progress
-        }
-        if let service = transcriptionService, service.state == .transcribing {
+        switch hotkeyManager.pipelineState {
+        case .recording:
+            return "mic.circle.fill"  // D-09: Recording in progress — distinct shape at menu bar size
+        case .transcribing:
             return "waveform.circle"  // D-11/UI-SPEC: Transcription in progress
+        case .cleaning:
+            return "sparkles"  // D-14/D-15: AI cleanup in progress
+        case .idle:
+            return "mic"  // Ready or warming (pulse animation handles warming per Phase 1)
         }
-        // D-14/D-15: AI cleanup in progress — sparkles SF Symbol indicates AI processing
-        if let cleanup = cleanupService, cleanup.state == .cleaning {
-            return "sparkles"
-        }
-        return "mic"  // Ready or warming (pulse animation handles warming per Phase 1)
     }
 }
