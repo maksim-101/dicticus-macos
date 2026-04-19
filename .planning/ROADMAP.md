@@ -94,9 +94,9 @@ See [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full v1.0 phase
 **UI hint**: yes
 
 ## Progress
+- [x] **Phase 9: Model Upgrade & Intelligent Cleanup** - Upgrade LLM to Gemma 4 E2B and redesign cleanup for non-native German
 
-**Execution Order:**
-Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10 -> 11
+...
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -109,6 +109,7 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10 -> 11
 | 6. Bug Fixes & Reactivity | v1.1 | 2/2 | Complete | 2026-04-19 |
 | 7. Code Signing & Notarization | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 8. Auto-Update via Sparkle | v1.1 | 1/1 | Complete | 2026-04-19 |
-| 9. Model Upgrade & Intelligent Cleanup | v1.1 | 0/0 | Not started | - |
+| 9. Model Upgrade & Intelligent Cleanup | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 10. Text Processing Pipeline | v1.1 | 0/0 | Not started | - |
 | 11. Transcription History | v1.1 | 0/0 | Not started | - |
+
