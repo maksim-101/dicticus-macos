@@ -18,7 +18,7 @@ See [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full v1.0 phase
 
 **Milestone Goal:** Transform AI cleanup into intelligent meaning inference for non-native German, add number formatting and custom dictionary, and ship a properly signed macOS app with auto-updates.
 
-- [ ] **Phase 6: Bug Fixes & Reactivity** - Fix cleanup quote injection and menu bar icon state reactivity
+- [x] **Phase 6: Bug Fixes & Reactivity** - Fix cleanup quote injection and menu bar icon state reactivity
 - [ ] **Phase 7: Code Signing & Notarization** - Sign and notarize the app so it launches without Gatekeeper override
 - [ ] **Phase 8: Auto-Update via Sparkle** - Add automatic update checking and one-click install via Sparkle
 - [ ] **Phase 9: Model Upgrade & Intelligent Cleanup** - Upgrade LLM to Gemma 4 E2B and redesign cleanup for non-native German
@@ -106,7 +106,7 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10 -> 11
 | 3. System-Wide Dictation | v1.0 | 4/4 | Complete | 2026-04-17 |
 | 4. AI Cleanup | v1.0 | 3/3 | Complete | 2026-04-17 |
 | 5. Polish & Distribution | v1.0 | 3/3 | Complete | 2026-04-18 |
-| 6. Bug Fixes & Reactivity | v1.1 | 0/0 | Not started | - |
+| 6. Bug Fixes & Reactivity | v1.1 | 2/2 | Complete | 2026-04-19 |
 | 7. Code Signing & Notarization | v1.1 | 0/0 | Not started | - |
 | 8. Auto-Update via Sparkle | v1.1 | 0/0 | Not started | - |
 | 9. Model Upgrade & Intelligent Cleanup | v1.1 | 0/0 | Not started | - |
