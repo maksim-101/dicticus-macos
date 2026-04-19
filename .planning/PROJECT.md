@@ -8,6 +8,20 @@ A fully local macOS dictation app that replaces native dictation with system-wid
 
 Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
 
+## Current Milestone: v1.1 Cleanup Intelligence & Distribution
+
+**Goal:** Transform AI cleanup from literal grammar correction into intelligent meaning inference for non-native/broken German, add number formatting and custom dictionary, and ship a properly signed macOS app with auto-updates.
+
+**Target features:**
+- Inverse text normalization (numbers as digits, not words)
+- Intelligent AI cleanup that handles broken/non-native German (infer meaning from gibberish)
+- Fix cleanup quote injection bug
+- Custom dictionary (find-and-replace for recurring ASR errors)
+- Apple Developer signing + notarization
+- Auto-update via Sparkle
+- Fix APP-03 icon state reactivity
+- Transcription history log with search
+
 ## Current State
 
 **Shipped:** v1.0 MVP (2026-04-18)
@@ -42,17 +56,25 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 
 - ⚠ Visual recording indicator — v1.0 (recording mic.fill works; transcribing/cleaning icon states not reactive due to @State vs @StateObject)
 
-### Active
+### Active (v1.1)
+
+- [ ] Inverse text normalization (numbers as digits, not words)
+- [ ] Intelligent AI cleanup for broken/non-native German
+- [ ] Fix cleanup quote injection bug
+- [ ] Custom dictionary (find-and-replace for recurring ASR errors)
+- [ ] Apple Developer Program signing and notarization
+- [ ] Auto-update via Sparkle
+- [ ] Fix APP-03 icon state reactivity (@StateObject refactor)
+- [ ] Transcription history log with search
+
+### Future
 
 - [ ] iPhone dictation replacement (custom keyboard or Shortcut)
 - [ ] Windows support for business laptop
 - [ ] Heavier rewrite mode (second AI cleanup tier)
 - [ ] Prompt customization for cleanup behavior
-- [ ] Transcription history log with search
-- [ ] Auto-update via Sparkle
-- [ ] Fix APP-03 icon state reactivity (@StateObject refactor)
 - [ ] Model integrity check (SHA256 for GGUF downloads)
-- [ ] Apple Developer Program signing and notarization
+- [ ] Swiss German ASR module (dialect → Standard German)
 
 ### Out of Scope
 
@@ -105,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after v1.0 milestone completion*
+*Last updated: 2026-04-19 after v1.1 milestone start*
