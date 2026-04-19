@@ -1,5 +1,6 @@
 import SwiftUI
 import KeyboardShortcuts
+import Combine
 
 /// Dictation mode — determines which pipeline processes the transcription.
 /// Per D-12: Both registered in Phase 3. Per D-13: AI cleanup is a no-op stub.
@@ -18,8 +19,18 @@ enum DictationMode: Sendable {
 @MainActor
 class HotkeyManager: ObservableObject {
 
+    enum PipelineState {
+        case idle
+        case recording
+        case transcribing
+        case cleaning
+    }
+
+    /// Overall pipeline state combining recording, transcribing, and cleaning.
+    @Published var pipelineState: PipelineState = .idle
+
     /// True while actively recording (keyDown received, keyUp not yet received).
-    /// Observed by DicticusApp for icon state.
+    /// Kept for internal logic, but UI observes pipelineState.
     @Published var isRecording = false
 
     /// Tracks whether the last notification was a specific type, for testability.
@@ -44,7 +55,11 @@ class HotkeyManager: ObservableObject {
     /// Reference to CleanupService for AI cleanup mode (D-11).
     /// Set via setup() after warmup completes, or later when LLM finishes loading.
     /// Weak to avoid retain cycle.
-    weak var cleanupService: CleanupService?
+    weak var cleanupService: CleanupService? {
+        didSet { bindState() }
+    }
+
+    private var cancellables = Set<AnyCancellable>()
 
     /// TextInjector for clipboard-based text injection.
     /// Isolated to @MainActor via HotkeyManager's own isolation.
@@ -66,6 +81,8 @@ class HotkeyManager: ObservableObject {
         self.transcriptionService = transcriptionService
         self.warmupService = warmupService
         self.cleanupService = cleanupService
+
+        bindState()
 
         // D-12: Register plain dictation hotkey with full push-to-talk.
         // Task inherits @MainActor isolation from the enclosing @MainActor class.
@@ -114,6 +131,24 @@ class HotkeyManager: ObservableObject {
             self?.handleKeyUp(mode: mode)
         }
         listener.start()
+    }
+
+    private func bindState() {
+        cancellables.removeAll()
+        guard let ts = transcriptionService else { return }
+        
+        let tsPub = ts.$state
+        let csPub = cleanupService?.$state.eraseToAnyPublisher() ?? Just(.idle).eraseToAnyPublisher()
+        
+        Publishers.CombineLatest3($isRecording, tsPub, csPub)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRec, tsState, csState in
+                if isRec || tsState == .recording { self?.pipelineState = .recording }
+                else if tsState == .transcribing { self?.pipelineState = .transcribing }
+                else if csState == .cleaning { self?.pipelineState = .cleaning }
+                else { self?.pipelineState = .idle }
+            }
+            .store(in: &cancellables)
     }
 
     /// Handle hotkey key-down event — start recording if conditions met.

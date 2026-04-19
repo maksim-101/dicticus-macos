@@ -455,11 +455,15 @@ class CleanupService: ObservableObject {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        // Step 3: Strip surrounding quotation marks the model may wrap output in
-        if (result.hasPrefix("\"") && result.hasSuffix("\"")) ||
-           (result.hasPrefix("\u{201C}") && result.hasSuffix("\u{201D}")) {
-            result = String(result.dropFirst().dropLast())
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Step 3: Strip ALL quotation marks the model may inject (CLEAN-01)
+        // Includes ASCII ("), smart quotes (“”), German low-9 („), guillemets («»), single curly (‘’)
+        let quotes = CharacterSet(charactersIn: "\"“”„«»‘’")
+        result = result.components(separatedBy: quotes).joined()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Clean up any stray double spaces created by stripping middle quotes
+        while result.contains("  ") {
+            result = result.replacingOccurrences(of: "  ", with: " ")
         }
 
         return result
