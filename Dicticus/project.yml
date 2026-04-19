@@ -21,6 +21,9 @@ packages:
   llama:
     url: https://github.com/mattt/llama.swift.git
     from: 2.8832.0
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle.git
+    from: 2.6.0
 
 targets:
   Dicticus:
@@ -39,11 +42,16 @@ targets:
         CFBundleIdentifier: com.dicticus.app
         CFBundleVersion: "1"
         CFBundleShortVersionString: "0.1.0"
+        SUFeedURL: "https://maksim-101.github.io/dicticus-macos/appcast.xml"
+        SUPublicEDKey: "svsiIi/mzzxOO1K9AJ7yAXboJb+U0wDoLCoLM1hEqjc="
+        SUEnableAutomaticChecks: YES
     entitlements:
       path: Dicticus/Dicticus.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.device.audio-input: true
+        com.apple.security.cs.disable-library-validation: true
+        com.apple.security.cs.allow-unsigned-executable-memory: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.app
@@ -53,8 +61,9 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
         INFOPLIST_FILE: Dicticus/Info.plist
         GENERATE_INFOPLIST_FILE: NO
-        CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Developer ID Application"
+        DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         # Explicitly link llama.framework so that llama.cpp C symbols (_llama_*) are
         # available at link time. CleanupService.swift calls the C API directly via
@@ -72,6 +81,8 @@ targets:
         product: LaunchAtLogin
       - package: llama
         product: LlamaSwift
+      - package: Sparkle
+        product: Sparkle
 
   DicticusTests:
     type: bundle.unit-test

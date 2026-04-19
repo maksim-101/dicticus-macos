@@ -1,14 +1,15 @@
 #!/bin/bash
-# Build Dicticus.app and package as a styled DMG.
+# Build, Sign, and Notarize Dicticus.app and package as a styled DMG.
 #
-# Usage: ./scripts/build-dmg.sh
+# Usage:
+#   op run --env-file=.env -- ./scripts/build-dmg.sh
+#
 # Output: Dicticus.dmg in the project root
 #
-# Requirements: Xcode, xcodegen, create-dmg (brew install create-dmg)
-#
-# Per D-05: Uses xcodebuild build (not archive) since archive requires a team ID.
-# Per D-06: Ad-hoc signing with CODE_SIGN_IDENTITY="-" (required on Apple Silicon).
-# Per D-07: Styled DMG with Applications symlink (uses native Finder theme).
+# Requirements:
+#   - Xcode, xcodegen, create-dmg (brew install create-dmg)
+#   - Apple Developer ID Application certificate in Keychain
+#   - Environment variables: DEVELOPER_TEAM_ID, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, SPARKLE_PRIVATE_KEY
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -16,18 +17,29 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")/Dicticus"
 OUTPUT_DIR="$(dirname "$SCRIPT_DIR")"
 DMG_NAME="Dicticus.dmg"
 
+# Verify environment variables
+if [ -z "${DEVELOPER_TEAM_ID:-}" ] || [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_APP_SPECIFIC_PASSWORD:-}" ] || [ -z "${SPARKLE_PRIVATE_KEY:-}" ]; then
+    echo "ERROR: Missing required environment variables."
+    echo "Expected: DEVELOPER_TEAM_ID, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, SPARKLE_PRIVATE_KEY"
+    echo "Use 'op run --env-file=.env.build -- $0' to inject them safely."
+    exit 1
+fi
+
 echo "=== Step 1: Generate Xcode project ==="
 cd "$PROJECT_DIR"
+# DEVELOPER_TEAM_ID is passed to xcodegen for the project.yml reference
+export DEVELOPER_TEAM_ID
 xcodegen generate
 
-echo "=== Step 2: Build Release .app (ad-hoc signed) ==="
+echo "=== Step 2: Build Release .app (Signed) ==="
+# We build with the Developer ID Application identity
 xcodebuild -scheme Dicticus \
     -configuration Release \
     -derivedDataPath build \
-    CODE_SIGN_IDENTITY="-" \
+    CODE_SIGN_IDENTITY="Developer ID Application" \
     CODE_SIGN_STYLE=Manual \
-    DEVELOPMENT_TEAM="" \
-    build 2>&1 | tail -5
+    DEVELOPMENT_TEAM="$DEVELOPER_TEAM_ID" \
+    build
 
 APP_DIR="build/Build/Products/Release"
 
@@ -37,20 +49,22 @@ if [ ! -d "$APP_DIR/Dicticus.app" ]; then
     exit 1
 fi
 
-# Re-sign the entire app bundle (including embedded frameworks) with ad-hoc identity.
-# Without this, embedded frameworks (e.g. llama.framework) retain their original Team ID
-# signatures, causing a Team ID mismatch crash on launch.
-echo "=== Step 3: Re-sign app bundle ==="
-codesign --force --deep --sign - "$APP_DIR/Dicticus.app"
+# Re-sign the entire app bundle (including embedded frameworks) with the real identity.
+echo "=== Step 3: Re-sign app bundle with Developer ID ==="
+codesign --force --deep --sign "Developer ID Application" \
+    --options runtime \
+    --entitlements "Dicticus/Dicticus.entitlements" \
+    "$APP_DIR/Dicticus.app"
 
-echo "=== Step 4: Verify entitlements ==="
+echo "=== Step 4: Verify signing and entitlements ==="
+codesign -vvv --deep --strict "$APP_DIR/Dicticus.app"
 codesign -d --entitlements :- "$APP_DIR/Dicticus.app" 2>/dev/null || echo "WARNING: Could not read entitlements"
 
 echo "=== Step 5: Create styled DMG ==="
 # Remove existing DMG if present
 rm -f "$OUTPUT_DIR/$DMG_NAME"
 
-# Stage only Dicticus.app (exclude loose .bundle files from SPM dependencies)
+# Stage only Dicticus.app
 STAGING_DIR=$(mktemp -d)
 cp -R "$APP_DIR/Dicticus.app" "$STAGING_DIR/"
 trap "rm -rf '$STAGING_DIR'" EXIT
@@ -67,17 +81,40 @@ create-dmg \
     "$OUTPUT_DIR/$DMG_NAME" \
     "$STAGING_DIR/" || EXIT_CODE=$?
 
-# create-dmg returns exit code 2 for non-fatal warnings (e.g. missing Finder AppleScript).
-# The DMG is still valid.
 if [ $EXIT_CODE -ne 0 ] && [ ! -f "$OUTPUT_DIR/$DMG_NAME" ]; then
     echo "ERROR: create-dmg failed (exit code $EXIT_CODE)"
     exit 1
 fi
 
+echo "=== Step 6: Notarize DMG ==="
+xcrun notarytool submit "$OUTPUT_DIR/$DMG_NAME" \
+    --apple-id "$APPLE_ID" \
+    --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+    --team-id "$DEVELOPER_TEAM_ID" \
+    --wait
+
+echo "=== Step 7: Staple Notarization Ticket ==="
+xcrun stapler staple "$OUTPUT_DIR/$DMG_NAME"
+
+echo "=== Step 8: Generate Sparkle Appcast Metadata ==="
+SIGN_UPDATE_TOOL="$PROJECT_DIR/build/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update"
+if [ ! -f "$SIGN_UPDATE_TOOL" ]; then
+    echo "WARNING: Sparkle sign_update tool not found at $SIGN_UPDATE_TOOL"
+else
+    # sign_update prints an <enclosure> tag for the appcast.xml
+    # It requires the private key as a string (passed via env or stdin)
+    echo "Sparkle Enclosure Metadata:"
+    echo "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE_TOOL" "$OUTPUT_DIR/$DMG_NAME"
+fi
+
 echo "=== Done ==="
-echo "DMG created: $OUTPUT_DIR/$DMG_NAME"
+echo "DMG created and notarized: $OUTPUT_DIR/$DMG_NAME"
 echo ""
 echo "To install:"
 echo "  1. Double-click $DMG_NAME to mount"
 echo "  2. Drag Dicticus.app to Applications"
-echo "  3. On first launch: System Settings > Privacy & Security > Open Anyway"
+echo "  3. Open Dicticus from Applications (no Gatekeeper override needed)"
+echo ""
+echo "Next Steps for Update Distribution:"
+echo "  1. Upload $DMG_NAME to a GitHub Release."
+echo "  2. Update the appcast.xml on GitHub Pages using the metadata printed above."

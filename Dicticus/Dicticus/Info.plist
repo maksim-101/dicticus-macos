@@ -22,5 +22,11 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://maksim-101.github.io/dicticus-macos/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>svsiIi/mzzxOO1K9AJ7yAXboJb+U0wDoLCoLM1hEqjc=</string>
 </dict>
 </plist>
