@@ -1,17 +1,17 @@
 import Foundation
 import NaturalLanguage
 
-/// Prompt builder for AI text cleanup via Gemma 3.
+/// Prompt builder for AI text cleanup via Gemma 4 E2B.
 ///
 /// Uses a single user-configurable instruction for all languages.
 /// For single-language text, passes `Language:` context so the LLM applies
 /// correct grammar rules. For mixed-language text (detected via NLLanguageRecognizer),
-/// omits the `Language:` line to prevent Gemma 3 1B from translating
+/// omits the `Language:` line to prevent Gemma 4 E2B from translating
 /// the minority language to the dominant one.
 ///
 /// Per D-03: Output must be plain text only — no markdown, no formatting, no explanations.
 ///
-/// Uses Gemma 3 single-turn chat format with Input/Output priming:
+/// Uses Gemma 4 single-turn chat format with Input/Output priming:
 ///   <start_of_turn>user\n{instruction}\n\n[Language: {lang}\n]Input: {text}<end_of_turn>\n<start_of_turn>model\nOutput:
 ///
 /// Source: https://ai.google.dev/gemma/docs/core/prompt-structure
@@ -22,19 +22,30 @@ struct CleanupPrompt {
 
     /// Default cleanup instruction — used when no custom prompt is configured.
     ///
-    /// Covers: grammar, punctuation, capitalization, smooth spoken phrasing,
-    /// fix ASR artifacts (misrecognized filler words like "ähm" → "am"),
-    /// replace profanity, preserve meaning, plain text output only.
+    /// Covers: minimal edits, phonetic/dialect intent inference, semantic word correction,
+    /// grammar, punctuation, capitalization, ITN, and plain text output.
     static let defaultInstruction = """
-        Polish the following dictated text for written form. \
-        Fix grammar, punctuation, and capitalization. \
-        Smooth awkward spoken phrasing so the text reads fluently and professionally. \
-        Fix speech recognition artifacts such as misrecognized filler words. \
-        When the speaker corrects themselves mid-sentence, keep only the final corrected version. \
-        Replace profanity and vulgar language with clean alternatives. \
-        Keep each language exactly as spoken — never translate between languages. \
-        Preserve the original meaning. \
-        Output ONLY the polished text — no preamble, no quotes, no explanations.
+        You are an expert editor specializing in correcting dictated text from non-native speakers. Your task is to fix grammar, punctuation, and capitalization while inferring the speaker's true intent from phonetic approximations and incorrect word choices.
+        
+        Rules:
+        1. Perform minimal edits necessary to make the text grammatically correct and semantically logical.
+        2. Recognize phonetic errors where the speech recognition misheard a dialect, accent, or spoken abbreviation (e.g., "mini chef het" -> "mein Chef hat").
+        3. Identify and replace semantically incorrect words with the intended word based on context (e.g., using "gestanden" instead of "gefragt").
+        4. Fix obvious ASR artifacts and filler words (ähm, also, ja).
+        5. Preserve the original meaning and tone — do NOT rewrite for style if the meaning is clear.
+        6. Do NOT add quotation marks around the output.
+        7. Write all numbers as digits (e.g., 'twenty three' -> '23', 'dreiundzwanzig' -> '23'). Use German ordinal convention (3. = dritte).
+        8. Output ONLY the polished text — no preamble, no explanations.
+
+        ### Examples:
+        Input: also ich habe mit einem Minischefeld geredet
+        Output: Also, ich habe mit meinem Chef geredet.
+        
+        Input: ich habe ihn gestanden ob er zeit hat
+        Output: Ich habe ihn gefragt, ob er Zeit hat.
+        
+        Input: das ist ein sehr gutes projekt wo wir machen
+        Output: Das ist ein sehr gutes Projekt, das wir machen.
         """
 
     /// The active instruction — custom if set, otherwise default.
@@ -45,7 +56,7 @@ struct CleanupPrompt {
             : custom
     }
 
-    /// Build a complete Gemma 3 single-turn cleanup prompt.
+    /// Build a complete Gemma 4 single-turn cleanup prompt.
     ///
     /// Uses Input/Output format which small models (1B) handle reliably.
     /// The instruction comes first, then the raw text labeled "Input:",

@@ -52,6 +52,10 @@ class HotkeyManager: ObservableObject {
     /// Reference to ModelWarmupService to check isReady before recording.
     private weak var warmupService: ModelWarmupService?
 
+    /// Reference to TextProcessingService for dictionary, ITN, and AI cleanup pipeline.
+    /// Set via setup() after warmup completes.
+    var textProcessingService: TextProcessingService?
+
     /// Reference to CleanupService for AI cleanup mode (D-11).
     /// Set via setup() after warmup completes, or later when LLM finishes loading.
     /// Weak to avoid retain cycle.
@@ -76,11 +80,12 @@ class HotkeyManager: ObservableObject {
     func setup(
         transcriptionService: TranscriptionService,
         warmupService: ModelWarmupService,
-        cleanupService: CleanupService?
+        textProcessingService: TextProcessingService
     ) {
         self.transcriptionService = transcriptionService
         self.warmupService = warmupService
-        self.cleanupService = cleanupService
+        self.textProcessingService = textProcessingService
+        self.cleanupService = warmupService.cleanupServiceInstance
 
         bindState()
 
@@ -230,28 +235,17 @@ class HotkeyManager: ObservableObject {
             do {
                 let result = try await service.stopRecordingAndTranscribe()
 
-                switch mode {
-                case .plain:
-                    // Existing plain dictation path — paste raw ASR text (D-06)
-                    await self.textInjector.injectText(result.text)
+                // Delegate processing to TextProcessingService (TEXT-03)
+                // Flow: Dictionary -> ITN -> [LLM Cleanup]
+                let finalOutput = await self.textProcessingService?.process(
+                    text: result.text,
+                    language: result.language,
+                    mode: mode
+                ) ?? result.text
 
-                case .aiCleanup:
-                    // D-11: AI cleanup pipeline — ASR -> LLM cleanup -> paste
-                    if let cleanupService = self.cleanupService, cleanupService.isLoaded {
-                        let cleanedText = await cleanupService.cleanup(
-                            text: result.text,
-                            language: result.language
-                        )
-                        // D-19: Always paste something — cleaned text or original on failure/timeout
-                        await self.textInjector.injectText(cleanedText)
-                    } else {
-                        // D-19: Fallback — paste raw ASR text if cleanup service unavailable
-                        await self.textInjector.injectText(result.text)
-                        let notification = DicticusNotification.cleanupFailed
-                        self.lastPostedNotification = notification
-                        NotificationService.shared.post(notification)
-                    }
-                }
+                // D-06: Inject final processed text into the active app
+                await self.textInjector.injectText(finalOutput)
+
             } catch is CancellationError {
                 // Task cancelled — silent
             } catch let error as TranscriptionError {

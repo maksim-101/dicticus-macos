@@ -3,7 +3,7 @@ import FluidAudio
 import os.log
 
 /// Manages FluidAudio initialization and Parakeet TDT v3 CoreML warm-up state,
-/// plus sequential LLM (Gemma 3 1B via llama.cpp) initialization for AI cleanup.
+/// plus sequential LLM (Gemma 4 E2B via llama.cpp) initialization for AI cleanup.
 ///
 /// Called once at app launch to trigger background CoreML model compilation and download.
 /// First-launch download is ~2.69 GB (Parakeet CoreML package) plus ~1.8 MB (Silero VAD).
