@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"  xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Dicticus Changelog</title>
+        <link>https://maksim-101.github.io/dicticus-macos/appcast.xml</link>
+        <description>Most recent changes with links to updates.</description>
+        <language>en</language>
+        <item>
+            <title>Version 0.1.0</title>
+            <sparkle:releaseNotesLink>https://github.com/maksim-101/dicticus-macos/releases/tag/v0.1.0</sparkle:releaseNotesLink>
+            <pubDate>Sun, 19 Apr 2026 18:14:50 +0000</pubDate>
+            <enclosure url="https://github.com/maksim-101/dicticus-macos/releases/download/v0.1.0/Dicticus.dmg"
+                       sparkle:version="1"
+                       sparkle:shortVersionString="0.1.0"
+                       sparkle:edSignature="f8khMk9lvYo6SxtKfRVZztQpexsE6840htS9qbdPvV8ntZzkZYUO2WXkaB83xIzK0rS0KioJMZlFUxY/smE0Ag=="
+                       length="7168793"
+                       type="application/octet-stream" />
+        </item>
+    </channel>
+</rss>
