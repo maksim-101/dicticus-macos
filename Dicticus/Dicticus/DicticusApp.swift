@@ -1,6 +1,7 @@
 import SwiftUI
 import FluidAudio
 import KeyboardShortcuts
+import Sparkle
 
 @main
 struct DicticusApp: App {
@@ -8,6 +9,7 @@ struct DicticusApp: App {
     @StateObject private var warmupService = ModelWarmupService()
     @StateObject private var hotkeyManager = HotkeyManager()
     @StateObject private var modifierListener = ModifierHotkeyListener()
+    @StateObject private var updater = SparkleUpdater()
 
     // TranscriptionService is created once from the warm FluidAudio ASR and VAD managers.
     // Held here so Phase 3 hotkey wiring can access it without re-initialization.
@@ -26,6 +28,7 @@ struct DicticusApp: App {
                 .environmentObject(warmupService)
                 .environmentObject(hotkeyManager)
                 .environmentObject(modifierListener)
+                .environmentObject(updater)
         } label: {
             // Icon state logic per UI-SPEC three-state machine:
             //   recording -> mic.circle.fill (red) per D-09

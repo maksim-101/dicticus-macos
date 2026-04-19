@@ -10,6 +10,7 @@
 		0EE3A0B5F33F9185235BD932 /* AiCleanupInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F13903D57CF4BA4E734A3C /* AiCleanupInfoView.swift */; };
 		1208F945E6BABF2AFD3362B9 /* ModifierCombo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A6674AE0A8390DD18313C5E /* ModifierCombo.swift */; };
 		12E045F6B61A40ED87C5657F /* SystemSettingsURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEC7D13F72E2E75574BB345 /* SystemSettingsURLTests.swift */; };
+		1718F875E73BC178C22EA283 /* SparkleUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685C77F14D62DFF404AEC44C /* SparkleUpdater.swift */; };
 		176BD3C640724979F26904A0 /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A6EC5970559A2E03C1B957 /* CleanupService.swift */; };
 		18668EE01D6AAE03785B0B5B /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */; };
 		1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */; };
@@ -35,6 +36,7 @@
 		9BA32438B0BD5B32F6E6C80D /* ModelDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */; };
 		9DA2E3F939D9B78CBC6E8299 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C7B3645B7DD6FFE49DC6A35 /* SettingsSection.swift */; };
 		A00810BCC1BC17FBEAB33FC3 /* WarmupRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6356DF22A67C2BF0B6EF82B /* WarmupRow.swift */; };
+		A0385BB6074E417E83F5CEF4 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C9043851297290913B367BF0 /* Sparkle */; };
 		B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6403E7E893BEB40EABCBD /* DicticusApp.swift */; };
 		BFDB87F665D7FFABF0692E1A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 65F840B6DAF4061FED6C7E20 /* Assets.xcassets */; };
 		C524718AC8111D53B30A01FD /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F103886FBBE1F7D287929D /* NotificationService.swift */; };
@@ -84,6 +86,7 @@
 		65F840B6DAF4061FED6C7E20 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		66BF5BACDC7437ABA6D177B9 /* TextInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInjector.swift; sourceTree = "<group>"; };
 		67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		685C77F14D62DFF404AEC44C /* SparkleUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdater.swift; sourceTree = "<group>"; };
 		698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRow.swift; sourceTree = "<group>"; };
 		6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManagerTests.swift; sourceTree = "<group>"; };
 		70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManagerTests.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 				806F6BD047497440889BFB76 /* KeyboardShortcuts in Frameworks */,
 				F649510C18EE78D7333FB9C5 /* LaunchAtLogin in Frameworks */,
 				DB9DA58FA9B5498FEC5F1394 /* LlamaSwift in Frameworks */,
+				A0385BB6074E417E83F5CEF4 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,6 +239,7 @@
 				4604034FBFBEA9E58ED356E9 /* ModifierHotkeyListener.swift */,
 				48F103886FBBE1F7D287929D /* NotificationService.swift */,
 				67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */,
+				685C77F14D62DFF404AEC44C /* SparkleUpdater.swift */,
 				66BF5BACDC7437ABA6D177B9 /* TextInjector.swift */,
 				D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */,
 			);
@@ -262,6 +267,7 @@
 				7EEE03BE235B159651BA8FFD /* KeyboardShortcuts */,
 				09CF30D7134E0AFC4C73F1EB /* LaunchAtLogin */,
 				E1AE1705DB37CB26927A4AEB /* LlamaSwift */,
+				C9043851297290913B367BF0 /* Sparkle */,
 			);
 			productName = Dicticus;
 			productReference = C0781F7C404244283FCD9224 /* Dicticus.app */;
@@ -298,8 +304,8 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					196278924188207EC2516968 = {
-						DevelopmentTeam = "";
-						ProvisioningStyle = Automatic;
+						DevelopmentTeam = VTWHBCCP36;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -316,6 +322,7 @@
 				C2D43E6A153D7B70CE02FC46 /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				C17528279D6AF803B1F7DBD5 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				6BE51970D7063D0F06423E17 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				EB22B4209020A3133B2FC780 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				B5C780019D396C2FA8C65E9E /* XCRemoteSwiftPackageReference "llama.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -363,6 +370,7 @@
 				D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */,
 				2A0BC6A9E3318985B054375B /* PermissionRow.swift in Sources */,
 				9DA2E3F939D9B78CBC6E8299 /* SettingsSection.swift in Sources */,
+				1718F875E73BC178C22EA283 /* SparkleUpdater.swift in Sources */,
 				2CCDDDB512E51308F0A0D6D5 /* SystemSettingsURLs.swift in Sources */,
 				6DB82EEF1BC7ABFDDF4ADDA2 /* TextInjector.swift in Sources */,
 				62DF49673ACC5EB9F14ABB40 /* TranscriptionResult.swift in Sources */,
@@ -407,9 +415,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Dicticus/Dicticus.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = VTWHBCCP36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -431,9 +440,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Dicticus/Dicticus.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = VTWHBCCP36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -672,6 +682,14 @@
 				minimumVersion = 0.13.6;
 			};
 		};
+		EB22B4209020A3133B2FC780 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -699,6 +717,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C17528279D6AF803B1F7DBD5 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		C9043851297290913B367BF0 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EB22B4209020A3133B2FC780 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 		E1AE1705DB37CB26927A4AEB /* LlamaSwift */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -10,6 +10,7 @@ Requirements for v1.1 Cleanup Intelligence & Distribution. Each maps to roadmap 
 ### Cleanup Quality
 
 - [ ] **CLEAN-01**: Cleanup output contains no quotation marks that were not present in the original dictated speech
+- [ ] **CLEAN-06**: Cleanup output correctly includes apostrophes for contractions (e.g. "don't", "it's", "you're") in both English and German
 - [ ] **CLEAN-02**: LLM upgraded from Gemma 3 1B to Gemma 4 E2B (~3.1 GB Q4_K_M) with llama.cpp Metal
 - [ ] **CLEAN-03**: User can dictate broken/non-native German and cleanup produces grammatically correct, sensible German that preserves intended meaning
 - [ ] **CLEAN-04**: Cleanup prompt includes few-shot examples of broken German → corrected German for meaning inference
@@ -76,14 +77,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLEAN-03 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
 | CLEAN-04 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
 | CLEAN-05 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
+| CLEAN-06 | Phase 9: Model Upgrade & Intelligent Cleanup | Pending |
 | TEXT-01 | Phase 10: Text Processing Pipeline | Pending |
 | TEXT-02 | Phase 10: Text Processing Pipeline | Pending |
 | TEXT-03 | Phase 10: Text Processing Pipeline | Pending |
-| DIST-01 | Phase 7: Code Signing & Notarization | Pending |
-| DIST-02 | Phase 7: Code Signing & Notarization | Pending |
-| DIST-03 | Phase 7: Code Signing & Notarization | Pending |
-| DIST-04 | Phase 8: Auto-Update via Sparkle | Pending |
-| DIST-05 | Phase 8: Auto-Update via Sparkle | Pending |
+| DIST-01 | Phase 7: Code Signing & Notarization | Complete |
+| DIST-02 | Phase 7: Code Signing & Notarization | Complete |
+| DIST-03 | Phase 7: Code Signing & Notarization | Complete |
+| DIST-04 | Phase 8: Auto-Update via Sparkle | Complete |
+| DIST-05 | Phase 8: Auto-Update via Sparkle | Complete |
 | UX-01 | Phase 6: Bug Fixes & Reactivity | Pending |
 | UX-02 | Phase 11: Transcription History | Pending |
 | UX-03 | Phase 11: Transcription History | Pending |

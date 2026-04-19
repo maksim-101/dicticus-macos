@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Cleanup Intelligence & Distribution
-status: planning
-stopped_at: Phase 6 context gathered
-last_updated: "2026-04-19T14:24:27.432Z"
-last_activity: 2026-04-19 — Roadmap created for v1.1 (6 phases, 17 requirements)
+status: in_progress
+stopped_at: Phase 8 implemented
+last_updated: "2026-04-19T20:10:00.000Z"
+last_activity: 2026-04-19 — Phase 8 (Auto-Update via Sparkle) implemented and verified
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 11
+  completed_phases: 8
+  total_plans: 1
+  completed_plans: 1
+  percent: 72
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Press a key, speak, release -- accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 6 - Bug Fixes & Reactivity
+**Current focus:** Phase 9 - Model Upgrade & Intelligent Cleanup
 
 ## Current Position
 
-Phase: 6 of 11 (Bug Fixes & Reactivity)
+Phase: 9 of 11 (Model Upgrade & Intelligent Cleanup)
 Plan: — (not yet planned)
 Status: Ready to plan
-Last activity: 2026-04-19 — Roadmap created for v1.1 (6 phases, 17 requirements)
+Last activity: 2026-04-19 — Phase 8 (Auto-Update via Sparkle) implemented and verified
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███████░░░] 72%
 
 ## Performance Metrics
 

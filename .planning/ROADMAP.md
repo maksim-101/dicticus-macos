@@ -107,8 +107,8 @@ Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10 -> 11
 | 4. AI Cleanup | v1.0 | 3/3 | Complete | 2026-04-17 |
 | 5. Polish & Distribution | v1.0 | 3/3 | Complete | 2026-04-18 |
 | 6. Bug Fixes & Reactivity | v1.1 | 2/2 | Complete | 2026-04-19 |
-| 7. Code Signing & Notarization | v1.1 | 0/0 | Not started | - |
-| 8. Auto-Update via Sparkle | v1.1 | 0/0 | Not started | - |
+| 7. Code Signing & Notarization | v1.1 | 1/1 | Complete | 2026-04-19 |
+| 8. Auto-Update via Sparkle | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 9. Model Upgrade & Intelligent Cleanup | v1.1 | 0/0 | Not started | - |
 | 10. Text Processing Pipeline | v1.1 | 0/0 | Not started | - |
 | 11. Transcription History | v1.1 | 0/0 | Not started | - |

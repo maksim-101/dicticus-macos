@@ -1,4 +1,5 @@
 import SwiftUI
+import Sparkle
 
 /// Main content of the menu bar dropdown.
 ///
@@ -21,6 +22,7 @@ struct MenuBarView: View {
     @EnvironmentObject var warmupService: ModelWarmupService
     @EnvironmentObject var hotkeyManager: HotkeyManager
     @EnvironmentObject var modifierListener: ModifierHotkeyListener
+    @EnvironmentObject var updater: SparkleUpdater
     @State private var showOnboarding = false
 
     var body: some View {
@@ -84,6 +86,11 @@ struct MenuBarView: View {
                 )
 
                 Divider()
+
+                Button("Check for Updates...") {
+                    updater.checkForUpdates()
+                }
+                .disabled(!updater.canCheckForUpdates)
 
                 Button("Quit Dicticus") {
                     NSApplication.shared.terminate(nil)
