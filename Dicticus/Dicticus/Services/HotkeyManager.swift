@@ -4,7 +4,7 @@ import Combine
 
 /// Dictation mode — determines which pipeline processes the transcription.
 /// Per D-12: Both registered in Phase 3. Per D-13: AI cleanup is a no-op stub.
-enum DictationMode: Sendable {
+enum DictationMode: String, Sendable, CaseIterable {
     case plain
     case aiCleanup  // Wired to LLM pipeline in Phase 4
 }
@@ -240,7 +240,8 @@ class HotkeyManager: ObservableObject {
                 let finalOutput = await self.textProcessingService?.process(
                     text: result.text,
                     language: result.language,
-                    mode: mode
+                    mode: mode,
+                    confidence: Double(result.confidence)
                 ) ?? result.text
 
                 // D-06: Inject final processed text into the active app

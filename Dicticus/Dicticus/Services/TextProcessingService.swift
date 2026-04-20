@@ -11,44 +11,53 @@ class TextProcessingService: ObservableObject {
 
     private let dictionaryService: DictionaryService
     private let cleanupService: CleanupService?
+    private let historyService: HistoryService
 
     /// Initialize with required services.
-    /// - Parameters:
-    ///   - dictionaryService: Shared DictionaryService instance.
-    ///   - cleanupService: CleanupService instance for LLM-based processing.
-    init(dictionaryService: DictionaryService = .shared, cleanupService: CleanupService?) {
+    init(
+        dictionaryService: DictionaryService = .shared,
+        cleanupService: CleanupService?,
+        historyService: HistoryService = .shared
+    ) {
         self.dictionaryService = dictionaryService
         self.cleanupService = cleanupService
+        self.historyService = historyService
     }
 
     /// Process the transcribed text based on the mode and language.
-    ///
-    /// Pipeline Flow:
-    /// 1. Dictionary replacements (find-replace recurring ASR errors)
-    /// 2. Rule-based ITN (convert spelled-out numbers to digits)
-    /// 3. AI Cleanup (if mode == .aiCleanup and service is available)
-    ///
-    /// - Parameters:
-    ///   - text: Raw transcribed text from ASR.
-    ///   - language: Detected language ("de" or "en").
-    ///   - mode: Dictation mode (.plain or .aiCleanup).
-    /// - Returns: Fully processed text ready for injection.
-    func process(text: String, language: String, mode: DictationMode) async -> String {
-        // Step 1: Dictionary replacements (TEXT-02, TEXT-03)
-        // Correct errors like "cloud" -> "Claude" early so downstream logic sees correct words.
+    func process(text: String, language: String, mode: DictationMode, confidence: Double = 1.0) async -> String {
+        let rawText = text
+        // Step 1: Dictionary replacements
         var processedText = dictionaryService.apply(to: text)
 
-        // Step 2: Rule-based ITN (TEXT-01)
-        // Convert numbers in both modes to ensure consistency.
+        // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
 
-        // Step 3: AI Cleanup (Optional, based on mode)
+        // Step 3: AI Cleanup
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
-            // CleanupService handles grammar, filler removal, etc.
-            // Note: CleanupService prompt (CleanupPrompt) also instructs LLM to use digits for numbers,
-            // serving as a secondary layer of ITN.
-            processedText = await cleanupService.cleanup(text: processedText, language: language)
+            let lowerText = processedText.lowercased()
+            let filteredContext = dictionaryService.dictionary.reduce(into: [String: String]()) { result, pair in
+                if lowerText.contains(pair.key.lowercased()) {
+                    result[pair.key] = pair.value.replacement
+                }
+            }
+            
+            processedText = await cleanupService.cleanup(
+                text: processedText,
+                language: language,
+                dictionaryContext: filteredContext
+            )
         }
+
+        // Step 4: Save to History (UX-02)
+        let entry = TranscriptionEntry(
+            text: processedText,
+            rawText: rawText,
+            language: language,
+            mode: mode.rawValue,
+            confidence: confidence
+        )
+        historyService.save(entry)
 
         return processedText
     }

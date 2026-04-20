@@ -24,6 +24,9 @@ packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle.git
     from: 2.6.0
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.0.0
 
 targets:
   Dicticus:
@@ -65,12 +68,6 @@ targets:
         CODE_SIGN_IDENTITY: "Developer ID Application"
         DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
         ENABLE_USER_SCRIPT_SANDBOXING: NO
-        # Explicitly link llama.framework so that llama.cpp C symbols (_llama_*) are
-        # available at link time. CleanupService.swift calls the C API directly via
-        # `import LlamaSwift` (which re-exports `import llama`). The LlamaSwift
-        # wrapper framework has @rpath/llama.framework as a dependency, but the
-        # linker needs the framework explicitly listed to resolve the C symbols when
-        # building the test dylib variant (Dicticus.debug.dylib).
         OTHER_LDFLAGS: "-framework llama"
     dependencies:
       - package: FluidAudio
@@ -83,6 +80,8 @@ targets:
         product: LlamaSwift
       - package: Sparkle
         product: Sparkle
+      - package: GRDB
+        product: GRDB
 
   DicticusTests:
     type: bundle.unit-test
@@ -101,3 +100,5 @@ targets:
         product: KeyboardShortcuts
       - package: llama
         product: LlamaSwift
+      - package: GRDB
+        product: GRDB

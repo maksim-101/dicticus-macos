@@ -128,8 +128,12 @@ class CleanupService: ObservableObject {
     /// Per D-18: 5-second timeout — returns raw text on timeout.
     /// Per D-19: On any failure, returns original text (never lose dictation).
     ///
+    /// - Parameters:
+    ///   - text: The text to clean up
+    ///   - language: Detected language code
+    ///   - dictionaryContext: Optional dictionary entries to guide the LLM
     /// - Returns: Cleaned text, or original text on failure/timeout
-    func cleanup(text: String, language: String) async -> String {
+    func cleanup(text: String, language: String, dictionaryContext: [String: String]? = nil) async -> String {
         let log = Logger(subsystem: "com.dicticus", category: "cleanup")
 
         guard isLoaded, let model = model, let context = context, let sampler = sampler else {
@@ -150,9 +154,8 @@ class CleanupService: ObservableObject {
             isInferring = false
         }
 
-        let prompt = CleanupPrompt.build(for: text, language: language)
-        let isMixed = CleanupPrompt.isMixedLanguage(text)
-        log.info("Prompt (\(prompt.count, privacy: .public) chars, mixed=\(isMixed, privacy: .public), lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
+        let prompt = CleanupPrompt.build(text: text, language: language, dictionaryContext: dictionaryContext)
+        log.info("Prompt (\(prompt.count, privacy: .public) chars, lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
 
         // Run inference in a detached task with timeout (D-18)
         // nonisolated(unsafe) for C pointer access in detached context (Pitfall 7)
