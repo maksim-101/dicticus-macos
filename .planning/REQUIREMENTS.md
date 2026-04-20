@@ -87,9 +87,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIST-04 | Phase 8: Auto-Update via Sparkle | Complete |
 | DIST-05 | Phase 8: Auto-Update via Sparkle | Complete |
 | UX-01 | Phase 6: Bug Fixes & Reactivity | Pending |
-| UX-02 | Phase 11: Transcription History | Pending |
-| UX-03 | Phase 11: Transcription History | Pending |
-| UX-04 | Phase 11: Transcription History | Pending |
+| UX-02 | Phase 11: Transcription History | Complete |
+| UX-03 | Phase 11: Transcription History | Complete |
+| UX-04 | Phase 11: Transcription History | Complete |
 
 **Coverage:**
 - v1.1 requirements: 17 total

@@ -70,6 +70,14 @@ struct SettingsSection: View {
             .padding(.horizontal)
             .padding(.vertical, 4)
 
+            // External keyboard note — .caption in .secondary per UI-SPEC copywriting contract
+            Text("Fn-based hotkeys require a Mac keyboard with an Fn key. Standard hotkeys above work on all keyboards.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
             Divider()
 
             Button(action: {
@@ -85,16 +93,6 @@ struct SettingsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             .padding(.vertical, 4)
-
-            Divider()
-
-            // External keyboard note — .caption in .secondary per UI-SPEC copywriting contract
-            Text("Fn-based hotkeys require a Mac keyboard with an Fn key. Standard hotkeys above work on all keyboards.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

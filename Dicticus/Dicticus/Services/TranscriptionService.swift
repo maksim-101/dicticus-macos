@@ -1,6 +1,6 @@
 import SwiftUI
 import FluidAudio
-import AVFoundation
+@preconcurrency import AVFoundation
 import NaturalLanguage
 import os
 
@@ -290,13 +290,18 @@ class TranscriptionService: ObservableObject {
         }
 
         var conversionError: NSError?
-        var didProvideData = false
+        
+        // Fix for "Mutation of captured var 'didProvideData' in concurrently-executing code"
+        // Use a class to wrap the boolean for thread-safe access in the closure.
+        final class ConversionState: @unchecked Sendable { var didProvideData = false }
+        let state = ConversionState()
+        
         converter.convert(to: outputBuffer, error: &conversionError) { inNumPackets, outStatus in
-            if didProvideData {
+            if state.didProvideData {
                 outStatus.pointee = .endOfStream
                 return nil
             }
-            didProvideData = true
+            state.didProvideData = true
             outStatus.pointee = .haveData
             return sourceBuffer
         }
@@ -356,15 +361,28 @@ class TranscriptionService: ObservableObject {
     ///
     /// Static so it can be unit tested without a FluidAudio instance.
     static func containsNonLatinScript(_ text: String) -> Bool {
+        let log = Logger(subsystem: "com.dicticus", category: "validation")
         let letters = CharacterSet.letters
+        
+        // Symbols and punctuation we explicitly want to allow even if they aren't 'Latin'
+        let allowedSymbols = CharacterSet(charactersIn: "$€£¥©®™°%‰#@&*-+=/\\|<>{}[]()\"'`^~_")
+        let allowedPunctuation = CharacterSet.punctuationCharacters
+        let allowedNumbers = CharacterSet.decimalDigits
+        
         for scalar in text.unicodeScalars {
-            // Skip non-letter scalars (numbers, punctuation, symbols, whitespace, combining marks)
-            guard letters.contains(scalar) else { continue }
-            // Check if this letter scalar falls within any Latin range
-            let value = scalar.value
-            let isLatin = latinRanges.contains { $0.contains(value) }
-            if !isLatin {
-                return true  // Found a non-Latin letter
+            // If it's a number, punctuation, or common symbol, it's fine.
+            if allowedNumbers.contains(scalar) || allowedPunctuation.contains(scalar) || allowedSymbols.contains(scalar) {
+                continue
+            }
+            
+            // If it's a letter, check if it's in a Latin range.
+            if letters.contains(scalar) {
+                let value = scalar.value
+                let isLatin = latinRanges.contains { $0.contains(value) }
+                if !isLatin {
+                    log.warning("Blocked non-Latin character: \(String(scalar)) (U+\(String(value, radix: 16)))")
+                    return true
+                }
             }
         }
         return false

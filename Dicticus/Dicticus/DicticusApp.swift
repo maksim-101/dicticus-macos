@@ -101,6 +101,12 @@ struct DicticusApp: App {
             DictionaryView()
                 .environmentObject(DictionaryService.shared)
         }
+
+        // Window for browsing transcription history (UX-02)
+        WindowGroup("History", id: "history") {
+            HistoryView()
+                .environmentObject(HistoryService.shared)
+        }
     }
 
     /// Menu bar icon view — uses a colored NSImage for recording (isTemplate=false bypasses

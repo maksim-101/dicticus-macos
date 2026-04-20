@@ -11,7 +11,7 @@ import os.log
 /// compilation and are fast (~162 ms warm load).
 ///
 /// D-07/D-08: LLM warmup runs sequentially after ASR to avoid memory pressure spikes.
-/// D-09: Gemma 3 1B GGUF (~722 MB) downloaded from HuggingFace on first run.
+/// D-09: Gemma 4 E2B GGUF (~3.1 GB) downloaded from HuggingFace on first run.
 /// Threat T-04-08: Sequential loading + existing 600-second watchdog covers combined warmup.
 /// Threat T-02.1-03: Compilation runs on Task.detached(priority: .utility) to avoid
 /// blocking the main thread. [weak self] prevents retain cycles on app quit.
@@ -128,7 +128,7 @@ class ModelWarmupService: ObservableObject {
 
                 // Step 4: Download + initialize LLM for AI cleanup (D-07, D-08).
                 // Sequential after ASR to avoid memory pressure spikes (D-08).
-                // Downloads ~722 MB GGUF on first run from HuggingFace CDN (D-09).
+                // Downloads ~3.1 GB GGUF on first run from HuggingFace CDN (D-09).
                 // Non-fatal: if LLM fails, plain dictation still works.
                 let warmupLog = Logger(subsystem: "com.dicticus", category: "warmup")
                 do {
