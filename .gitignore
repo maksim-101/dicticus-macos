@@ -1,2 +1,3 @@
 Dicticus/build/
 .env
+.env.build
