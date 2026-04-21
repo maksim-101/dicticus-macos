@@ -50,19 +50,21 @@ class HistoryService: ObservableObject {
 
     static let shared = HistoryService()
     
-    private let dbQueue: DatabaseQueue
+    private let dbPool: DatabasePool
     private static let log = Logger(subsystem: "com.dicticus", category: "history")
 
     @Published private(set) var entries: [TranscriptionEntry] = []
 
     private init() {
         do {
-            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            let dbFolder = appSupport.appendingPathComponent("Dicticus", isDirectory: true)
+            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.dicticus") else {
+                fatalError("App Group container not found")
+            }
+            let dbFolder = containerURL.appendingPathComponent("Database", isDirectory: true)
             try FileManager.default.createDirectory(at: dbFolder, withIntermediateDirectories: true)
             
             let dbURL = dbFolder.appendingPathComponent("History.sqlite")
-            self.dbQueue = try DatabaseQueue(path: dbURL.path)
+            self.dbPool = try DatabasePool(path: dbURL.path)
             
             try migrate()
             load()
@@ -114,12 +116,12 @@ class HistoryService: ObservableObject {
                 """)
         }
         
-        try migrator.migrate(dbQueue)
+        try migrator.migrate(dbPool)
     }
 
     func load(query: String? = nil) {
         do {
-            try dbQueue.read { db in
+            try dbPool.read { db in
                 if let query = query, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     let sql = "SELECT * FROM transcriptionEntry WHERE id IN (SELECT rowid FROM transcription_search WHERE transcription_search MATCH ?) ORDER BY createdAt DESC"
                     self.entries = try TranscriptionEntry.fetchAll(db, sql: sql, arguments: [query])
@@ -135,7 +137,7 @@ class HistoryService: ObservableObject {
     func save(_ entry: TranscriptionEntry) {
         do {
             let entryToSave = entry
-            try dbQueue.write { db in
+            try dbPool.write { db in
                 try entryToSave.insert(db)
             }
             Self.log.info("Saved transcription to history: \(entry.text.prefix(20))...")
@@ -147,7 +149,7 @@ class HistoryService: ObservableObject {
 
     func delete(id: Int64) {
         do {
-            _ = try dbQueue.write { db in
+            _ = try dbPool.write { db in
                 try TranscriptionEntry.filter(key: id).deleteAll(db)
             }
             load()
@@ -158,7 +160,7 @@ class HistoryService: ObservableObject {
 
     func clearAll() {
         do {
-            _ = try dbQueue.write { db in
+            _ = try dbPool.write { db in
                 try TranscriptionEntry.deleteAll(db)
             }
             load()
