@@ -1,463 +1,276 @@
-# Technology Stack: v1.1 Additions
+# Technology Stack: v2.0 iOS App — Shortcut Dictation
 
-**Project:** Dicticus v1.1 -- Cleanup Intelligence & Distribution
-**Researched:** 2026-04-19
-**Overall Confidence:** HIGH (most findings verified with official docs and release pages)
+**Project:** Dicticus v2.0 — iOS App (iPhone + iPad)
+**Researched:** 2026-04-21
+**Overall Confidence:** HIGH (FluidAudio iOS requirements verified via Context7 + official docs; App Intents via Apple documentation and WWDC materials; model size verified via HuggingFace repo)
 
 ---
 
-## Existing Stack (Validated in v1.0 -- DO NOT CHANGE)
+## Existing Stack (Validated in v1.0/v1.1 — DO NOT CHANGE on macOS)
 
 | Technology | Purpose | Status |
 |------------|---------|--------|
-| FluidAudio 0.13.6+ | ASR via Parakeet TDT v3 on ANE | Shipped |
-| llama.cpp via LlamaSwift 2.8832.0+ | LLM cleanup via Gemma 3 1B | Shipped |
-| Gemma 3 1B IT QAT Q4_0 GGUF | Light AI cleanup model | Shipped |
-| Swift 6 / SwiftUI / MenuBarExtra | App shell | Shipped |
-| KeyboardShortcuts (sindresorhus) | Global hotkeys | Shipped |
-| LaunchAtLogin-Modern | Login item | Shipped |
-| AVFoundation | Audio capture | Shipped |
-| NSPasteboard + CGEvent | Text injection | Shipped |
-| xcodegen | Project generation | Shipped |
+| FluidAudio 0.13.6+ | ASR via Parakeet TDT v3 on ANE | macOS shipped |
+| llama.swift 2.8832.0+ (llama.cpp) | LLM cleanup via Gemma 4 E2B | macOS shipped — NOT on iOS v1 |
+| Gemma 4 E2B IT QAT Q4_K_M GGUF | AI cleanup model | macOS only — NOT on iOS v1 |
+| Swift 6 / SwiftUI / MenuBarExtra | macOS app shell | macOS shipped |
+| KeyboardShortcuts (sindresorhus) | Global hotkeys | macOS only |
+| LaunchAtLogin-Modern | Login item | macOS only |
+| NSPasteboard + CGEvent | Text injection at cursor | macOS only |
+| GRDB 7.x | Transcription history + FTS5 | macOS shipped — share on iOS |
+| Sparkle 2.x | Auto-update | macOS only |
+| xcodegen | Project generation | Shared — extend project.yml |
 
 ---
 
-## New Stack Additions for v1.1
+## New Stack for v2.0 iOS App
 
-### 1. Inverse Text Normalization (ITN)
+### Core Technologies
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| LLM-based ITN (via existing Gemma 3 1B) | N/A -- prompt change only | Convert spoken numbers/dates to digits | No new dependency needed; LLM-based ITN proven to outperform rule-based WFST by 12.6% ERR (Interspeech 2024 research). Folding ITN into the existing cleanup prompt avoids adding Python, NeMo, or any external dependency. |
+| FluidAudio | 0.13.6+ (same SPM package) | ASR inference via Parakeet TDT v3 on Neural Engine | Same SDK runs on iOS 17+. Requires `iOS 17.0+` per official docs (Context7 + CLAUDE.md). The same `AsrManager` + `AsrModels.downloadAndLoad(version: .v3)` API works unchanged on iOS. CoreML model compiles to ANE; same ~190–210x realtime performance as macOS. No code changes to FluidAudio integration logic. |
+| Swift 6 / SwiftUI | iOS 18 target | iOS app UI | Same language as macOS target. UIKit not needed — SwiftUI covers all required UI patterns: onboarding, model download progress, Shortcut feedback screen. |
+| App Intents framework | iOS 16+ (AppShortcutsProvider), iOS 17+ recommended | Shortcut/Action Button/Siri activation | Apple's first-party Swift framework for surfacing app actions in Shortcuts, Siri, and the Action Button (iPhone 15 Pro+). Use `AppIntent` + `AppShortcutsProvider`. No third-party dependency. `openAppWhenRun = true` brings app to foreground before microphone starts — required because AVAudioSession cannot record from a background-launched intent. |
+| AVFoundation / AVAudioSession | iOS built-in | Audio capture on iOS | Same framework as macOS but with iOS-specific session categories. Set `.record` category and `.default` mode before starting `AVAudioEngine` tap. `NSMicrophoneUsageDescription` required in Info.plist. No background recording mode needed — the App Intent brings the app foreground via `openAppWhenRun`. |
+| UIPasteboard | iOS built-in | Text output to clipboard | Standard iOS clipboard API: `UIPasteboard.general.string = transcribedText`. The Shortcut's output can also be returned as a `String` result from the `AppIntent.perform()` method, enabling "paste" automation in Shortcuts without manual clipboard step. Both paths needed: clipboard for Action Button activation, result value for Shortcuts automation. |
+| URLSession (background configuration) | iOS built-in | First-launch Parakeet model download | Parakeet TDT v3 CoreML package is **2.69 GB** (verified from HuggingFace repo: multiple `.mlmodelc` bundles). FluidAudio's `AsrModels.downloadAndLoad(version: .v3)` handles download + compile internally, caching to `~/Library/Application Support/FluidAudio/Models/`. Use a foreground download with progress UI on first launch — background URLSession is optional but enables resumable downloads if the user leaves the app. |
+| App Groups entitlement | iOS entitlement (Xcode capability) | Shared model storage for future keyboard extension | Set up `group.com.dicticus.app` now so the future keyboard extension (v2.1) can access models downloaded by the main app. The App Groups container is at `FileManager.default.containerURL(forSecurityApplicationGroupIdentifier:)`. FluidAudio supports custom cache directories via `AsrModels.downloadAndLoad(to: customDir, version: .v3)` — point `to:` at the App Groups container so models don't need re-downloading when the keyboard extension is added. |
 
-**Approach: Prompt-integrated ITN, not a separate system.**
+### Supporting Libraries
 
-The Interspeech 2024 paper "Spoken-to-written text conversion with Large Language Model" demonstrates that LLM-based ITN achieves superior results to traditional WFST-based methods, particularly in resolving ambiguity through contextual understanding. For Dicticus, this means adding ITN instructions to the existing `CleanupPrompt.defaultInstruction` rather than building a separate pipeline.
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| GRDB.swift | 7.x (same as macOS) | Transcription history on iOS | The `HistoryService` and `DictionaryService` should be extracted to `Shared/` and linked into the iOS target. GRDB is pure Swift and cross-platform with no platform-specific dependencies. Database file goes in the App Groups container (`group.com.dicticus.app`) so it's accessible to the future keyboard extension. |
+| NaturalLanguage | iOS built-in | Post-hoc language detection (de/en) | Same usage as macOS `TranscriptionService` — `NLLanguageRecognizer` identifies de/en after transcription for metadata labeling. Already used on macOS; just include it in the iOS target. |
 
-**Why NOT a separate rule-based system:**
-- NVIDIA NeMo text-processing has German ITN support, but it's a Python library requiring pynini/OpenFst -- adding a Python runtime dependency to a Swift menu bar app is unacceptable for a 170 MB footprint target.
-- A Swift-native rule-based ITN would need hand-written WFST grammars for German and English number systems (ordinals, cardinals, dates, times, currency, percentages) -- months of work for two languages.
-- The LLM is already loaded and running for cleanup. Adding "Convert spoken numbers and dates to their written digit form" to the prompt is zero additional latency, zero additional memory, zero new code.
+### Development Tools
 
-**For raw dictation mode (no AI cleanup):** ITN will NOT apply. Users who want raw text get raw text. ITN is inherently part of the AI cleanup pipeline.
-
-**Prompt addition (draft):**
-```
-Convert spoken numbers, dates, times, and quantities to their written digit form \
-(e.g., "twenty three" -> "23", "two thousand twenty four" -> "2024", \
-"dreiundzwanzig" -> "23", "zweitausendfunfundzwanzig" -> "2025").
-```
-
-**Confidence:** HIGH -- approach validated by peer-reviewed research; implementation is a prompt change, not a library addition.
-
----
-
-### 2. LLM Model for Intelligent Cleanup (Gibberish -> Sensible German)
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Gemma 3 1B IT QAT Q4_0 (keep current) | google/gemma-3-1b-it-qat-q4_0-gguf | Primary cleanup model | Sufficient for the task with improved prompting. 1 GB disk, ~170 MB runtime when combined with ASR. |
-| Gemma 4 E2B IT (future upgrade path) | google/gemma-4-E2B-it | Potential upgrade if 1B proves insufficient | 2.3B effective params, ~3.4 GB Q4, better instruction following. Only consider if testing shows Gemma 3 1B cannot handle gibberish correction. |
-
-**Recommendation: Stay with Gemma 3 1B, improve the prompt first.**
-
-The question of whether Gemma 3 1B can handle "gibberish -> sensible German" is fundamentally a prompt engineering question, not a model size question. The current prompt asks the model to "fix grammar, punctuation, and capitalization" -- this is too conservative for non-native speech.
-
-**Why Gemma 3 1B is likely sufficient:**
-1. The model has 140+ language support including strong German (trained on multilingual data from Gemini distillation).
-2. Non-native German speech errors are predictable: wrong case endings, wrong article gender, wrong word order, missing prepositions. These are grammatical, not semantic -- exactly what a cleanup model should fix.
-3. The 1B model's weakness is complex multi-step reasoning, not pattern-matching grammar fixes.
-4. The research on GEC (Grammatical Error Correction) shows small models perform well when prompts are tuned for learner proficiency levels.
-
-**Why NOT upgrade to a bigger model yet:**
-- Gemma 4 E2B at Q4_K_M = ~3.4 GB disk + ~5 GB RAM. This triples the app's memory footprint from 170 MB to ~5+ GB. On 8 GB machines, this is uncomfortable.
-- Phi-4 Mini (3.8B) explicitly states "not intended to support multilingual use" -- worse German than Gemma 3 1B.
-- Phi-3 Mini (3.8B, from CLAUDE.md) has decent multilingual but similar size concerns and was not specifically trained for German.
-- Qwen 2.5 1.5B has 29+ languages including German, but at Q4 it's ~1.1 GB and would be a lateral move from Gemma 3 1B, not an upgrade.
-
-**Upgrade trigger:** If testing shows that Gemma 3 1B with the improved prompt cannot correct sentences like "Ich habe gestern gehen in die Laden fur kaufen Brot" -> "Ich bin gestern in den Laden gegangen, um Brot zu kaufen", then consider Gemma 4 E2B. But test the prompt first.
-
-**If upgrade is needed, use Gemma 4 E2B IT (not Phi or Qwen):**
-- Same Gemma tokenizer format, same prompt template structure, minimal code change.
-- 2.3B effective parameters with PLE architecture -- better instruction following than Gemma 3 1B.
-- Apache 2.0 license (same as Gemma 3).
-- Already supported in llama.cpp (launched with first-day support, April 2 2026).
-- Q4_K_M at ~3.4 GB is the smallest "significant upgrade" available.
-
-**Confidence:** MEDIUM -- the sufficiency of Gemma 3 1B for gibberish correction needs empirical testing. The prompt engineering approach is HIGH confidence.
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| xcodegen | Add iOS target to existing `project.yml` | The macOS `project.yml` already exists. Add an `iOS` target block with `platform: iOS`, `deploymentTarget: "17.0"`, FluidAudio + GRDB dependencies. Do NOT add KeyboardShortcuts, LaunchAtLogin, or Sparkle to the iOS target. |
+| TestFlight | iOS beta distribution | Standard Apple workflow: Archive → App Store Connect → TestFlight. Requires Apple Distribution certificate + App Store provisioning profile. The same Apple Developer Program account used for macOS signing covers iOS. |
+| Instruments / Xcode Memory Graph | Model memory profiling on device | Parakeet TDT v3 uses ~66 MB at inference per the FluidAudio benchmark. On an iPhone with 6–8 GB RAM, this is fine. Verify on device before release. |
 
 ---
 
-### 3. Prompt Engineering for Non-Native Speech Cleanup
+## iOS-Specific Architecture Decisions
 
-No new library needed. This is a prompt design change in `CleanupPrompt.swift`.
+### App Intent Design: `openAppWhenRun = true` is Mandatory
 
-**Current prompt weakness:** "Fix grammar, punctuation, and capitalization" assumes the input is mostly correct with minor errors. Non-native German can have:
-- Wrong verb conjugation ("Ich gehe gestern" instead of "Ich bin gestern gegangen")
-- Wrong article gender ("die Brot" instead of "das Brot")
-- Wrong case ("fur den Mann" instead of "fur den Mann" -- actually correct, but wrong preposition case combos)
-- Wrong word order ("Ich gestern habe gegangen in den Laden")
-- Direct translations from English ("Ich bin 25 Jahre alt" is correct, but "Ich habe kalt" instead of "Mir ist kalt")
-- Missing separable verb prefixes ("Ich rufe morgen an" vs "Ich rufe morgen")
-
-**Proposed prompt strategy (two-tier):**
-
-Tier 1 (current "light cleanup" hotkey) -- conservative:
-```
-Polish the following dictated text for written form.
-Fix grammar, punctuation, and capitalization.
-Smooth awkward spoken phrasing so the text reads fluently.
-Fix speech recognition artifacts such as misrecognized filler words.
-Convert spoken numbers, dates, times, and quantities to digit form.
-When the speaker corrects themselves mid-sentence, keep only the final version.
-Replace profanity with clean alternatives.
-Keep each language exactly as spoken -- never translate.
-Preserve the original meaning.
-Output ONLY the polished text -- no preamble, no quotes, no explanations.
-```
-
-Tier 2 (new "intelligent cleanup" -- could be a new hotkey or a setting):
-```
-You are a German/English text reconstruction assistant.
-The following text was dictated by a non-native speaker and may contain:
-- Broken grammar, wrong word order, or incorrect verb forms
-- Mixed-up articles, cases, or prepositions
-- Direct translations from the speaker's native language
-- Fragments or incomplete sentences
-Reconstruct what the speaker most likely intended to say.
-Fix all grammar to produce correct, natural-sounding text.
-Convert spoken numbers, dates, and quantities to digit form.
-If a sentence is ambiguous, choose the most likely intended meaning.
-Output ONLY the reconstructed text -- no preamble, no quotes, no explanations.
-```
-
-**Key insight from GEC research:** The overcorrection problem. Small LLMs tend to "improve" text beyond what was intended, adding formality or changing register. The prompt must explicitly constrain the model: "Fix grammar but preserve the speaker's register and tone."
-
-**Confidence:** MEDIUM -- prompt effectiveness needs empirical testing with real non-native dictation samples.
-
----
-
-### 4. Auto-Update via Sparkle
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Sparkle | 2.9.1 (latest, March 2025) | macOS auto-update framework | De facto standard for non-App-Store macOS apps. Ed25519 signing, DMG/ZIP support, SwiftUI integration, appcast-based updates. Used by virtually every indie macOS app. |
-
-**SPM Integration:**
-```
-// In project.yml packages section:
-Sparkle:
-  url: https://github.com/sparkle-project/Sparkle.git
-  from: 2.9.1
-```
-
-**Minimum requirements:** macOS 10.11+ (Dicticus targets macOS 15, no issue). Swift Package Manager supported via binary target.
-
-**Integration pattern for SwiftUI MenuBarExtra:**
-
-1. Add `SPUStandardUpdaterController` as a property on the App struct.
-2. Create a `CheckForUpdatesViewModel` that observes `updater.canCheckForUpdates`.
-3. Add a "Check for Updates..." button in the MenuBarExtra menu.
-4. Configure `SUFeedURL` in Info.plist pointing to an appcast XML on GitHub Pages or a static hosting provider.
+AVAudioSession microphone recording requires the app to be in the foreground. An App Intent launched from a Shortcut, Action Button, or Siri runs in the background unless `openAppWhenRun` is set. The correct pattern:
 
 ```swift
-// DicticusApp.swift addition
-import Sparkle
+import AppIntents
 
-private let updaterController = SPUStandardUpdaterController(
-    startingUpdater: true,
-    updaterDelegate: nil,
-    userDriverDelegate: nil
-)
-```
+struct DictateIntent: AppIntent {
+    static var title: LocalizedStringResource = "Dictate with Dicticus"
+    static let openAppWhenRun: Bool = true  // REQUIRED — brings app foreground before mic starts
 
-**Appcast hosting:** Use GitHub Releases + a static appcast.xml. The `generate_appcast` tool (bundled with Sparkle) creates the appcast from a directory of DMG/ZIP files and signs them with Ed25519.
-
-**Key setup steps:**
-1. Run `./bin/generate_keys` once to create an Ed25519 keypair.
-2. Add the public key to Info.plist as `SUPublicEDKey`.
-3. Add `SUFeedURL` to Info.plist pointing to the appcast URL.
-4. Use `generate_appcast` to create signed appcast entries for each release.
-
-**Confidence:** HIGH -- Sparkle is extremely well-documented, actively maintained (2.9.1 released March 2025), and the standard choice for macOS auto-updates.
-
-**Source:** [Sparkle Programmatic Setup](https://sparkle-project.org/documentation/programmatic-setup/), [Sparkle GitHub](https://github.com/sparkle-project/Sparkle)
-
----
-
-### 5. Apple Developer Signing & Notarization
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Apple Developer Program | $99/year | Developer ID certificate for code signing + notarization | Required for Gatekeeper trust. Without it, users must right-click -> Open to bypass security. |
-| codesign | Xcode built-in | Sign app bundle with Developer ID Application certificate | Enables hardened runtime, required for notarization. |
-| xcrun notarytool | Xcode 13+ built-in | Submit to Apple's notarization service | Apple scans the binary for malware and issues a ticket. |
-| xcrun stapler | Xcode built-in | Attach notarization ticket to DMG | Allows offline Gatekeeper verification without Apple server check. |
-| hdiutil | macOS built-in | Create DMG distribution image | Same tool currently used, but output gets signed and notarized. |
-
-**No new Swift dependencies.** This is entirely a build/distribution toolchain change.
-
-**Certificates needed:**
-1. **Developer ID Application** certificate -- signs the .app bundle.
-2. **App-specific password** -- for notarytool authentication (generated at appleid.apple.com).
-
-**Complete workflow:**
-```bash
-# 1. Sign the app (hardened runtime required for notarization)
-codesign -f -s "Developer ID Application: Your Name (TEAMID)" \
-  -o runtime --timestamp \
-  Dicticus.app
-
-# 2. Create DMG
-hdiutil create -volname "Dicticus" -srcfolder Dicticus.app \
-  -ov -format UDZO Dicticus.dmg
-
-# 3. Sign the DMG
-codesign -f -s "Developer ID Application: Your Name (TEAMID)" \
-  --timestamp Dicticus.dmg
-
-# 4. Store credentials (one-time)
-xcrun notarytool store-credentials "dicticus-notary" \
-  --apple-id "your@email.com" \
-  --team-id "TEAMID" \
-  --password "APP_SPECIFIC_PASSWORD"
-
-# 5. Submit for notarization
-xcrun notarytool submit Dicticus.dmg \
-  --keychain-profile "dicticus-notary" \
-  --wait
-
-# 6. Staple the ticket
-xcrun stapler staple Dicticus.dmg
-```
-
-**xcodegen changes needed:**
-```yaml
-settings:
-  base:
-    CODE_SIGN_IDENTITY: "Developer ID Application"
-    DEVELOPMENT_TEAM: "XXXXXXXXXX"  # Your team ID
-    CODE_SIGN_STYLE: Manual  # Change from Automatic
-    ENABLE_HARDENED_RUNTIME: YES  # Already set
-```
-
-**Entitlements for hardened runtime:** The app already has `com.apple.security.device.audio-input: true`. No additional entitlements needed unless llama.cpp or FluidAudio require JIT or unsigned memory (they don't -- both use Metal, which is fine under hardened runtime).
-
-**Confidence:** HIGH -- standard Apple toolchain, well-documented workflow.
-
-**Sources:** [Apple Notarizing macOS Software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution), [rsms codesigning gist](https://gist.github.com/rsms/929c9c2fec231f0cf843a1a746a416f5)
-
----
-
-### 6. Transcription History & Search
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| GRDB.swift | 7.10.0 (Feb 2025) | SQLite database wrapper | Swift 6 compatible (requires Swift 6.1+/Xcode 16.3+), FTS5 full-text search built-in, battle-tested, SPM native. Better than SwiftData for this use case. |
-
-**Why GRDB over SwiftData:**
-- SwiftData has higher abstraction = lower performance for text search.
-- SwiftData lacks native FTS5 integration -- you'd query with predicates, not full-text search.
-- GRDB gives direct SQLite FTS5 access with tokenizer control, ranked results, and prefix matching.
-- Dicticus is not sandboxed and doesn't use iCloud -- SwiftData's advantages (CloudKit sync, SwiftUI bindings) don't apply.
-- GRDB is a single dependency with no framework overhead. SwiftData pulls in Core Data.
-
-**Why NOT raw SQLite (no wrapper):**
-- Swift has no built-in SQLite API beyond C interop. Writing safe, Sendable database access with manual sqlite3 calls is error-prone and verbose.
-- GRDB provides exactly the right abstraction: type-safe record mapping, migration support, and FTS5 pattern builders, without the overhead of an ORM.
-
-**SPM Integration:**
-```yaml
-# In project.yml packages section:
-GRDB:
-  url: https://github.com/groue/GRDB.swift.git
-  from: 7.10.0
-```
-
-**Schema design:**
-```swift
-// TranscriptionRecord.swift
-struct TranscriptionRecord: Codable, FetchableRecord, PersistableRecord {
-    var id: Int64?
-    var text: String           // Final output text (cleaned or raw)
-    var rawText: String        // Original ASR output before cleanup
-    var language: String       // "de" or "en"
-    var mode: String           // "raw" or "cleanup"
-    var timestamp: Date
-    var durationSeconds: Float // Recording duration
-
-    static let databaseTableName = "transcriptions"
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        // App is now in foreground; AVAudioSession can start
+        let text = await DictationCoordinator.shared.startDictationSession()
+        UIPasteboard.general.string = text
+        return .result(value: text)
+    }
 }
 
-// Migration
-migrator.registerMigration("v1") { db in
-    try db.create(table: "transcriptions") { t in
-        t.autoIncrementedPrimaryKey("id")
-        t.column("text", .text).notNull()
-        t.column("rawText", .text).notNull()
-        t.column("language", .text).notNull()
-        t.column("mode", .text).notNull()
-        t.column("timestamp", .datetime).notNull()
-        t.column("durationSeconds", .real).notNull()
-    }
-    // FTS5 external content table for full-text search
-    try db.create(virtualTable: "transcriptions_ft", using: FTS5()) { t in
-        t.synchronize(withTable: "transcriptions")
-        t.column("text")
-        t.column("rawText")
+struct DicticusShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: DictateIntent(),
+            phrases: ["Dictate with \(.applicationName)", "Start \(.applicationName)"],
+            shortTitle: "Dictate",
+            systemImageName: "mic.fill"
+        )
     }
 }
 ```
 
-**Search pattern:**
+**Why `openAppWhenRun = true` not `ForegroundContinuableIntent`:** `ForegroundContinuableIntent` is for intents that *start* in the background and *may* need foreground. For dictation, foreground is always required — there is no background path. Using `openAppWhenRun` is simpler and more reliable.
+
+### Model Download Strategy: Foreground with Progress UI
+
+The Parakeet TDT v3 CoreML package is 2.69 GB. Strategies ranked:
+
+1. **Recommended: In-app foreground download on first launch** — Show a dedicated onboarding screen with a `ProgressView`. Use `AsrModels.downloadAndLoad(to: appGroupsContainer, version: .v3)` which handles resumable download internally. This is what FluidAudio's own iOS example app does. No On-Demand Resources or App Store overhead.
+
+2. **Alternative: Background URLSession** — Only necessary if users are likely to background the app during download. For a 2.69 GB file on modern LTE/WiFi, a focused 2–5 minute download is acceptable. Use background session if empirical testing shows users abandon the download.
+
+3. **Do NOT bundle in app binary** — A 2.69 GB bundle would be rejected by App Store upload limits and makes TestFlight distribution impractical.
+
+4. **Do NOT use On-Demand Resources (ODR)** — ODR size limits per variant are 30 GB, so technically possible, but ODR requires App Store hosting and cannot be used during TestFlight. Blocks development velocity.
+
+**Model cache location:** Use the App Groups shared container as the custom cache directory:
 ```swift
-// FTS5 search with ranking
-let pattern = FTS5Pattern(matchingAllTokensIn: searchQuery)
-let results = try TranscriptionRecord
-    .joining(required: TranscriptionRecord.transcriptionsFt.matching(pattern))
-    .order(Column("timestamp").desc)
-    .fetchAll(db)
+let modelCacheDir = FileManager.default.containerURL(
+    forSecurityApplicationGroupIdentifier: "group.com.dicticus.app"
+)!.appendingPathComponent("Models")
+
+let models = try await AsrModels.downloadAndLoad(to: modelCacheDir, version: .v3)
 ```
+This means models downloaded once are accessible to the future keyboard extension without re-downloading.
 
-**Database location:** `~/Library/Application Support/Dicticus/history.sqlite` (matches existing model storage pattern).
+### Shared Code Extraction to `Shared/`
 
-**Confidence:** HIGH -- GRDB is mature (7.x, actively maintained), Swift 6 native, FTS5 support is a first-class feature.
+Services that contain no platform-specific imports can move to `Shared/`:
 
-**Sources:** [GRDB.swift GitHub](https://github.com/groue/GRDB.swift), [GRDB Full Text Search docs](https://github.com/groue/GRDB.swift/blob/master/Documentation/FullTextSearch.md)
+| Service | Can Share? | Notes |
+|---------|-----------|-------|
+| `DictionaryService.swift` | Yes | Pure Swift, UserDefaults only — or migrate to App Groups UserDefaults (`UserDefaults(suiteName:)`) for keyboard extension access |
+| `CleanupPrompt.swift` | Yes | Pure Swift, no imports |
+| `TranscriptionResult.swift` | Yes | Pure Swift model |
+| `ModifierCombo.swift` | No | macOS-only (NSEvent) |
+| `TranscriptionService.swift` | No — refactor | AVFoundation is cross-platform but the class has macOS-specific logic (NSEvent, AudioSampleBuffer). Extract the FluidAudio inference part to `Shared/ASRService.swift`, keep macOS audio capture in `macOS/` |
+| `HistoryService.swift` | Yes — with DB path change | Change DB path to App Groups container |
+| `CleanupService.swift` | No | llama.swift is iOS-compatible but NO AI cleanup on iOS v1 — keep macOS only |
+| `HotkeyManager.swift` | No | macOS KeyboardShortcuts only |
+| `TextInjector.swift` | No | macOS NSPasteboard + CGEvent only |
 
----
+### iOS Audio Session Configuration
 
-### 7. Custom Dictionary (Find-and-Replace)
-
-**No new dependency needed.** This is a UserDefaults or JSON file storage feature.
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| UserDefaults / JSON file | Swift built-in | Store custom dictionary entries | Simple key-value pairs (wrong -> correct). No database needed for typically < 100 entries. |
-
-**Implementation approach:**
-- Store as `[[String: String]]` in UserDefaults (key: `customDictionary`).
-- Apply as a post-processing step AFTER ASR, BEFORE AI cleanup (so the LLM sees corrected terms).
-- Use case-insensitive string replacement.
-- UI: simple table in settings with "ASR Output" and "Replace With" columns.
-
-**Example entries:**
-```
-"cloud" -> "Claude"
-"dikdikus" -> "Dicticus"
-"whatsapp" -> "WhatsApp"
-```
-
-**Why apply BEFORE cleanup:** The LLM needs correct proper nouns to produce correct output. If the ASR says "cloud" but the user means "Claude", the LLM will build grammar around the wrong word.
-
-**Confidence:** HIGH -- trivial implementation, no architectural decisions needed.
-
----
-
-### 8. Quote Injection Bug Fix
-
-**No new dependency needed.** This is a fix to the existing `CleanupService.stripPreamble()` method.
-
-The current `stripPreamble` already strips surrounding quotes, but only handles one layer:
 ```swift
-if (result.hasPrefix("\"") && result.hasSuffix("\"")) ...
+// iOS audio session setup before starting AVAudioEngine
+let session = AVAudioSession.sharedInstance()
+try session.setCategory(.record, mode: .default, options: [])
+try session.setActive(true)
+// Then start AVAudioEngine tap as in macOS TranscriptionService
+// The AudioSampleBuffer class and tap pattern are identical to macOS
 ```
 
-The bug likely involves:
-1. The LLM wrapping output in quotes that aren't stripped (different quote characters not covered).
-2. The LLM injecting inline quotes within the text.
-3. Quote characters surviving the sanitization pipeline.
+**Key iOS vs macOS difference:** On macOS, `AVAudioEngine` uses the system default input without explicit session category. On iOS, you must explicitly set `.record` category and call `setActive(true)`. The engine setup and Float32 sample tap are identical.
 
-**Fix approach:** Extend the strip logic to handle all Unicode quote variants and strip quotes more aggressively. No library needed.
+### Universal App (iPhone + iPad): No Significant Extra Work
 
-**Confidence:** HIGH -- code-level fix.
+SwiftUI layouts automatically adapt to iPad screen sizes. The dictation flow is:
+1. User taps Action Button / runs Shortcut → `DictateIntent.perform()` → app launches full-screen
+2. App shows recording UI (single large view)
+3. Transcription finishes → result shown + copied to clipboard
+4. User taps "Done" or app dismisses
 
----
-
-### 9. APP-03 Icon State Reactivity Fix
-
-**No new dependency needed.** This is a SwiftUI architecture fix.
-
-The issue is `@State` vs `@StateObject` for service state observation. The fix is refactoring the menu bar view to use `@StateObject` or `@ObservedObject` for `TranscriptionService` and `CleanupService` state, ensuring icon changes are reactive.
-
-**Confidence:** HIGH -- standard SwiftUI pattern fix.
+This single-view flow works identically on iPhone and iPad without `UITraitCollection` customization. Use `.navigationStack` at the root and `@Environment(\.horizontalSizeClass)` only if iPad gets a persistent history panel in a future phase.
 
 ---
 
-## Complete v1.1 Dependency Additions
+## xcodegen project.yml iOS Target Addition
 
-Only TWO new SPM packages:
+```yaml
+# Add to existing packages section:
+packages:
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio.git
+    from: 0.13.6
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.0.0
+  # ... existing packages unchanged
 
-| Package | URL | Version | Purpose |
-|---------|-----|---------|---------|
-| Sparkle | https://github.com/sparkle-project/Sparkle.git | from: 2.9.1 | Auto-update framework |
-| GRDB | https://github.com/groue/GRDB.swift.git | from: 7.10.0 | SQLite + FTS5 for transcription history |
+# Add new iOS target:
+targets:
+  # ... existing Dicticus macOS target unchanged
 
-**Total new disk footprint:** Sparkle framework (~5 MB) + GRDB (~2 MB compiled). Negligible.
+  DicticusIOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: iOS/DicticusIOS
+      - path: Shared  # Shared services extracted here
+    info:
+      path: iOS/DicticusIOS/Info.plist
+      properties:
+        CFBundleIdentifier: com.dicticus.ios
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "2.0.0"
+        NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    entitlements:
+      path: iOS/DicticusIOS/DicticusIOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.dicticus.app
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
+        SWIFT_VERSION: "6.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"  # 1=iPhone, 2=iPad (universal)
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+    dependencies:
+      - package: FluidAudio
+        product: FluidAudio
+      - package: GRDB
+        product: GRDB
+    # NO: KeyboardShortcuts, LaunchAtLogin, llama, Sparkle
+```
 
-Everything else (ITN, intelligent cleanup, custom dictionary, bug fixes, signing) is done via prompt changes, code changes, or build configuration -- no new libraries.
+---
+
+## What NOT to Add to iOS v1
+
+| Do Not Add | Why | What to Use Instead |
+|------------|-----|---------------------|
+| llama.swift / llama.cpp | AI cleanup is explicitly out of scope for iOS v1. ~3.1 GB model is too large for typical iOS device usage; no keyboard extension can run LLM anyway. | Defer to iOS v2 milestone. |
+| Sparkle | macOS-only updater framework. iOS updates via App Store / TestFlight. | TestFlight automatic updates |
+| KeyboardShortcuts (sindresorhus) | macOS `NSEvent`-based global hotkeys. No iOS equivalent. | App Intents AppShortcutsProvider |
+| LaunchAtLogin-Modern | macOS login item only. | Not applicable |
+| UIInputViewController (keyboard extension) | Cannot access microphone from within the extension process. Keyboard approach is deferred to v2.1 with main-app bounce architecture. | App Intent + `openAppWhenRun = true` |
+| SFSpeechRecognizer (Apple built-in ASR) | Poor German offline quality, no de/en auto-detection, requires permission prompt every session. | FluidAudio + Parakeet TDT v3 |
+| Whisper / WhisperKit | 5–10x slower than Parakeet on ANE, ~8x more memory. Superseded by FluidAudio. | FluidAudio |
+| On-Demand Resources (ODR) | Blocked during TestFlight, requires App Store review for model updates. | In-app URLSession foreground download |
+| Bundled CoreML model in app binary | 2.69 GB exceeds practical App Store binary size for TestFlight and initial deployment. | Download on first launch |
 
 ---
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| ITN | LLM prompt integration | NeMo text-processing (Python WFST) | Adds Python runtime dependency; 170 MB app would balloon. LLM-based ITN proven superior (Interspeech 2024). |
-| ITN | LLM prompt integration | Swift rule-based ITN | Months of hand-written WFST grammars for de+en. Not justified when LLM is already loaded. |
-| Cleanup model | Gemma 3 1B (keep current) | Gemma 4 E2B (3.4 GB Q4) | 3x memory increase for uncertain quality gain. Test prompt improvements first. |
-| Cleanup model | Gemma 3 1B (keep current) | Phi-4 Mini 3.8B | "Not intended for multilingual use" -- explicitly worse German. |
-| Cleanup model | Gemma 3 1B (keep current) | Qwen 2.5 1.5B | Lateral move at similar size. No proven advantage for German GEC. |
-| Database | GRDB.swift | SwiftData | No FTS5 integration, higher abstraction cost, CloudKit/SwiftUI advantages irrelevant for unsandboxed menu bar app. |
-| Database | GRDB.swift | Raw SQLite C API | Verbose, no type safety, no migration support, error-prone. |
-| Database | GRDB.swift | SQLiteData (PointFree) | Very new (2025), built on GRDB anyway. Use GRDB directly. |
-| Auto-update | Sparkle 2.9.1 | Custom update checker | Reinventing the wheel. Sparkle handles delta updates, Ed25519 signing, appcast, UI, and edge cases. |
-| Custom dictionary | UserDefaults/JSON | SQLite/GRDB | < 100 entries, no search needed, no migration needed. UserDefaults is simpler. |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| App Intents (AppShortcutsProvider) | SiriKit Intents (deprecated) | SiriKit requires a separate extension process; App Intents runs in-process in the main app and is Swift-native. App Intents is the modern replacement (iOS 16+, actively enhanced at WWDC 2025). |
+| `openAppWhenRun = true` | `ForegroundContinuableIntent` | `ForegroundContinuableIntent` is for intents that can partially run in background and optionally escalate. Dictation always requires foreground (mic). `openAppWhenRun` is the right primitive — simpler, no escalation path to maintain. |
+| In-app foreground download (first launch) | On-Demand Resources | ODR is blocked during TestFlight, requires App Store, and adds App Store Connect asset management overhead. In-app download with progress UI is simpler and faster to ship. |
+| App Groups shared container for models | Per-target `applicationSupportDirectory` | Setting up App Groups now costs nothing but enables the future keyboard extension to access downloaded models without re-downloading. The 2.69 GB model must not be downloaded twice. |
+| FluidAudio `AsrModels.downloadAndLoad(to:)` custom path | FluidAudio default cache path | Default cache is `~/Library/Application Support/FluidAudio/Models/` which is NOT in the App Groups container. Point the custom `to:` parameter at the App Groups container so future keyboard extension can access the model. |
+| GRDB (shared from macOS target) | CoreData / SwiftData | Same reasoning as macOS: no FTS5, no direct SQLite control. The shared `HistoryService` must use the same schema as macOS for potential future Mac ↔ iOS sync. |
+| SwiftUI universal app | Separate iPhone/iPad targets | A single universal target with `TARGETED_DEVICE_FAMILY: "1,2"` is idiomatic Apple development. The dictation UI is simple enough to work at both sizes without divergent codebases. |
 
 ---
 
-## Updated project.yml Packages Section (Complete)
+## Version Compatibility
 
-```yaml
-packages:
-  FluidAudio:
-    url: https://github.com/FluidInference/FluidAudio.git
-    from: 0.13.6
-  KeyboardShortcuts:
-    url: https://github.com/sindresorhus/KeyboardShortcuts.git
-    from: 2.4.0
-  LaunchAtLogin:
-    url: https://github.com/sindresorhus/LaunchAtLogin-Modern.git
-    from: 1.1.0
-  llama:
-    url: https://github.com/mattt/llama.swift.git
-    from: 2.8832.0
-  # --- v1.1 additions ---
-  Sparkle:
-    url: https://github.com/sparkle-project/Sparkle.git
-    from: 2.9.1
-  GRDB:
-    url: https://github.com/groue/GRDB.swift.git
-    from: 7.10.0
-```
+| Package | iOS Min | Swift | Notes |
+|---------|---------|-------|-------|
+| FluidAudio 0.13.6+ | iOS 17.0 | Swift 5.9+ (Swift 6 ready) | Confirmed via Context7 + FluidAudio CLAUDE.md + HuggingFace model card. ANE support requires Apple Silicon; A12+ chips qualify (iPhone XS+, which all run iOS 17). |
+| App Intents framework | iOS 16+ | Swift 5.7+ | AppShortcutsProvider requires iOS 16. Action Button integration requires iOS 17 (iPhone 15 Pro hardware). Targeting iOS 17 as minimum covers both. |
+| UIPasteboard | iOS 3+ | Any | Stable API. `UIPasteboard.general.string = text` is the idiomatic approach. |
+| AVFoundation / AVAudioSession | iOS 7+ | Any | `.record` category available since iOS 3. `AVAudioEngine` since iOS 8. No version concerns at iOS 17 target. |
+| GRDB 7.x | iOS 13+ | Swift 5.7+ | No iOS-specific concerns. Pure Swift. Same SPM package as macOS. |
+| NaturalLanguage | iOS 12+ | Any | `NLLanguageRecognizer` available since iOS 12. No concerns at iOS 17 target. |
 
 ---
 
 ## Sources
 
-- Sparkle 2.9.1 release: https://github.com/sparkle-project/sparkle/releases (HIGH confidence)
-- Sparkle programmatic setup: https://sparkle-project.org/documentation/programmatic-setup/ (HIGH confidence)
-- Sparkle publishing: https://sparkle-project.org/documentation/publishing/ (HIGH confidence)
-- GRDB.swift 7.10.0: https://github.com/groue/GRDB.swift/releases (HIGH confidence)
-- GRDB FTS5 docs: https://github.com/groue/GRDB.swift/blob/master/Documentation/FullTextSearch.md (HIGH confidence)
-- Apple notarization: https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution (HIGH confidence)
-- Apple Developer ID: https://developer.apple.com/developer-id/ (HIGH confidence)
-- rsms codesigning reference: https://gist.github.com/rsms/929c9c2fec231f0cf843a1a746a416f5 (HIGH confidence)
-- notarytool guide: https://scriptingosx.com/2021/07/notarize-a-command-line-tool-with-notarytool/ (HIGH confidence)
-- LLM-based ITN (Interspeech 2024): https://www.isca-archive.org/interspeech_2024/choi24_interspeech.pdf (HIGH confidence)
-- NeMo ITN German support: https://docs.nvidia.com/nemo-framework/user-guide/24.12/nemotoolkit/nlp/text_normalization/wfst/wfst_text_normalization.html (MEDIUM confidence -- confirmed German listed but not tested)
-- Gemma 3 1B technical report: https://arxiv.org/abs/2503.19786 (HIGH confidence)
-- Gemma 4 E2B: https://huggingface.co/blog/gemma4 (HIGH confidence)
-- Gemma 4 E2B GGUF: https://huggingface.co/bartowski/google_gemma-4-E2B-it-GGUF (HIGH confidence -- Q4_K_M = 3.46 GB)
-- Phi-4 Mini multilingual limitation: https://huggingface.co/microsoft/phi-4-gguf (HIGH confidence -- "not intended for multilingual")
-- GEC prompt engineering: https://arxiv.org/html/2402.15930v1 (MEDIUM confidence)
+- FluidAudio iOS platform requirements: Context7 `/fluidinference/fluidaudio` — "iOS 17.0+ / macOS 14.0+" (HIGH confidence, sourced from FluidAudio CLAUDE.md and official docs)
+- FluidAudio iOS ASR example: https://github.com/FluidInference/FluidAudio/blob/main/Documentation/ASR/TDT-CTC-110M.md (HIGH confidence — official repo)
+- FluidAudio manual model loading: https://github.com/FluidInference/FluidAudio/blob/main/Documentation/ASR/ManualModelLoading.md (HIGH confidence — official repo)
+- Parakeet TDT v3 CoreML model size (2.69 GB): https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tree/main (HIGH confidence — verified from HuggingFace file listing)
+- App Intents framework introduction (iOS 16): https://developer.apple.com/documentation/appintents (HIGH confidence)
+- App Shortcuts / AppShortcutsProvider: https://developer.apple.com/documentation/appintents/app-shortcuts (HIGH confidence)
+- Action Button App Intents integration: https://developer.apple.com/documentation/appintents/actionbutton (HIGH confidence — requires iOS 17 hardware iPhone 15 Pro+)
+- openAppWhenRun developer forum: https://developer.apple.com/forums/thread/723623 (MEDIUM confidence — community + Apple engineer response)
+- ForegroundContinuableIntent: https://developer.apple.com/documentation/appintents/foregroundcontinuableintent (HIGH confidence — official docs)
+- App Groups configuration: https://developer.apple.com/documentation/Xcode/configuring-app-groups (HIGH confidence — official Xcode docs)
+- UIPasteboard: https://developer.apple.com/documentation/uikit/uipasteboard/ (HIGH confidence)
+- FluidAudio custom cache directory: Context7 `/fluidinference/fluidaudio` — `downloadAndLoad(to: cacheDir, version: .v3)` (HIGH confidence — from official repo documentation)
+- FluidAudio model default cache location: Context7 `/fluidinference/fluidaudio` — `~/Library/Application Support/FluidAudio/Models/` (HIGH confidence — from official repo)
+
+---
+
+*Stack research for: iOS dictation app — Dicticus v2.0*
+*Researched: 2026-04-21*
