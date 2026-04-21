@@ -30,16 +30,14 @@ class DictionaryService: ObservableObject {
     private init() {
         self.isCaseSensitive = UserDefaults.standard.bool(forKey: Self.caseSensitiveKey)
         load()
-        
+
         // Migrate old data if it exists and new data is empty
         if dictionary.isEmpty {
             migrateOldFormat()
         }
-        
-        // If still empty, prepopulate defaults
-        if dictionary.isEmpty {
-            prepopulateWithDefaults()
-        }
+
+        // Always merge defaults — adds new entries on updates, preserves existing user entries
+        prepopulateWithDefaults()
     }
 
     private func migrateOldFormat() {
