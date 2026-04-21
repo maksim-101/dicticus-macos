@@ -61,7 +61,11 @@ See [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full v1.0 phase
   2. iOS app target compiles and launches on iOS 17+ simulator (Xcode 26 project format, not xcodegen)
   3. App Groups container (`group.com.dicticus`) is configured and accessible from the iOS app
   4. `DictionaryService`, `ITNUtility`, `HistoryService`, `TextProcessingService`, `TranscriptionResult`, and `CleanupPrompt` compile from `Shared/` into both targets without `#if os()` conditionals in shared files
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 12-01-PLAN.md — Protocol & Base Models Extraction
+- [ ] 12-02-PLAN.md — Services Move & App Groups Refactor
+- [ ] 12-03-PLAN.md — iOS Project Scaffold & Wiring
 
 ### Phase 13: App Intent + Live Activity + Core Dictation Pipeline
 **Goal**: Users can trigger dictation from a Siri Shortcut and receive the transcribed text on their clipboard — the complete end-to-end dictation flow working on a real iPhone
@@ -129,7 +133,7 @@ See [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full v1.0 phase
 | 9. Model Upgrade & Intelligent Cleanup | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 10. Text Processing Pipeline | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 11. Transcription History | v1.1 | 1/1 | Complete | 2026-04-19 |
-| 12. Shared Code Extraction & iOS Scaffold | v2.0 | 0/TBD | Not started | - |
+| 12. Shared Code Extraction & iOS Scaffold | v2.0 | 0/3 | Planned | - |
 | 13. App Intent + Live Activity + Core Dictation Pipeline | v2.0 | 0/TBD | Not started | - |
 | 14. Model Management | v2.0 | 0/TBD | Not started | - |
 | 15. Custom Dictionary & Post-Processing | v2.0 | 0/TBD | Not started | - |
