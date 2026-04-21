@@ -1,0 +1,43 @@
+name: Dicticus
+options:
+  bundleIdPrefix: com.dicticus
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  SWIFT_VERSION: "6.0"
+  IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.0.0
+
+targets:
+  Dicticus:
+    type: application
+    platform: iOS
+    sources: 
+      - path: Dicticus
+      - path: ../Shared
+    entitlements:
+      path: Dicticus/Dicticus.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.dicticus
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
+      INFOPLIST_FILE: Dicticus/Info.plist
+      GENERATE_INFOPLIST_FILE: YES
+      CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
+      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+    dependencies:
+      - package: GRDB
+        product: GRDB
+
+  DicticusTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: 
+      - path: DicticusTests
+    dependencies:
+      - target: Dicticus
