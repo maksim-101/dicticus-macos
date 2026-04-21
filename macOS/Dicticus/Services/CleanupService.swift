@@ -23,7 +23,7 @@ import os.log
 ///   - llama_vocab* → OpaquePointer (forward-declared struct)
 ///   - llama_memory_t → OpaquePointer (typedef of llama_memory_i*, forward-declared)
 @MainActor
-class CleanupService: ObservableObject {
+class CleanupService: ObservableObject, CleanupProvider {
 
     /// Cleanup pipeline state. Observed by DicticusApp for icon state (D-14, D-15).
     enum State: Equatable, Sendable {

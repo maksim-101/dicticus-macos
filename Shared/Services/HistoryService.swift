@@ -79,8 +79,8 @@ class HistoryService: ObservableObject {
         
         // Wipe old schema if it exists to fix the UUID/Integer ID conflict
         migrator.registerMigration("v2-setup") { db in
-            try db.drop(table: "transcriptionEntry")
-            try db.drop(table: "transcription_search")
+            try db.execute(sql: "DROP TABLE IF EXISTS transcriptionEntry")
+            try db.execute(sql: "DROP TABLE IF EXISTS transcription_search")
             
             try db.create(table: "transcriptionEntry") { t in
                 t.autoIncrementedPrimaryKey("id")

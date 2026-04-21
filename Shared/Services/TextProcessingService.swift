@@ -10,13 +10,13 @@ import Foundation
 class TextProcessingService: ObservableObject {
 
     private let dictionaryService: DictionaryService
-    private let cleanupService: CleanupService?
+    private let cleanupService: CleanupProvider?
     private let historyService: HistoryService
 
     /// Initialize with required services.
     init(
         dictionaryService: DictionaryService = .shared,
-        cleanupService: CleanupService?,
+        cleanupService: CleanupProvider?,
         historyService: HistoryService = .shared
     ) {
         self.dictionaryService = dictionaryService
