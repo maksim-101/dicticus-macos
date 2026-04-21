@@ -132,6 +132,11 @@ AudioRecordingIntent.perform()
 DictationViewModel.startDictation()
         │
     ┌───┴─────────────────────────────────────┐
+    │ 0. AVAudioApplication                   │  ← GUARD: mic permission
+    │    .requestRecordPermission()            │
+    └─────────────────────┬───────────────────┘
+                          │
+    ┌─────────────────────┴───────────────────┐
     │ 1. Activity.request(DictationAttributes)│  ← MUST be FIRST
     │    (starts Live Activity)               │
     └─────────────────────┬───────────────────┘
@@ -382,7 +387,7 @@ UIPasteboard.general.string = result.text
 
 ### Pattern 5: DictationViewModel — Orchestrating the Sequence
 
-**What:** A `@MainActor` ObservableObject that owns the sequence: Live Activity → AVAudioSession → recording → transcription → clipboard → end activity.
+**What:** A `@MainActor` ObservableObject that owns the sequence: mic permission check -> Live Activity -> AVAudioSession -> recording -> transcription -> clipboard -> end activity.
 
 **When to use:** This is the single orchestrator. `DictateIntent.perform()` calls into this. `DictationView` observes it.
 
@@ -401,6 +406,14 @@ class DictationViewModel: ObservableObject {
     // Called by DictateIntent.perform() (via NotificationCenter or direct ref)
     func startDictation() async {
         guard state == .idle else { return }
+
+        // STEP 0: Guard on microphone permission (Pitfall 7)
+        let permissionGranted = await AVAudioApplication.requestRecordPermission()
+        guard permissionGranted else {
+            self.error = "Microphone access denied. Enable in Settings > Privacy > Microphone."
+            return
+        }
+
         state = .preparingLiveActivity
 
         // STEP 1: Live Activity MUST start before AVAudioSession
@@ -504,6 +517,7 @@ NSSupportsLiveActivitiesFrequentUpdates: false  (we update infrequently)
 - **Sharing DictationAttributes between main app and widget extension via a shared SPM package:** The `DictationAttributes` struct must be visible to both targets — either duplicate it or add the source file to both targets' membership. Do NOT use a static SPM library for this.
 - **Using `UIPasteboard` from a background thread:** `UIPasteboard.general` is main-thread-only; always dispatch to `@MainActor`.
 - **Requesting microphone permission inside the intent perform() call:** Request permission on app foreground (`requestRecordPermission` in PermissionManager), not inside the intent flow. If permission is denied, the audio engine start will fail — handle this with a user-visible error.
+- **Skipping microphone permission check before startRecording():** Always call `AVAudioApplication.requestRecordPermission()` as a guard before `startRecording()`. On first launch, iOS shows the permission dialog; on subsequent launches, it returns the cached result. If denied, display a user-visible error directing them to Settings.
 
 ---
 
@@ -562,7 +576,7 @@ NSSupportsLiveActivitiesFrequentUpdates: false  (we update infrequently)
 ### Pitfall 7: Microphone Permission Not Requested Before Dictation Attempt
 **What goes wrong:** `audioEngine.start()` throws `AVAudioSessionErrorCode.cannotStartRecording` or simply no audio is captured — no microphone permission dialog appears (iOS shows it only once).
 **Why it happens:** iOS 17+ requires `NSMicrophoneUsageDescription` in Info.plist AND explicit permission request before use.
-**How to avoid:** Call `AVAudioApplication.requestRecordPermission()` on first app foreground (in a PermissionManager equivalent, not inside the intent flow). Gate `startDictation()` on permission status.
+**How to avoid:** Call `AVAudioApplication.requestRecordPermission()` as a guard in `DictationViewModel.startDictation()` before starting the Live Activity or recording. If permission is denied, display a user-visible error directing the user to Settings > Privacy > Microphone.
 **Warning signs:** `audioEngine.start()` throws error code -10875; no audio samples collected.
 
 ### Pitfall 8: increased-memory-limit Entitlement OOM Risk
@@ -684,6 +698,10 @@ struct DicticusShortcuts: AppShortcutsProvider {
 // Source: https://developer.apple.com/documentation/avfaudio/avaudioapplication/requestrecordpermission(completionhandler:)
 // iOS 17+ API: AVAudioApplication.requestRecordPermission (replaces AVAudioSession method)
 let granted = await AVAudioApplication.requestRecordPermission()
+guard granted else {
+    // Display user-visible error directing to Settings > Privacy > Microphone
+    return
+}
 // Also add NSMicrophoneUsageDescription to Info.plist
 ```
 
@@ -718,22 +736,25 @@ let granted = await AVAudioApplication.requestRecordPermission()
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **FluidAudio model download path on iOS simulator vs device**
+1. **FluidAudio model download path on iOS simulator vs device** -- RESOLVED
    - What we know: `AsrModels.downloadAndLoad(version: .v3)` works on macOS with default path; custom `to:` parameter is supported
    - What's unclear: Whether the default path resolves correctly in the iOS sandbox and whether the model is shared across simulator re-installs
    - Recommendation: On day 1 of Phase 13, run a spike on a simulator to confirm path, then test on device. Use `downloadAndLoad(to: appSupportDir)` as the explicit safe form.
+   - **Resolution:** Plans mitigate this by design. IOSModelWarmupService uses `AsrModels.downloadAndLoad(version: .v3)` which defaults to `applicationSupportDirectory/FluidAudio/Models` -- this path is valid in the iOS sandbox. If the default path fails at runtime, the fallback is the explicit `to:` parameter with `FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]`. Plan 03 Task 3 (human-verify checkpoint) catches any path issues on first simulator launch. No planning change needed.
 
-2. **`openAppWhenRun` deprecation and `AudioRecordingIntent` on iOS 18**
+2. **`openAppWhenRun` deprecation and `AudioRecordingIntent` on iOS 18/26** -- RESOLVED
    - What we know: `openAppWhenRun` deprecated in favor of `supportedModes`; `AudioRecordingIntent` is a `SystemIntent` subtype
    - What's unclear: Whether `AudioRecordingIntent` has implicit foreground behavior that makes `openAppWhenRun = true` redundant on iOS 18
    - Recommendation: Declare both `openAppWhenRun = true` (in a `@available(*, deprecated)` extension) and implement `supportedModes` if needed — WWDC25 session "Enhance your app's audio recording capabilities" (developer.apple.com/videos/play/wwdc2025/251/) may clarify.
+   - **Resolution:** Plans implement both backward-compat patterns. DictateIntent declares `@available(*, deprecated) static var openAppWhenRun: Bool = true` for iOS 17 compatibility, while conforming to `AudioRecordingIntent` (a `SystemIntent` subtype) which has implicit foreground behavior on iOS 18+. If `supportedModes` is required on iOS 26, it can be added at that time without architectural change. Plan 03 Task 3 (human-verify checkpoint on device) validates that the intent correctly foregrounds the app and begins recording. This is an execution-time verification, not a planning blocker.
 
-3. **`increased-memory-limit` entitlement approval timeline**
+3. **`increased-memory-limit` entitlement approval timeline** -- RESOLVED
    - What we know: Must be requested from Apple Developer Portal; approved for professional CoreML apps; not instant
    - What's unclear: Approval SLA and whether it affects TestFlight builds or only App Store builds
    - Recommendation: Submit entitlement request on day 1 of Phase 13. In parallel, test on higher-RAM devices (iPhone 15 Pro: 8 GB, no OOM risk) during development.
+   - **Resolution:** Timeline risk acknowledged but does not block planning or development. The entitlement is declared in project.yml and Dicticus.entitlements (Plan 01). Development proceeds on high-RAM devices (iPhone 15 Pro+ with 8 GB) where no OOM risk exists. The entitlement request should be submitted to the Apple Developer Portal in parallel with Phase 13 execution. TestFlight builds work without the entitlement on high-RAM devices; only 4 GB devices (iPhone 12/13 base) require it for production.
 
 ---
 
@@ -770,28 +791,19 @@ let granted = await AVAudioApplication.requestRecordPermission()
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| ASR-01 | Transcription of de/en audio via Parakeet v3 | Integration (model-dependent) | `xcodebuild test ... -only-testing:DicticusTests/TranscriptionServiceTests` | ❌ Wave 0 |
-| ASR-02 | Transcription latency < 2s from pre-warmed model | Integration | `xcodebuild test ... -only-testing:DicticusTests/TranscriptionServiceTests/testTranscriptionLatency` | ❌ Wave 0 |
-| ASR-03 | Model warmup triggered on scenePhase .active | Unit | `xcodebuild test ... -only-testing:DicticusTests/ModelWarmupServiceTests` | ❌ Wave 0 |
-| ACT-01 | DictateIntent.perform() triggers dictation flow | Unit (mock DictationViewModel) | `xcodebuild test ... -only-testing:DicticusTests/DictateIntentTests` | ❌ Wave 0 |
-| ACT-02 | Live Activity starts before AVAudioSession | Unit (mock Activity) | `xcodebuild test ... -only-testing:DicticusTests/DictationViewModelTests/testLiveActivityStartsFirst` | ❌ Wave 0 |
+| ASR-01 | Transcription of de/en audio via Parakeet v3 | Integration (model-dependent) | `xcodebuild test ... -only-testing:DicticusTests/IOSTranscriptionServiceTests` | Created by Plan 02 |
+| ASR-02 | Transcription latency < 2s from pre-warmed model | Integration | `xcodebuild test ... -only-testing:DicticusTests/IOSTranscriptionServiceTests` | Created by Plan 02 |
+| ASR-03 | Model warmup triggered on scenePhase .active | Unit | `xcodebuild test ... -only-testing:DicticusTests/IOSModelWarmupServiceTests` | Created by Plan 02 |
+| ACT-01 | DictateIntent.perform() triggers dictation flow | Unit (mock DictationViewModel) | `xcodebuild test ... -only-testing:DicticusTests/DictationViewModelTests` | Created by Plan 03 |
+| ACT-02 | Live Activity starts before AVAudioSession | Unit (mock Activity) | `xcodebuild test ... -only-testing:DicticusTests/DictationViewModelTests` | Created by Plan 03 |
 | ACT-03 | Recording continues beyond 30s | Integration (requires device) | Manual on device | — |
 | ACT-06 | Siri phrase surfaces Dicticus shortcut | Manual (requires device + Siri) | Manual | — |
-| TEXT-01 | UIPasteboard.general.string set after transcription | Unit | `xcodebuild test ... -only-testing:DicticusTests/DictationViewModelTests/testClipboardWritten` | ❌ Wave 0 |
+| TEXT-01 | UIPasteboard.general.string set after transcription | Unit | `xcodebuild test ... -only-testing:DicticusTests/DictationViewModelTests` | Created by Plan 03 |
 
 ### Sampling Rate
 - **Per task commit:** `xcodebuild build -project iOS/Dicticus.xcodeproj -scheme Dicticus -destination "platform=iOS Simulator,name=iPhone 17 Pro" | xcpretty`
 - **Per wave merge:** Full test suite run
 - **Phase gate:** Full suite green before `/gsd-verify-work`
-
-### Wave 0 Gaps
-- [ ] `iOS/DicticusTests/TranscriptionServiceTests.swift` — covers ASR-01, ASR-02
-- [ ] `iOS/DicticusTests/ModelWarmupServiceTests.swift` — covers ASR-03
-- [ ] `iOS/DicticusTests/DictateIntentTests.swift` — covers ACT-01
-- [ ] `iOS/DicticusTests/DictationViewModelTests.swift` — covers ACT-02, TEXT-01
-- [ ] `iOS/DicticusTests/AudioSampleBufferTests.swift` — covers thread-safety of sample buffer (port from macOS if it exists)
-
-Note: macOS has parallel test files at `macOS/DicticusTests/TranscriptionServiceTests.swift` and `macOS/DicticusTests/ModelWarmupServiceTests.swift` — the iOS versions should be adapted from these.
 
 ---
 
@@ -813,7 +825,7 @@ Note: macOS has parallel test files at `macOS/DicticusTests/TranscriptionService
 |---------|--------|---------------------|
 | ASR hallucination (non-Latin script output) | Tampering | containsNonLatinScript() filter (already in macOS TranscriptionService) |
 | Clipboard poisoning (malformed ASR text) | Tampering | Non-Latin script filter + empty result guard prevent garbage on clipboard |
-| Microphone access without permission | Elevation of privilege | iOS permission system + NSMicrophoneUsageDescription; gate startDictation on permission check |
+| Microphone access without permission | Elevation of privilege | iOS permission system + NSMicrophoneUsageDescription; gate startDictation on AVAudioApplication.requestRecordPermission() check |
 | Model file tampering | Tampering | FluidAudio downloads from HuggingFace via HTTPS; CoreML compilation verifies model integrity — no additional action needed |
 | Live Activity data exposure | Information disclosure | ContentState contains only `isRecording: Bool` and `elapsedSeconds: Int` — no sensitive data |
 
