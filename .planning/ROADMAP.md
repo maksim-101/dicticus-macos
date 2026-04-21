@@ -33,7 +33,7 @@ See [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full v1.0 phase
 
 **Milestone Goal:** Bring Dicticus to iPhone and iPad with Shortcut-based activation, on-device Parakeet ASR via FluidAudio, custom dictionary, and model management — fully private, no cloud dependency.
 
-- [ ] **Phase 12: Shared Code Extraction & iOS Scaffold** - Extract platform-agnostic services to `Shared/`, create iOS Xcode 26 target, configure App Groups
+- [x] **Phase 12: Shared Code Extraction & iOS Scaffold** - Extract platform-agnostic services to `Shared/`, create iOS Xcode 26 target, configure App Groups
 - [ ] **Phase 13: App Intent + Live Activity + Core Dictation Pipeline** - Wire DictateIntent, AudioRecordingIntent, AVAudioSession, FluidAudio ASR, and clipboard output into an end-to-end dictation flow
 - [ ] **Phase 14: Model Management** - First-launch model download with progress UI, Wi-Fi warning, resume support, and storage consent
 - [ ] **Phase 15: Custom Dictionary & Post-Processing** - Apply DictionaryService and ITN corrections to iOS transcriptions, wire UserDefaults App Groups suite
@@ -78,8 +78,11 @@ Plans:
   4. User can record without a time cap (Option B: app foregrounds, no 30-second Shortcut timeout constraint)
   5. Transcribed text is automatically written to the clipboard at the end of dictation, available for paste in any app
   6. User can trigger dictation via Siri voice command ("Hey Siri, start dictation")
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+Plans:
+- [ ] 13-01-PLAN.md — Widget Extension + ActivityAttributes + Project Config
+- [ ] 13-02-PLAN.md — iOS Transcription & Warmup Services (port from macOS)
+- [ ] 13-03-PLAN.md — DictationViewModel + Intents + App Wiring + UI
 
 ### Phase 14: Model Management
 **Goal**: Users can download and manage the Parakeet ASR model on first launch with clear progress feedback, storage consent, and resilient download behavior
@@ -134,7 +137,7 @@ Plans:
 | 10. Text Processing Pipeline | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 11. Transcription History | v1.1 | 1/1 | Complete | 2026-04-19 |
 | 12. Shared Code Extraction & iOS Scaffold | v2.0 | 0/3 | Planned | - |
-| 13. App Intent + Live Activity + Core Dictation Pipeline | v2.0 | 0/TBD | Not started | - |
+| 13. App Intent + Live Activity + Core Dictation Pipeline | v2.0 | 0/3 | Planned | - |
 | 14. Model Management | v2.0 | 0/TBD | Not started | - |
 | 15. Custom Dictionary & Post-Processing | v2.0 | 0/TBD | Not started | - |
 | 16. Onboarding, Universal App & Distribution | v2.0 | 0/TBD | Not started | - |
