@@ -53,6 +53,8 @@ targets:
       path: Dicticus/Dicticus.entitlements
       properties:
         com.apple.security.app-sandbox: false
+        com.apple.security.application-groups:
+          - group.com.dicticus
         com.apple.security.device.audio-input: true
         com.apple.security.cs.disable-library-validation: true
         com.apple.security.cs.allow-unsigned-executable-memory: true

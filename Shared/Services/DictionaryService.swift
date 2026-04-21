@@ -20,7 +20,7 @@ class DictionaryService: ObservableObject {
     /// Whether matching should be case-sensitive.
     @Published var isCaseSensitive: Bool = false {
         didSet {
-            UserDefaults.standard.set(isCaseSensitive, forKey: Self.caseSensitiveKey)
+            UserDefaults(suiteName: "group.com.dicticus")!.set(isCaseSensitive, forKey: Self.caseSensitiveKey)
         }
     }
 
@@ -28,7 +28,7 @@ class DictionaryService: ObservableObject {
     static let shared = DictionaryService()
 
     private init() {
-        self.isCaseSensitive = UserDefaults.standard.bool(forKey: Self.caseSensitiveKey)
+        self.isCaseSensitive = UserDefaults(suiteName: "group.com.dicticus")!.bool(forKey: Self.caseSensitiveKey)
         load()
 
         // Migrate old data if it exists and new data is empty
@@ -80,7 +80,7 @@ class DictionaryService: ObservableObject {
     }
 
     func load() {
-        if let data = UserDefaults.standard.data(forKey: Self.dictionaryKey),
+        if let data = UserDefaults(suiteName: "group.com.dicticus")!.data(forKey: Self.dictionaryKey),
            let stored = try? JSONDecoder().decode([String: DictionaryMetadata].self, from: data) {
             dictionary = stored
         }
@@ -88,7 +88,7 @@ class DictionaryService: ObservableObject {
 
     func save() {
         if let data = try? JSONEncoder().encode(dictionary) {
-            UserDefaults.standard.set(data, forKey: Self.dictionaryKey)
+            UserDefaults(suiteName: "group.com.dicticus")!.set(data, forKey: Self.dictionaryKey)
         }
     }
 
