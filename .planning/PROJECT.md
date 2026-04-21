@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A fully local macOS dictation app that replaces native dictation with system-wide push-to-talk hotkeys, on-device ASR (Parakeet TDT v3 via FluidAudio on Apple Neural Engine), and optional AI cleanup (Gemma 4 E2B via llama.cpp). Works in any text field across any app — browser, native apps, terminal.
+A fully local, multi-platform dictation app that replaces native dictation on Mac and iPhone/iPad. Uses on-device ASR (Parakeet TDT v3 via FluidAudio on Apple Neural Engine) and optional AI cleanup (Gemma 4 E2B via llama.cpp on macOS). macOS: system-wide push-to-talk hotkeys, works in any text field. iOS: Shortcut-based activation, transcribed text to clipboard.
 
 ## Core Value
 
@@ -13,9 +13,22 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 - **v1.0 MVP** — shipped 2026-04-18
 - **v1.1 Cleanup Intelligence & Distribution** — shipped 2026-04-21 (v1.1.1)
 
+## Current Milestone: v2.0 iOS App — Shortcut Dictation
+
+**Goal:** Bring Dicticus to iPhone and iPad with Shortcut-based activation, on-device Parakeet ASR, and custom dictionary.
+
+**Target features:**
+- On-device ASR via FluidAudio + Parakeet TDT v3 on iOS (Neural Engine)
+- Shortcut/App Intent activation (Action Button, Back Tap, Siri)
+- Transcribed text to clipboard or Shortcut output
+- Custom dictionary (find-and-replace corrections)
+- Model management (download/bundle strategy)
+- Universal app (iPhone + iPad)
+- Shared code extraction to `Shared/` for cross-platform reuse
+
 ## Current State
 
-**Version:** v1.1.1 (released 2026-04-21)
+**macOS Version:** v1.1.1 (released 2026-04-21)
 **Codebase:** ~5,000 lines Swift, 11 phases, 158 tests (all passing)
 **Memory:** 170 MB physical footprint with both ASR and LLM loaded
 **Distribution:** Developer ID signed + notarized DMG, Sparkle auto-updates
@@ -43,26 +56,30 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 - ✓ Memory < 3 GB (achieved 170 MB) — v1.0
 - ✓ DMG distribution — v1.0
 - ✓ Modifier-only hotkeys (Fn+Shift, Fn+Control) — v1.0
+- ✓ Inverse text normalization (numbers as digits, not words) — v1.1
+- ✓ Intelligent AI cleanup for broken/non-native German — v1.1
+- ✓ Fix cleanup quote injection bug — v1.1
+- ✓ Custom dictionary (find-and-replace for recurring ASR errors) — v1.1
+- ✓ Apple Developer Program signing and notarization — v1.1
+- ✓ Auto-update via Sparkle — v1.1
+- ✓ Fix APP-03 icon state reactivity (@StateObject refactor) — v1.1
+- ✓ Transcription history log with search — v1.1
 
-### Partially Validated
+### Active (v2.0)
 
-- ⚠ Visual recording indicator — v1.0 (recording mic.fill works; transcribing/cleaning icon states not reactive due to @State vs @StateObject)
-
-### Active (v1.1)
-
-- [ ] Inverse text normalization (numbers as digits, not words)
-- [ ] Intelligent AI cleanup for broken/non-native German
-- [ ] Fix cleanup quote injection bug
-- [ ] Custom dictionary (find-and-replace for recurring ASR errors)
-- [ ] Apple Developer Program signing and notarization
-- [ ] Auto-update via Sparkle
-- [ ] Fix APP-03 icon state reactivity (@StateObject refactor)
-- [ ] Transcription history log with search
+- [ ] On-device ASR via FluidAudio + Parakeet TDT v3 on iOS (Neural Engine)
+- [ ] Shortcut/App Intent activation (Action Button, Back Tap, Siri)
+- [ ] Transcribed text to clipboard or Shortcut output
+- [ ] Custom dictionary on iOS (find-and-replace corrections)
+- [ ] Model management on iOS (download/bundle strategy)
+- [ ] Universal app (iPhone + iPad)
+- [ ] Shared code extraction to `Shared/` for cross-platform reuse
 
 ### Future
 
-- [ ] iPhone dictation replacement (custom keyboard or Shortcut)
+- [ ] iOS custom keyboard activation (text-at-cursor without paste)
 - [ ] Windows support for business laptop
+- [ ] iOS AI cleanup (Gemma via llama.cpp Metal on iPhone)
 - [ ] Heavier rewrite mode (second AI cleanup tier)
 - [ ] Prompt customization for cleanup behavior
 - [ ] Model integrity check (SHA256 for GGUF downloads)
@@ -70,7 +87,7 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 
 ### Out of Scope
 
-- iOS custom keyboard — iOS blocks microphone access in keyboard extensions
+- iOS custom keyboard with direct mic access — iOS blocks microphone access in keyboard extensions (keyboard approach deferred to v2.1 with main-app bounce architecture)
 - Cloud ASR/LLM fallback — fully local is a hard requirement
 - App Store distribution — sandbox blocks global hotkeys and text injection
 - Always-listening mode — privacy risk, battery drain
@@ -100,6 +117,9 @@ Press a key, speak, release — accurate text appears at your cursor instantly, 
 | Unsandboxed DMG distribution | Sandbox blocks global hotkeys and text injection | ✓ Good — Gatekeeper override needed |
 | xcodegen for project generation | Reproducible .pbxproj from declarative project.yml | ✓ Good — eliminates merge conflicts |
 | ASR engine swap (Phase 2.1) | User preferred Parakeet v3 quality over Whisper | ✓ Good — seamless API-level swap |
+| iOS Shortcut-first approach | Keyboard extension can't access mic; Shortcut is simpler to build and test | — Pending |
+| No AI cleanup for iOS v1 | Hardware constraints make dictionary more important; keep scope tight | — Pending |
+| Universal app (iPhone + iPad) | Same codebase, wider reach | — Pending |
 
 ## Evolution
 
@@ -119,4 +139,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-19 after v1.1 milestone start*
+*Last updated: 2026-04-21 after v2.0 milestone start*
