@@ -96,34 +96,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
-| ASR-01 | — | Pending |
-| ASR-02 | — | Pending |
-| ASR-03 | — | Pending |
-| MODEL-01 | — | Pending |
-| MODEL-02 | — | Pending |
-| MODEL-03 | — | Pending |
-| ACT-01 | — | Pending |
-| ACT-02 | — | Pending |
-| ACT-03 | — | Pending |
-| ACT-04 | — | Pending |
-| ACT-05 | — | Pending |
-| ACT-06 | — | Pending |
-| TEXT-01 | — | Pending |
-| DICT-01 | — | Pending |
-| DICT-02 | — | Pending |
-| ONBD-01 | — | Pending |
-| ONBD-02 | — | Pending |
-| UAPP-01 | — | Pending |
-| UAPP-02 | — | Pending |
+| INFRA-01 | Phase 12 | Pending |
+| INFRA-02 | Phase 12 | Pending |
+| INFRA-03 | Phase 12 | Pending |
+| ASR-01 | Phase 13 | Pending |
+| ASR-02 | Phase 13 | Pending |
+| ASR-03 | Phase 13 | Pending |
+| ACT-01 | Phase 13 | Pending |
+| ACT-02 | Phase 13 | Pending |
+| ACT-03 | Phase 13 | Pending |
+| ACT-06 | Phase 13 | Pending |
+| TEXT-01 | Phase 13 | Pending |
+| MODEL-01 | Phase 14 | Pending |
+| MODEL-02 | Phase 14 | Pending |
+| MODEL-03 | Phase 14 | Pending |
+| DICT-01 | Phase 15 | Pending |
+| DICT-02 | Phase 15 | Pending |
+| ONBD-01 | Phase 16 | Pending |
+| ONBD-02 | Phase 16 | Pending |
+| ACT-04 | Phase 16 | Pending |
+| ACT-05 | Phase 16 | Pending |
+| UAPP-01 | Phase 16 | Pending |
+| UAPP-02 | Phase 16 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-21 after initial definition*
+*Last updated: 2026-04-21 — traceability populated after roadmap creation*
