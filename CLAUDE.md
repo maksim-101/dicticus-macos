@@ -36,10 +36,10 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
 | llama.cpp | current (8796+ commits, active) | LLM inference runtime | Apple Silicon Metal first-class, 1.5-8bit quantization, runs on macOS and Windows, C library embeddable in native apps |
-| Gemma 3 1B IT (QAT Q4_0 GGUF) | Google Gemma 3 | Light cleanup mode | ~1 GB on disk, 140+ language support including German, instruction-tuned, fast enough for <1s cleanup latency on M-series |
-| Phi-3 Mini 4K (Q4_K_M GGUF) | 3.8B params | Heavier rewrite mode | 2.2 GB on disk, stronger reasoning for structural rewrites, good multilingual performance |
-- Light cleanup (grammar, punctuation, filler removal): Gemma 3 1B. Small, fast, multilingual. At Q4_0 it fits in ~1 GB RAM alongside the Whisper model without pressure on 16GB Apple Silicon machines.
-- Heavier rewrite (restructure sentences, formal register): Phi-3 Mini. 3.8B at Q4 gives meaningfully better output quality for complex rewrites. 2.2 GB is still comfortable.
+| Gemma 4 E2B IT (Q4_K_M GGUF) | Google Gemma 4 | Cleanup mode | ~3.1 GB on disk, multilingual, instruction-tuned, handles broken/non-native German with meaning inference |
+| Phi-3 Mini 4K (Q4_K_M GGUF) | 3.8B params | Heavier rewrite mode (future) | 2.2 GB on disk, stronger reasoning for structural rewrites, good multilingual performance |
+- **Current cleanup model:** Gemma 4 E2B. Upgraded from Gemma 3 1B in v1.1 for better German meaning inference. ~3.1 GB Q4_K_M, runs via llama.cpp Metal.
+- Heavier rewrite (future): Phi-3 Mini. 3.8B at Q4 gives meaningfully better output quality for complex rewrites.
 - Both run via llama.cpp Metal backend on macOS, and llama.cpp CPU/GPU on Windows.
 - **Ollama**: Adds a daemon dependency and HTTP overhead; too heavy for sub-second cleanup in a menu bar app
 - **Cloud LLM APIs**: Hard constraint violation
