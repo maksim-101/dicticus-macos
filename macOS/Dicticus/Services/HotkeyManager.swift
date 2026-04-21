@@ -2,13 +2,6 @@ import SwiftUI
 import KeyboardShortcuts
 import Combine
 
-/// Dictation mode — determines which pipeline processes the transcription.
-/// Per D-12: Both registered in Phase 3. Per D-13: AI cleanup is a no-op stub.
-enum DictationMode: String, Sendable, CaseIterable {
-    case plain
-    case aiCleanup  // Wired to LLM pipeline in Phase 4
-}
-
 /// Push-to-talk state machine coordinating hotkey events, TranscriptionService, and TextInjector.
 ///
 /// Per D-01: Hold hotkey starts recording, release triggers transcription and paste.
