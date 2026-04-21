@@ -2,7 +2,7 @@ import SwiftUI
 import LlamaSwift
 import os.log
 
-/// Local LLM cleanup service using Gemma 3 1B via llama.cpp.
+/// Local LLM cleanup service using Gemma 4 E2B via llama.cpp.
 ///
 /// Per D-12: @MainActor ObservableObject following established service pattern.
 /// Per D-05: llama.cpp Metal backend for Apple Silicon GPU acceleration.
@@ -128,16 +128,12 @@ class CleanupService: ObservableObject {
     /// Per D-18: 5-second timeout — returns raw text on timeout.
     /// Per D-19: On any failure, returns original text (never lose dictation).
     ///
-    /// **Known limitation:** Mixed-language text (e.g. German + English in one dictation)
-    /// is not reliably cleaned by Gemma 3 1B — the model translates the minority language
-    /// instead of preserving both. Single-language dictation works correctly for both
-    /// German and English. See `CleanupPrompt.isMixedLanguage` for details.
-    ///
     /// - Parameters:
-    ///   - text: Raw ASR transcription from TranscriptionService
-    ///   - language: "de" or "en" from DicticusTranscriptionResult.language
+    ///   - text: The text to clean up
+    ///   - language: Detected language code
+    ///   - dictionaryContext: Optional dictionary entries to guide the LLM
     /// - Returns: Cleaned text, or original text on failure/timeout
-    func cleanup(text: String, language: String) async -> String {
+    func cleanup(text: String, language: String, dictionaryContext: [String: String]? = nil) async -> String {
         let log = Logger(subsystem: "com.dicticus", category: "cleanup")
 
         guard isLoaded, let model = model, let context = context, let sampler = sampler else {
@@ -158,9 +154,8 @@ class CleanupService: ObservableObject {
             isInferring = false
         }
 
-        let prompt = CleanupPrompt.build(for: text, language: language)
-        let isMixed = CleanupPrompt.isMixedLanguage(text)
-        log.info("Prompt (\(prompt.count, privacy: .public) chars, mixed=\(isMixed, privacy: .public), lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
+        let prompt = CleanupPrompt.build(text: text, language: language, dictionaryContext: dictionaryContext)
+        log.info("Prompt (\(prompt.count, privacy: .public) chars, lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
 
         // Run inference in a detached task with timeout (D-18)
         // nonisolated(unsafe) for C pointer access in detached context (Pitfall 7)
@@ -354,16 +349,12 @@ class CleanupService: ObservableObject {
     /// token-by-token detokenization (leading spaces per token → double spaces).
     static func stripPreamble(_ text: String) -> String {
         // Step 0: Replace all Unicode whitespace variants with ASCII space.
-        // llama.cpp tokenizer may emit non-breaking spaces (U+00A0), SentencePiece
-        // block elements (U+2581 ▁), or other Unicode whitespace that looks like a
-        // space but doesn't match ASCII " " in string operations.
         var result = text.unicodeScalars.reduce(into: "") { str, scalar in
             if scalar.value == 0 {
-                // Strip null bytes — tokenToPiece bug produced \0 between tokens
                 return
             } else if scalar.properties.isWhitespace && scalar != "\n" {
                 str.append(" ")
-            } else if scalar == "\u{2581}" {  // SentencePiece word boundary marker
+            } else if scalar == "\u{2581}" {
                 str.append(" ")
             } else {
                 str.append(Character(scalar))
@@ -371,30 +362,21 @@ class CleanupService: ObservableObject {
         }
         result = result.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Step 1: Normalize whitespace — collapse runs of spaces to single space.
+        // Step 1: Normalize whitespace and fix contractions
         while result.contains("  ") {
             result = result.replacingOccurrences(of: "  ", with: " ")
         }
+        
+        // We strip the space before an apostrophe only when it is preceded
+        // and followed by a contraction suffix (e.g., "don ' t" -> "don't", "here ' s" -> "here's").
+        // We handle both " 's" and " ' s" variants.
+        let contractionRegex = try? NSRegularExpression(pattern: "([a-zA-Z]) ' ?([stdmveSTDMLVR])\\b", options: [])
+        let range = NSRange(result.startIndex..<result.endIndex, in: result)
+        result = contractionRegex?.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "$1'$2") ?? result
 
         // Fix spaces before punctuation (tokenizer artifact: "Hello , world" → "Hello, world")
         for punct in [" .", " ,", " !", " ?", " ;", " :"] {
             result = result.replacingOccurrences(of: punct, with: String(punct.last!))
-        }
-
-        // Fix split contractions: "here ' s" → "here's", "don ' t" → "don't"
-        // Tokenizer splits apostrophe-contractions into separate tokens with spaces.
-        // First remove space before apostrophe, then space between apostrophe and suffix.
-        result = result.replacingOccurrences(of: " '", with: "'")
-        for suffix in ["'s ", "'t ", "'d ", "'m ", "'ll ", "'ve ", "'re "] {
-            let split = "'" + " " + String(suffix.dropFirst())
-            result = result.replacingOccurrences(of: split, with: suffix)
-        }
-        // Handle contraction at end of string (no trailing space)
-        for suffix in ["'s", "'t", "'d", "'m", "'ll", "'ve", "'re"] {
-            let split = "'" + " " + String(suffix.dropFirst())
-            if result.hasSuffix(split) {
-                result = String(result.dropLast(split.count)) + suffix
-            }
         }
 
         // Step 2: Strip known preamble patterns (case-insensitive prefix match)
@@ -427,15 +409,13 @@ class CleanupService: ObservableObject {
             if lowered.hasPrefix(preamble.lowercased()) {
                 result = String(result.dropFirst(preamble.count))
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                break  // Only strip first match
+                break
             }
         }
 
-        // Strip "Please provide/share..." refusal — model asked for input instead of processing.
-        // Also strip "Output:" prefix the model may echo from the Input/Output format.
+        // Step 3: Strip "Please provide/share..." refusal or "Output:" prefix
         let loweredAfterPreamble = result.lowercased()
         if loweredAfterPreamble.hasPrefix("please provide") || loweredAfterPreamble.hasPrefix("please share") {
-            // Try to find content after the refusal sentence
             if let dotRange = result.range(of: ".\n", options: .literal) {
                 result = String(result[dotRange.upperBound...])
                     .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -444,24 +424,27 @@ class CleanupService: ObservableObject {
                 result = String(result[result.index(after: dotRange.lowerBound)...])
                     .trimmingCharacters(in: .whitespacesAndNewlines)
             } else {
-                // Entire output is a refusal with no content — return empty to trigger raw text fallback
                 result = ""
             }
         }
 
-        // Strip "Output:" prefix the model may echo from the prompt format
-        if loweredAfterPreamble.hasPrefix("output:") {
+        if result.lowercased().hasPrefix("output:") {
             result = String(result.dropFirst("output:".count))
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        // Step 3: Strip ALL quotation marks the model may inject (CLEAN-01)
-        // Includes ASCII ("), smart quotes (“”), German low-9 („), guillemets («»), single curly (‘’)
-        let quotes = CharacterSet(charactersIn: "\"“”„«»‘’")
-        result = result.components(separatedBy: quotes).joined()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Step 4: Strip double quotation marks and non-standard quotes (CLEAN-01)
+        let doubleQuotes = CharacterSet(charactersIn: "\"“”„«»")
+        result = result.components(separatedBy: doubleQuotes).joined()
+
+        // Strip surrounding single quotes if they wrap the whole result
+        if (result.hasPrefix("'") && result.hasSuffix("'")) ||
+           (result.hasPrefix("‘") && result.hasSuffix("’")) {
+            result = String(result.dropFirst().dropLast())
+        }
+
+        result = result.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Clean up any stray double spaces created by stripping middle quotes
         while result.contains("  ") {
             result = result.replacingOccurrences(of: "  ", with: " ")
         }

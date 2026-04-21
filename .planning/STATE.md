@@ -1,76 +1,26 @@
----
-gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Cleanup Intelligence & Distribution
-status: in_progress
-stopped_at: Phase 8 implemented
-last_updated: "2026-04-19T20:10:00.000Z"
-last_activity: 2026-04-19 — Phase 8 (Auto-Update via Sparkle) implemented and verified
-progress:
-  total_phases: 11
-  completed_phases: 8
-  total_plans: 1
-  completed_plans: 1
-  percent: 72
----
+# Project State: Dicticus
 
-# Project State
+**Last Updated:** 2026-04-20
+**Current Version:** 0.1.1 (Internal Test)
+**Milestone:** ✅ v1.1 Cleanup Intelligence & Distribution COMPLETE
 
-## Project Reference
+## Recent Progress
+- **Phase 10**: Implemented `TextProcessingService`, `DictionaryService` (pre-populated with 35+ entries), and `ITNUtility`.
+- **Phase 11**: Implemented `HistoryService` (GRDB + FTS5) and `HistoryView` with search highlighting and copy feedback.
+- **Model Upgrade**: Officially moved to **Gemma 4 E2B (Q4_K_M)**. Prompt overhauled for better context handling and zero truncation.
+- **UI/UX**: Fixed alignment and symmetry in Dictionary/History windows.
 
-See: .planning/PROJECT.md (updated 2026-04-19)
+## Current Technical Stack
+- **ASR**: Parakeet TDT v3 (FluidAudio)
+- **LLM**: Gemma 4 E2B (llama.cpp)
+- **Database**: SQLite / GRDB
+- **UI**: SwiftUI (macOS 15+)
 
-**Core value:** Press a key, speak, release -- accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 9 - Model Upgrade & Intelligent Cleanup
+## Next Milestone: v1.2 Advanced Normalization & Rules
+- **Phase 12**: Advanced ITN (Ordinal numbers, Date/Currency formatting).
+- **Phase 13**: Per-language dictionary rules.
+- **Phase 14**: History Export functionality.
 
-## Current Position
-
-Phase: 9 of 11 (Model Upgrade & Intelligent Cleanup)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-19 — Phase 8 (Auto-Update via Sparkle) implemented and verified
-
-Progress: [███████░░░] 72%
-
-## Performance Metrics
-
-**Velocity:**
-
-- Total plans completed: 17 (v1.0)
-- Average duration: ~30 min (v1.0 baseline)
-- Total execution time: ~8.5 hours (v1.0)
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| v1.0 phases 1-5 | 17 | ~8.5h | ~30 min |
-| v1.1 phases 6-11 | TBD | - | - |
-
-*Updated after each plan completion*
-
-## Accumulated Context
-
-### Decisions
-
-All decisions logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [v1.0]: NSEvent global monitor chosen over CGEventTap (macOS 15 blocks CGEventTap for ad-hoc signed)
-- [v1.0]: FluidAudio + Parakeet TDT v3 replaced WhisperKit (Phase 2.1 swap)
-- [v1.1]: Gemma 4 E2B selected as LLM upgrade target (~3.1 GB Q4_K_M, 2.3B effective params)
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-- Phase 9 (Model Upgrade) is HIGH risk: meaning inference from broken German is at the frontier of 2-3B model capability. Accept partial success.
-- Phase 7 (Signing): Hardened runtime entitlements may affect llama.cpp Metal -- needs early testing.
-
-## Session Continuity
-
-Last session: 2026-04-19T14:24:27.429Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-bug-fixes-reactivity/06-CONTEXT.md
+## Known Issues / Technical Debt
+- `NumberFormatter` remains sensitive to some complex German compound words.
+- AI cleanup is highly reliable but adds ~1-2s of latency.

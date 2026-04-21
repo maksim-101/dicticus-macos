@@ -1,81 +1,49 @@
 import Foundation
 import NaturalLanguage
 
-/// Prompt builder for AI text cleanup via Gemma 3.
-///
-/// Uses a single user-configurable instruction for all languages.
-/// For single-language text, passes `Language:` context so the LLM applies
-/// correct grammar rules. For mixed-language text (detected via NLLanguageRecognizer),
-/// omits the `Language:` line to prevent Gemma 3 1B from translating
-/// the minority language to the dominant one.
-///
-/// Per D-03: Output must be plain text only — no markdown, no formatting, no explanations.
-///
-/// Uses Gemma 3 single-turn chat format with Input/Output priming:
-///   <start_of_turn>user\n{instruction}\n\n[Language: {lang}\n]Input: {text}<end_of_turn>\n<start_of_turn>model\nOutput:
-///
-/// Source: https://ai.google.dev/gemma/docs/core/prompt-structure
+/// Prompt builder for AI text cleanup via Gemma 4 E2B.
 struct CleanupPrompt {
 
-    /// UserDefaults key for the custom cleanup instruction.
     static let customInstructionKey = "cleanupInstruction"
 
-    /// Default cleanup instruction — used when no custom prompt is configured.
-    ///
-    /// Covers: grammar, punctuation, capitalization, smooth spoken phrasing,
-    /// fix ASR artifacts (misrecognized filler words like "ähm" → "am"),
-    /// replace profanity, preserve meaning, plain text output only.
     static let defaultInstruction = """
-        Polish the following dictated text for written form. \
-        Fix grammar, punctuation, and capitalization. \
-        Smooth awkward spoken phrasing so the text reads fluently and professionally. \
-        Fix speech recognition artifacts such as misrecognized filler words. \
-        When the speaker corrects themselves mid-sentence, keep only the final corrected version. \
-        Replace profanity and vulgar language with clean alternatives. \
-        Keep each language exactly as spoken — never translate between languages. \
-        Preserve the original meaning. \
-        Output ONLY the polished text — no preamble, no quotes, no explanations.
-        """
+    Rewrite the following transcribed text to be polished and grammatically correct. \
+    Remove filler words and repetition. Write numbers as digits. \
+    Apply the dictionary replacements if any. Output ONLY the polished text.
+    """
 
-    /// The active instruction — custom if set, otherwise default.
-    static var activeInstruction: String {
+    static func userInstruction() -> String {
         let custom = UserDefaults.standard.string(forKey: customInstructionKey) ?? ""
         return custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? defaultInstruction
             : custom
     }
 
-    /// Build a complete Gemma 3 single-turn cleanup prompt.
-    ///
-    /// Uses Input/Output format which small models (1B) handle reliably.
-    /// The instruction comes first, then the raw text labeled "Input:",
-    /// and the model is primed to continue after "Output:" with the polished text.
-    ///
-    /// - Parameters:
-    ///   - text: Raw ASR transcription to clean up
-    ///   - language: "de" or "en" from DicticusTranscriptionResult.language
-    /// - Returns: Complete prompt string with Gemma 3 control tokens
-    static func build(for text: String, language: String) -> String {
-        let instruction = activeInstruction
-        let languageLine: String
-
-        if isMixedLanguage(text) {
-            // Mixed language: omit Language line to avoid translation of minority language
-            languageLine = ""
-        } else {
-            let languageName = language == "de" ? "German" : "English"
-            languageLine = "Language: \(languageName)\n"
+    static func build(text: String, language: String? = nil, dictionaryContext: [String: String]? = nil) -> String {
+        let instruction = userInstruction()
+        
+        var prompt = "<start_of_turn>user\n"
+        prompt += "INSTRUCTION: \(instruction)\n"
+        
+        if let dict = dictionaryContext, !dict.isEmpty {
+            prompt += "DICTIONARY:\n"
+            for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
+                prompt += "- \(original) -> \(replacement)\n"
+            }
         }
-
-        // Sanitize control tokens from ASR text to prevent prompt injection
+        
+        if let lang = language {
+            prompt += "LANGUAGE: \(lang == "de" ? "German" : "English")\n"
+        }
+        
         let sanitizedText = sanitizeControlTokens(text)
-
-        return "<start_of_turn>user\n\(instruction)\n\n\(languageLine)Input: \(sanitizedText)<end_of_turn>\n<start_of_turn>model\nOutput: "
+        prompt += "INPUT: \(sanitizedText)<end_of_turn>\n"
+        prompt += "<start_of_turn>model\n"
+        prompt += "OUTPUT:"
+        
+        return prompt
     }
 
-    /// Strip Gemma control tokens from user text to prevent prompt injection.
-    /// ASR output rarely contains angle-bracket sequences, but if it does,
-    /// these could be parsed as format tokens by the LLM tokenizer.
     static func sanitizeControlTokens(_ text: String) -> String {
         var result = text
         for token in ["<start_of_turn>", "<end_of_turn>", "<bos>", "<eos>"] {
@@ -84,35 +52,23 @@ struct CleanupPrompt {
         return result
     }
 
-    /// Detect whether the text contains multiple languages via per-sentence analysis.
-    ///
-    /// NLLanguageRecognizer only reports one dominant language for the full text.
-    /// This splits into sentences and detects language per sentence, returning true
-    /// if at least two different languages are found. Prevents the `Language:` line
-    /// from causing the LLM to translate the minority language.
-    ///
-    /// **Known limitation (Gemma 3 1B):** Even with the `Language:` line omitted,
-    /// the 1B model is too small to reliably follow the "never translate between
-    /// languages" instruction. It defaults to its dominant training language (English)
-    /// and translates the minority language. Mixed-language AI cleanup is therefore
-    /// unreliable with the current model. Single-language cleanup works correctly
-    /// for both German and English. A larger model (e.g. Phi-3 Mini 3.8B) or a
-    /// split-per-language-then-reassemble strategy would be needed to fix this.
-    static func isMixedLanguage(_ text: String) -> Bool {
-        let tokenizer = NLTokenizer(unit: .sentence)
-        tokenizer.string = text
-        var languages = Set<String>()
+    static func containsMixedLanguages(_ text: String) -> Bool {
+        let recognizer = NLLanguageRecognizer()
+        let sentences = text.components(separatedBy: CharacterSet(charactersIn: ".!?"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
 
-        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
-            let sentence = String(text[range])
-            let recognizer = NLLanguageRecognizer()
+        guard sentences.count > 1 else { return false }
+
+        var languages = Set<String>()
+        for sentence in sentences {
             recognizer.processString(sentence)
             if let lang = recognizer.dominantLanguage?.rawValue {
                 languages.insert(lang)
             }
-            return languages.count < 2  // Stop early once we find 2 languages
+            if languages.count >= 2 { return true }
         }
 
-        return languages.count >= 2
+        return false
     }
 }

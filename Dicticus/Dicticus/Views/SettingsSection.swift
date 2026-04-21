@@ -15,6 +15,8 @@ struct SettingsSection: View {
     /// Binding to the AI cleanup modifier combo — sourced from ModifierHotkeyListener.
     @Binding var cleanupCombo: ModifierCombo
 
+    @Environment(\.openWindow) private var openWindow
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Settings")
@@ -75,6 +77,22 @@ struct SettingsSection: View {
                 .padding(.horizontal)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+
+            Button(action: {
+                openWindow(id: "dictionary")
+                NSApp.activate(ignoringOtherApps: true)
+            }) {
+                HStack {
+                    Image(systemName: "book.pages")
+                    Text("Manage Custom Dictionary\u{2026}")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            .padding(.vertical, 4)
         }
     }
 }

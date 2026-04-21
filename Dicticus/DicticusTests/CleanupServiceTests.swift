@@ -108,8 +108,20 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, "This is clean output.")
     }
 
-    func testStripPreambleRemovesSurroundingQuotes() {
+    func testStripPreamblePreservesApostrophesInContractions() {
+        let input = "Don't stop it's working."
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Don't stop it's working.", "Apostrophes in contractions must be preserved (CLEAN-06)")
+    }
+
+    func testStripPreambleRemovesSurroundingDoubleQuotes() {
         let input = "\"One thing that gets on my nerves.\""
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "One thing that gets on my nerves.")
+    }
+
+    func testStripPreambleRemovesSurroundingSingleQuotes() {
+        let input = "'One thing that gets on my nerves.'"
         let result = CleanupService.stripPreamble(input)
         XCTAssertEqual(result, "One thing that gets on my nerves.")
     }
@@ -120,16 +132,16 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, "Clean text here.")
     }
 
-    func testStripPreambleRemovesMiddleQuotes() {
-        let input = "He said \"hello\" to me."
+    func testStripPreamblePreservesMiddleSingleQuotes() {
+        let input = "He said 'hello' to me."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "He said hello to me.")
+        XCTAssertEqual(result, "He said 'hello' to me.", "Middle single quotes are preserved to support contractions; only wrapping quotes are stripped.")
     }
 
-    func testStripPreambleRemovesAllUnicodeQuoteVariants() {
-        let input = "“Smart quotes” and „German quotes“ and «Guillemets» and ‘Single’ quotes."
+    func testStripPreambleRemovesAllDoubleUnicodeQuoteVariants() {
+        let input = "“Smart quotes” and „German quotes“ and «Guillemets»."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "Smart quotes and German quotes and Guillemets and Single quotes.")
+        XCTAssertEqual(result, "Smart quotes and German quotes and Guillemets.")
     }
 
     // MARK: - CleanupError

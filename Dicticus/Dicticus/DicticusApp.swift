@@ -21,6 +21,9 @@ struct DicticusApp: App {
     // Optional because it cannot be created until LLM warmup completes.
     @State private var cleanupService: CleanupService?
 
+    // TextProcessingService orchestrates Dictionary, ITN, and CleanupService.
+    @State private var textProcessingService: TextProcessingService?
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
@@ -63,11 +66,14 @@ struct DicticusApp: App {
                         // Plain dictation works immediately; AI cleanup wires later.
                         let cleanup = warmupService.cleanupServiceInstance
                         cleanupService = cleanup
+                        
+                        let processingService = TextProcessingService(cleanupService: cleanup)
+                        textProcessingService = processingService
 
                         hotkeyManager.setup(
                             transcriptionService: service,
                             warmupService: warmupService,
-                            cleanupService: cleanup
+                            textProcessingService: processingService
                         )
 
                         // D-08: Wire modifier hotkey listener after ASR is ready so
@@ -80,11 +86,27 @@ struct DicticusApp: App {
                     // Wire CleanupService into HotkeyManager and icon state.
                     if ready, let cleanup = warmupService.cleanupServiceInstance {
                         cleanupService = cleanup
+                        
+                        let processingService = TextProcessingService(cleanupService: cleanup)
+                        textProcessingService = processingService
+                        hotkeyManager.textProcessingService = processingService
                         hotkeyManager.cleanupService = cleanup
                     }
                 }
         }
         .menuBarExtraStyle(.window)
+
+        // Window for managing the custom dictionary (TEXT-02)
+        WindowGroup("Manage Dictionary", id: "dictionary") {
+            DictionaryView()
+                .environmentObject(DictionaryService.shared)
+        }
+
+        // Window for browsing transcription history (UX-02)
+        WindowGroup("History", id: "history") {
+            HistoryView()
+                .environmentObject(HistoryService.shared)
+        }
     }
 
     /// Menu bar icon view — uses a colored NSImage for recording (isTemplate=false bypasses

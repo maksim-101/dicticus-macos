@@ -23,6 +23,7 @@ struct MenuBarView: View {
     @EnvironmentObject var hotkeyManager: HotkeyManager
     @EnvironmentObject var modifierListener: ModifierHotkeyListener
     @EnvironmentObject var updater: SparkleUpdater
+    @Environment(\.openWindow) private var openWindow
     @State private var showOnboarding = false
 
     var body: some View {
@@ -78,6 +79,22 @@ struct MenuBarView: View {
                 if hotkeyManager.lastTranscriptionText != nil {
                     Divider()
                 }
+
+                Button(action: {
+                    openWindow(id: "history")
+                    NSApp.activate(ignoringOtherApps: true)
+                }) {
+                    HStack {
+                        Image(systemName: "clock.arrow.circlepath")
+                        Text("Transcription History\u{2026}")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+
+                Divider()
 
                 // D-03: Settings section above Quit — launch at login + modifier hotkey pickers
                 SettingsSection(
