@@ -43,8 +43,8 @@ targets:
         LSUIElement: true
         NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
         CFBundleIdentifier: com.dicticus.app
-        CFBundleVersion: "1"
-        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "2"
+        CFBundleShortVersionString: "1.1.0"
         SUFeedURL: "https://maksim-101.github.io/dicticus-macos/appcast.xml"
         SUPublicEDKey: "svsiIi/mzzxOO1K9AJ7yAXboJb+U0wDoLCoLM1hEqjc="
         SUEnableAutomaticChecks: YES
