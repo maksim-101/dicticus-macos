@@ -137,6 +137,59 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 Conventions not yet established. Will populate as patterns emerge during development.
 <!-- GSD:conventions-end -->
 
+## Multi-Platform Strategy
+
+Dicticus is a family of platform-native apps sharing the same goal, models, and (where possible) code.
+
+### Repository Structure
+
+```
+dicticus/                    ← this repo (Apple platforms)
+├── macOS/                   ← macOS menu bar app (Swift/SwiftUI, xcodegen)
+│   ├── project.yml          ← xcodegen config
+│   ├── Dicticus/            ← app sources
+│   └── DicticusTests/       ← tests
+├── Shared/                  ← shared Swift code (future: extracted services)
+├── iOS/                     ← iOS keyboard extension + host app (future)
+├── scripts/
+│   ├── build-dmg.sh         ← macOS release pipeline
+│   └── build-ipa.sh         ← iOS release pipeline (future)
+├── .planning/               ← GSD artifacts (milestones span both platforms)
+└── CLAUDE.md
+
+~/code/dicticus-windows/     ← separate repo, separate tech stack (C#/Rust)
+```
+
+### Platform Details
+
+| | macOS | iOS/iPadOS | Windows |
+|---|---|---|---|
+| Repo | `dicticus` (this) | `dicticus` (this) | `dicticus-windows` (separate) |
+| Language | Swift 6 | Swift 6 | C# or Rust |
+| ASR | FluidAudio (Parakeet v3) | FluidAudio (Parakeet v3) | whisper.cpp |
+| LLM | llama.cpp (Metal) | llama.cpp (Metal) | llama.cpp (CPU/CUDA) |
+| Distribution | Sparkle + GitHub Releases | TestFlight / Ad-hoc | TBD |
+| Tags | `macos-vX.Y.Z` | `ios-vX.Y.Z` | own repo tags |
+| Build script | `scripts/build-dmg.sh` | `scripts/build-ipa.sh` | own repo |
+
+### Shared Code (macOS ↔ iOS)
+
+When iOS work begins, extract platform-independent services into `Shared/`:
+- `DictionaryService`, `ITNUtility`, `CleanupPrompt` — pure Swift, no platform deps
+- `CleanupService` — llama.cpp via SPM (cross-platform)
+- `HistoryService` — GRDB (cross-platform)
+- `TextProcessingService` — orchestrator, depends on above
+
+Platform-specific code stays in `macOS/` or `iOS/`:
+- Hotkey management, text injection, audio capture, app lifecycle, UI views
+
+### Working on a Single Platform
+
+Branch and PR as normal. Scope changes to the platform directory:
+- macOS-only change: edit `macOS/` files, PR targets `main`
+- iOS-only change: edit `iOS/` files, PR targets `main`
+- Shared change: edit `Shared/`, verify both platforms build
+
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
