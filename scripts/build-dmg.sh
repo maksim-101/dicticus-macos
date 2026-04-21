@@ -13,7 +13,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")/Dicticus"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")/macOS"
 OUTPUT_DIR="$(dirname "$SCRIPT_DIR")"
 DMG_NAME="Dicticus.dmg"
 

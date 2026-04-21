@@ -340,6 +340,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					196278924188207EC2516968 = {
+						DevelopmentTeam = VTWHBCCP36;
 						ProvisioningStyle = Manual;
 					};
 				};
@@ -465,7 +466,6 @@
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = VTWHBCCP36;
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = VTWHBCCP36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -475,10 +475,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				OTHER_LDFLAGS = (
-					"-framework",
-					llama,
-				);
+				OTHER_LDFLAGS = "-framework llama";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dicticus.app;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -494,7 +491,6 @@
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = VTWHBCCP36;
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = VTWHBCCP36;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -504,10 +500,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				OTHER_LDFLAGS = (
-					"-framework",
-					llama,
-				);
+				OTHER_LDFLAGS = "-framework llama";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dicticus.app;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
