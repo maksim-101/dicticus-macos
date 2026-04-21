@@ -35,6 +35,7 @@ targets:
     deploymentTarget: "15.0"
     sources:
       - path: Dicticus
+      - path: ../Shared
     resources:
       - path: Dicticus/Assets.xcassets
     info:
