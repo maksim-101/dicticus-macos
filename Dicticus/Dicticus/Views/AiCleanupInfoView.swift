@@ -22,7 +22,7 @@ struct AiCleanupInfoView: View {
                         .font(.body)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("Gemma 3 1B (Q4_0)")
+                    Text("Gemma 4 E2B (Q4_K_M)")
                         .font(.body)
                 }
                 .padding(.horizontal)
