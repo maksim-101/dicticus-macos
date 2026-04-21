@@ -2,32 +2,24 @@
 
 ## What This Is
 
-A fully local macOS dictation app that replaces native dictation with system-wide push-to-talk hotkeys, on-device ASR (Parakeet TDT v3 via FluidAudio on Apple Neural Engine), and optional AI cleanup (Gemma 3 1B via llama.cpp). Works in any text field across any app — browser, native apps, terminal.
+A fully local macOS dictation app that replaces native dictation with system-wide push-to-talk hotkeys, on-device ASR (Parakeet TDT v3 via FluidAudio on Apple Neural Engine), and optional AI cleanup (Gemma 4 E2B via llama.cpp). Works in any text field across any app — browser, native apps, terminal.
 
 ## Core Value
 
 Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
 
-## Current Milestone: v1.1 Cleanup Intelligence & Distribution
+## Completed Milestones
 
-**Goal:** Transform AI cleanup from literal grammar correction into intelligent meaning inference for non-native/broken German, add number formatting and custom dictionary, and ship a properly signed macOS app with auto-updates.
-
-**Target features:**
-- Inverse text normalization (numbers as digits, not words)
-- Intelligent AI cleanup that handles broken/non-native German (infer meaning from gibberish)
-- Fix cleanup quote injection bug
-- Custom dictionary (find-and-replace for recurring ASR errors)
-- Apple Developer signing + notarization
-- Auto-update via Sparkle
-- Fix APP-03 icon state reactivity
-- Transcription history log with search
+- **v1.0 MVP** — shipped 2026-04-18
+- **v1.1 Cleanup Intelligence & Distribution** — shipped 2026-04-21 (v1.1.1)
 
 ## Current State
 
-**Shipped:** v1.0 MVP (2026-04-18)
-**Codebase:** 3,084 lines Swift, 6 phases, 17 plans
+**Version:** v1.1.1 (released 2026-04-21)
+**Codebase:** ~5,000 lines Swift, 11 phases, 158 tests (all passing)
 **Memory:** 170 MB physical footprint with both ASR and LLM loaded
-**Distribution:** Ad-hoc signed DMG, drag-to-Applications install
+**Distribution:** Developer ID signed + notarized DMG, Sparkle auto-updates
+**LLM:** Gemma 4 E2B (Q4_K_M, ~3.1 GB) via llama.cpp Metal
 
 ## Requirements
 
