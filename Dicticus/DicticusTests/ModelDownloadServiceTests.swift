@@ -7,7 +7,7 @@ final class ModelDownloadServiceTests: XCTestCase {
 
     func testModelPathEndsWithGGUFFileName() {
         let path = ModelDownloadService.modelPath()
-        XCTAssertTrue(path.lastPathComponent == "gemma-3-1b-it-Q4_0.gguf",
+        XCTAssertTrue(path.lastPathComponent == "gemma-4-E2B-it-Q4_K_M.gguf",
                        "Model path must end with GGUF filename")
     }
 
@@ -27,16 +27,16 @@ final class ModelDownloadServiceTests: XCTestCase {
 
     func testModelURLPointsToUnslothRepo() {
         let url = ModelDownloadService.modelURL.absoluteString
-        XCTAssertTrue(url.contains("unsloth/gemma-3-1b-it-GGUF"),
+        XCTAssertTrue(url.contains("unsloth/gemma-4-E2B-it-GGUF"),
                        "Must use ungated unsloth repo, not gated Google repo")
         XCTAssertFalse(url.contains("google/"),
                         "Must NOT use gated Google repo (requires login)")
     }
 
-    func testModelURLPointsToQ4_0Quantization() {
+    func testModelURLPointsToQ4_K_MQuantization() {
         let url = ModelDownloadService.modelURL.absoluteString
-        XCTAssertTrue(url.contains("Q4_0"),
-                       "Must download Q4_0 quantization per D-04")
+        XCTAssertTrue(url.contains("Q4_K_M"),
+                       "Must download Q4_K_M quantization for Gemma 4 E2B")
     }
 
     // MARK: - Cache check

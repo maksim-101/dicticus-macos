@@ -10,8 +10,10 @@ final class DictionaryServiceTests: XCTestCase {
         super.setUp()
         // Clear UserDefaults for testing
         UserDefaults.standard.removeObject(forKey: DictionaryService.dictionaryKey)
+        UserDefaults.standard.removeObject(forKey: DictionaryService.caseSensitiveKey)
         service = DictionaryService.shared
         service.removeAll() // Ensure clean state
+        service.isCaseSensitive = false // Reset to default for test isolation
     }
     
     func testPrepopulation() {
