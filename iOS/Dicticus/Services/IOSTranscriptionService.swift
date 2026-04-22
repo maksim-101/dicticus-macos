@@ -68,16 +68,20 @@ class IOSTranscriptionService: ObservableObject {
     @Published var lastResult: DicticusTranscriptionResult?
     @Published var error: String?
 
-    @AppStorage("useCustomDictionary") var useCustomDictionary = true
-    @AppStorage("useITN") var useITN = true
-    @AppStorage("useAutoStop") var useAutoStop = true
+    @AppStorage("useCustomDictionary", store: UserDefaults(suiteName: "group.com.dicticus"))
+    var useCustomDictionary = true
+    @AppStorage("useITN", store: UserDefaults(suiteName: "group.com.dicticus"))
+    var useITN = true
+    @AppStorage("useAutoStop", store: UserDefaults(suiteName: "group.com.dicticus"))
+    var useAutoStop = true
 
     // MARK: - Configuration
 
     static let vadProbabilityThreshold: Float = 0.75
     var silenceThreshold: Float = IOSTranscriptionService.vadProbabilityThreshold
     let minimumDurationSeconds: Float = 0.3
-    let autoStopSilenceSeconds: Double = 1.5
+    let autoStopSilenceSeconds: Double = 2.5
+    let autoStopGracePeriod: Double = 3.0
 
     // MARK: - Private
 
@@ -120,6 +124,7 @@ class IOSTranscriptionService: ObservableObject {
             autoStopEnabled: useAutoStop,
             silenceThreshold: 0.01, // RMS threshold for "silence"
             silenceDuration: autoStopSilenceSeconds,
+            gracePeriod: autoStopGracePeriod,
             onSilence: { [weak self] in
                 Task { @MainActor in
                     self?.onSilenceDetected?()
@@ -139,10 +144,12 @@ class IOSTranscriptionService: ObservableObject {
         autoStopEnabled: Bool,
         silenceThreshold: Float,
         silenceDuration: Double,
+        gracePeriod: Double,
         onSilence: @escaping @Sendable () -> Void
     ) {
         // Track silence state in a thread-safe way
         final class SilenceTracker: @unchecked Sendable {
+            var startTime = Date()
             var lastSoundTime = Date()
             var didTrigger = false
         }
@@ -156,15 +163,18 @@ class IOSTranscriptionService: ObservableObject {
             buffer.append(samples)
 
             if autoStopEnabled {
+                let now = Date()
+                let elapsedTotal = now.timeIntervalSince(tracker.startTime)
+                
                 // Simple RMS calculation to detect "sound"
                 var sum: Float = 0
                 for sample in samples { sum += sample * sample }
                 let rms = sqrt(sum / Float(frameCount))
                 
                 if rms > silenceThreshold {
-                    tracker.lastSoundTime = Date()
-                } else if !tracker.didTrigger {
-                    let silenceElapsed = Date().timeIntervalSince(tracker.lastSoundTime)
+                    tracker.lastSoundTime = now
+                } else if !tracker.didTrigger && elapsedTotal > gracePeriod {
+                    let silenceElapsed = now.timeIntervalSince(tracker.lastSoundTime)
                     if silenceElapsed >= silenceDuration {
                         tracker.didTrigger = true
                         onSilence()

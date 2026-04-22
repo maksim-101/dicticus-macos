@@ -4,8 +4,8 @@ import FluidAudio
 @main
 struct DicticusApp: App {
     @StateObject private var warmupService = IOSModelWarmupService()
-    @StateObject private var dictionaryService = DictionaryService.shared
-    @StateObject private var historyService = HistoryService.shared
+    @ObservedObject private var dictionaryService = DictionaryService.shared
+    @ObservedObject private var historyService = HistoryService.shared
     @StateObject private var viewModel = DictationViewModel()
 
     @State private var transcriptionService: IOSTranscriptionService?

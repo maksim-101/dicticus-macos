@@ -3,7 +3,8 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var warmupService: IOSModelWarmupService
     @Environment(\.dismiss) var dismiss
-    
+    @State private var showingModelInfo = false
+
     var body: some View {
         NavigationStack {
             List {
@@ -11,28 +12,16 @@ struct SettingsView: View {
                     NavigationLink(destination: DictionaryManagementView()) {
                         Label("Custom Dictionary", systemImage: "book")
                     }
-                    
-                    Toggle(isOn: .init(get: {
-                        UserDefaults.standard.bool(forKey: "useCustomDictionary") || !UserDefaults.standard.dictionaryRepresentation().keys.contains("useCustomDictionary")
-                    }, set: { 
-                        UserDefaults.standard.set($0, forKey: "useCustomDictionary")
-                    })) {
+
+                    Toggle(isOn: appGroupBinding("useCustomDictionary", default: true)) {
                         Label("Apply Replacements", systemImage: "character.cursor.ibeam")
                     }
-                    
-                    Toggle(isOn: .init(get: {
-                        UserDefaults.standard.bool(forKey: "useITN") || !UserDefaults.standard.dictionaryRepresentation().keys.contains("useITN")
-                    }, set: { 
-                        UserDefaults.standard.set($0, forKey: "useITN")
-                    })) {
+
+                    Toggle(isOn: appGroupBinding("useITN", default: true)) {
                         Label("Numbers to Digits", systemImage: "number")
                     }
-                    
-                    Toggle(isOn: .init(get: {
-                        UserDefaults.standard.bool(forKey: "useAutoStop") || !UserDefaults.standard.dictionaryRepresentation().keys.contains("useAutoStop")
-                    }, set: { 
-                        UserDefaults.standard.set($0, forKey: "useAutoStop")
-                    })) {
+
+                    Toggle(isOn: appGroupBinding("useAutoStop", default: true)) {
                         Label("Auto-Stop Recording", systemImage: "stop.circle")
                     }
                 }
@@ -43,12 +32,16 @@ struct SettingsView: View {
                     }
                     
                     if UIDevice.current.userInterfaceIdiom == .phone {
-                        Button(action: {
-                            if let url = URL(string: "App-Prefs:root=Action_Button") {
-                                UIApplication.shared.open(url)
+                        DisclosureGroup {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("1. Open **Settings** → **Action Button**")
+                                Text("2. Select **Shortcut**")
+                                Text("3. Choose **Dictate with Dicticus**")
                             }
-                        }) {
-                            Label("Action Button Settings", systemImage: "iphone.gen3")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        } label: {
+                            Label("Action Button Setup", systemImage: "iphone.gen3")
                         }
                     }
                     
@@ -59,15 +52,21 @@ struct SettingsView: View {
                 
                 Section("Model Management") {
                     HStack {
-                        Label("ASR Model (Parakeet)", systemImage: "cpu")
+                        Label("ASR Model", systemImage: "cpu")
                         Spacer()
+                        Button {
+                            showingModelInfo = true
+                        } label: {
+                            Image(systemName: "info.circle")
+                        }
+                        .buttonStyle(.borderless)
                         if warmupService.hasModels {
                             Text("Ready").foregroundColor(.green)
                         } else {
                             Text("Missing").foregroundColor(.red)
                         }
                     }
-                    
+
                     Button(role: .destructive, action: { warmupService.warmup() }) {
                         Label("Force Model Update", systemImage: "arrow.clockwise")
                     }
@@ -82,12 +81,43 @@ struct SettingsView: View {
                     Text("About")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Dicticus v1.0")
+                        Text("Dicticus v2.0")
                         Text("\u{00A9} 2026 Maksim-101")
                     }
                 }
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showingModelInfo) {
+                NavigationStack {
+                    List {
+                        Section("Model") {
+                            LabeledContent("Name", value: "Parakeet TDT v3")
+                            LabeledContent("Provider", value: "NVIDIA / FluidAudio")
+                            LabeledContent("Parameters", value: "600M")
+                            LabeledContent("Size on Disk", value: "~2.7 GB (CoreML)")
+                        }
+                        Section("Capabilities") {
+                            LabeledContent("Languages", value: "25 (incl. DE, EN)")
+                            LabeledContent("German WER", value: "5.04%")
+                            LabeledContent("English WER", value: "6.34%")
+                            LabeledContent("Compute", value: "Apple Neural Engine")
+                        }
+                        Section {
+                            Text("Parakeet TDT v3 is a multilingual speech recognition model optimized for Apple Neural Engine via CoreML. It runs entirely on-device — no audio is sent to any server.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .navigationTitle("ASR Model Info")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showingModelInfo = false }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
@@ -98,6 +128,18 @@ struct SettingsView: View {
         }
     }
     
+    private static let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus")!
+
+    private func appGroupBinding(_ key: String, default defaultValue: Bool) -> Binding<Bool> {
+        Binding(
+            get: {
+                let defaults = Self.appGroupDefaults
+                return defaults.object(forKey: key) == nil ? defaultValue : defaults.bool(forKey: key)
+            },
+            set: { Self.appGroupDefaults.set($0, forKey: key) }
+        )
+    }
+
     private func openSystemSettings() {
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)

@@ -28,9 +28,20 @@ struct DictationView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(viewModel.state == .recording ? .red : .accentColor)
-                .disabled(!warmupService.isReady || viewModel.state == .transcribing || viewModel.state == .preparingLiveActivity)
+                .disabled(warmupService.isWarming || viewModel.state == .transcribing || viewModel.state == .preparingLiveActivity)
                 .accessibilityLabel(buttonLabel)
-                .accessibilityHint(viewModel.state == .recording ? "Stops recording and transcribes" : "Starts a new dictation")
+                .accessibilityHint(modelMissing ? "Downloads the ASR model" : viewModel.state == .recording ? "Stops recording and transcribes" : "Starts a new dictation")
+
+                if warmupService.isWarming {
+                    VStack(spacing: 8) {
+                        ProgressView(value: warmupService.downloadProgress, total: 1.0)
+                            .progressViewStyle(.linear)
+                        Text(warmupService.downloadStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal)
+                }
 
                 if let result = viewModel.lastResult {
                     VStack(alignment: .leading, spacing: 8) {
@@ -52,6 +63,13 @@ struct DictationView: View {
                         .foregroundStyle(.red)
                         .font(.caption)
                         .padding(.horizontal)
+                }
+
+                if warmupService.error != nil && !warmupService.isWarming {
+                    Button("Retry Download") {
+                        warmupService.retry()
+                    }
+                    .buttonStyle(.bordered)
                 }
 
                 Spacer()
@@ -76,8 +94,14 @@ struct DictationView: View {
         }
     }
 
+    /// Whether the model needs to be downloaded before dictation can start.
+    private var modelMissing: Bool {
+        !warmupService.hasModels && !warmupService.isWarming && !warmupService.isReady
+    }
+
     private var iconName: String {
         if warmupService.isWarming { return "arrow.down.circle" }
+        if modelMissing { return "arrow.down.to.line" }
         switch viewModel.state {
         case .idle:                  return "mic"
         case .preparingLiveActivity: return "mic"
@@ -89,6 +113,7 @@ struct DictationView: View {
     private var statusLabel: String {
         if warmupService.isWarming { return "Downloading ASR Models (2.7GB)\u{2026}" }
         if let error = warmupService.error { return error }
+        if modelMissing { return "ASR model not downloaded" }
         switch viewModel.state {
         case .idle:                  return "Ready"
         case .preparingLiveActivity: return "Starting\u{2026}"
@@ -98,10 +123,15 @@ struct DictationView: View {
     }
 
     private var buttonLabel: String {
-        viewModel.state == .recording ? "Stop" : "Start Dictation"
+        if modelMissing { return "Download Model" }
+        return viewModel.state == .recording ? "Stop" : "Start Dictation"
     }
 
     private func handleButton() {
+        if modelMissing {
+            warmupService.retry()
+            return
+        }
         Task {
             if viewModel.state == .idle {
                 await viewModel.startDictation()

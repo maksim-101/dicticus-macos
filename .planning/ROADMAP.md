@@ -5,7 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-04-18) — [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 Cleanup Intelligence & Distribution** — Phases 6-11 (shipped 2026-04-20)
 - ✅ **v2.0 iOS App — Shortcut Dictation** — Phases 12-16 (shipped 2026-04-22)
-- 📋 **v2.1 Keyboard & Sync** — Phases 17+ (planned)
+- 📋 **v2.1 Keyboard Extension & Polish** — Phases 17+ (planned)
 
 ---
 
@@ -23,9 +23,9 @@
 
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
-| 17. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
-| 18. Keyboard | v2.1 | Custom iOS Keyboard extension | Not started | - |
+| 17. Keyboard Extension | v2.1 | Custom iOS Keyboard with in-app dictation — text at cursor without app switching | Not started | - |
+| 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
 | 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Not started | - |
 
 ---
-*Last updated: 2026-04-22 after v2.0 completion*
+*Last updated: 2026-04-22 — reordered: Keyboard Extension promoted to Phase 17 (core UX improvement over Shortcut flow)*

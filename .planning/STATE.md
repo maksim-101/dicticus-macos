@@ -8,11 +8,11 @@
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Planning v2.1 — iCloud Sync & Keyboard Extension
+**Current focus:** v2.1 — Keyboard Extension (text at cursor without app switching)
 
 ## Current Position
 
-Phase: 17 of TBD (iCloud Sync & Keyboard)
+Phase: 17 of TBD (Keyboard Extension)
 Plan: 0 of TBD
 Status: Pending Planning
 Last activity: 2026-04-22 — Milestone v2.0 completed (Phases 12-16)
@@ -39,5 +39,5 @@ Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 ## Session Continuity
 
 Last session: 2026-04-22
-Stopped at: v2.0 SHIPPED. All requirements met.
+Stopped at: Fixed Gemini issues, reordered roadmap — Keyboard Extension is now Phase 17
 Resume file: None

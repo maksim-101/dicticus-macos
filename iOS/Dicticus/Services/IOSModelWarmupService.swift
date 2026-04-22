@@ -38,10 +38,13 @@ class IOSModelWarmupService: ObservableObject {
             hasModels = false
             return
         }
-        let fluidAudioModels = base.appendingPathComponent("FluidAudio/Models")
-        // If the directory exists and is not empty, we assume models are present
-        let contents = try? FileManager.default.contentsOfDirectory(atPath: fluidAudioModels.path)
-        hasModels = contents?.isEmpty == false
+        // FluidAudio stores models in Application Support / FluidAudio / Models / <repo-name>
+        let modelDir = base.appendingPathComponent("FluidAudio/Models/parakeet-tdt-0.6b-v3-coreml")
+        let preprocessor = modelDir.appendingPathComponent("Preprocessor.mlmodelc")
+        
+        let exists = FileManager.default.fileExists(atPath: preprocessor.path)
+        print("Checking model at: \(preprocessor.path) - Exists: \(exists)")
+        hasModels = exists
     }
 
     /// Start FluidAudio + Parakeet TDT v3 initialization in a background Task.
@@ -90,7 +93,7 @@ class IOSModelWarmupService: ObservableObject {
                 await MainActor.run {
                     progressTimer.cancel()
                     self?.isWarming = false
-                    self?.error = "Model load timed out or was cancelled. Restart app."
+                    self?.error = "Model load timed out or was cancelled."
                     self?.watchdogTask?.cancel()
                     self?.watchdogTask = nil
                 }
@@ -98,7 +101,7 @@ class IOSModelWarmupService: ObservableObject {
                 await MainActor.run {
                     progressTimer.cancel()
                     self?.isWarming = false
-                    self?.error = "Model load failed. Restart app."
+                    self?.error = "Model load failed: \(error.localizedDescription)"
                     self?.watchdogTask?.cancel()
                     self?.watchdogTask = nil
                 }
@@ -119,6 +122,13 @@ class IOSModelWarmupService: ObservableObject {
         warmupTask?.cancel()
         warmupTask = nil
         isWarming = false
+    }
+
+    /// Reset error state and retry warmup.
+    func retry() {
+        error = nil
+        isReady = false
+        warmup()
     }
 
     /// Expose the initialized AsrManager for IOSTranscriptionService.

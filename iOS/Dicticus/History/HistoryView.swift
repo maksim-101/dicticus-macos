@@ -59,27 +59,31 @@ struct HistoryRow: View {
                     .padding(.vertical, 2)
                     .background(Color.accentColor.opacity(0.1))
                     .cornerRadius(4)
+                    .accessibilityLabel("Language: \(entry.language == "de" ? "German" : "English")")
             }
-            
+
             Text(entry.text)
                 .font(.body)
                 .lineLimit(3)
-            
+
             HStack {
                 Label("\(Int(entry.confidence * 100))%", systemImage: "waveform")
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                
+                    .accessibilityLabel("Confidence: \(Int(entry.confidence * 100)) percent")
+
                 Spacer()
-                
+
                 Button(action: copyToClipboard) {
                     Label(showingCopiedMessage ? "Copied" : "Copy", systemImage: "doc.on.doc")
                         .font(.caption2)
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel(showingCopiedMessage ? "Copied to clipboard" : "Copy transcription")
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
     
     private func copyToClipboard() {
