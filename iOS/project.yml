@@ -6,11 +6,16 @@ options:
 settings:
   SWIFT_VERSION: "6.0"
   IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+  MARKETING_VERSION: "1.0"
+  CURRENT_PROJECT_VERSION: "1"
 
 packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift.git
     from: 7.0.0
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio.git
+    from: 0.13.6
 
 targets:
   Dicticus:
@@ -24,6 +29,7 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.dicticus
+        com.apple.developer.kernel.increased-memory-limit: true
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
       INFOPLIST_FILE: Dicticus/Info.plist
@@ -33,11 +39,36 @@ targets:
     dependencies:
       - package: GRDB
         product: GRDB
+      - package: FluidAudio
+        product: FluidAudio
+      - target: DicticusWidget
+
+  DicticusWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DicticusWidget
+      - path: Dicticus/LiveActivity/DictationActivity.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios.widget
+      INFOPLIST_FILE: DicticusWidget/Info.plist
+      GENERATE_INFOPLIST_FILE: YES
+      SKIP_INSTALL: YES
+      PRODUCT_NAME: DicticusWidget
+      SWIFT_VERSION: "6.0"
+      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+    info:
+      path: DicticusWidget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
   DicticusTests:
     type: bundle.unit-test
     platform: iOS
     sources: 
       - path: DicticusTests
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dicticus
