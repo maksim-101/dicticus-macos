@@ -97,50 +97,70 @@ struct OnboardingView: View {
     }
     
     private var downloadStep: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.accentColor)
-                .symbolEffect(.pulse, isActive: warmupService.isWarming)
-            
-            Text("Download ASR Model")
-                .font(.title).bold()
-            
-            Text("Dicticus uses a high-accuracy neural model for transcription. This requires a one-time download of approximately 2.7 GB.")
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            if !warmupService.hasModels && !warmupService.isWarming {
-                Button("Download Now (Wi-Fi Recommended)") {
-                    warmupService.warmup()
-                }
-                .buttonStyle(.bordered)
-            } else if warmupService.isWarming {
-                VStack(spacing: 12) {
-                    ProgressView(value: warmupService.downloadProgress, total: 1.0)
-                        .progressViewStyle(.linear)
-                        .padding(.horizontal, 40)
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 80))
+                    .foregroundColor(.accentColor)
+                    .symbolEffect(.pulse, isActive: warmupService.isWarming)
+                
+                Text("Provision ASR Model")
+                    .font(.title).bold()
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Dicticus uses a state-of-the-art neural engine for transcription.")
+                        .multilineTextAlignment(.center)
                     
-                    Text(warmupService.downloadStatus)
-                        .font(.caption)
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Model: Parakeet TDT v3", systemImage: "cpu")
+                            Label("Size: 2.7 GB (One-time download)", systemImage: "sdcard")
+                            Label("Type: Multilingual (EN, DE, and 23+ more)", systemImage: "globe")
+                            Label("Compute: Apple Neural Engine (ANE)", systemImage: "bolt.ring.closed")
+                        }
+                        .font(.footnote)
                         .foregroundColor(.secondary)
-                    
-                    Text("\(Int(warmupService.downloadProgress * 100))%")
-                        .font(.caption2).monospacedDigit()
-                        .foregroundColor(.accentColor)
+                    }
                 }
-                .padding()
-            } else if warmupService.hasModels {
-                Text("Model Ready")
-                    .foregroundColor(.green)
-                    .font(.headline)
+                .padding(.horizontal)
+                
+                if !warmupService.hasModels && !warmupService.isWarming {
+                    Button("Download Now (Wi-Fi Recommended)") {
+                        warmupService.warmup()
+                    }
+                    .buttonStyle(.borderedProminent)
+                } else if warmupService.isWarming {
+                    VStack(spacing: 12) {
+                        ProgressView(value: warmupService.downloadProgress, total: 1.0)
+                            .progressViewStyle(.linear)
+                        
+                        Text(warmupService.downloadStatus)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("\(Int(warmupService.downloadProgress * 100))%")
+                            .font(.caption2).monospacedDigit()
+                            .foregroundColor(.accentColor)
+                    }
+                    .padding()
+                } else if warmupService.hasModels {
+                    Text("Model Ready")
+                        .foregroundColor(.green)
+                        .font(.headline)
+                }
+                
+                if let error = warmupService.error {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+
+                    Button("Retry") {
+                        warmupService.retry()
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
-            
-            if let error = warmupService.error {
-                Text(error)
-                    .foregroundColor(.red)
-                    .font(.caption)
-            }
+            .padding(.vertical)
         }
     }
     
@@ -161,24 +181,24 @@ struct OnboardingView: View {
             .padding()
             
             if UIDevice.current.userInterfaceIdiom == .phone {
-                Button(action: openActionButtonSettings) {
-                    Label("Configure Action Button", systemImage: "gearshape.2.fill")
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("Action Button Setup", systemImage: "iphone.gen3")
+                            .font(.subheadline).bold()
+                        Text("1. Open **Settings** → **Action Button**")
+                        Text("2. Select **Shortcut**")
+                        Text("3. Choose the **Dictate with Dicticus** shortcut")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .padding(.horizontal)
             }
         }
     }
     
     // MARK: - Logic
-    
-    private func openActionButtonSettings() {
-        // Direct link to Action Button settings (iOS 17+)
-        if let url = URL(string: "App-Prefs:root=Action_Button") {
-            UIApplication.shared.open(url)
-        }
-    }
-    
+
     private var nextButtonLabel: String {
         if currentPage == 1 && !micPermissionGranted { return "Skip" }
         if currentPage == 2 && !warmupService.hasModels { return "Download First" }

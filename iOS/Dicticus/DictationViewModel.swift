@@ -32,12 +32,18 @@ class DictationViewModel: ObservableObject {
     }
 
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
-    private var notificationObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var notificationObserver: NSObjectProtocol?
 
     func startDictation() async {
         guard state == .idle else { return }
 
-        // STEP 0: Request microphone permission
+        // STEP 0: Ensure transcription service is available (model loaded)
+        guard transcriptionService != nil else {
+            self.error = "ASR model not loaded. Download it first."
+            return
+        }
+
+        // STEP 1: Request microphone permission
         let permissionGranted = await AVAudioApplication.requestRecordPermission()
         guard permissionGranted else {
             self.error = "Microphone access denied. Enable in Settings > Privacy > Microphone."
@@ -46,14 +52,14 @@ class DictationViewModel: ObservableObject {
 
         state = .preparingLiveActivity
 
-        // STEP 1: Live Activity MUST start before AVAudioSession
+        // STEP 2: Live Activity MUST start before AVAudioSession
         do {
             try startLiveActivity()
         } catch {
             // Non-fatal: Live Activities may be disabled by user — still attempt recording
         }
 
-        // STEP 2: Activate AVAudioSession + start recording (inside IOSTranscriptionService)
+        // STEP 3: Activate AVAudioSession + start recording (inside IOSTranscriptionService)
         state = .recording
         do {
             try transcriptionService?.startRecording()
@@ -156,9 +162,8 @@ class DictationViewModel: ObservableObject {
     }
 
     deinit {
-        // Since deinit is called on an unknown thread, we use NotificationCenter.default.removeObserver directly
-        // However, notificationObserver is an NSObjectProtocol which is thread-safe to remove.
-        // But the deinit might not be on @MainActor.
-        // Actually, non-isolated deinit is fine for this.
+        if let observer = notificationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 }

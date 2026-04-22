@@ -17,6 +17,10 @@ struct ITNUtility {
     /// Custom parser for German compound number words.
     /// Apple's NumberFormatter.spellOut doesn't reliably parse compound German numbers
     /// like "einhundertdreiundzwanzig" or "viertausendfünfhundert".
+    /// Minimum value for standalone number conversion.
+    /// Numbers below this are left as words (style guide: spell out one through nine).
+    private static let minDigitThreshold = 10
+
     private static func applyGermanITN(to text: String) -> String {
         let tokens = text.components(separatedBy: .whitespacesAndNewlines)
         var resultTokens: [String] = []
@@ -25,7 +29,8 @@ struct ITNUtility {
             let cleanedToken = token.trimmingCharacters(in: .punctuationCharacters)
             let punctuation = String(token.suffix(token.count - cleanedToken.count))
 
-            if let number = parseGermanNumber(cleanedToken.lowercased()) {
+            if let number = parseGermanNumber(cleanedToken.lowercased()),
+               number >= minDigitThreshold {
                 resultTokens.append("\(number)\(punctuation)")
             } else {
                 resultTokens.append(token)
@@ -194,6 +199,10 @@ struct ITNUtility {
                 }
 
                 if let number = parsed {
+                    // Skip small standalone numbers (style: spell out one through nine)
+                    if number.intValue < minDigitThreshold && length == 1 {
+                        break
+                    }
                     result.append("\(number)\(lastPunctuation)")
                     i += length
                     foundNumber = true
