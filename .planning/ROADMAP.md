@@ -23,9 +23,22 @@
 
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
-| 17. Keyboard Extension | v2.1 | Custom iOS Keyboard with in-app dictation — text at cursor without app switching | Not started | - |
+| 17. Keyboard Extension | v2.1 | Custom iOS Keyboard with in-app dictation — text at cursor without app switching | 🏗️ In Progress | [4 plans] |
 | 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
 | 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Not started | - |
 
 ---
-*Last updated: 2026-04-22 — reordered: Keyboard Extension promoted to Phase 17 (core UX improvement over Shortcut flow)*
+
+### Phase 17: Keyboard Extension
+**Goal:** Implement a custom iOS keyboard extension with a QWERTZ layout and an integrated dictation button that bounces to the main app for recording and auto-inserts the result at the cursor.
+
+**Requirements:** KEYB-01, KEYB-02
+
+**Plans:**
+- [ ] 17-01-PLAN.md — Foundation, Target Setup, and URL Scheme
+- [ ] 17-02-PLAN.md — Keyboard UI (SwiftUI QWERTZ Layout)
+- [ ] 17-03-PLAN.md — Dictation Loop and Result Delivery
+- [ ] 17-04-PLAN.md — Live Activity Stop Button and Polish
+
+---
+*Last updated: 2026-04-22 — Phase 17 planning complete*
