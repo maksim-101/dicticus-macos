@@ -8,14 +8,14 @@
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 12 — Shared Code Extraction & iOS Scaffold
+**Current focus:** Phase 13 — App Intent + Live Activity + Core Dictation Pipeline
 
 ## Current Position
 
-Phase: 12 of 16 (Shared Code Extraction & iOS Scaffold)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-04-21 — Roadmap created for v2.0 milestone (5 phases, 22 requirements mapped)
+Phase: 13 of 16 (App Intent + Live Activity + Core Dictation Pipeline)
+Plan: 0 of 3 in current phase
+Status: Ready to execute
+Last activity: 2026-04-21 — Phase 13 planned (3 plans, 2 waves, 8 requirements covered)
 
 Progress: [░░░░░░░░░░] 0% (v2.0 phases)
 
