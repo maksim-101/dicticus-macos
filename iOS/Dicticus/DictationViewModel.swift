@@ -32,7 +32,7 @@ class DictationViewModel: ObservableObject {
     }
 
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
-    nonisolated(unsafe) private var notificationObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var notificationObservers: [NSObjectProtocol] = []
 
     func startDictation() async {
         guard state == .idle else { return }
@@ -137,7 +137,7 @@ class DictationViewModel: ObservableObject {
     }
 
     func setupNotificationObserver() {
-        notificationObserver = NotificationCenter.default.addObserver(
+        let startObserver = NotificationCenter.default.addObserver(
             forName: .startDictation,
             object: nil,
             queue: .main
@@ -146,6 +146,19 @@ class DictationViewModel: ObservableObject {
                 await self?.startDictation()
             }
         }
+        notificationObservers.append(startObserver)
+
+        let stopObserver = NotificationCenter.default.addObserver(
+            forName: .stopDictation,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.stopDictation()
+            }
+        }
+        notificationObservers.append(stopObserver)
+
         checkPendingIntent()
     }
 
@@ -162,7 +175,7 @@ class DictationViewModel: ObservableObject {
     }
 
     deinit {
-        if let observer = notificationObserver {
+        for observer in notificationObservers {
             NotificationCenter.default.removeObserver(observer)
         }
     }
