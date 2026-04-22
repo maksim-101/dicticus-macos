@@ -33,11 +33,12 @@ Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 - **D-17:** Implemented "Whats New" flow to highlight v2.0 features to upgrading users (Phase 16).
 
 ## Active Concerns / Risks
-- Phase 17: iCloud Sync conflict resolution for Dictionary entries.
-- Phase 18: Keyboard Extension memory limits (30-50MB) may prevent loading the 2.7GB ASR model; may need "Quick Dictation" via app trigger.
+- Phase 17: Keyboard extension 30-50MB memory limit — ASR runs in main app, not extension (bounce architecture). Resolved by design.
+- Phase 18: iCloud Sync conflict resolution for Dictionary entries.
+- iOS 26 `SpeechAnalyzer` supports German — benchmark vs Parakeet v3 before committing to model download flow long-term.
 
 ## Session Continuity
 
 Last session: 2026-04-22
-Stopped at: Fixed Gemini issues, reordered roadmap — Keyboard Extension is now Phase 17
-Resume file: None
+Stopped at: Phase 17 context gathered — keyboard extension architecture, UI, flow, and text insertion decisions captured
+Resume file: .planning/phases/17-keyboard-extension/17-CONTEXT.md
