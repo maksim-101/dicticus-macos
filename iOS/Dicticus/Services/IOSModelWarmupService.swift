@@ -11,6 +11,8 @@ class IOSModelWarmupService: ObservableObject {
     @Published var isWarming = false
     @Published var isReady = false
     @Published var hasModels = false
+    @Published var downloadProgress: Double = 0.0
+    @Published var downloadStatus: String = ""
     @Published var error: String?
 
     private var asrManager: AsrManager?
@@ -47,13 +49,19 @@ class IOSModelWarmupService: ObservableObject {
         guard !isWarming && !isReady else { return }
         isWarming = true
         error = nil
+        downloadProgress = 0.0
+        downloadStatus = "Step 1/3: Initializing models..."
+
+        let progressTimer = startProgressTimer()
 
         warmupTask = Task.detached(priority: .utility) { [weak self] in
             do {
                 // Step 1: Download + load Parakeet TDT v3 CoreML models from HuggingFace.
+                await MainActor.run { self?.downloadStatus = "Step 2/3: Downloading ASR Weights (2.7GB)..." }
                 let models = try await AsrModels.downloadAndLoad(version: .v3)
 
                 // Step 2: Create actor-based AsrManager and load models into it.
+                await MainActor.run { self?.downloadStatus = "Step 3/3: Compiling for Neural Engine..." }
                 let manager = AsrManager(config: .default)
                 try await manager.loadModels(models)
 
@@ -65,10 +73,14 @@ class IOSModelWarmupService: ObservableObject {
                 try Task.checkCancellation()
 
                 await MainActor.run {
+                    progressTimer.cancel()
+                    self?.downloadProgress = 1.0
+                    self?.downloadStatus = "Ready"
                     self?.asrManager = manager
                     self?.vadManager = vad
                     self?.isWarming = false
                     self?.isReady = true
+                    self?.hasModels = true
                     self?.watchdogTask?.cancel()
                     self?.watchdogTask = nil
                 }
@@ -76,6 +88,7 @@ class IOSModelWarmupService: ObservableObject {
                 // NOTE: No Step 4 (LLM) on iOS v2.0 — locked decision
             } catch is CancellationError {
                 await MainActor.run {
+                    progressTimer.cancel()
                     self?.isWarming = false
                     self?.error = "Model load timed out or was cancelled. Restart app."
                     self?.watchdogTask?.cancel()
@@ -83,6 +96,7 @@ class IOSModelWarmupService: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
+                    progressTimer.cancel()
                     self?.isWarming = false
                     self?.error = "Model load failed. Restart app."
                     self?.watchdogTask?.cancel()
@@ -115,5 +129,18 @@ class IOSModelWarmupService: ObservableObject {
     /// Expose the initialized VadManager for IOSTranscriptionService.
     var vadManagerInstance: VadManager? {
         vadManager
+    }
+
+    private func startProgressTimer() -> Task<Void, Never> {
+        Task {
+            // Simulated progress: 0 to 0.9 over 90 seconds
+            for i in 1...90 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if Task.isCancelled { return }
+                await MainActor.run {
+                    self.downloadProgress = Double(i) * 0.01
+                }
+            }
+        }
     }
 }

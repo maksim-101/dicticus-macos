@@ -68,6 +68,11 @@ struct DictationView: View {
                 SettingsView()
                     .environmentObject(warmupService)
             }
+            .onChange(of: viewModel.state) { _, newState in
+                if newState == .recording {
+                    showingSettings = false
+                }
+            }
         }
     }
 

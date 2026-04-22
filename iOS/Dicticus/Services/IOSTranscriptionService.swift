@@ -70,12 +70,14 @@ class IOSTranscriptionService: ObservableObject {
 
     @AppStorage("useCustomDictionary") var useCustomDictionary = true
     @AppStorage("useITN") var useITN = true
+    @AppStorage("useAutoStop") var useAutoStop = true
 
     // MARK: - Configuration
 
     static let vadProbabilityThreshold: Float = 0.75
     var silenceThreshold: Float = IOSTranscriptionService.vadProbabilityThreshold
     let minimumDurationSeconds: Float = 0.3
+    let autoStopSilenceSeconds: Double = 1.5
 
     // MARK: - Private
 
@@ -84,6 +86,9 @@ class IOSTranscriptionService: ObservableObject {
     private let audioEngine = AVAudioEngine()
     private let sampleBuffer = AudioSampleBuffer()
     private let sampleRate: Double = 16000
+
+    /// Callback triggered when Auto-Stop detects sustained silence.
+    var onSilenceDetected: (() -> Void)?
 
     // MARK: - Initialization
 
@@ -108,7 +113,19 @@ class IOSTranscriptionService: ObservableObject {
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
 
-        Self.installTap(on: inputNode, format: inputFormat, buffer: sampleBuffer)
+        Self.installTap(
+            on: inputNode,
+            format: inputFormat,
+            buffer: sampleBuffer,
+            autoStopEnabled: useAutoStop,
+            silenceThreshold: 0.01, // RMS threshold for "silence"
+            silenceDuration: autoStopSilenceSeconds,
+            onSilence: { [weak self] in
+                Task { @MainActor in
+                    self?.onSilenceDetected?()
+                }
+            }
+        )
 
         try audioEngine.start()
         state = .recording
@@ -118,14 +135,41 @@ class IOSTranscriptionService: ObservableObject {
     nonisolated private static func installTap(
         on inputNode: AVAudioInputNode,
         format: AVAudioFormat,
-        buffer: AudioSampleBuffer
+        buffer: AudioSampleBuffer,
+        autoStopEnabled: Bool,
+        silenceThreshold: Float,
+        silenceDuration: Double,
+        onSilence: @escaping @Sendable () -> Void
     ) {
+        // Track silence state in a thread-safe way
+        final class SilenceTracker: @unchecked Sendable {
+            var lastSoundTime = Date()
+            var didTrigger = false
+        }
+        let tracker = SilenceTracker()
+
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) {
             pcmBuffer, _ in
-            if let channelData = pcmBuffer.floatChannelData?[0] {
-                let frameCount = Int(pcmBuffer.frameLength)
-                let samples = Array(UnsafeBufferPointer(start: channelData, count: frameCount))
-                buffer.append(samples)
+            guard let channelData = pcmBuffer.floatChannelData?[0] else { return }
+            let frameCount = Int(pcmBuffer.frameLength)
+            let samples = Array(UnsafeBufferPointer(start: channelData, count: frameCount))
+            buffer.append(samples)
+
+            if autoStopEnabled {
+                // Simple RMS calculation to detect "sound"
+                var sum: Float = 0
+                for sample in samples { sum += sample * sample }
+                let rms = sqrt(sum / Float(frameCount))
+                
+                if rms > silenceThreshold {
+                    tracker.lastSoundTime = Date()
+                } else if !tracker.didTrigger {
+                    let silenceElapsed = Date().timeIntervalSince(tracker.lastSoundTime)
+                    if silenceElapsed >= silenceDuration {
+                        tracker.didTrigger = true
+                        onSilence()
+                    }
+                }
             }
         }
     }
