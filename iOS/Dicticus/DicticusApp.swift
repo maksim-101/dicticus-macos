@@ -23,6 +23,16 @@ struct DicticusApp: App {
                     .environmentObject(dictionaryService)
                     .environmentObject(historyService)
                     .environmentObject(viewModel)
+                    .onOpenURL { url in
+                        if url.scheme == "dicticus" && url.host == "dictate" {
+                            let shared = UserDefaults(suiteName: "group.com.dicticus")
+                            shared?.set(true, forKey: "kbSource")
+                            shared?.set(true, forKey: "pendingDictation")
+                            
+                            // If app is already active, trigger immediately
+                            NotificationCenter.default.post(name: .startDictation, object: nil)
+                        }
+                    }
                     .sheet(isPresented: $showingWhatsNew) {
                         WhatsNewView()
                             .onDisappear {
