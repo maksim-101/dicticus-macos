@@ -116,11 +116,20 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.bordered)
             } else if warmupService.isWarming {
-                ProgressView()
-                    .padding()
-                Text("Downloading and compiling\u{2026}")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                VStack(spacing: 12) {
+                    ProgressView(value: warmupService.downloadProgress, total: 1.0)
+                        .progressViewStyle(.linear)
+                        .padding(.horizontal, 40)
+                    
+                    Text(warmupService.downloadStatus)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("\(Int(warmupService.downloadProgress * 100))%")
+                        .font(.caption2).monospacedDigit()
+                        .foregroundColor(.accentColor)
+                }
+                .padding()
             } else if warmupService.hasModels {
                 Text("Model Ready")
                     .foregroundColor(.green)
@@ -150,10 +159,25 @@ struct OnboardingView: View {
                 Label("Setup Action Button for instant access.", systemImage: "iphone.gen3")
             }
             .padding()
+            
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Button(action: openActionButtonSettings) {
+                    Label("Configure Action Button", systemImage: "gearshape.2.fill")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
         }
     }
     
     // MARK: - Logic
+    
+    private func openActionButtonSettings() {
+        // Direct link to Action Button settings (iOS 17+)
+        if let url = URL(string: "App-Prefs:root=Action_Button") {
+            UIApplication.shared.open(url)
+        }
+    }
     
     private var nextButtonLabel: String {
         if currentPage == 1 && !micPermissionGranted { return "Skip" }

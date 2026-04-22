@@ -17,7 +17,19 @@ class DictationViewModel: ObservableObject {
     @Published var error: String?
 
     // Set by DicticusApp once warmup completes (property injection)
-    var transcriptionService: IOSTranscriptionService?
+    var transcriptionService: IOSTranscriptionService? {
+        didSet {
+            transcriptionService?.onSilenceDetected = { [weak self] in
+                Task { @MainActor in
+                    await self?.stopDictation()
+                }
+            }
+            // Check for pending intent if service just became available
+            if transcriptionService != nil {
+                checkPendingIntent()
+            }
+        }
+    }
 
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
     private var notificationObserver: NSObjectProtocol?
@@ -126,6 +138,19 @@ class DictationViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 await self?.startDictation()
+            }
+        }
+        checkPendingIntent()
+    }
+
+    private func checkPendingIntent() {
+        let shared = UserDefaults(suiteName: "group.com.dicticus")
+        if shared?.bool(forKey: "pendingDictation") == true {
+            shared?.set(false, forKey: "pendingDictation")
+            Task {
+                // Small delay to ensure everything is ready
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                await self.startDictation()
             }
         }
     }

@@ -7,16 +7,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Integration") {
-                    NavigationLink(destination: SetupGuidesView()) {
-                        Label("Setup Guides", systemImage: "questionmark.circle")
-                    }
-                    
-                    Button(action: openSystemSettings) {
-                        Label("System Permissions", systemImage: "gear")
-                    }
-                }
-                
                 Section("Transcriptions") {
                     NavigationLink(destination: DictionaryManagementView()) {
                         Label("Custom Dictionary", systemImage: "book")
@@ -36,6 +26,34 @@ struct SettingsView: View {
                         UserDefaults.standard.set($0, forKey: "useITN")
                     })) {
                         Label("Numbers to Digits", systemImage: "number")
+                    }
+                    
+                    Toggle(isOn: .init(get: {
+                        UserDefaults.standard.bool(forKey: "useAutoStop") || !UserDefaults.standard.dictionaryRepresentation().keys.contains("useAutoStop")
+                    }, set: { 
+                        UserDefaults.standard.set($0, forKey: "useAutoStop")
+                    })) {
+                        Label("Auto-Stop Recording", systemImage: "stop.circle")
+                    }
+                }
+                
+                Section("Integration") {
+                    NavigationLink(destination: SetupGuidesView()) {
+                        Label("Setup Guides", systemImage: "questionmark.circle")
+                    }
+                    
+                    if UIDevice.current.userInterfaceIdiom == .phone {
+                        Button(action: {
+                            if let url = URL(string: "App-Prefs:root=Action_Button") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            Label("Action Button Settings", systemImage: "iphone.gen3")
+                        }
+                    }
+                    
+                    Button(action: openSystemSettings) {
+                        Label("System Permissions", systemImage: "gear")
                     }
                 }
                 
