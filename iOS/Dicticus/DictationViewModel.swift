@@ -15,6 +15,7 @@ class DictationViewModel: ObservableObject {
     @Published var state: State = .idle
     @Published var lastResult: String?
     @Published var error: String?
+    @Published var isShortcutLaunch: Bool = false
 
     init() {
         cleanupInconsistentState()
@@ -33,6 +34,9 @@ class DictationViewModel: ObservableObject {
     // Set by DicticusApp once warmup completes (property injection)
     var transcriptionService: IOSTranscriptionService? {
         didSet {
+            if transcriptionService != nil {
+                error = nil
+            }
             transcriptionService?.onSilenceDetected = { [weak self] in
                 Task { @MainActor in
                     await self?.stopDictation()
@@ -139,6 +143,7 @@ class DictationViewModel: ObservableObject {
         }
 
         await endLiveActivity()
+        isShortcutLaunch = false
         state = .idle
     }
 
@@ -195,6 +200,8 @@ class DictationViewModel: ObservableObject {
         let shared = UserDefaults(suiteName: "group.com.dicticus")
         if shared?.bool(forKey: "pendingDictation") == true {
             shared?.set(false, forKey: "pendingDictation")
+            isShortcutLaunch = shared?.bool(forKey: "isShortcutLaunch") ?? false
+            shared?.set(false, forKey: "isShortcutLaunch")
             Task {
                 // Small delay to ensure everything is ready
                 try? await Task.sleep(nanoseconds: 500_000_000)
