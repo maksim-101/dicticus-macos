@@ -68,26 +68,19 @@ class KeyboardViewController: UIInputViewController {
     // MARK: - Responder Chain URL Opener
 
     /// Opens a URL from the keyboard extension using the responder chain.
-    /// Keyboard extensions cannot use `UIApplication.shared.open()` — this traverses
-    /// the responder chain to find UIApplication and calls open on it.
+    /// Keyboard extensions cannot use `UIApplication.shared` — instead we walk
+    /// the responder chain to find UIApplication and call open() on it directly.
     private func openURL(_ url: URL) {
-        let modernSelector = NSSelectorFromString("openURL:options:completionHandler:")
-        let legacySelector = NSSelectorFromString("openURL:")
         var responder: UIResponder? = self
         while let r = responder {
-            if r.responds(to: modernSelector) {
-                r.perform(modernSelector, with: url, with: NSDictionary())
-                logger.info("Opened URL via modern selector: \(url)")
-                return
-            }
-            if r.responds(to: legacySelector) {
-                r.perform(legacySelector, with: url)
-                logger.info("Opened URL via legacy selector: \(url)")
+            if let app = r as? UIApplication {
+                app.open(url, options: [:], completionHandler: nil)
+                logger.info("Opened URL: \(url)")
                 return
             }
             responder = r.next
         }
-        logger.error("Failed to find responder for openURL — no UIApplication in chain")
+        logger.error("Failed to find UIApplication in responder chain")
     }
 
     // MARK: - Smart Text Insertion
