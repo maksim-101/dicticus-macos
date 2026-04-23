@@ -73,6 +73,10 @@ class DictationViewModel: ObservableObject {
     func stopDictation() async {
         guard state == .recording else { return }
         state = .transcribing
+
+        let shared = UserDefaults(suiteName: "group.com.dicticus")
+        let isKeyboardSource = shared?.bool(forKey: "kbSource") == true
+
         do {
             if let result = try await transcriptionService?.stopRecordingAndTranscribe() {
                 UIPasteboard.general.string = result.text
@@ -88,6 +92,11 @@ class DictationViewModel: ObservableObject {
                     confidence: Double(result.confidence)
                 )
                 HistoryService.shared.save(entry)
+
+                // Deliver to keyboard extension if it was the source
+                if isKeyboardSource {
+                    shared?.set(result.text, forKey: "kbResult")
+                }
             }
         } catch let transcriptionError as TranscriptionError {
             switch transcriptionError {
@@ -109,6 +118,12 @@ class DictationViewModel: ObservableObject {
         } catch {
             self.error = error.localizedDescription
         }
+
+        if isKeyboardSource {
+            shared?.set(true, forKey: "kbResultReady")
+            shared?.set(false, forKey: "kbSource")
+        }
+
         await endLiveActivity()
         state = .idle
     }
