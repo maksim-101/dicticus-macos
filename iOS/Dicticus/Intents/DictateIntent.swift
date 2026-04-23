@@ -14,8 +14,8 @@ struct DictateIntent: AudioRecordingIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        UserDefaults(suiteName: "group.com.dicticus")?.set(true, forKey: "pendingDictation")
-        UserDefaults(suiteName: "group.com.dicticus")?.set(true, forKey: "isShortcutLaunch")
+        DicticusIPCBridge.defaults?.set(true, forKey: "pendingDictation")
+        DicticusIPCBridge.defaults?.set(true, forKey: "isShortcutLaunch")
         NotificationCenter.default.post(name: .startDictation, object: nil)
         return .result()
     }

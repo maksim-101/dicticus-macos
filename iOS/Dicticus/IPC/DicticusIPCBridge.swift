@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Shared IPC constants and helpers for Darwin notification-based communication
 /// between the Dicticus main app and the DicticusKeyboard extension.
@@ -91,8 +92,7 @@ enum DicticusIPCBridge {
     /// Session is considered "warm" if heartbeat is less than this many seconds old.
     static let heartbeatFreshnessWindow: TimeInterval = 5
 
-    /// Rate-limiter for heartbeat writes — prevents thrashing UserDefaults.
-    nonisolated(unsafe) private static var lastHeartbeatUpdateTime: TimeInterval = 0
+    private static let heartbeatLock = OSAllocatedUnfairLock(initialState: TimeInterval(0))
 
     /// Returns true if the main app's heartbeat timestamp is fresh (< 5 seconds old).
     static func isSessionWarm() -> Bool {
@@ -104,9 +104,11 @@ enum DicticusIPCBridge {
     /// Updates the heartbeat timestamp. Rate-limited to at most once per second.
     static func touchHeartbeat() {
         let now = Date().timeIntervalSince1970
-        guard now - lastHeartbeatUpdateTime >= 1.0 else { return }
-        lastHeartbeatUpdateTime = now
-        defaults?.set(now, forKey: Key.sessionTimestamp)
+        heartbeatLock.withLock { lastUpdate in
+            guard now - lastUpdate >= 1.0 else { return }
+            lastUpdate = now
+            defaults?.set(now, forKey: Key.sessionTimestamp)
+        }
     }
 
     // MARK: - Transient State Cleanup

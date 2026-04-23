@@ -26,7 +26,7 @@ class DictationViewModel: ObservableObject {
     }
 
     private func cleanupInconsistentState() {
-        let shared = UserDefaults(suiteName: "group.com.dicticus")
+        let shared = DicticusIPCBridge.defaults
         // If we were in the middle of a keyboard dictation and crashed/closed,
         // clear the source flag and signal completion to stop keyboard polling.
         if shared?.bool(forKey: "kbSource") == true {
@@ -99,7 +99,7 @@ class DictationViewModel: ObservableObject {
         state = .transcribing
         hostBridge?.publishTranscribing()
 
-        let shared = UserDefaults(suiteName: "group.com.dicticus")
+        let shared = DicticusIPCBridge.defaults
         let isKeyboardSource = shared?.bool(forKey: "kbSource") == true
 
         do {
@@ -211,7 +211,7 @@ class DictationViewModel: ObservableObject {
     }
 
     private func checkPendingIntent() {
-        let shared = UserDefaults(suiteName: "group.com.dicticus")
+        let shared = DicticusIPCBridge.defaults
         if shared?.bool(forKey: "pendingDictation") == true {
             shared?.set(false, forKey: "pendingDictation")
             let shortcut = shared?.bool(forKey: "isShortcutLaunch") ?? false

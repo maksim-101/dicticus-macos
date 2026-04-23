@@ -26,7 +26,7 @@ struct DicticusApp: App {
                     .environmentObject(viewModel)
                     .onOpenURL { url in
                         if url.scheme == "dicticus" && url.host == "dictate" {
-                            let shared = UserDefaults(suiteName: "group.com.dicticus")
+                            let shared = DicticusIPCBridge.defaults
                             shared?.set(true, forKey: "kbSource")
                             shared?.set(true, forKey: "pendingDictation")
 
@@ -35,7 +35,7 @@ struct DicticusApp: App {
                         }
                         // Cold-start URL from keyboard extension via Darwin IPC
                         if url.scheme == "dicticus" && url.host == "record" && url.path == "/start" {
-                            let shared = UserDefaults(suiteName: "group.com.dicticus")
+                            let shared = DicticusIPCBridge.defaults
                             shared?.set(true, forKey: "pendingDictation")
                             NotificationCenter.default.post(name: .startDictation, object: nil)
                         }
@@ -47,7 +47,7 @@ struct DicticusApp: App {
                             }
                     }
                     .onAppear {
-                        let pendingDictation = UserDefaults(suiteName: "group.com.dicticus")?.bool(forKey: "pendingDictation") ?? false
+                        let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
                         if !hasSeenWhatsNewV2 && !pendingDictation {
                             showingWhatsNew = true
                         }
@@ -88,7 +88,11 @@ struct DicticusApp: App {
                 }
                 hostBridge.onCancelRecordingCommand = {
                     Task { @MainActor in
+                        if viewModel.state == .recording {
+                            viewModel.transcriptionService?.cancelRecording()
+                        }
                         viewModel.state = .idle
+                        viewModel.hostBridge?.publishNoSpeech()
                     }
                 }
                 hostBridge.registerObservers()
