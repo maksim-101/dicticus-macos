@@ -37,6 +37,19 @@ final class DictationViewModelTests: XCTestCase {
         XCTAssertNil(vm.lastResult)
     }
 
+    func testIsShortcutLaunchInitiallyFalse() {
+        let vm = DictationViewModel()
+        XCTAssertFalse(vm.isShortcutLaunch, "isShortcutLaunch should be false on init")
+    }
+
+    func testStopDictationFromIdleDoesNotAffectShortcutFlag() async {
+        let vm = DictationViewModel()
+        vm.isShortcutLaunch = true  // Simulate shortcut launch
+        await vm.stopDictation()
+        // stopDictation guards on state == .recording, so it's a no-op from idle
+        XCTAssertTrue(vm.isShortcutLaunch, "stopDictation from idle should not reset shortcut flag")
+    }
+
     func testStateEnumEquality() {
         let idle: DictationViewModel.State = .idle
         let recording: DictationViewModel.State = .recording
