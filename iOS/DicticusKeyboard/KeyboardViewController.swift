@@ -1,32 +1,61 @@
 import UIKit
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.dicticus.ios.keyboard", category: "keyboard")
 
 class KeyboardViewController: UIInputViewController {
+    private let dictationController = DicticusKeyboardDictationController()
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupDictationController()
         setupSwiftUI()
     }
-    
-    private var pollingTimer: Timer?
-    
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        dictationController.setup()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        dictationController.teardown()
+    }
+
+    // MARK: - Dictation Controller Wiring
+
+    private func setupDictationController() {
+        // Wire URL opening via responder chain (keyboard extensions cannot use UIApplication.shared.open)
+        dictationController.openURL = { [weak self] url in
+            self?.openURL(url)
+        }
+
+        // Wire transcription insertion via textDocumentProxy with smart text processing
+        dictationController.onTranscriptionReady = { [weak self] text in
+            guard let self else { return }
+            let processedText = self.processTextForInsertion(text)
+            self.textDocumentProxy.insertText(processedText)
+            logger.info("Inserted transcription: \(processedText.prefix(50))")
+        }
+    }
+
     private func setupSwiftUI() {
         let keyboardView = KeyboardExtensionView(
             proxy: self.textDocumentProxy,
             advanceToNextInputMode: { [weak self] in
                 self?.advanceToNextInputMode()
             },
-            startDictation: { [weak self] in
-                self?.handleDictationTap()
-            }
+            dictationController: dictationController
         )
-        
+
         let hostingController = UIHostingController(rootView: keyboardView)
         hostingController.view.backgroundColor = .clear
-        
+
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
-        
+
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
@@ -35,44 +64,73 @@ class KeyboardViewController: UIInputViewController {
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
-    
-    private func handleDictationTap() {
-        // 1. Set kbSource flag in shared UserDefaults
-        let shared = UserDefaults(suiteName: "group.com.dicticus")
-        shared?.set(true, forKey: "kbSource")
-        
-        // 2. Open main app via URL scheme
-        // Note: Requires RequestsOpenAccess=YES in Info.plist
-        let url = URL(string: "dicticus://dictate?source=keyboard")!
-        self.extensionContext?.open(url, completionHandler: { [weak self] success in
-            if success {
-                // 3. Start polling for results
-                self?.startPolling()
+
+    // MARK: - Responder Chain URL Opener
+
+    /// Opens a URL from the keyboard extension using the responder chain.
+    /// Keyboard extensions cannot use `UIApplication.shared.open()` -- this traverses
+    /// the responder chain to find UIApplication and calls openURL on it.
+    /// Uses the legacy `openURL:` selector which works in keyboard extensions.
+    private func openURL(_ url: URL) {
+        let selector = NSSelectorFromString("openURL:")
+        var responder: UIResponder? = self
+        while let currentResponder = responder {
+            if currentResponder.responds(to: selector) {
+                currentResponder.perform(selector, with: url)
+                return
             }
-        })
-    }
-    
-    private func startPolling() {
-        pollingTimer?.invalidate()
-        pollingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            self?.checkForResult()
+            responder = currentResponder.next
         }
+        logger.error("Failed to find responder for openURL")
     }
-    
-    private func checkForResult() {
-        let shared = UserDefaults(suiteName: "group.com.dicticus")
-        if shared?.bool(forKey: "kbResultReady") == true {
-            if let result = shared?.string(forKey: "kbResult") {
-                self.textDocumentProxy.insertText(result)
+
+    // MARK: - Smart Text Insertion
+
+    /// Processes transcription text for insertion: trims trailing newlines,
+    /// normalizes leading capitalization based on cursor context,
+    /// and adds smart leading space if needed.
+    private func processTextForInsertion(_ text: String) -> String {
+        // Step 0: Trim trailing newlines
+        let cleaned = text.replacingOccurrences(of: #"[\r\n]+$"#, with: "", options: .regularExpression)
+        guard !cleaned.isEmpty else { return cleaned }
+
+        // Step 1: Capitalization normalization
+        let contextBefore = textDocumentProxy.documentContextBeforeInput ?? ""
+        var result = cleaned
+
+        // If first character is uppercase and not at sentence start, lowercase it.
+        // Preserves acronyms (e.g. "NASA") and proper nouns by checking if the second char is also uppercase.
+        if let firstChar = result.first, firstChar.isUppercase {
+            let isAcronymOrProperNoun = result.count >= 2 && result.dropFirst().first?.isUppercase == true
+            if !isAcronymOrProperNoun {
+                let trimmedContext = contextBefore.trimmingCharacters(in: .whitespaces)
+                let atSentenceStart = trimmedContext.isEmpty ||
+                    trimmedContext.hasSuffix(".") ||
+                    trimmedContext.hasSuffix("!") ||
+                    trimmedContext.hasSuffix("?") ||
+                    trimmedContext.hasSuffix("\n")
+                if !atSentenceStart {
+                    result = result.prefix(1).lowercased() + result.dropFirst()
+                }
             }
-            
-            // Cleanup shared defaults
-            shared?.set(false, forKey: "kbResultReady")
-            shared?.removeObject(forKey: "kbResult")
-            
-            // Stop polling
-            pollingTimer?.invalidate()
-            pollingTimer = nil
         }
+
+        // Step 2: Smart leading space
+        // Add a space before the transcription if the cursor is after a word/closing punctuation
+        // and the transcription doesn't start with punctuation.
+        if let lastChar = contextBefore.last {
+            let needsSpace = lastChar.isLetter || lastChar.isNumber ||
+                lastChar == ")" || lastChar == "]" || lastChar == "\"" ||
+                lastChar == "\u{201D}" // right double quotation mark
+            let startsWithPunctuation = result.first.map {
+                ".!?,;:)]\"\u{201D}".contains($0)
+            } ?? false
+
+            if needsSpace && !startsWithPunctuation {
+                result = " " + result
+            }
+        }
+
+        return result
     }
 }
