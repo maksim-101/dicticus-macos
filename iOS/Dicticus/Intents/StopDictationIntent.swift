@@ -5,7 +5,7 @@ extension Notification.Name {
     static let stopDictation = Notification.Name("com.dicticus.stopDictation")
 }
 
-struct StopDictationIntent: AppIntent {
+struct StopDictationIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Stop Dictation"
     static let description = IntentDescription("Stop current dictation in Dicticus")
 
