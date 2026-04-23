@@ -52,8 +52,9 @@ class DictationViewModel: ObservableObject {
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
     nonisolated(unsafe) private var notificationObservers: [NSObjectProtocol] = []
 
-    func startDictation() async {
+    func startDictation(fromShortcut: Bool = false) async {
         guard state == .idle else { return }
+        isShortcutLaunch = fromShortcut
 
         // STEP 0: Ensure transcription service is available (model loaded)
         guard transcriptionService != nil else {
@@ -199,15 +200,12 @@ class DictationViewModel: ObservableObject {
         let shared = UserDefaults(suiteName: "group.com.dicticus")
         if shared?.bool(forKey: "pendingDictation") == true {
             shared?.set(false, forKey: "pendingDictation")
-            isShortcutLaunch = shared?.bool(forKey: "isShortcutLaunch") ?? false
+            let shortcut = shared?.bool(forKey: "isShortcutLaunch") ?? false
             shared?.set(false, forKey: "isShortcutLaunch")
             Task {
-                // Small delay to ensure everything is ready
                 try? await Task.sleep(nanoseconds: 500_000_000)
-                await self.startDictation()
+                await self.startDictation(fromShortcut: shortcut)
             }
-        } else {
-            isShortcutLaunch = false
         }
     }
 
