@@ -62,6 +62,9 @@ targets:
       PRODUCT_NAME: DicticusKeyboard
       SWIFT_VERSION: "6.0"
       DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+    dependencies:
+      - package: GRDB
+        product: GRDB
     info:
       path: DicticusKeyboard/Info.plist
       properties:
@@ -80,6 +83,7 @@ targets:
     sources:
       - path: DicticusWidget
       - path: Dicticus/LiveActivity/DictationActivity.swift
+      - path: Dicticus/Intents/StopDictationIntent.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios.widget
       INFOPLIST_FILE: DicticusWidget/Info.plist

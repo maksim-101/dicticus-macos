@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 struct DictationLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -21,8 +22,24 @@ struct DictationLiveActivity: Widget {
                     Text(context.state.isRecording ? "Recording" : "Processing")
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text("Tap to open Dicticus")
-                        .font(.caption)
+                    HStack {
+                        Text("Tap to open Dicticus")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        if context.state.isRecording {
+                            Button(intent: StopDictationIntent()) {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .padding(8)
+                                    .background(Circle().fill(Color.red))
+                                    .foregroundColor(.white)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
             } compactLeading: {
                 Image(systemName: "mic.fill").foregroundColor(.red)
