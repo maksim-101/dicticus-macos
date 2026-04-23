@@ -24,7 +24,7 @@
 
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
-| 17.5. Inline Shortcut Dictation | v2.1 | Darwin IPC keyboard dictation — mic button on Dicticus keyboard triggers recording in main app via Darwin notifications, transcription inserts at cursor via textDocumentProxy (PIVOTED from shortcut UI) | In progress | - |
+| 17.5. Inline Shortcut Dictation | v2.1 | Darwin IPC keyboard dictation — mic button on Dicticus keyboard triggers recording in main app via Darwin notifications, transcription inserts at cursor via textDocumentProxy (PIVOTED from shortcut UI) | Done | Success |
 | 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
 | 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Not started | - |
 
@@ -51,7 +51,7 @@
 **Plans:** 3 plans
 - [x] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle (Action Button fallback)
 - [x] 17.5-02-PLAN.md — IPC Bridge (shared) + Host Bridge (main app) + DictationViewModel wiring
-- [ ] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
+- [x] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
 *Last updated: 2026-04-23 — Phase 17.5 replanned with Darwin IPC approach (2 new plans in 2 waves)*

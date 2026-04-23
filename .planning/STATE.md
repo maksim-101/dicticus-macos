@@ -1,7 +1,7 @@
 # Project State: Dicticus
 
 **Last Updated:** 2026-04-23
-**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS)
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS - Phase 17.5 complete)
 
 ## Project Reference
 
@@ -13,12 +13,12 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 17.5 of TBD (Inline Shortcut Dictation)
-Plan: 2 of 3
-Status: In progress
-Last activity: 2026-04-23 — Plan 02 complete: Darwin IPC bridge foundation with shared constants, host bridge, and DictationViewModel wiring.
+Plan: 3 of 3
+Status: Phase complete
+Last activity: 2026-04-23 — Plan 03 complete: Keyboard IPC manager, dictation controller, smart text insertion, stateful mic button.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
-Progress (v2.1): [▓▓▓▓▓▓░░░░] 60%
+Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
 
 ## Completed Milestones
 
@@ -42,6 +42,10 @@ Progress (v2.1): [▓▓▓▓▓▓░░░░] 60%
 - **D-24:** publishTranscriptionReady writes text to UserDefaults BEFORE posting Darwin notification to prevent race condition (Phase 17.5).
 - **D-25:** Heartbeat timer runs continuously so keyboard can always check isSessionWarm() between dictation sessions (Phase 17.5).
 - **D-26:** DicticusIPCBridge imports only Foundation for dual-target compilation in app and extension (Phase 17.5).
+- **D-27:** Responder-chain URL opener uses legacy openURL: selector for keyboard extension compatibility (Phase 17.5).
+- **D-28:** Smart text insertion lowercases first char mid-sentence but preserves acronyms via two-consecutive-uppercase detection (Phase 17.5).
+- **D-29:** Warm-start grace period of 0.5s before falling back to URL launch matches KeyVox default (Phase 17.5).
+- **D-30:** Long-press gesture (0.5s) on mic button cancels active dictation as escape hatch (Phase 17.5).
 
 ## Active Concerns / Risks
 - Phase 17: Keyboard extension dictation bounce blocked by iOS 26 restrictions — Apple broke all programmatic URL-opening from keyboard extensions. Keyboard typing works; dictation pivot to Phase 17.5.
@@ -54,5 +58,5 @@ Progress (v2.1): [▓▓▓▓▓▓░░░░] 60%
 ## Session Continuity
 
 Last session: 2026-04-23
-Stopped at: Completed 17.5-02-PLAN.md — Darwin IPC bridge foundation (shared + host + ViewModel wiring)
-Resume file: .planning/phases/17.5-inline-shortcut-dictation/17.5-03-PLAN.md
+Stopped at: Completed 17.5-03-PLAN.md — Keyboard IPC manager, dictation controller, smart text insertion, stateful mic button
+Resume file: Phase 17.5 complete (all 3 plans done)
