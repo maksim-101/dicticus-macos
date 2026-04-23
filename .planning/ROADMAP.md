@@ -50,7 +50,7 @@
 
 **Plans:** 3 plans
 - [x] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle (Action Button fallback)
-- [ ] 17.5-02-PLAN.md — IPC Bridge (shared) + Host Bridge (main app) + DictationViewModel wiring
+- [x] 17.5-02-PLAN.md — IPC Bridge (shared) + Host Bridge (main app) + DictationViewModel wiring
 - [ ] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
