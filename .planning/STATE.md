@@ -1,7 +1,7 @@
 # Project State: Dicticus
 
-**Last Updated:** 2026-04-22
-**Milestone:** v2.0 iOS App — Shortcut Dictation (SHIPPED)
+**Last Updated:** 2026-04-23
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS)
 
 ## Project Reference
 
@@ -12,19 +12,20 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 17 of TBD (Keyboard Extension)
-Plan: 3 of 4
-Status: In Progress
-Last activity: 2026-04-22 — Dictation loop (keyboard -> app -> keyboard) implemented (17-03)
+Phase: 17.5 of TBD (Inline Shortcut Dictation)
+Plan: 0 of 2
+Status: Ready to execute
+Last activity: 2026-04-23 — Phase 17.5 planned: 2 plans in 2 waves.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
-Progress (v2.1): [▓▓▓░░░░░░░] 30%
+Progress (v2.1): [▓▓▓▓░░░░░░] 40%
 
 ## Completed Milestones
 
 - **v1.0 MVP** — Phases 1-5 — SHIPPED 2026-04-18
 - **v1.1 Cleanup Intelligence & Distribution** — Phases 6-11 — SHIPPED 2026-04-21 (v1.1.1)
 - **v2.0 iOS App — Shortcut Dictation** — Phases 12-16 — SHIPPED 2026-04-22
+- **v2.1 Keyboard Extension & Polish** — Phase 17 — COMPLETED 2026-04-23
 
 ## Key Decisions
 
@@ -32,16 +33,20 @@ Progress (v2.1): [▓▓▓░░░░░░░] 30%
 - **D-15:** Used `NavigationSplitView` with adaptive logic for iPad sidebar support (Phase 16).
 - **D-16:** Integrated `GRDB` for shared transcription history between app and future extensions (Phase 15).
 - **D-17:** Implemented "Whats New" flow to highlight v2.0 features to upgrading users (Phase 16).
-- **D-18:** Consistently clear `kbSource` and set `kbResultReady` in `DictationViewModel` regardless of success/failure to ensure reliable state and stop keyboard polling.
-- **D-19:** Used `Timer`-based polling in `KeyboardViewController` (0.5s interval) as planned for simplicity and reliability.
+- **D-18:** Consistently clear `kbSource` and set `kbResultReady` in `DictationViewModel` regardless of success/failure to ensure reliable state and stop keyboard polling (Phase 17).
+- **D-19:** Used `Timer`-based polling in `KeyboardViewController` (0.5s interval) as planned for simplicity and reliability (Phase 17).
+- **D-20:** Switched `StopDictationIntent` to `LiveActivityIntent` for better interactive support in Dynamic Island (Phase 17).
 
 ## Active Concerns / Risks
-- Phase 17: Keyboard extension 30-50MB memory limit — ASR runs in main app, not extension (bounce architecture). Resolved by design.
+- Phase 17: Keyboard extension dictation bounce blocked by iOS 26 restrictions — Apple broke all programmatic URL-opening from keyboard extensions. Keyboard typing works; dictation pivot to Phase 17.5.
 - Phase 18: iCloud Sync conflict resolution for Dictionary entries.
 - iOS 26 `SpeechAnalyzer` supports German — benchmark vs Parakeet v3 before committing to model download flow long-term.
 
+## Roadmap Evolution
+- Phase 17.5 inserted after Phase 17: Inline Shortcut Dictation — Auto-Return Flow (URGENT). Replaces keyboard extension bounce approach blocked by iOS 26.
+
 ## Session Continuity
 
-Last session: 2026-04-22
-Stopped at: Keyboard UI (Plan 17-02) complete. Foundations (17-01) also verified as complete.
-Resume file: .planning/phases/17-keyboard-extension/17-03-PLAN.md
+Last session: 2026-04-23
+Stopped at: Phase 17.5 planned — ready for execution.
+Resume file: .planning/phases/17.5-inline-shortcut-dictation/
