@@ -35,8 +35,8 @@
 **Requirements:** KEYB-01, KEYB-02
 
 **Plans:**
-- [ ] 17-01-PLAN.md — Foundation, Target Setup, and URL Scheme
-- [ ] 17-02-PLAN.md — Keyboard UI (SwiftUI QWERTZ Layout)
+- [x] 17-01-PLAN.md — Foundation, Target Setup, and URL Scheme
+- [x] 17-02-PLAN.md — Keyboard UI (SwiftUI QWERTZ Layout)
 - [ ] 17-03-PLAN.md — Dictation Loop and Result Delivery
 - [ ] 17-04-PLAN.md — Live Activity Stop Button and Polish
 

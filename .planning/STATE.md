@@ -13,11 +13,12 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 17 of TBD (Keyboard Extension)
-Plan: 0 of TBD
-Status: Pending Planning
-Last activity: 2026-04-22 — Milestone v2.0 completed (Phases 12-16)
+Plan: 2 of 4
+Status: In Progress
+Last activity: 2026-04-22 — Keyboard UI (SwiftUI QWERTZ Layout) implemented (17-02)
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
+Progress (v2.1): [▓▓░░░░░░░░] 20%
 
 ## Completed Milestones
 
@@ -40,5 +41,5 @@ Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 ## Session Continuity
 
 Last session: 2026-04-22
-Stopped at: Phase 17 context gathered — keyboard extension architecture, UI, flow, and text insertion decisions captured
-Resume file: .planning/phases/17-keyboard-extension/17-CONTEXT.md
+Stopped at: Keyboard UI (Plan 17-02) complete. Foundations (17-01) also verified as complete.
+Resume file: .planning/phases/17-keyboard-extension/17-03-PLAN.md
