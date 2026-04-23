@@ -38,6 +38,10 @@ targets:
       GENERATE_INFOPLIST_FILE: YES
       CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
       DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+      INFOPLIST_KEY_CFBundleURLTypes:
+        - CFBundleURLName: com.dicticus.ios
+          CFBundleURLSchemes:
+            - dicticus
     dependencies:
       - package: GRDB
         product: GRDB
@@ -52,8 +56,12 @@ targets:
     sources:
       - path: DicticusKeyboard
       - path: ../Shared
+      - path: Dicticus/IPC/DicticusIPCBridge.swift
     entitlements:
       path: DicticusKeyboard/DicticusKeyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.dicticus
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios.keyboard
       INFOPLIST_FILE: DicticusKeyboard/Info.plist
@@ -68,6 +76,7 @@ targets:
     info:
       path: DicticusKeyboard/Info.plist
       properties:
+        CFBundleDisplayName: Dicticus
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: DicticusKeyboard.KeyboardViewController
@@ -95,6 +104,7 @@ targets:
     info:
       path: DicticusWidget/Info.plist
       properties:
+        CFBundleDisplayName: Dicticus
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         NSSupportsLiveActivities: true
@@ -108,3 +118,27 @@ targets:
       GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dicticus
+
+schemes:
+  Dicticus:
+    build:
+      targets:
+        Dicticus: [all]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - DicticusTests
+    archive:
+      config: Release
+    profile:
+      config: Release
+  DicticusKeyboard:
+    build:
+      targets:
+        DicticusKeyboard: [all]
+        Dicticus: [all]
+    run:
+      config: Debug
+      askForAppToLaunch: true
