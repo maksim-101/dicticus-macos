@@ -24,7 +24,7 @@
 
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
-| 17.5. Inline Shortcut Dictation | v2.1 | Auto-return App Intent flow — record, transcribe, copy to clipboard inline via Shortcut, returning user to previous app automatically (INSERTED) | Planning complete | - |
+| 17.5. Inline Shortcut Dictation | v2.1 | Auto-return App Intent flow — record, transcribe, copy to clipboard inline via Shortcut, returning user to previous app automatically (INSERTED) | In progress (1/2 plans) | - |
 | 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
 | 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Not started | - |
 
@@ -49,8 +49,8 @@
 **Requirements:** KEYB-02 (text at cursor without app switching — alternative approach)
 
 **Plans:** 2 plans
-- [ ] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle
+- [x] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle
 - [ ] 17.5-02-PLAN.md — Shortcut-mode UI (minimal chrome, swipe-back hint, WhatsNew suppression)
 
 ---
-*Last updated: 2026-04-23 — Phase 17.5 planned (2 plans, 2 waves)*
+*Last updated: 2026-04-23 — Phase 17.5 plan 01 complete (1/2 plans done)*

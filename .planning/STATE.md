@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 17.5 of TBD (Inline Shortcut Dictation)
-Plan: 0 of 2
-Status: Ready to execute
-Last activity: 2026-04-23 — Phase 17.5 planned: 2 plans in 2 waves.
+Plan: 1 of 2
+Status: In progress
+Last activity: 2026-04-23 — Plan 01 complete: isShortcutLaunch flag wired through intent-viewmodel pipeline.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓░░░░░░] 40%
@@ -36,6 +36,8 @@ Progress (v2.1): [▓▓▓▓░░░░░░] 40%
 - **D-18:** Consistently clear `kbSource` and set `kbResultReady` in `DictationViewModel` regardless of success/failure to ensure reliable state and stop keyboard polling (Phase 17).
 - **D-19:** Used `Timer`-based polling in `KeyboardViewController` (0.5s interval) as planned for simplicity and reliability (Phase 17).
 - **D-20:** Switched `StopDictationIntent` to `LiveActivityIntent` for better interactive support in Dynamic Island (Phase 17).
+- **D-21:** isShortcutLaunch flag read synchronously before async Task in checkPendingIntent to prevent race conditions (Phase 17.5).
+- **D-22:** Flag reset in stopDictation ensures manual dictation after shortcut does not inherit shortcut mode (Phase 17.5).
 
 ## Active Concerns / Risks
 - Phase 17: Keyboard extension dictation bounce blocked by iOS 26 restrictions — Apple broke all programmatic URL-opening from keyboard extensions. Keyboard typing works; dictation pivot to Phase 17.5.
@@ -48,5 +50,5 @@ Progress (v2.1): [▓▓▓▓░░░░░░] 40%
 ## Session Continuity
 
 Last session: 2026-04-23
-Stopped at: Phase 17.5 planned — ready for execution.
-Resume file: .planning/phases/17.5-inline-shortcut-dictation/
+Stopped at: Completed 17.5-01-PLAN.md — isShortcutLaunch flag pipeline
+Resume file: .planning/phases/17.5-inline-shortcut-dictation/17.5-02-PLAN.md
