@@ -143,7 +143,6 @@ class DictationViewModel: ObservableObject {
         }
 
         await endLiveActivity()
-        isShortcutLaunch = false
         state = .idle
     }
 
@@ -207,6 +206,8 @@ class DictationViewModel: ObservableObject {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 await self.startDictation()
             }
+        } else {
+            isShortcutLaunch = false
         }
     }
 
