@@ -110,7 +110,9 @@ final class DicticusHostBridge: ObservableObject {
         }
     }
 
-    deinit {
-        heartbeatTimer?.invalidate()
+    nonisolated deinit {
+        MainActor.assumeIsolated {
+            heartbeatTimer?.invalidate()
+        }
     }
 }
