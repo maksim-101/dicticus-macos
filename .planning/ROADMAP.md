@@ -24,7 +24,7 @@
 
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
-| 17.5. Inline Shortcut Dictation | v2.1 | Auto-return App Intent flow — record, transcribe, copy to clipboard inline via Shortcut, returning user to previous app automatically (INSERTED) | In progress (1/2 plans) | - |
+| 17.5. Inline Shortcut Dictation | v2.1 | Darwin IPC keyboard dictation — mic button on Dicticus keyboard triggers recording in main app via Darwin notifications, transcription inserts at cursor via textDocumentProxy (PIVOTED from shortcut UI) | In progress | - |
 | 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
 | 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Not started | - |
 
@@ -43,14 +43,15 @@
 
 ---
 
-### Phase 17.5: Inline Shortcut Dictation — Auto-Return Flow (INSERTED)
-**Goal:** Enhance the Action Button shortcut so the entire dictation flow (record, transcribe, copy to clipboard) happens with minimal friction, showing a stripped-down UI and guiding the user back to their previous app.
+### Phase 17.5: Darwin IPC Keyboard Dictation (PIVOTED)
+**Goal:** Enable the Dicticus keyboard extension's mic button to trigger dictation in the main app via Darwin notification IPC, with transcription inserted directly at the cursor via textDocumentProxy — user never leaves their current app.
 
-**Requirements:** KEYB-02 (text at cursor without app switching — alternative approach)
+**Requirements:** KEYB-02 (text at cursor without app switching — keyboard extension approach)
 
-**Plans:** 2 plans
-- [x] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle
-- [ ] 17.5-02-PLAN.md — Shortcut-mode UI (minimal chrome, swipe-back hint, WhatsNew suppression)
+**Plans:** 3 plans
+- [x] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle (Action Button fallback)
+- [ ] 17.5-02-PLAN.md — IPC Bridge (shared) + Host Bridge (main app) + DictationViewModel wiring
+- [ ] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
-*Last updated: 2026-04-23 — Phase 17.5 plan 01 complete (1/2 plans done)*
+*Last updated: 2026-04-23 — Phase 17.5 replanned with Darwin IPC approach (2 new plans in 2 waves)*
