@@ -17,6 +17,10 @@ class DictationViewModel: ObservableObject {
     @Published var error: String?
     @Published var isShortcutLaunch: Bool = false
 
+    /// IPC bridge for Darwin notification communication with keyboard extension.
+    /// Set by DicticusApp after warmup completes.
+    var hostBridge: DicticusHostBridge?
+
     init() {
         cleanupInconsistentState()
     }
@@ -82,6 +86,7 @@ class DictationViewModel: ObservableObject {
         state = .recording
         do {
             try transcriptionService?.startRecording()
+            hostBridge?.publishRecordingStarted()
         } catch {
             await endLiveActivity()
             self.error = error.localizedDescription
@@ -92,6 +97,7 @@ class DictationViewModel: ObservableObject {
     func stopDictation() async {
         guard state == .recording else { return }
         state = .transcribing
+        hostBridge?.publishTranscribing()
 
         let shared = UserDefaults(suiteName: "group.com.dicticus")
         let isKeyboardSource = shared?.bool(forKey: "kbSource") == true
@@ -116,6 +122,12 @@ class DictationViewModel: ObservableObject {
                 if isKeyboardSource {
                     shared?.set(result.text, forKey: "kbResult")
                 }
+
+                // Notify keyboard extension via Darwin IPC
+                hostBridge?.publishTranscriptionReady(result.text)
+            } else {
+                // No transcription result — notify keyboard
+                hostBridge?.publishNoSpeech()
             }
         } catch let transcriptionError as TranscriptionError {
             switch transcriptionError {
@@ -134,8 +146,10 @@ class DictationViewModel: ObservableObject {
             case .notRecording:
                 self.error = "Not recording."
             }
+            hostBridge?.publishNoSpeech()
         } catch {
             self.error = error.localizedDescription
+            hostBridge?.publishNoSpeech()
         }
 
         if isKeyboardSource {

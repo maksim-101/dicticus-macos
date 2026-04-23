@@ -7,6 +7,7 @@ struct DicticusApp: App {
     @ObservedObject private var dictionaryService = DictionaryService.shared
     @ObservedObject private var historyService = HistoryService.shared
     @StateObject private var viewModel = DictationViewModel()
+    @StateObject private var hostBridge = DicticusHostBridge()
 
     @State private var transcriptionService: IOSTranscriptionService?
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -28,8 +29,14 @@ struct DicticusApp: App {
                             let shared = UserDefaults(suiteName: "group.com.dicticus")
                             shared?.set(true, forKey: "kbSource")
                             shared?.set(true, forKey: "pendingDictation")
-                            
+
                             // If app is already active, trigger immediately
+                            NotificationCenter.default.post(name: .startDictation, object: nil)
+                        }
+                        // Cold-start URL from keyboard extension via Darwin IPC
+                        if url.scheme == "dicticus" && url.host == "record" && url.path == "/start" {
+                            let shared = UserDefaults(suiteName: "group.com.dicticus")
+                            shared?.set(true, forKey: "pendingDictation")
                             NotificationCenter.default.post(name: .startDictation, object: nil)
                         }
                     }
@@ -66,6 +73,25 @@ struct DicticusApp: App {
                 )
                 transcriptionService = service
                 viewModel.transcriptionService = service
+
+                // Wire Darwin IPC bridge for keyboard extension communication
+                viewModel.hostBridge = hostBridge
+                hostBridge.onStartRecordingCommand = {
+                    Task { @MainActor in
+                        await viewModel.startDictation()
+                    }
+                }
+                hostBridge.onStopRecordingCommand = {
+                    Task { @MainActor in
+                        await viewModel.stopDictation()
+                    }
+                }
+                hostBridge.onCancelRecordingCommand = {
+                    Task { @MainActor in
+                        viewModel.state = .idle
+                    }
+                }
+                hostBridge.registerObservers()
             }
         }
     }
