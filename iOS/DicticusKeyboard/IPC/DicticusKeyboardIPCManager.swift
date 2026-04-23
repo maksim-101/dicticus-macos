@@ -8,6 +8,7 @@ import Foundation
 ///
 /// Data (transcription text, recording state) is exchanged via App Group UserDefaults;
 /// Darwin notifications are pure signals that carry no payload.
+@MainActor
 final class DicticusKeyboardIPCManager {
 
     // MARK: - State Callbacks (set by DicticusKeyboardDictationController)

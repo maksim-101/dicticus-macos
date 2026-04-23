@@ -57,7 +57,6 @@ final class DicticusHostBridge: ObservableObject {
     }
 
     func publishNoSpeech() {
-        DicticusIPCBridge.clearTransientOperationState()
         DicticusIPCBridge.setRecordingState(.idle)
         DicticusIPCBridge.postDarwinNotification(named: DicticusIPCBridge.Notification.noSpeech)
     }
@@ -66,9 +65,8 @@ final class DicticusHostBridge: ObservableObject {
 
     private func startHeartbeatTimer() {
         heartbeatTimer?.invalidate()
-        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             Task { @MainActor in
-                _ = self  // prevent premature deallocation
                 DicticusIPCBridge.touchHeartbeat()
             }
         }

@@ -68,11 +68,11 @@ class IOSTranscriptionService: ObservableObject {
     @Published var lastResult: DicticusTranscriptionResult?
     @Published var error: String?
 
-    @AppStorage("useCustomDictionary", store: UserDefaults(suiteName: "group.com.dicticus"))
+    @AppStorage("useCustomDictionary", store: DicticusIPCBridge.defaults)
     var useCustomDictionary = true
-    @AppStorage("useITN", store: UserDefaults(suiteName: "group.com.dicticus"))
+    @AppStorage("useITN", store: DicticusIPCBridge.defaults)
     var useITN = true
-    @AppStorage("useAutoStop", store: UserDefaults(suiteName: "group.com.dicticus"))
+    @AppStorage("useAutoStop", store: DicticusIPCBridge.defaults)
     var useAutoStop = true
 
     // MARK: - Configuration
@@ -182,6 +182,15 @@ class IOSTranscriptionService: ObservableObject {
                 }
             }
         }
+    }
+
+    func cancelRecording() {
+        guard state == .recording else { return }
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        sampleBuffer.clear()
+        state = .idle
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     // MARK: - Transcription
