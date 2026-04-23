@@ -4,25 +4,38 @@ struct KeyboardKey: View {
     let label: String
     let action: () -> Void
     var width: CGFloat? = nil
-    var color: Color = Color(UIColor.systemBackground)
+    var color: Color? = nil
     var foregroundColor: Color = .primary
     
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
             Text(label)
                 .font(.system(size: 20))
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .background(color)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(color ?? (colorScheme == .dark ? Color.white.opacity(0.3) : .white))
+                )
                 .foregroundColor(foregroundColor)
-                .cornerRadius(5)
-                .shadow(color: Color.black.opacity(0.2), radius: 0, x: 0, y: 1)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(Color.black.opacity(0.1), lineWidth: 0.5)
+                )
+                .shadow(color: Color.black.opacity(0.15), radius: 0, x: 0, y: 1)
         }
         .frame(width: width)
     }
 }
 
 struct KeyboardExtensionView: View {
+    @Environment(\.colorScheme) var colorScheme
     var proxy: UITextDocumentProxy
     var advanceToNextInputMode: () -> Void
     var startDictation: () -> Void
@@ -32,6 +45,10 @@ struct KeyboardExtensionView: View {
     let row1 = ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P"]
     let row2 = ["A", "S", "D", "F", "G", "H", "J", "K", "L"]
     let row3 = ["Y", "X", "C", "V", "B", "N", "M"]
+    
+    private var functionalKeyColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.15) : Color(UIColor.systemGray2)
+    }
     
     var body: some View {
         VStack(spacing: 8) {
@@ -57,7 +74,7 @@ struct KeyboardExtensionView: View {
                     label: "⇧",
                     action: { isUppercase.toggle() },
                     width: 44,
-                    color: isUppercase ? .blue : Color(UIColor.systemGray2),
+                    color: isUppercase ? .blue : functionalKeyColor,
                     foregroundColor: isUppercase ? .white : .primary
                 )
                 
@@ -69,21 +86,21 @@ struct KeyboardExtensionView: View {
                     label: "⌫",
                     action: { proxy.deleteBackward() },
                     width: 44,
-                    color: Color(UIColor.systemGray2)
+                    color: functionalKeyColor
                 )
             }
             
             // Row 4
             HStack(spacing: 6) {
-                KeyboardKey(label: "123", action: { }, width: 44, color: Color(UIColor.systemGray2))
-                KeyboardKey(label: "🌐", action: advanceToNextInputMode, width: 44, color: Color(UIColor.systemGray2))
+                KeyboardKey(label: "123", action: { }, width: 44, color: functionalKeyColor)
+                KeyboardKey(label: "🌐", action: advanceToNextInputMode, width: 44, color: functionalKeyColor)
                 KeyboardKey(label: "space", action: { proxy.insertText(" ") })
-                KeyboardKey(label: "🎙️", action: startDictation, width: 44, color: Color(UIColor.systemGray2))
-                KeyboardKey(label: "return", action: { proxy.insertText("\n") }, width: 64, color: Color(UIColor.systemGray2))
+                KeyboardKey(label: "🎙️", action: startDictation, width: 44, color: functionalKeyColor)
+                KeyboardKey(label: "return", action: { proxy.insertText("\n") }, width: 64, color: functionalKeyColor)
             }
         }
         .padding(4)
-        .background(Color(UIColor.systemGray4).edgesIgnoringSafeArea(.all))
+        .background(colorScheme == .dark ? Color.black.opacity(0.8) : Color(UIColor.systemGray4))
     }
     
     private func transform(_ key: String) -> String {

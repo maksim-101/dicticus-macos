@@ -16,6 +16,20 @@ class DictationViewModel: ObservableObject {
     @Published var lastResult: String?
     @Published var error: String?
 
+    init() {
+        cleanupInconsistentState()
+    }
+
+    private func cleanupInconsistentState() {
+        let shared = UserDefaults(suiteName: "group.com.dicticus")
+        // If we were in the middle of a keyboard dictation and crashed/closed,
+        // clear the source flag and signal completion to stop keyboard polling.
+        if shared?.bool(forKey: "kbSource") == true {
+            shared?.set(false, forKey: "kbSource")
+            shared?.set(true, forKey: "kbResultReady")
+        }
+    }
+
     // Set by DicticusApp once warmup completes (property injection)
     var transcriptionService: IOSTranscriptionService? {
         didSet {
