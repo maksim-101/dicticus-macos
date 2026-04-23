@@ -51,6 +51,30 @@ struct DicticusApp: App {
                         if !hasSeenWhatsNewV2 && !pendingDictation {
                             showingWhatsNew = true
                         }
+
+                        // Register bridge immediately so heartbeat runs from app launch.
+                        // Callbacks are safe to wire early — startDictation checks transcriptionService.
+                        viewModel.hostBridge = hostBridge
+                        hostBridge.onStartRecordingCommand = {
+                            Task { @MainActor in
+                                await viewModel.startDictation()
+                            }
+                        }
+                        hostBridge.onStopRecordingCommand = {
+                            Task { @MainActor in
+                                await viewModel.stopDictation()
+                            }
+                        }
+                        hostBridge.onCancelRecordingCommand = {
+                            Task { @MainActor in
+                                if viewModel.state == .recording {
+                                    viewModel.transcriptionService?.cancelRecording()
+                                }
+                                viewModel.state = .idle
+                                viewModel.hostBridge?.publishNoSpeech()
+                            }
+                        }
+                        hostBridge.registerObservers()
                     }
             } else {
                 OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
@@ -73,29 +97,6 @@ struct DicticusApp: App {
                 )
                 transcriptionService = service
                 viewModel.transcriptionService = service
-
-                // Wire Darwin IPC bridge for keyboard extension communication
-                viewModel.hostBridge = hostBridge
-                hostBridge.onStartRecordingCommand = {
-                    Task { @MainActor in
-                        await viewModel.startDictation()
-                    }
-                }
-                hostBridge.onStopRecordingCommand = {
-                    Task { @MainActor in
-                        await viewModel.stopDictation()
-                    }
-                }
-                hostBridge.onCancelRecordingCommand = {
-                    Task { @MainActor in
-                        if viewModel.state == .recording {
-                            viewModel.transcriptionService?.cancelRecording()
-                        }
-                        viewModel.state = .idle
-                        viewModel.hostBridge?.publishNoSpeech()
-                    }
-                }
-                hostBridge.registerObservers()
             }
         }
     }
