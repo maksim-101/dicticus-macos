@@ -40,7 +40,8 @@ struct DicticusApp: App {
                             }
                     }
                     .onAppear {
-                        if !hasSeenWhatsNewV2 {
+                        let pendingDictation = UserDefaults(suiteName: "group.com.dicticus")?.bool(forKey: "pendingDictation") ?? false
+                        if !hasSeenWhatsNewV2 && !pendingDictation {
                             showingWhatsNew = true
                         }
                     }

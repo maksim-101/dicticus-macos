@@ -19,6 +19,9 @@ struct DictationView: View {
 
                 Text(statusLabel)
                     .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                     .accessibilityLabel("Status")
                     .accessibilityValue(statusLabel)
 
@@ -39,6 +42,9 @@ struct DictationView: View {
                         Text(warmupService.downloadStatus)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
                     }
                     .padding(.horizontal)
                 }
@@ -54,6 +60,12 @@ struct DictationView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(.secondarySystemBackground))
                             .cornerRadius(8)
+                        if viewModel.isShortcutLaunch {
+                            Label("Swipe up to return to your app", systemImage: "arrow.up")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                        }
                     }
                     .padding(.horizontal)
                 }
@@ -76,9 +88,11 @@ struct DictationView: View {
             }
             .padding()
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: { showingSettings = true }) {
-                        Image(systemName: "gear")
+                if !viewModel.isShortcutLaunch {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: { showingSettings = true }) {
+                            Image(systemName: "gear")
+                        }
                     }
                 }
             }
@@ -115,7 +129,11 @@ struct DictationView: View {
         if let error = warmupService.error { return error }
         if modelMissing { return "ASR model not downloaded" }
         switch viewModel.state {
-        case .idle:                  return "Ready"
+        case .idle:
+            if viewModel.isShortcutLaunch && viewModel.lastResult != nil {
+                return "Copied to clipboard"
+            }
+            return "Ready"
         case .preparingLiveActivity: return "Starting\u{2026}"
         case .recording:             return "Recording\u{2026}"
         case .transcribing:          return "Transcribing\u{2026}"
