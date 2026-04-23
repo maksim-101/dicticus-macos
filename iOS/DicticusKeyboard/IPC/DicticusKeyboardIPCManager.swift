@@ -147,6 +147,7 @@ final class DicticusKeyboardIPCManager {
     }
 
     deinit {
-        unregisterObservers()
+        let center = CFNotificationCenterGetDarwinNotifyCenter()
+        CFNotificationCenterRemoveEveryObserver(center, Unmanaged.passUnretained(self).toOpaque())
     }
 }
