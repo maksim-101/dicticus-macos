@@ -59,8 +59,8 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Keyboard Activation
 
-- [ ] **KEYB-01**: User can trigger dictation via custom keyboard mic button
-- [ ] **KEYB-02**: Transcribed text appears at cursor in any text field (no paste required)
+- [x] **KEYB-01**: User can trigger dictation via custom keyboard mic button
+- [x] **KEYB-02**: Transcribed text appears at cursor in any text field (no paste required)
 
 ### AI Cleanup
 
@@ -117,8 +117,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ACT-05 | Phase 16 | Completed |
 | UAPP-01 | Phase 16 | Completed |
 | UAPP-02 | Phase 16 | Completed |
-| KEYB-01 | Phase 17 | In Progress |
-| KEYB-02 | Phase 17 | In Progress |
+| KEYB-01 | Phase 17 | Completed |
+| KEYB-02 | Phase 17 | Completed |
 
 **Coverage:**
 - v2.0 requirements: 22 total

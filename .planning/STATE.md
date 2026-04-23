@@ -13,12 +13,12 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 17 of TBD (Keyboard Extension)
-Plan: 2 of 4
+Plan: 3 of 4
 Status: In Progress
-Last activity: 2026-04-22 — Keyboard UI (SwiftUI QWERTZ Layout) implemented (17-02)
+Last activity: 2026-04-22 — Dictation loop (keyboard -> app -> keyboard) implemented (17-03)
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
-Progress (v2.1): [▓▓░░░░░░░░] 20%
+Progress (v2.1): [▓▓▓░░░░░░░] 30%
 
 ## Completed Milestones
 
@@ -32,6 +32,8 @@ Progress (v2.1): [▓▓░░░░░░░░] 20%
 - **D-15:** Used `NavigationSplitView` with adaptive logic for iPad sidebar support (Phase 16).
 - **D-16:** Integrated `GRDB` for shared transcription history between app and future extensions (Phase 15).
 - **D-17:** Implemented "Whats New" flow to highlight v2.0 features to upgrading users (Phase 16).
+- **D-18:** Consistently clear `kbSource` and set `kbResultReady` in `DictationViewModel` regardless of success/failure to ensure reliable state and stop keyboard polling.
+- **D-19:** Used `Timer`-based polling in `KeyboardViewController` (0.5s interval) as planned for simplicity and reliability.
 
 ## Active Concerns / Risks
 - Phase 17: Keyboard extension 30-50MB memory limit — ASR runs in main app, not extension (bounce architecture). Resolved by design.
