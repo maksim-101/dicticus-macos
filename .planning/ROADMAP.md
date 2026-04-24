@@ -35,10 +35,10 @@
 
 **Requirements:** CLEAN-01, CLEAN-02
 
-**Plans:** 6 plans (2 / 6 complete)
+**Plans:** 6 plans (3 / 6 complete)
 - [x] 19-01-PLAN.md — Wave 0 test scaffolding (TDD red targets for Wave 1-4) — completed 2026-04-24
 - [x] 19-02-PLAN.md — SPM wiring + CleanupService extraction to Shared/ + Swiss ITN/prompt — completed 2026-04-24
-- [ ] 19-03-PLAN.md — IOSModelDownloadService (URLSession delegate, pause/resume, backup exclusion) + device eligibility
+- [x] 19-03-PLAN.md — IOSModelDownloadService (URLSession delegate, pause/resume, backup exclusion) + device eligibility — completed 2026-04-24
 - [ ] 19-04-PLAN.md — IOSModelWarmupService Step 4 (conditional LLM load, graceful degradation)
 - [ ] 19-05-PLAN.md — Settings UI (AiCleanupSection: toggles + inline download panel)
 - [ ] 19-06-PLAN.md — DictationViewModel + DicticusApp integration (TextProcessingService wiring + E2E)
@@ -69,4 +69,4 @@
 - [x] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
-*Last updated: 2026-04-24 — Phase 19 planned and revised (6 plans in 5 waves; wave re-normalized after checker pass)*
+*Last updated: 2026-04-24 — Phase 19 Wave 2 complete (Plan 19-03 — iOS downloader + D-03 device gate); 3/6 plans done*
