@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed Plan 19-04 (Wave 3 — IOSModelWarmupService Step 4: conditional LLM load with triple-gate + graceful degradation). 4 atomic task commits (a494aec RED / 04a4d24 GREEN Task 1 LlmStatus + backend-init token; 9991ea6 gate-invariants / c6dce92 GREEN Task 2 Step 4 block). iOS: 22 related tests / 0 failures on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED (ad-hoc). Wave 4 inherits isLlmReady / llmStatus / cleanupServiceInstance."
-last_updated: "2026-04-24T19:37:43Z"
+stopped_at: "Completed Plan 19-05 (Wave 4 — Settings UI: AiCleanupSection with App Group toggles + inline download panel + RAM-gated explainer). 2 atomic task commits (8156489 feat create AiCleanupSection; 89babf3 feat mount in SettingsView). SettingsToggleTests 4/4 green. iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED (ad-hoc)."
+last_updated: "2026-04-24T19:44:28Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State: Dicticus
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 19 (AI Cleanup iOS)
-Plan: 5 of 6 (Wave 3 complete — IOSModelWarmupService Step 4 conditional LLM load)
-Status: Wave 4 ready — DictationViewModel injection + Settings UI bindings against isLlmReady / llmStatus
-Last activity: 2026-04-24 — Executed Plan 19-04 (Wave 3): Added LlmStatus enum, @Published isLlmReady + llmStatus (public private(set)), cleanupServiceInstance accessor, and Step 4 warmup block (triple-gated on aiCleanupEnabled AppGroup toggle + isAiCleanupSupported RAM gate + IOSModelDownloadService.isModelCached()). CleanupService.initializeBackend() wired via static-let token (D-29). Graceful degradation: ASR publishes isReady BEFORE Step 4 starts; Step 4 failure sets llmStatus = .failed("AI cleanup unavailable") without re-throwing. 4 atomic commits (RED/GREEN pairs for both tasks). iOS: 22 related tests / 0 failures; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
+Plan: 6 of 6 (Wave 4 complete — Settings UI: toggles + inline download panel)
+Status: Wave 5 ready — DictationViewModel + TextProcessingService pipeline integration (inject cleanupServiceInstance when aiCleanupEnabled is ON)
+Last activity: 2026-04-24 — Executed Plan 19-05 (Wave 4): Created AiCleanupSection.swift (259 LOC) with AI Cleanup + Swiss German toggles (AppGroup group.com.dicticus keys aiCleanupEnabled, useSwissGerman, both default OFF), inline download panel with 5-state switch (.idle/.downloading/.paused/.completed/.failed), RAM-gated explainer replacing AI toggle on <5 GB devices (D-03/D-20), Swiss toggle always visible per D-15, status row bound to warmupService.llmStatus (idle/loading/ready/failed + "Relaunch to enable" hint). Mounted in SettingsView between Transcriptions and Integration. Wave 0 SettingsToggleTests 4/4 green. 2 atomic commits (8156489 create, 89babf3 mount). iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓░] 92%
@@ -67,6 +67,8 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓░] 92%
 - **D-32:** D-03 RAM threshold is exactly `5 * 1024 * 1024 * 1024` bytes (5 GiB) — authoritative constant `IOSModelWarmupService.requiredPhysicalMemoryBytes`. `isAiCleanupSupported` reads `ProcessInfo.processInfo.physicalMemory` against this at call time, so there is no cached gate to invalidate when moving between devices / simulators (Phase 19 Wave 2).
 - **D-33:** `CleanupService.initializeBackend()` is invoked exactly once per app lifetime via a file-scoped `private static let backendInitToken: Void = { ... }()` on `IOSModelWarmupService`, referenced by `_ = IOSModelWarmupService.backendInitToken` inside `init(...)`. Swift's thread-safe once-only static initializer guarantees the backend init runs on first service construction and never again — no app-delegate coupling required (Phase 19 Wave 3).
 - **D-34:** iOS `LlmStatus` intentionally omits `.downloading` (present on macOS `LlmStatus`). Rationale: on iOS the GGUF download is Settings-UI-initiated (D-09/D-10), not warmup-driven, so warmup never occupies the `.downloading` state. If the GGUF isn't cached when Step 4 fires, Step 4 skips and `llmStatus` stays `.idle` (Phase 19 Wave 3).
+- **D-35:** `AiCleanupSection` owns an ephemeral `@StateObject IOSModelDownloadService` scoped to the Settings view lifetime — NOT the same instance that `IOSModelWarmupService.Step 4` uses. Step 4 simply reads the cached GGUF from disk on next launch. Consequence: dismissing Settings mid-download cancels the in-flight task (T-19-05-03 accepted scope); user must re-open Settings and tap Retry. Background downloads are deferred to a future wave (Phase 19 Wave 4).
+- **D-36:** `appGroupBinding(_:default:)` helper is duplicated in `AiCleanupSection` instead of being shared with `SettingsView`. Rationale: plan task 2 mandated "make no other changes to `SettingsView.swift`" beyond the one-line mount. Duplication is 11 LOC, zero runtime cost; future consolidation is trivial if a third consumer appears (Phase 19 Wave 4).
 
 ## Active Concerns / Risks
 
@@ -80,6 +82,6 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓░] 92%
 
 ## Session Continuity
 
-Last session: 2026-04-24T19:37:43Z
-Stopped at: Completed Plan 19-04 (Wave 3 — IOSModelWarmupService Step 4: conditional LLM load + graceful degradation). 4 atomic commits (a494aec/04a4d24 Task 1; 9991ea6/c6dce92 Task 2). iOS: 22 related tests / 0 failures on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
-Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-05 (Wave 4 — DictationViewModel injection + Settings UI bindings against IOSModelWarmupService.{isLlmReady, llmStatus, cleanupServiceInstance})
+Last session: 2026-04-24T19:44:28Z
+Stopped at: Completed Plan 19-05 (Wave 4 — Settings UI: AiCleanupSection + inline download panel + RAM-gated explainer + Swiss German toggle). 2 atomic commits (8156489 create, 89babf3 mount). SettingsToggleTests 4/4 green. iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
+Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-06 (Wave 5 — DictationViewModel pipeline integration: inject cleanupServiceInstance into TextProcessingService when aiCleanupEnabled AppGroup key is ON)
