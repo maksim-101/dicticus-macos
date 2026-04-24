@@ -12,6 +12,27 @@ struct ITNUtility {
         }
     }
 
+    /// D-16 / D-17: Deterministic Swiss German orthography transform.
+    ///
+    /// Converts `ß` → `ss` and `ẞ` (U+1E9E, capital Eszett) → `SS`, preserving
+    /// the surrounding case. Runs whenever the Swiss German toggle is ON,
+    /// independent of AI cleanup state. Sub-millisecond cost — cheap enough
+    /// to run on every transcription when enabled.
+    ///
+    /// Called from two sites:
+    ///   1. `TextProcessingService.process(...)` — applies to plain dictation AND
+    ///      the pre-LLM input (Swiss users benefit without enabling AI cleanup).
+    ///   2. `CleanupService.cleanup(...)` — post-LLM safety-net (D-19) to catch
+    ///      any `ß` the LLM slipped in despite the D-18 prompt instruction.
+    ///
+    /// - Parameter text: Any Swiss German text (or mixed-case input).
+    /// - Returns: Text with all Eszett characters transliterated to ss/SS.
+    static func applySwissITN(to text: String) -> String {
+        return text
+            .replacingOccurrences(of: "ß", with: "ss")
+            .replacingOccurrences(of: "\u{1E9E}", with: "SS")
+    }
+
     // MARK: - German ITN
 
     /// Custom parser for German compound number words.

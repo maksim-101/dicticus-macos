@@ -55,13 +55,30 @@ class CleanupService: ObservableObject, CleanupProvider {
 
     /// Maximum output tokens for cleanup. Dictation cleanup output is always
     /// shorter than or equal to input length, so 512 tokens is generous.
-    private let maxOutputTokens: Int32 = 512
+    /// Configurable per-platform via init (default matches macOS/iOS behavior).
+    private let maxOutputTokens: Int32
 
-    /// LLM inference timeout in seconds (per D-18).
+    /// LLM inference timeout in seconds (per D-04 iOS, D-18 macOS).
     /// If exceeded, cleanup returns raw ASR text as fallback.
-    private let inferenceTimeoutSeconds: TimeInterval = 5.0
+    /// Platform defaults diverge: iOS uses 8.0 s (Neural Engine is slower),
+    /// macOS passes 5.0 s explicitly at call-site to preserve v1.x behavior.
+    private let inferenceTimeoutSeconds: TimeInterval
 
     // MARK: - Initialization
+
+    /// Platform-agnostic initializer. iOS uses the default 8 s timeout (D-04);
+    /// macOS passes `inferenceTimeoutSeconds: 5.0` explicitly to preserve the
+    /// tighter pre-extraction behavior.
+    ///
+    /// - Parameters:
+    ///   - inferenceTimeoutSeconds: Per-call inference timeout before falling
+    ///     back to raw ASR text. Default 8.0 (D-04, iOS-tuned).
+    ///   - maxOutputTokens: Upper bound on generated tokens. Default 512 —
+    ///     dictation outputs are always ≤ input length so 512 is generous.
+    init(inferenceTimeoutSeconds: TimeInterval = 8.0, maxOutputTokens: Int32 = 512) {
+        self.inferenceTimeoutSeconds = inferenceTimeoutSeconds
+        self.maxOutputTokens = maxOutputTokens
+    }
 
     /// Initialize the llama.cpp backend.
     /// Must be called once before loadModel(). Called during app warmup.
@@ -157,18 +174,20 @@ class CleanupService: ObservableObject, CleanupProvider {
         let prompt = CleanupPrompt.build(text: text, language: language, dictionaryContext: dictionaryContext)
         log.info("Prompt (\(prompt.count, privacy: .public) chars, lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
 
-        // Run inference in a detached task with timeout (D-18)
+        // Run inference in a detached task with timeout (D-04 iOS / D-18 macOS)
         // nonisolated(unsafe) for C pointer access in detached context (Pitfall 7)
         nonisolated(unsafe) let unsafeModel = model
         nonisolated(unsafe) let unsafeContext = context
         nonisolated(unsafe) let unsafeSampler = sampler
         let maxTokens = maxOutputTokens
+        // Capture timeout locally for Sendable safety inside the task group closure.
+        let timeout = self.inferenceTimeoutSeconds
 
         do {
             let result = try await withThrowingTaskGroup(of: String.self) { group in
                 group.addTask {
-                    // Timeout task
-                    try await Task.sleep(nanoseconds: UInt64(5.0 * 1_000_000_000))
+                    // Timeout task — honors the parameterized inferenceTimeoutSeconds
+                    try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                     throw CleanupError.timeout
                 }
 
@@ -194,8 +213,17 @@ class CleanupService: ObservableObject, CleanupProvider {
 
             // Post-process: strip any preamble the model might add (Pitfall 4)
             log.info("LLM raw (\(result.count, privacy: .public) chars): \(result.prefix(500), privacy: .public)")
-            let cleaned = Self.stripPreamble(result)
+            var cleaned = Self.stripPreamble(result)
             log.info("After strip (\(cleaned.count, privacy: .public) chars): \(cleaned.prefix(500), privacy: .public)")
+
+            // D-19: Post-LLM Swiss safety-net — catch any ß the LLM slipped in
+            // despite the D-18 prompt instruction. Gated by the shared AppGroup
+            // `useSwissGerman` key so the regex is free when Swiss toggle is OFF.
+            let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+            if swissDefaults.bool(forKey: "useSwissGerman") {
+                cleaned = ITNUtility.applySwissITN(to: cleaned)
+            }
+
             return cleaned.isEmpty ? text : cleaned
 
         } catch {

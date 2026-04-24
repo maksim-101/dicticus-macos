@@ -16,8 +16,8 @@
 		13DAE6D10AD94A540B1B02A1 /* DictionaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D6EAC45934BA02E00EE3D4E /* DictionaryView.swift */; };
 		1718F875E73BC178C22EA283 /* SparkleUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685C77F14D62DFF404AEC44C /* SparkleUpdater.swift */; };
 		171DF828BD9397910CE051FF /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C74F55E49D9613F8A46172 /* DictionaryService.swift */; };
-		176BD3C640724979F26904A0 /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A6EC5970559A2E03C1B957 /* CleanupService.swift */; };
 		18668EE01D6AAE03785B0B5B /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */; };
+		19275F32EEE16136B152773A /* CleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA0A8578A28FA69DEFD2AEB /* CleanupService.swift */; };
 		1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */; };
 		224D944F8C69C4D182295A23 /* ITNUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CF6C951598DD95DF8012E2 /* ITNUtilityTests.swift */; };
 		22A84736FD3182B120F7D8DF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 383C33859A15C6735C57D628 /* FluidAudio */; };
@@ -80,7 +80,6 @@
 
 /* Begin PBXFileReference section */
 		00A6403E7E893BEB40EABCBD /* DicticusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusApp.swift; sourceTree = "<group>"; };
-		02A6EC5970559A2E03C1B957 /* CleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupService.swift; sourceTree = "<group>"; };
 		143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPromptTests.swift; sourceTree = "<group>"; };
 		190A391B6BC042BE1B56011B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -117,6 +116,7 @@
 		960860ACFBAA1B6980CAC734 /* DicticusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DicticusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A6674AE0A8390DD18313C5E /* ModifierCombo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModifierCombo.swift; sourceTree = "<group>"; };
 		9BA4FFDE53E7BC06A5A214D2 /* DictationMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationMode.swift; sourceTree = "<group>"; };
+		9EA0A8578A28FA69DEFD2AEB /* CleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupService.swift; sourceTree = "<group>"; };
 		A4711E5E2A1A90B0A7DC48F3 /* TranscriptionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceTests.swift; sourceTree = "<group>"; };
 		ACD25584A55773982F1CBD98 /* CleanupProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupProvider.swift; sourceTree = "<group>"; };
 		B6356DF22A67C2BF0B6EF82B /* WarmupRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupRow.swift; sourceTree = "<group>"; };
@@ -283,6 +283,7 @@
 		9A7338D68417F690F770059C /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				9EA0A8578A28FA69DEFD2AEB /* CleanupService.swift */,
 				E6C74F55E49D9613F8A46172 /* DictionaryService.swift */,
 				1E60BA27B4C9B8FC047449A2 /* HistoryService.swift */,
 				7BA23190FB8D30AD7CD52C71 /* TextProcessingService.swift */,
@@ -323,7 +324,6 @@
 		F2BDD31317F7D53FF9069687 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				02A6EC5970559A2E03C1B957 /* CleanupService.swift */,
 				516F18D70F7720AD0779EA74 /* HotkeyManager.swift */,
 				E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */,
 				44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */,
@@ -397,7 +397,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					196278924188207EC2516968 = {
-						DevelopmentTeam = VTWHBCCP36;
+						DevelopmentTeam = "${DEVELOPER_TEAM_ID}";
 						ProvisioningStyle = Manual;
 					};
 				};
@@ -449,7 +449,7 @@
 				0EE3A0B5F33F9185235BD932 /* AiCleanupInfoView.swift in Sources */,
 				831A9C4AEA783A6D229A0D41 /* CleanupPrompt.swift in Sources */,
 				8AEBBFCCD69BB9A401CEFCB9 /* CleanupProvider.swift in Sources */,
-				176BD3C640724979F26904A0 /* CleanupService.swift in Sources */,
+				19275F32EEE16136B152773A /* CleanupService.swift in Sources */,
 				B56FA6D5E8A634CCECBC47B9 /* DictationMode.swift in Sources */,
 				B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */,
 				171DF828BD9397910CE051FF /* DictionaryService.swift in Sources */,
@@ -524,7 +524,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = VTWHBCCP36;
+				DEVELOPMENT_TEAM = "${DEVELOPER_TEAM_ID}";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -549,7 +549,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = VTWHBCCP36;
+				DEVELOPMENT_TEAM = "${DEVELOPER_TEAM_ID}";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;

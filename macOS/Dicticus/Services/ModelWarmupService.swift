@@ -147,7 +147,9 @@ class ModelWarmupService: ObservableObject {
                     warmupLog.info("LLM model path: \(modelPath)")
                     let cleanup = try await MainActor.run { () throws -> CleanupService in
                         CleanupService.initializeBackend()
-                        let service = CleanupService()
+                        // Preserve pre-extraction macOS timeout (5 s) — the shared
+                        // init default is 8 s, tuned for iOS (D-04).
+                        let service = CleanupService(inferenceTimeoutSeconds: 5.0)
                         try service.loadModel(from: modelPath)
                         return service
                     }
