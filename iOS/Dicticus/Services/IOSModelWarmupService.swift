@@ -163,7 +163,58 @@ class IOSModelWarmupService: ObservableObject {
                     self?.watchdogTask?.cancel()
                     self?.watchdogTask = nil
                 }
-                // Step 4 (LLM warmup) wiring lands in Wave 3 (Plan 19-04).
+
+                // Step 4: LLM warmup (D-12). Conditional on AI Cleanup toggle + RAM gate + GGUF cache.
+                // Download is triggered by Settings UI (D-09/D-10), NOT by warmup. If the GGUF
+                // is not yet cached, Step 4 skips silently and `llmStatus` remains `.idle`.
+                //
+                // Critical ordering: Step 3's MainActor.run above publishes `isReady = true`
+                // BEFORE this block starts, so ASR is usable even if Step 4 fails — plain
+                // dictation never blocks on LLM availability (graceful degradation, D-26).
+                try Task.checkCancellation()
+
+                let warmupLog = Logger(subsystem: "com.dicticus", category: "warmup")
+
+                // Read AppGroup-scoped toggle (matches SettingsView.appGroupBinding suite).
+                let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+                let aiCleanupEnabled = appGroupDefaults.bool(forKey: "aiCleanupEnabled")
+                let hasEnoughRam = IOSModelWarmupService.isAiCleanupSupported  // D-03
+                let isCached = IOSModelDownloadService.isModelCached()
+
+                guard aiCleanupEnabled, hasEnoughRam, isCached else {
+                    warmupLog.info("Step 4 skipped — aiCleanupEnabled=\(aiCleanupEnabled, privacy: .public), hasEnoughRam=\(hasEnoughRam, privacy: .public), isCached=\(isCached, privacy: .public)")
+                    return  // Leaves llmStatus = .idle, isLlmReady = false — safe default
+                }
+
+                do {
+                    await MainActor.run { self?.llmStatus = .loading }
+
+                    let modelPath = IOSModelDownloadService.modelPath().path
+                    // CleanupService is @MainActor; construct + load on the main actor.
+                    // `MainActor.run` is the actor-hop primitive; its throwing overload
+                    // lets us propagate loadModel errors without a second hop.
+                    let cleanup: CleanupService = try await MainActor.run { () throws -> CleanupService in
+                        let service = CleanupService(inferenceTimeoutSeconds: 8.0)  // D-04 iOS timeout
+                        try service.loadModel(from: modelPath)
+                        return service
+                    }
+
+                    await MainActor.run {
+                        self?.cleanupService = cleanup
+                        self?.isLlmReady = true
+                        self?.llmStatus = .ready
+                    }
+                    warmupLog.info("Step 4 complete — LLM loaded and ready")
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    warmupLog.error("Step 4 failed: \(error.localizedDescription, privacy: .public)")
+                    await MainActor.run {
+                        self?.llmStatus = .failed("AI cleanup unavailable")
+                        self?.isLlmReady = false
+                    }
+                    // Do NOT re-throw — ASR already published readiness; plain dictation still works.
+                }
             } catch is CancellationError {
                 await MainActor.run {
                     progressTimer.cancel()
