@@ -33,6 +33,15 @@ class TextProcessingService: ObservableObject {
         // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
 
+        // Step 2b: Swiss German ß → ss (D-16) — runs on both plain AND AI-cleanup
+        // paths whenever the useSwissGerman toggle is ON. Intentionally applies
+        // regardless of language so users who dictate mixed de/en don't have
+        // rogue Eszett slip through when Swiss orthography is selected.
+        let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+        if swissDefaults.bool(forKey: "useSwissGerman") {
+            processedText = ITNUtility.applySwissITN(to: processedText)
+        }
+
         // Step 3: AI Cleanup
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
             let lowerText = processedText.lowercased()
