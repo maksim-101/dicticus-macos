@@ -25,7 +25,9 @@ struct SettingsView: View {
                         Label("Auto-Stop Recording", systemImage: "stop.circle")
                     }
                 }
-                
+
+                AiCleanupSection()   // Phase 19 Wave 4 — CLEAN-01
+
                 Section("Integration") {
                     NavigationLink(destination: SetupGuidesView()) {
                         Label("Setup Guides", systemImage: "questionmark.circle")
