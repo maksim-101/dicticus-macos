@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 19 (AI Cleanup iOS)
-Plan: 1 of 6 (Wave 0 complete — test scaffolding)
-Status: Wave 1 ready — Swiss ITN + CleanupService extraction can begin
-Last activity: 2026-04-24 — Executed Plan 19-01 (Wave 0): 9 XCTest scaffold files created covering all 14 Req→Test rows in 19-VALIDATION.md; full DicticusTests suite green (58 tests, 18 skipped pending Waves 1/2, 0 failures) on iPhone 17 simulator.
+Plan: 2 of 6 (Wave 1 complete — Swiss ITN + Shared CleanupService)
+Status: Wave 2 ready — iOS model download service + RAM-based device eligibility gating
+Last activity: 2026-04-24 — Executed Plan 19-02 (Wave 1): Wired mattt/llama.swift SPM on iOS (resolved 2.8914.0), lifted CleanupService to Shared/ with parameterized init (macOS passes 5.0s, iOS default 8.0s per D-04), shipped ITNUtility.applySwissITN (D-16/D-17), Swiss STYLE prompt extension (D-18), TextProcessingService Step 2b, and D-19 post-LLM safety-net. 4 atomic task commits; both iOS + macOS targets green; Wave 0 ITNUtilityTests flipped from 4 skipped → 4 passing (iOS: 58/14 skipped/0 failures).
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
@@ -58,5 +58,5 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Completed Plan 19-01 (Wave 0 test scaffolding) — 9 files, 3 atomic commits, full DicticusTests suite green on iPhone 17 sim
-Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-02 (Wave 1 — Swiss ITN + CleanupService extraction)
+Stopped at: Completed Plan 19-02 (Wave 1 — Swiss ITN + Shared CleanupService). 4 atomic commits (08c17d4 Task 1 iOS llama SPM; a9a1bed Task 2a git mv; c3ee521 Task 2b parameterize + safety-net; c0d6a22 Task 3 prompt + TextProcessingService + test flip). iOS: 58 tests / 14 skipped / 0 failures on iPhone 17. macOS: 25/25 CleanupServiceTests pass. Pre-existing macOS testMixedText failure logged to phase deferred-items.md.
+Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-03 (Wave 2 — iOS model download service + RAM-based device eligibility gating)

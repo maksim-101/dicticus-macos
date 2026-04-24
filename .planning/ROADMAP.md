@@ -35,9 +35,9 @@
 
 **Requirements:** CLEAN-01, CLEAN-02
 
-**Plans:** 6 plans
-- [ ] 19-01-PLAN.md — Wave 0 test scaffolding (TDD red targets for Wave 1-4)
-- [ ] 19-02-PLAN.md — SPM wiring + CleanupService extraction to Shared/ + Swiss ITN/prompt
+**Plans:** 6 plans (2 / 6 complete)
+- [x] 19-01-PLAN.md — Wave 0 test scaffolding (TDD red targets for Wave 1-4) — completed 2026-04-24
+- [x] 19-02-PLAN.md — SPM wiring + CleanupService extraction to Shared/ + Swiss ITN/prompt — completed 2026-04-24
 - [ ] 19-03-PLAN.md — IOSModelDownloadService (URLSession delegate, pause/resume, backup exclusion) + device eligibility
 - [ ] 19-04-PLAN.md — IOSModelWarmupService Step 4 (conditional LLM load, graceful degradation)
 - [ ] 19-05-PLAN.md — Settings UI (AiCleanupSection: toggles + inline download panel)
