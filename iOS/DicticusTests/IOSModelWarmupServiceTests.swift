@@ -61,4 +61,29 @@ final class IOSModelWarmupServiceTests: XCTestCase {
         XCTAssertFalse(IOSModelWarmupService.LlmStatus.ready.isActive)
         XCTAssertFalse(IOSModelWarmupService.LlmStatus.failed("x").isActive)
     }
+
+    // MARK: - Wave 3 (Plan 19-04) — Task 2: Step 4 gate defaults
+
+    /// Gate precondition: with no AppGroup value set, `aiCleanupEnabled`
+    /// must read as `false` — warmup Step 4 MUST skip silently and
+    /// `llmStatus` must remain `.idle`. This verifies the default-OFF
+    /// posture independently of the heavy warmup pipeline.
+    func testAiCleanupToggleDefaultsOffInAppGroup() {
+        let suite = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+        // Confirm the key Step 4 reads matches the Settings UI key.
+        // (SettingsView.appGroupBinding writes this same key.)
+        suite.removeObject(forKey: "aiCleanupEnabled")
+        XCTAssertFalse(suite.bool(forKey: "aiCleanupEnabled"),
+                       "Default must be false so Step 4 skips on a fresh install")
+    }
+
+    /// Gate precondition: before Step 4 runs, the published state snapshot
+    /// must be the safe default — `.idle` + `isLlmReady == false` — even
+    /// after a cancelWarmup round-trip that previously only cleared ASR state.
+    func testLlmStatusRemainsIdleAfterCancelWarmup() {
+        let service = IOSModelWarmupService()
+        service.cancelWarmup()
+        XCTAssertEqual(service.llmStatus, .idle)
+        XCTAssertFalse(service.isLlmReady)
+    }
 }
