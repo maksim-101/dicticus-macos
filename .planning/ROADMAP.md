@@ -30,6 +30,15 @@
 
 ---
 
+### Phase 19: AI Cleanup iOS
+**Goal:** Enable on-device AI cleanup of ASR transcriptions on iOS via llama.cpp with Metal acceleration — improving number/currency/date formatting and enforcing Swiss German orthography (ß→ss) without any network calls.
+
+**Requirements:** CLEAN-01, CLEAN-02
+
+**Plans:** TBD (to be created via /gsd-plan-phase 19)
+
+---
+
 ### Phase 17: Keyboard Extension
 **Goal:** Implement a custom iOS keyboard extension with a QWERTZ layout and an integrated dictation button that bounces to the main app for recording and auto-inserts the result at the cursor.
 
