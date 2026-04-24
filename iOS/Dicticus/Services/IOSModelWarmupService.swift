@@ -9,6 +9,32 @@ import os.log
 @MainActor
 class IOSModelWarmupService: ObservableObject {
 
+    // MARK: - LLM warmup status (D-12)
+
+    /// LLM warmup lifecycle state, observed by Settings UI (Wave 4).
+    ///
+    /// iOS omits `.downloading` because the GGUF download is driven by
+    /// Settings UI (D-09/D-10), not by warmup. If the GGUF is absent when
+    /// Step 4 runs, Step 4 simply remains `.idle` and defers to the
+    /// user-initiated download flow.
+    public enum LlmStatus: Equatable {
+        case idle
+        case loading
+        case ready
+        case failed(String)
+
+        public var label: String {
+            switch self {
+            case .idle:                return "Waiting"
+            case .loading:             return "Loading model\u{2026}"
+            case .ready:               return "Ready"
+            case .failed(let reason):  return reason
+            }
+        }
+
+        public var isActive: Bool { self == .loading }
+    }
+
     // MARK: - Device eligibility (D-03)
 
     /// Per D-03: AI cleanup requires ≥5 GB RAM to safely coexist with the
@@ -32,8 +58,37 @@ class IOSModelWarmupService: ObservableObject {
     @Published var downloadStatus: String = ""
     @Published var error: String?
 
+    // MARK: - LLM state (Wave 3, D-12)
+
+    /// Whether the LLM (Gemma 4 E2B) is loaded and ready for inference.
+    /// Consumed by `DictationViewModel` (Wave 4) to decide whether to route
+    /// transcripts through `TextProcessingService` for AI cleanup.
+    @Published public private(set) var isLlmReady: Bool = false
+
+    /// Current LLM warmup lifecycle state — observed by Settings UI (Wave 4).
+    @Published public private(set) var llmStatus: LlmStatus = .idle
+
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
+
+    /// llama.cpp-backed cleanup service instance — populated by Step 4 on success.
+    /// Exposed via `cleanupServiceInstance` for `DictationViewModel` injection.
+    private var cleanupService: CleanupService?
+
+    /// Expose the initialized CleanupService for DictationViewModel (Wave 4).
+    /// Returns nil until Step 4 (LLM warmup) completes successfully.
+    public var cleanupServiceInstance: CleanupService? {
+        cleanupService
+    }
+
+    /// File-scoped static token that triggers `CleanupService.initializeBackend()`
+    /// exactly once per app lifetime (D-29). Referenced from `init(...)` so the
+    /// backend is initialized on first `IOSModelWarmupService` creation without
+    /// requiring an app-delegate hook. Swift guarantees once-only evaluation of
+    /// static let initializers (thread-safe, lazy).
+    private static let backendInitToken: Void = {
+        CleanupService.initializeBackend()
+    }()
 
     /// Reference to the in-flight warmup Task for cancellation support.
     private var warmupTask: Task<Void, Never>?
@@ -45,6 +100,10 @@ class IOSModelWarmupService: ObservableObject {
     private let warmupTimeoutSeconds: UInt64 = 600
 
     init() {
+        // Fire the once-only static backend init (D-29). `_ =` ensures the
+        // compiler doesn't elide the reference; Swift evaluates `backendInitToken`
+        // on first touch and caches the result for subsequent instances.
+        _ = IOSModelWarmupService.backendInitToken
         checkHasModels()
     }
 
