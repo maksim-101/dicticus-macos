@@ -7,7 +7,6 @@ struct DicticusApp: App {
     @ObservedObject private var dictionaryService = DictionaryService.shared
     @ObservedObject private var historyService = HistoryService.shared
     @StateObject private var viewModel = DictationViewModel()
-    @StateObject private var hostBridge = DicticusHostBridge()
 
     @State private var transcriptionService: IOSTranscriptionService?
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -26,17 +25,7 @@ struct DicticusApp: App {
                     .environmentObject(viewModel)
                     .onOpenURL { url in
                         if url.scheme == "dicticus" && url.host == "dictate" {
-                            let shared = DicticusIPCBridge.defaults
-                            shared?.set(true, forKey: "kbSource")
-                            shared?.set(true, forKey: "pendingDictation")
-
-                            // If app is already active, trigger immediately
-                            NotificationCenter.default.post(name: .startDictation, object: nil)
-                        }
-                        // Cold-start URL from keyboard extension via Darwin IPC
-                        if url.scheme == "dicticus" && url.host == "record" && url.path == "/start" {
-                            let shared = DicticusIPCBridge.defaults
-                            shared?.set(true, forKey: "pendingDictation")
+                            DicticusIPCBridge.defaults?.set(true, forKey: "pendingDictation")
                             NotificationCenter.default.post(name: .startDictation, object: nil)
                         }
                     }
@@ -51,30 +40,6 @@ struct DicticusApp: App {
                         if !hasSeenWhatsNewV2 && !pendingDictation {
                             showingWhatsNew = true
                         }
-
-                        // Register bridge immediately so heartbeat runs from app launch.
-                        // Callbacks are safe to wire early — startDictation checks transcriptionService.
-                        viewModel.hostBridge = hostBridge
-                        hostBridge.onStartRecordingCommand = {
-                            Task { @MainActor in
-                                await viewModel.startDictation()
-                            }
-                        }
-                        hostBridge.onStopRecordingCommand = {
-                            Task { @MainActor in
-                                await viewModel.stopDictation()
-                            }
-                        }
-                        hostBridge.onCancelRecordingCommand = {
-                            Task { @MainActor in
-                                if viewModel.state == .recording {
-                                    viewModel.transcriptionService?.cancelRecording()
-                                }
-                                viewModel.state = .idle
-                                viewModel.hostBridge?.publishNoSpeech()
-                            }
-                        }
-                        hostBridge.registerObservers()
                     }
             } else {
                 OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)

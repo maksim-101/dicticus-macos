@@ -17,23 +17,6 @@ class DictationViewModel: ObservableObject {
     @Published var error: String?
     @Published var isShortcutLaunch: Bool = false
 
-    /// IPC bridge for Darwin notification communication with keyboard extension.
-    /// Set by DicticusApp after warmup completes.
-    var hostBridge: DicticusHostBridge?
-
-    init() {
-        cleanupInconsistentState()
-    }
-
-    private func cleanupInconsistentState() {
-        let shared = DicticusIPCBridge.defaults
-        // If we were in the middle of a keyboard dictation and crashed/closed,
-        // clear the source flag and signal completion to stop keyboard polling.
-        if shared?.bool(forKey: "kbSource") == true {
-            shared?.set(false, forKey: "kbSource")
-            shared?.set(true, forKey: "kbResultReady")
-        }
-    }
 
     // Set by DicticusApp once warmup completes (property injection)
     var transcriptionService: IOSTranscriptionService? {
@@ -86,7 +69,6 @@ class DictationViewModel: ObservableObject {
         state = .recording
         do {
             try transcriptionService?.startRecording()
-            hostBridge?.publishRecordingStarted()
         } catch {
             await endLiveActivity()
             self.error = error.localizedDescription
@@ -97,37 +79,21 @@ class DictationViewModel: ObservableObject {
     func stopDictation() async {
         guard state == .recording else { return }
         state = .transcribing
-        hostBridge?.publishTranscribing()
-
-        let shared = DicticusIPCBridge.defaults
-        let isKeyboardSource = shared?.bool(forKey: "kbSource") == true
 
         do {
             if let result = try await transcriptionService?.stopRecordingAndTranscribe() {
                 UIPasteboard.general.string = result.text
                 lastResult = result.text
-                error = nil // Clear any previous error on success
-                
-                // Save to History
+                error = nil
+
                 let entry = TranscriptionEntry(
                     text: result.text,
-                    rawText: result.text, // iOS v2.0 doesn't distinguish raw vs processed in this pipeline yet
+                    rawText: result.text,
                     language: result.language,
                     mode: DictationMode.plain.rawValue,
                     confidence: Double(result.confidence)
                 )
                 HistoryService.shared.save(entry)
-
-                // Deliver to keyboard extension if it was the source
-                if isKeyboardSource {
-                    shared?.set(result.text, forKey: "kbResult")
-                }
-
-                // Notify keyboard extension via Darwin IPC
-                hostBridge?.publishTranscriptionReady(result.text)
-            } else {
-                // No transcription result — notify keyboard
-                hostBridge?.publishNoSpeech()
             }
         } catch let transcriptionError as TranscriptionError {
             switch transcriptionError {
@@ -146,15 +112,8 @@ class DictationViewModel: ObservableObject {
             case .notRecording:
                 self.error = "Not recording."
             }
-            hostBridge?.publishNoSpeech()
         } catch {
             self.error = error.localizedDescription
-            hostBridge?.publishNoSpeech()
-        }
-
-        if isKeyboardSource {
-            shared?.set(true, forKey: "kbResultReady")
-            shared?.set(false, forKey: "kbSource")
         }
 
         await endLiveActivity()
