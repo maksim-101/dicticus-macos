@@ -69,4 +69,4 @@
 - [x] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
-*Last updated: 2026-04-24 — Phase 19 planned (6 plans in 5 waves)*
+*Last updated: 2026-04-24 — Phase 19 planned and revised (6 plans in 5 waves; wave re-normalized after checker pass)*

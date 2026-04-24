@@ -694,22 +694,22 @@ Rationale:
 
 **Assumptions A1–A3 should be validated empirically during Wave 0 by running the existing macOS `CleanupService` in a barebones iOS harness on an iPhone 14 simulator and a real device. Those measurements are the single most de-risking action in this phase.**
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should warmup Step 4 be eager or lazy on iPhone 14 specifically?**
    - What we know: D-12 locks eager-at-launch. Q4 memory analysis shows iPhone 14 is within a few hundred MB of the entitled ceiling with both models resident.
    - What's unclear: actual co-residency RSS on a real iPhone 14 with real workload.
-   - Recommendation: measure during Wave 0 before committing. If co-residency fails, escalate to user to revisit D-12 (not planner's call to override a locked decision).
+   - **RESOLVED:** Measure during Wave 0 before committing. If co-residency fails, escalate to user to revisit D-12 (not planner's call to override a locked decision). Phase 19 proceeds with D-12 (eager-at-launch) as the contract; empirical measurement gates that decision in Wave 0, and any revision is user-driven.
 
 2. **Does CLEAN-01 require the toggle to disable cleanup without deleting the 3 GB GGUF, or does OFF also delete?**
    - What we know: CONTEXT.md D-08 says toggle default OFF; "Reset AI Cleanup" affordance is listed as Claude's discretion.
    - What's unclear: user's expectation when they toggle OFF after having downloaded.
-   - Recommendation: default = keep GGUF on disk; provide optional "Reset AI Cleanup" action (discretionary per CONTEXT.md) that deletes the GGUF and sets toggle OFF.
+   - **RESOLVED:** Default = keep GGUF on disk when the toggle is flipped OFF; provide an optional "Reset AI Cleanup" action (discretionary per CONTEXT.md) that deletes the GGUF and sets the toggle OFF. Phase 19 Plan 05 implements the toggle only; the Reset affordance is deferred to a follow-up if user requests it.
 
 3. **Should the Swiss safety-net regex (D-19) apply only when AI cleanup is ON, or also to plain-mode German?**
    - What we know: D-16 applies ß→ss in ITN layer when Swiss toggle is ON (plain dictation too). D-19 is specifically "post-LLM".
    - What's unclear: whether D-16 is sufficient to cover plain-mode without the D-19 safety net — they're idempotent, so running D-19 even without LLM is harmless.
-   - Recommendation: keep D-16 and D-19 as distinct call sites per CONTEXT.md; D-19 runs only in the AI-cleanup branch. This is what CONTEXT.md literally says.
+   - **RESOLVED:** Keep D-16 and D-19 as distinct call sites per CONTEXT.md: D-16 runs in `TextProcessingService` step 2b (plain + AI paths), D-19 runs inside `CleanupService` post-LLM (AI path only). This matches CONTEXT.md literally and avoids duplicate work in the plain path.
 
 ## Code Examples
 
