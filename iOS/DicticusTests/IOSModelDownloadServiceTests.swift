@@ -25,17 +25,31 @@ import XCTest
 @MainActor
 final class IOSModelDownloadServiceTests: XCTestCase {
 
-    /// Flip to `true` in Wave 2 once IOSModelDownloadService exists.
-    private let isWave2Ready = false
+    /// Wave 2 ready — IOSModelDownloadService landed in 19-03.
+    private let isWave2Ready = true
 
     override func setUp() async throws {
         try await super.setUp()
         MockURLProtocol.reset()
+        // Make sure any leftover GGUF from a previous test doesn't skew
+        // the backup-exclusion assertion (fresh download each run).
+        try? FileManager.default.removeItem(at: IOSModelDownloadService.modelPath())
     }
 
     override func tearDown() async throws {
         MockURLProtocol.reset()
+        try? FileManager.default.removeItem(at: IOSModelDownloadService.modelPath())
         try await super.tearDown()
+    }
+
+    /// Make a service wired to MockURLProtocol with a small in-memory payload.
+    private func makeService(payloadBytes: Int = 8 * 1024, chunkCount: Int = 4) -> IOSModelDownloadService {
+        MockURLProtocol.responseData[IOSModelDownloadService.modelURL.absoluteString] =
+            Data(repeating: 0xAB, count: payloadBytes)
+        MockURLProtocol.chunkCount = chunkCount
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.protocolClasses = [MockURLProtocol.self]
+        return IOSModelDownloadService(sessionConfiguration: cfg)
     }
 
     // MARK: - D-10: Progress callbacks over ≥3 chunks
@@ -43,22 +57,29 @@ final class IOSModelDownloadServiceTests: XCTestCase {
     func testProgressCallbacks() async throws {
         try XCTSkipIf(!isWave2Ready,
                       "Pending Wave 2: IOSModelDownloadService not yet implemented")
-        // Wave 2 implementation:
-        // let cfg = URLSessionConfiguration.ephemeral
-        // cfg.protocolClasses = [MockURLProtocol.self]
-        // MockURLProtocol.responseData[IOSModelDownloadService.modelURL.absoluteString] =
-        //     Data(repeating: 0xAB, count: 8 * 1024)
-        // MockURLProtocol.chunkCount = 4
-        // let service = IOSModelDownloadService(sessionConfiguration: cfg)
-        //
-        // var progressSamples: [Double] = []
-        // let cancel = service.$progress.sink { progressSamples.append($0) }
-        // defer { cancel.cancel() }
-        //
-        // await service.startAndWaitForCompletion()
-        //
-        // XCTAssertGreaterThanOrEqual(progressSamples.count, 3)
-        // XCTAssertEqual(progressSamples.last ?? 0, 1.0, accuracy: 0.01)
+        MockURLProtocol.chunkDelay = 0.02
+        let service = makeService(payloadBytes: 8 * 1024, chunkCount: 4)
+
+        var progressSamples: [Double] = []
+        let cancel = service.$progress.sink { value in
+            progressSamples.append(value)
+        }
+        defer { cancel.cancel() }
+
+        try await service.startAndWaitForCompletion()
+
+        XCTAssertEqual(service.state, .completed)
+        XCTAssertGreaterThanOrEqual(progressSamples.count, 3,
+                                    "Expected at least 3 progress samples across chunks")
+        XCTAssertEqual(progressSamples.last ?? 0, 1.0, accuracy: 0.01)
+
+        // Monotonic non-decreasing (allowing for the initial 0.0 reset on start()).
+        let meaningful = progressSamples.drop(while: { $0 == 0 })
+        var prev = 0.0
+        for sample in meaningful {
+            XCTAssertGreaterThanOrEqual(sample, prev, "progress must not decrease: \(sample) < \(prev)")
+            prev = sample
+        }
     }
 
     // MARK: - D-10: Pause / resume with Range header
@@ -66,20 +87,29 @@ final class IOSModelDownloadServiceTests: XCTestCase {
     func testPauseResume() async throws {
         try XCTSkipIf(!isWave2Ready,
                       "Pending Wave 2: IOSModelDownloadService not yet implemented")
-        // Wave 2 implementation:
-        // MockURLProtocol.chunkDelay = 0.2
-        // let service = makeService()  // helper below
-        // service.start()
-        // try await Task.sleep(nanoseconds: 300_000_000)
-        // service.pause()
-        // // XCTAssertEqual(service.state, .paused)
-        // let midProgress = service.progress
-        // XCTAssertGreaterThan(midProgress, 0.0)
-        // XCTAssertLessThan(midProgress, 1.0)
-        //
-        // service.resume()
-        // await service.waitForCompletion()
-        // // XCTAssertEqual(service.state, .completed)
+        // 200 ms between chunks, 10 chunks → ~2 s total; pause mid-way.
+        MockURLProtocol.chunkDelay = 0.2
+        let service = makeService(payloadBytes: 10 * 1024, chunkCount: 10)
+        service.start()
+        try await Task.sleep(nanoseconds: 500_000_000)
+        service.pause()
+
+        // Poll briefly for the cancel-with-resume-data callback to publish .paused.
+        let deadline = Date().addingTimeInterval(2.0)
+        while service.state != .paused && Date() < deadline {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(service.state, .paused)
+        let midProgress = service.progress
+        XCTAssertGreaterThan(midProgress, 0.0)
+        XCTAssertLessThan(midProgress, 1.0)
+
+        // Resume: drop chunk delay so the remainder completes quickly.
+        MockURLProtocol.chunkDelay = 0.01
+        service.resume()
+        await service.waitForCompletion()
+        XCTAssertEqual(service.state, .completed)
+        XCTAssertEqual(service.progress, 1.0, accuracy: 0.01)
     }
 
     // MARK: - Q6: Backup exclusion
@@ -87,12 +117,32 @@ final class IOSModelDownloadServiceTests: XCTestCase {
     func testBackupExclusion() async throws {
         try XCTSkipIf(!isWave2Ready,
                       "Pending Wave 2: IOSModelDownloadService not yet implemented")
-        // Wave 2 implementation:
-        // await makeService().startAndWaitForCompletion()
-        // let url = IOSModelDownloadService.modelPath()
-        // let values = try url.resourceValues(forKeys: [.isExcludedFromBackupKey])
-        // XCTAssertTrue(values.isExcludedFromBackup ?? false,
-        //               "Q6: downloaded GGUF must be marked isExcludedFromBackup")
+        MockURLProtocol.chunkDelay = 0
+        let service = makeService(payloadBytes: 1024, chunkCount: 1)
+        try await service.startAndWaitForCompletion()
+
+        let url = IOSModelDownloadService.modelPath()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path),
+                      "Downloaded GGUF should be at canonical modelPath()")
+
+        let values = try url.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        XCTAssertTrue(values.isExcludedFromBackup ?? false,
+                      "Q6: downloaded GGUF must be marked isExcludedFromBackup")
+    }
+
+    // MARK: - isModelCached lifecycle
+
+    func testIsModelCachedReflectsDiskState() async throws {
+        try XCTSkipIf(!isWave2Ready,
+                      "Pending Wave 2: IOSModelDownloadService not yet implemented")
+        // Fresh — setUp deletes any stale file.
+        XCTAssertFalse(IOSModelDownloadService.isModelCached())
+        MockURLProtocol.chunkDelay = 0
+        let service = makeService(payloadBytes: 512, chunkCount: 1)
+        try await service.startAndWaitForCompletion()
+        XCTAssertTrue(IOSModelDownloadService.isModelCached())
+        try FileManager.default.removeItem(at: IOSModelDownloadService.modelPath())
+        XCTAssertFalse(IOSModelDownloadService.isModelCached())
     }
 
     // MARK: - Sanity: MockURLProtocol Range header handling
