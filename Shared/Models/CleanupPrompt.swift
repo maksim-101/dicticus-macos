@@ -35,7 +35,16 @@ struct CleanupPrompt {
         if let lang = language {
             prompt += "LANGUAGE: \(lang == "de" ? "German" : "English")\n"
         }
-        
+
+        // D-18: Swiss German orthography prompt extension (scoped to German only).
+        // Gated on BOTH the shared useSwissGerman AppGroup toggle AND language == "de".
+        // Standard-German dictation stays untouched even if the Swiss toggle is ON.
+        let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+        if swissDefaults.bool(forKey: "useSwissGerman") && language == "de" {
+            prompt += "STYLE: Use Swiss German orthography (never use ß, always ss). "
+            prompt += "Use Swiss thousands separator style (e.g. 1'250, not 1.250).\n"
+        }
+
         let sanitizedText = sanitizeControlTokens(text)
         prompt += "INPUT: \(sanitizedText)<end_of_turn>\n"
         prompt += "<start_of_turn>model\n"

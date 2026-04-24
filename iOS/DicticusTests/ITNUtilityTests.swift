@@ -14,15 +14,12 @@ import XCTest
 /// that 19-VALIDATION.md requires.
 final class ITNUtilityTests: XCTestCase {
 
-    /// Flip this to `true` in Wave 1 (when `ITNUtility.applySwissITN` lands) to
-    /// let the assertions run. Currently false → every test early-skips.
-    private let isWave1Ready = false
+    /// Wave 1 flipped: `ITNUtility.applySwissITN` exists in Shared/. Assertions run.
+    private let isWave1Ready = true
 
-    /// Compile-time shim. Wave 1 replaces the body with:
-    ///     return ITNUtility.applySwissITN(to: text)
+    /// Wave 1 replaced the no-op body with a direct call to the real symbol.
     private func callSwissITN(_ text: String) -> String {
-        // Intentional no-op until Wave 1 replaces the body.
-        return text
+        return ITNUtility.applySwissITN(to: text)
     }
 
     func testSwissGermanEszett() throws {
