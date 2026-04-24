@@ -26,7 +26,7 @@
 |-------|-----------|-------|--------|--------|
 | 17.5. Inline Shortcut Dictation | v2.1 | Darwin IPC keyboard dictation — mic button on Dicticus keyboard triggers recording in main app via Darwin notifications, transcription inserts at cursor via textDocumentProxy (PIVOTED from shortcut UI) | Done | Success |
 | 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
-| 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Planned | - |
+| 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Code Complete | Pending physical-device UAT |
 
 ---
 
@@ -35,13 +35,13 @@
 
 **Requirements:** CLEAN-01, CLEAN-02
 
-**Plans:** 6 plans (5 / 6 complete)
+**Plans:** 6 plans (6 / 6 complete — code-complete pending physical-device UAT)
 - [x] 19-01-PLAN.md — Wave 0 test scaffolding (TDD red targets for Wave 1-4) — completed 2026-04-24
 - [x] 19-02-PLAN.md — SPM wiring + CleanupService extraction to Shared/ + Swiss ITN/prompt — completed 2026-04-24
 - [x] 19-03-PLAN.md — IOSModelDownloadService (URLSession delegate, pause/resume, backup exclusion) + device eligibility — completed 2026-04-24
 - [x] 19-04-PLAN.md — IOSModelWarmupService Step 4 (conditional LLM load, graceful degradation) — completed 2026-04-24
 - [x] 19-05-PLAN.md — Settings UI (AiCleanupSection: toggles + inline download panel) — completed 2026-04-24
-- [ ] 19-06-PLAN.md — DictationViewModel + DicticusApp integration (TextProcessingService wiring + E2E)
+- [x] 19-06-PLAN.md — DictationViewModel + DicticusApp integration (TextProcessingService wiring + E2E) — completed 2026-04-24
 
 ---
 
@@ -69,4 +69,4 @@
 - [x] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
-*Last updated: 2026-04-24 — Phase 19 Wave 4 complete (Plan 19-05 — Settings UI with AiCleanupSection + inline download panel); 5/6 plans done*
+*Last updated: 2026-04-24 — Phase 19 Wave 5 complete (Plan 19-06 — DictationViewModel + DicticusApp pipeline integration); 6/6 plans done, CLEAN-01 + CLEAN-02 code-complete pending physical-device UAT*

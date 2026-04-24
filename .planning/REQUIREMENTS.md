@@ -119,8 +119,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UAPP-02 | Phase 16 | Completed |
 | KEYB-01 | Phase 17 | Completed |
 | KEYB-02 | Phase 17 | Completed |
-| CLEAN-01 | Phase 19 | Planned |
-| CLEAN-02 | Phase 19 | Planned |
+| CLEAN-01 | Phase 19 | Completed |
+| CLEAN-02 | Phase 19 | Completed |
 
 **Coverage:**
 - v2.0 requirements: 22 total

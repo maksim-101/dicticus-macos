@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed Plan 19-05 (Wave 4 — Settings UI: AiCleanupSection with App Group toggles + inline download panel + RAM-gated explainer). 2 atomic task commits (8156489 feat create AiCleanupSection; 89babf3 feat mount in SettingsView). SettingsToggleTests 4/4 green. iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED (ad-hoc)."
-last_updated: "2026-04-24T19:44:28Z"
+stopped_at: "Completed Plan 19-06 (Wave 5 — DictationViewModel + DicticusApp pipeline integration). 4 atomic task commits (d43d4a4 test RED seam; d994e8f feat route stopDictation through TextProcessingService; 4d2834e feat inject cleanupServiceInstance; f5e49df test flip Wave 0 CleanupService shims to live). CLEAN-01 + CLEAN-02 DELIVERED pending physical-device UAT. iOS: 70 tests / 62 passed / 8 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED (ad-hoc)."
+last_updated: "2026-04-24T19:55:52Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 3
@@ -28,13 +28,13 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 19 (AI Cleanup iOS)
-Plan: 6 of 6 (Wave 4 complete — Settings UI: toggles + inline download panel)
-Status: Wave 5 ready — DictationViewModel + TextProcessingService pipeline integration (inject cleanupServiceInstance when aiCleanupEnabled is ON)
-Last activity: 2026-04-24 — Executed Plan 19-05 (Wave 4): Created AiCleanupSection.swift (259 LOC) with AI Cleanup + Swiss German toggles (AppGroup group.com.dicticus keys aiCleanupEnabled, useSwissGerman, both default OFF), inline download panel with 5-state switch (.idle/.downloading/.paused/.completed/.failed), RAM-gated explainer replacing AI toggle on <5 GB devices (D-03/D-20), Swiss toggle always visible per D-15, status row bound to warmupService.llmStatus (idle/loading/ready/failed + "Relaunch to enable" hint). Mounted in SettingsView between Transcriptions and Integration. Wave 0 SettingsToggleTests 4/4 green. 2 atomic commits (8156489 create, 89babf3 mount). iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
+Phase: 19 (AI Cleanup iOS) — ALL 6 PLANS COMPLETE pending physical-device UAT
+Plan: 6 of 6 (Wave 5 complete — DictationViewModel + DicticusApp pipeline integration)
+Status: Phase 19 code-complete. CLEAN-01 + CLEAN-02 delivered. Phase-level SUMMARY pending (19-SUMMARY.md roll-up to be authored before phase close-out).
+Last activity: 2026-04-24 — Executed Plan 19-06 (Wave 5): Added `cleanupService: CleanupProvider?` property-injection seam to DictationViewModel; rewrote stopDictation() to route through TextProcessingService.process(text:language:mode:confidence:) with mode branching on AppGroup aiCleanupEnabled AND provider.isLoaded (D-13/D-23/D-26). Removed direct HistoryService.save from DictationViewModel to avoid double-saves (TextProcessingService Step 4 is the sole save site). Added .onChange(of: warmupService.isLlmReady) in DicticusApp to inject cleanupServiceInstance on Step 4 success, clear on failure. Flipped Wave 0 CleanupService test shims (testTimeoutFallback now runs as D-26 unloaded-fallback test; rest env-gated on DICTICUS_TEST_MODEL_PATH with clean skip messages). 4 atomic commits: d43d4a4 (RED), d994e8f (TextProcessingService routing), 4d2834e (DicticusApp injection), f5e49df (CleanupService test flip). iOS: 70 tests / 62 passed / 8 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
-Progress (v2.1): [▓▓▓▓▓▓▓▓▓░] 92%
+Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
 
 ## Completed Milestones
 
@@ -69,6 +69,9 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓░] 92%
 - **D-34:** iOS `LlmStatus` intentionally omits `.downloading` (present on macOS `LlmStatus`). Rationale: on iOS the GGUF download is Settings-UI-initiated (D-09/D-10), not warmup-driven, so warmup never occupies the `.downloading` state. If the GGUF isn't cached when Step 4 fires, Step 4 skips and `llmStatus` stays `.idle` (Phase 19 Wave 3).
 - **D-35:** `AiCleanupSection` owns an ephemeral `@StateObject IOSModelDownloadService` scoped to the Settings view lifetime — NOT the same instance that `IOSModelWarmupService.Step 4` uses. Step 4 simply reads the cached GGUF from disk on next launch. Consequence: dismissing Settings mid-download cancels the in-flight task (T-19-05-03 accepted scope); user must re-open Settings and tap Retry. Background downloads are deferred to a future wave (Phase 19 Wave 4).
 - **D-36:** `appGroupBinding(_:default:)` helper is duplicated in `AiCleanupSection` instead of being shared with `SettingsView`. Rationale: plan task 2 mandated "make no other changes to `SettingsView.swift`" beyond the one-line mount. Duplication is 11 LOC, zero runtime cost; future consolidation is trivial if a third consumer appears (Phase 19 Wave 4).
+- **D-37:** `DictationViewModel.cleanupService` is a plain `var` property (not `@Published`). Rationale: the provider is consumed lazily at `stopDictation()` time via `cleanupService?.isLoaded`, not by SwiftUI views — so SwiftUI invalidation on warmup transitions is unnecessary. Keeps the view-model free of `isLlmReady` observation while still picking up injection the moment `DicticusApp` writes the seam (Phase 19 Wave 5).
+- **D-38:** `DictationViewModel.stopDictation()` no longer calls `HistoryService.shared.save()` directly — `TextProcessingService.process()` performs the save as Step 4 of the pipeline. This is a silent contract change from v2.0 where the view-model saved before any processing: history `text` column is now the POST-pipeline output (dictionary + ITN + Swiss ITN + optional LLM), `rawText` column remains raw ASR verbatim (Phase 19 Wave 5).
+- **D-39:** `DicticusApp.onChange(of: warmupService.isLlmReady)` clears `viewModel.cleanupService` to nil when `isLlmReady` transitions to false (Step 4 failure / cancel), instead of preserving the last-known instance. Rationale: a stale `CleanupService` whose `loadModel` failed could still be referenced even though `isLoaded=false` prevents use. Explicit clear = explicit fall-back to `.plain` mode and cleaner post-failure state (Phase 19 Wave 5).
 
 ## Active Concerns / Risks
 
