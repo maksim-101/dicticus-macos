@@ -64,5 +64,17 @@ struct DicticusApp: App {
                 viewModel.transcriptionService = service
             }
         }
+        // Phase 19 Wave 5 — CLEAN-01 / CLEAN-02.
+        // Inject the warmed-up CleanupService into DictationViewModel as soon
+        // as warmup Step 4 publishes isLlmReady. Mirrors the isReady wiring
+        // above. When Step 4 tears down (.failed or cancel), clear the seam
+        // so the next dictation falls back to mode=.plain (D-26).
+        .onChange(of: warmupService.isLlmReady) { _, isLlmReady in
+            if isLlmReady, let cleanup = warmupService.cleanupServiceInstance {
+                viewModel.cleanupService = cleanup
+            } else if !isLlmReady {
+                viewModel.cleanupService = nil
+            }
+        }
     }
 }
