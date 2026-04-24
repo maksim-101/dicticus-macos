@@ -8,6 +8,23 @@ import os.log
 /// and binary footprint on mobile hardware (D- تصمیم taken in STATE.md).
 @MainActor
 class IOSModelWarmupService: ObservableObject {
+
+    // MARK: - Device eligibility (D-03)
+
+    /// Per D-03: AI cleanup requires ≥5 GB RAM to safely coexist with the
+    /// ~2.7 GB Parakeet ASR model. iPhone 12/13 (4 GB A14) are below this
+    /// threshold; iPhone 14+ (6 GB) meet it.
+    /// `nonisolated` so SettingsView (and any other call site, including
+    /// non-main contexts) can read it without actor hops.
+    public nonisolated static let requiredPhysicalMemoryBytes: UInt64 = 5 * 1024 * 1024 * 1024
+
+    /// Whether the current device meets the RAM requirement for AI cleanup.
+    /// Read at launch by `SettingsView` to decide between showing the AI
+    /// Cleanup toggle or a device-unsupported explainer.
+    public nonisolated static var isAiCleanupSupported: Bool {
+        ProcessInfo.processInfo.physicalMemory >= requiredPhysicalMemoryBytes
+    }
+
     @Published var isWarming = false
     @Published var isReady = false
     @Published var hasModels = false
@@ -87,8 +104,7 @@ class IOSModelWarmupService: ObservableObject {
                     self?.watchdogTask?.cancel()
                     self?.watchdogTask = nil
                 }
-                
-                // NOTE: No Step 4 (LLM) on iOS v2.0 — locked decision
+                // Step 4 (LLM warmup) wiring lands in Wave 3 (Plan 19-04).
             } catch is CancellationError {
                 await MainActor.run {
                     progressTimer.cancel()

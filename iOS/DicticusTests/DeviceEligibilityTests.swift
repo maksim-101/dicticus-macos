@@ -10,22 +10,22 @@ import XCTest
 @MainActor
 final class DeviceEligibilityTests: XCTestCase {
 
-    /// Flip to `true` in Wave 2 when `IOSModelWarmupService.isAiCleanupSupported`
-    /// and the shared `ramThreshold` constant land.
-    private let isWave2Ready = false
+    /// Wave 2 ready — `IOSModelWarmupService.requiredPhysicalMemoryBytes` +
+    /// `isAiCleanupSupported` landed in 19-03.
+    private let isWave2Ready = true
 
-    /// D-03: cutoff is 5 GB. This constant should be mirrored in the Wave 2
-    /// implementation (e.g. `IOSModelWarmupService.ramThresholdBytes`).
+    /// D-03: cutoff is 5 GB. Mirrored by the implementation as
+    /// `IOSModelWarmupService.requiredPhysicalMemoryBytes`.
     static let expectedRamThresholdBytes: UInt64 = 5 * 1024 * 1024 * 1024
 
     // MARK: - D-03: Threshold constant contract
 
     func testRamThresholdConstantIsFiveGb() throws {
         try XCTSkipIf(!isWave2Ready,
-                      "Pending Wave 2: IOSModelWarmupService.ramThresholdBytes not yet exposed")
-        // Wave 2 assertion:
-        // XCTAssertEqual(IOSModelWarmupService.ramThresholdBytes,
-        //                Self.expectedRamThresholdBytes)
+                      "Pending Wave 2: IOSModelWarmupService.requiredPhysicalMemoryBytes not yet exposed")
+        XCTAssertEqual(IOSModelWarmupService.requiredPhysicalMemoryBytes,
+                       Self.expectedRamThresholdBytes,
+                       "D-03: threshold must be exactly 5 GiB")
     }
 
     // MARK: - D-03: Runtime eligibility on current device
@@ -36,8 +36,13 @@ final class DeviceEligibilityTests: XCTestCase {
                       "Simulator/device has < 5 GB RAM — eligibility test intentionally skipped")
         try XCTSkipIf(!isWave2Ready,
                       "Pending Wave 2: IOSModelWarmupService.isAiCleanupSupported not yet implemented")
-        // Wave 2 assertion:
-        // XCTAssertTrue(IOSModelWarmupService.isAiCleanupSupported)
+        XCTAssertTrue(IOSModelWarmupService.isAiCleanupSupported,
+                      "Device with \(physicalMemory) bytes physicalMemory should be supported")
+        // Cross-check against the raw ProcessInfo read (behavioral parity).
+        XCTAssertEqual(
+            IOSModelWarmupService.isAiCleanupSupported,
+            ProcessInfo.processInfo.physicalMemory >= IOSModelWarmupService.requiredPhysicalMemoryBytes
+        )
     }
 
     // MARK: - Sanity: ProcessInfo exposes physicalMemory
