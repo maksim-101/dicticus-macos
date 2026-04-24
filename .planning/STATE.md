@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 19 (AI Cleanup iOS)
-Plan: 0 of 6
-Status: Ready to execute — 6 plans in 5 waves (plan-check passed iter 2)
-Last activity: 2026-04-24 — Plan-phase 19 complete: 6 plans across waves 0-5 (Wave 0 test scaffolds, SPM+CleanupService extraction, Download+eligibility, Warmup Step 4, Settings UI, ViewModel/E2E). Plan-checker passed after 1 revision round.
+Plan: 1 of 6 (Wave 0 complete — test scaffolding)
+Status: Wave 1 ready — Swiss ITN + CleanupService extraction can begin
+Last activity: 2026-04-24 — Executed Plan 19-01 (Wave 0): 9 XCTest scaffold files created covering all 14 Req→Test rows in 19-VALIDATION.md; full DicticusTests suite green (58 tests, 18 skipped pending Waves 1/2, 0 failures) on iPhone 17 simulator.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
@@ -58,5 +58,5 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Discuss-phase 19 complete — 19-CONTEXT.md + 19-DISCUSSION-LOG.md committed
-Resume file: Run `/gsd-plan-phase 19` to begin research + planning for AI Cleanup iOS
+Stopped at: Completed Plan 19-01 (Wave 0 test scaffolding) — 9 files, 3 atomic commits, full DicticusTests suite green on iPhone 17 sim
+Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-02 (Wave 1 — Swiss ITN + CleanupService extraction)
