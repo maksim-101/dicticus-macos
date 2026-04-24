@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed Plan 19-03 (Wave 2 — iOS downloader + D-03 device gate). 2 atomic task commits (45bae61 Task 1 IOSModelDownloadService; 5be43d2 Task 2 requiredPhysicalMemoryBytes + isAiCleanupSupported). iOS: 59 tests / 9 skipped / 0 failures on iPhone 17. macOS: BUILD SUCCEEDED (ad-hoc). Dropped Wave 0 skipped count by 5 (3 download tests + 2 device tests flipped to green)."
-last_updated: "2026-04-24T19:15:29.770Z"
+stopped_at: "Completed Plan 19-04 (Wave 3 — IOSModelWarmupService Step 4: conditional LLM load with triple-gate + graceful degradation). 4 atomic task commits (a494aec RED / 04a4d24 GREEN Task 1 LlmStatus + backend-init token; 9991ea6 gate-invariants / c6dce92 GREEN Task 2 Step 4 block). iOS: 22 related tests / 0 failures on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED (ad-hoc). Wave 4 inherits isLlmReady / llmStatus / cleanupServiceInstance."
+last_updated: "2026-04-24T19:37:43Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 13
-  completed_plans: 11
-  percent: 85
+  completed_plans: 12
+  percent: 92
 ---
 
 # Project State: Dicticus
@@ -29,12 +29,12 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 19 (AI Cleanup iOS)
-Plan: 4 of 6 (Wave 2 complete — iOS downloader + D-03 device gate)
-Status: Wave 3 ready — SettingsView toggles + inline download UI + Step 4 warmup wiring
-Last activity: 2026-04-24 — Executed Plan 19-03 (Wave 2): Landed IOSModelDownloadService (URLSession delegate, progress/pause-resume/backup-exclusion) and D-03 device RAM gate (requiredPhysicalMemoryBytes = 5 GiB; isAiCleanupSupported: Bool) on IOSModelWarmupService. 2 atomic task commits; both iOS + macOS targets green; Wave 0 download + device tests flipped from 5 skipped → 5 green (iOS: 59 / 9 skipped / 0 failures).
+Plan: 5 of 6 (Wave 3 complete — IOSModelWarmupService Step 4 conditional LLM load)
+Status: Wave 4 ready — DictationViewModel injection + Settings UI bindings against isLlmReady / llmStatus
+Last activity: 2026-04-24 — Executed Plan 19-04 (Wave 3): Added LlmStatus enum, @Published isLlmReady + llmStatus (public private(set)), cleanupServiceInstance accessor, and Step 4 warmup block (triple-gated on aiCleanupEnabled AppGroup toggle + isAiCleanupSupported RAM gate + IOSModelDownloadService.isModelCached()). CleanupService.initializeBackend() wired via static-let token (D-29). Graceful degradation: ASR publishes isReady BEFORE Step 4 starts; Step 4 failure sets llmStatus = .failed("AI cleanup unavailable") without re-throwing. 4 atomic commits (RED/GREEN pairs for both tasks). iOS: 22 related tests / 0 failures; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
-Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
+Progress (v2.1): [▓▓▓▓▓▓▓▓▓░] 92%
 
 ## Completed Milestones
 
@@ -65,6 +65,8 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
 - **D-30:** Long-press gesture (0.5s) on mic button cancels active dictation as escape hatch (Phase 17.5).
 - **D-31:** `@MainActor` classes expose their static helpers as `nonisolated` whenever those helpers need to be called synchronously from `URLSession` delegate callbacks (e.g. `IOSModelDownloadService.modelPath()` is called by the non-main delegate queue to move the file before the temp URL is invalidated). Instance state remains `@MainActor`-isolated; `@Published` mutations still hop via `Task { @MainActor in … }` (Phase 19 Wave 2).
 - **D-32:** D-03 RAM threshold is exactly `5 * 1024 * 1024 * 1024` bytes (5 GiB) — authoritative constant `IOSModelWarmupService.requiredPhysicalMemoryBytes`. `isAiCleanupSupported` reads `ProcessInfo.processInfo.physicalMemory` against this at call time, so there is no cached gate to invalidate when moving between devices / simulators (Phase 19 Wave 2).
+- **D-33:** `CleanupService.initializeBackend()` is invoked exactly once per app lifetime via a file-scoped `private static let backendInitToken: Void = { ... }()` on `IOSModelWarmupService`, referenced by `_ = IOSModelWarmupService.backendInitToken` inside `init(...)`. Swift's thread-safe once-only static initializer guarantees the backend init runs on first service construction and never again — no app-delegate coupling required (Phase 19 Wave 3).
+- **D-34:** iOS `LlmStatus` intentionally omits `.downloading` (present on macOS `LlmStatus`). Rationale: on iOS the GGUF download is Settings-UI-initiated (D-09/D-10), not warmup-driven, so warmup never occupies the `.downloading` state. If the GGUF isn't cached when Step 4 fires, Step 4 skips and `llmStatus` stays `.idle` (Phase 19 Wave 3).
 
 ## Active Concerns / Risks
 
@@ -78,6 +80,6 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
 
 ## Session Continuity
 
-Last session: 2026-04-24T19:20:00Z
-Stopped at: Completed Plan 19-03 (Wave 2 — iOS downloader + D-03 device gate). 2 atomic task commits (45bae61 Task 1 IOSModelDownloadService; 5be43d2 Task 2 requiredPhysicalMemoryBytes + isAiCleanupSupported). iOS: 59 tests / 9 skipped / 0 failures on iPhone 17. macOS: BUILD SUCCEEDED. Dropped Wave 0 skipped count by 5 (3 download tests + 2 device tests flipped to green).
-Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-04 (Wave 3 — SettingsView toggles + inline download UI + Step 4 warmup wiring)
+Last session: 2026-04-24T19:37:43Z
+Stopped at: Completed Plan 19-04 (Wave 3 — IOSModelWarmupService Step 4: conditional LLM load + graceful degradation). 4 atomic commits (a494aec/04a4d24 Task 1; 9991ea6/c6dce92 Task 2). iOS: 22 related tests / 0 failures on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
+Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-05 (Wave 4 — DictationViewModel injection + Settings UI bindings against IOSModelWarmupService.{isLlmReady, llmStatus, cleanupServiceInstance})
