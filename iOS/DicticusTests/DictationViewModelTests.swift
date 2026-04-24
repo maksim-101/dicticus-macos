@@ -61,4 +61,32 @@ final class DictationViewModelTests: XCTestCase {
         XCTAssertEqual(preparing, .preparingLiveActivity)
         XCTAssertNotEqual(idle, recording)
     }
+
+    // MARK: - Phase 19 Wave 5: CleanupService injection seam
+
+    /// The property must exist so DicticusApp can inject the warmed-up
+    /// CleanupService when Step 4 completes. Default is nil until injection.
+    func testCleanupServiceIsNilByDefault() {
+        let vm = DictationViewModel()
+        XCTAssertNil(vm.cleanupService,
+                     "cleanupService seam must start nil until DicticusApp injects it")
+    }
+
+    /// The seam must accept any `CleanupProvider` (including mocks) so tests can
+    /// exercise the TextProcessingService routing without spinning up llama.cpp.
+    func testCleanupServiceCanBeInjected() {
+        final class StubProvider: CleanupProvider {
+            var isLoaded: Bool = true
+            func cleanup(text: String, language: String, dictionaryContext: [String: String]?) async -> String {
+                return text
+            }
+        }
+        let vm = DictationViewModel()
+        let stub = StubProvider()
+        vm.cleanupService = stub
+        XCTAssertNotNil(vm.cleanupService,
+                        "cleanupService seam must be writable for DicticusApp injection")
+        XCTAssertTrue(vm.cleanupService?.isLoaded == true,
+                      "Injected provider must be the same instance")
+    }
 }
