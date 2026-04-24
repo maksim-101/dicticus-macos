@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 19 (AI Cleanup iOS)
-Plan: 0 of TBD
-Status: Discuss-phase complete — CONTEXT.md captured (29 decisions)
-Last activity: 2026-04-24 — Discuss-phase 19 complete: Gemma 4 E2B, RAM gating, Swiss German ITN+prompt+safety-net, 8s timeout, block until cleaned, warmup on launch.
+Plan: 0 of 6
+Status: Ready to execute — 6 plans in 5 waves (plan-check passed iter 2)
+Last activity: 2026-04-24 — Plan-phase 19 complete: 6 plans across waves 0-5 (Wave 0 test scaffolds, SPM+CleanupService extraction, Download+eligibility, Warmup Step 4, Settings UI, ViewModel/E2E). Plan-checker passed after 1 revision round.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓░░] 80%
