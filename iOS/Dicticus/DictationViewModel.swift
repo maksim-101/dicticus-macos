@@ -36,6 +36,13 @@ class DictationViewModel: ObservableObject {
         }
     }
 
+    // Phase 19 Wave 5: CleanupService injection seam (CLEAN-01 / CLEAN-02).
+    // Set by DicticusApp once warmup Step 4 completes (property injection).
+    // When non-nil + AppGroup `aiCleanupEnabled` is true, stopDictation routes
+    // through TextProcessingService with mode=.aiCleanup. Consumed lazily at
+    // stopDictation() time, so no didSet hook is needed.
+    var cleanupService: CleanupProvider?
+
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
     nonisolated(unsafe) private var notificationObservers: [NSObjectProtocol] = []
 
@@ -81,20 +88,39 @@ class DictationViewModel: ObservableObject {
         state = .transcribing
 
         do {
-            if let result = try await transcriptionService?.stopRecordingAndTranscribe() {
-                UIPasteboard.general.string = result.text
-                lastResult = result.text
-                error = nil
-
-                let entry = TranscriptionEntry(
-                    text: result.text,
-                    rawText: result.text,
-                    language: result.language,
-                    mode: DictationMode.plain.rawValue,
-                    confidence: Double(result.confidence)
-                )
-                HistoryService.shared.save(entry)
+            guard let result = try await transcriptionService?.stopRecordingAndTranscribe() else {
+                await endLiveActivity()
+                state = .idle
+                return
             }
+
+            // Phase 19 Wave 5 — CLEAN-01 / CLEAN-02.
+            // Determine pipeline mode: AI cleanup only if the user toggle is ON
+            // AND a CleanupProvider has been injected AND the provider reports
+            // loaded. This matches D-13/D-23 gating + graceful degradation
+            // (D-26) when Step 4 LLM warmup has not completed yet.
+            let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+            let wantsAiCleanup = appGroupDefaults.bool(forKey: "aiCleanupEnabled")
+            let llmReady = cleanupService?.isLoaded ?? false
+            let mode: DictationMode = (wantsAiCleanup && llmReady) ? .aiCleanup : .plain
+
+            // Route through the shared pipeline:
+            //   Dictionary -> ITN -> Swiss ITN -> [LLM cleanup] -> History.
+            // TextProcessingService.process() itself saves the TranscriptionEntry
+            // (Step 4 of the pipeline) so we MUST NOT call HistoryService here
+            // or every dictation would create a duplicate row.
+            let processor = TextProcessingService(cleanupService: cleanupService)
+            let cleaned = await processor.process(
+                text: result.text,
+                language: result.language,
+                mode: mode,
+                confidence: Double(result.confidence)
+            )
+
+            UIPasteboard.general.string = cleaned
+            lastResult = cleaned
+            error = nil
+
         } catch let transcriptionError as TranscriptionError {
             switch transcriptionError {
             case .tooShort:
