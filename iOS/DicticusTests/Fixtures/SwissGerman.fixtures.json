@@ -1,0 +1,10 @@
+[
+  { "input": "Straße", "expected": "Strasse" },
+  { "input": "groß und süß", "expected": "gross und süss" },
+  { "input": "STRAẞE", "expected": "STRASSE" },
+  { "input": "Heißgetränke und Grüße", "expected": "Heissgetränke und Grüsse" },
+  { "input": "Nix ohne Eszett", "expected": "Nix ohne Eszett" },
+  { "input": "1.250", "expected": "1.250" },
+  { "input": "ẞ", "expected": "SS" },
+  { "input": "Fußball", "expected": "Fussball" }
+]
