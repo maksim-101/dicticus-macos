@@ -18,6 +18,9 @@ packages:
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio.git
     from: 0.13.6
+  llama:
+    url: https://github.com/mattt/llama.swift.git
+    from: 2.8832.0
 
 targets:
   Dicticus:
@@ -38,6 +41,7 @@ targets:
       GENERATE_INFOPLIST_FILE: YES
       CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
       DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+      OTHER_LDFLAGS: "-framework llama"
       INFOPLIST_KEY_CFBundleURLTypes:
         - CFBundleURLName: com.dicticus.ios
           CFBundleURLSchemes:
@@ -47,6 +51,8 @@ targets:
         product: GRDB
       - package: FluidAudio
         product: FluidAudio
+      - package: llama
+        product: LlamaSwift
       - target: DicticusWidget
 
   DicticusWidget:
