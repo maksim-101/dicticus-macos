@@ -48,43 +48,6 @@ targets:
       - package: FluidAudio
         product: FluidAudio
       - target: DicticusWidget
-      - target: DicticusKeyboard
-
-  DicticusKeyboard:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: DicticusKeyboard
-      - path: ../Shared
-      - path: Dicticus/IPC/DicticusIPCBridge.swift
-    entitlements:
-      path: DicticusKeyboard/DicticusKeyboard.entitlements
-      properties:
-        com.apple.security.application-groups:
-          - group.com.dicticus
-    settings:
-      PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios.keyboard
-      INFOPLIST_FILE: DicticusKeyboard/Info.plist
-      GENERATE_INFOPLIST_FILE: YES
-      SKIP_INSTALL: YES
-      PRODUCT_NAME: DicticusKeyboard
-      SWIFT_VERSION: "6.0"
-      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
-    dependencies:
-      - package: GRDB
-        product: GRDB
-    info:
-      path: DicticusKeyboard/Info.plist
-      properties:
-        CFBundleDisplayName: Dicticus
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.keyboard-service
-          NSExtensionPrincipalClass: DicticusKeyboard.KeyboardViewController
-          NSExtensionAttributes:
-            IsASCIICapable: false
-            PrefersRightToLeft: false
-            PrimaryLanguage: de-DE
-            RequestsOpenAccess: true
 
   DicticusWidget:
     type: app-extension
@@ -134,11 +97,3 @@ schemes:
       config: Release
     profile:
       config: Release
-  DicticusKeyboard:
-    build:
-      targets:
-        DicticusKeyboard: [all]
-        Dicticus: [all]
-    run:
-      config: Debug
-      askForAppToLaunch: true
