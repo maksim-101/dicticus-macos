@@ -19,7 +19,7 @@ APP_SUPPORT="$HOME/Library/Application Support/Dicticus"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/com.dicticus.app.plist"
 
 echo "=== Step 1: Quit running $APP_NAME instance ==="
-osascript -e 'tell application id "com.dicticus.macos" to quit' 2>/dev/null || true
+osascript -e 'tell application id "com.dicticus.app" to quit' 2>/dev/null || true
 for i in 1 2 3; do
     if ! pgrep -x "$APP_NAME" >/dev/null 2>&1; then break; fi
     sleep 1

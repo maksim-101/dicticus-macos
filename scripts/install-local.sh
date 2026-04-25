@@ -6,9 +6,10 @@
 #
 # Behavior:
 #   1. Gracefully quits any running Dicticus instance.
-#   2. Enumerates every com.dicticus.macos bundle on disk via mdfind.
+#   2. Enumerates every com.dicticus.app bundle on disk via mdfind.
 #   3. Trashes (mv ~/.Trash/) every copy that is NOT /Applications/Dicticus.app,
-#      excluding ~/.Trash and Time Machine snapshots.
+#      excluding ~/.Trash, Time Machine snapshots, and dev build artifacts
+#      (project build/ subdir + Xcode DerivedData).
 #   4. Copies the freshly-built Release .app from macOS/build/ to /Applications/.
 #   5. Re-launches via `open -a Dicticus`.
 #
@@ -17,7 +18,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")/macOS"
-BUNDLE_ID="com.dicticus.macos"
+BUNDLE_ID="com.dicticus.app"
 CANONICAL_APP="/Applications/Dicticus.app"
 BUILD_APP="$PROJECT_DIR/build/Build/Products/Release/Dicticus.app"
 TRASH_DIR="$HOME/.Trash"
@@ -31,7 +32,7 @@ if [ ! -d "$BUILD_APP" ]; then
 fi
 
 echo "=== Step 2: Quit any running Dicticus instance ==="
-osascript -e 'tell application id "com.dicticus.macos" to quit' 2>/dev/null || true
+osascript -e "tell application id \"$BUNDLE_ID\" to quit" 2>/dev/null || true
 for i in 1 2 3; do
     if ! pgrep -x "Dicticus" >/dev/null 2>&1; then break; fi
     sleep 1
@@ -51,16 +52,18 @@ while IFS= read -r path; do
       */Dicticus.app) ;;
       *) continue ;;
     esac
-    # Exclude canonical, Trash, Time Machine
+    # Exclude canonical, Trash, Time Machine, and dev build artifacts
     case "$path" in
       "$CANONICAL_APP") continue ;;
       "$HOME/.Trash"/*) continue ;;
       */Backups.backupdb/*) continue ;;
       */.MobileBackups/*) continue ;;
       /Volumes/com.apple.TimeMachine.localsnapshots/*) continue ;;
+      */build/Build/Products/*) continue ;;        # local xcodebuild output
+      */DerivedData/*) continue ;;                 # Xcode per-user build cache
     esac
     STALE_COPIES+=("$path")
-done < <(mdfind "kMDItemCFBundleIdentifier == 'com.dicticus.macos'")
+done < <(mdfind "kMDItemCFBundleIdentifier == '$BUNDLE_ID'")
 
 if [ ${#STALE_COPIES[@]} -eq 0 ]; then
     echo "  No stale copies found."
