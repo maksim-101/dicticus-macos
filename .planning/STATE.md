@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed Plan 19-06 (Wave 5 — DictationViewModel + DicticusApp pipeline integration). 4 atomic task commits (d43d4a4 test RED seam; d994e8f feat route stopDictation through TextProcessingService; 4d2834e feat inject cleanupServiceInstance; f5e49df test flip Wave 0 CleanupService shims to live). CLEAN-01 + CLEAN-02 DELIVERED pending physical-device UAT. iOS: 70 tests / 62 passed / 8 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED (ad-hoc)."
-last_updated: "2026-04-24T19:55:52Z"
-last_activity: 2026-04-24
+stopped_at: "Phase 19.7 (macOS Hygiene) context gathered. 18 decisions across M1 hotkey re-auth (sticky banner + always-visible re-register button + AX/KeyboardShortcuts liveness check + mdfind multi-copy launch warning), M2 multi-install (dev-only scripts/install-local.sh + scripts/uninstall.sh; DMG unchanged), M3 permission status (add Input Monitoring 3rd row + correct wrong PermissionManager comment + per-pane deep-links + hide-when-all-granted), D1 app icon (assets/icon-master.png + scripts/generate-icons.sh + same glyph/shape iOS↔macOS + rebuild-first-then-debug). CONTEXT.md + DISCUSSION-LOG.md written to .planning/phases/19.7-macos-hygiene/."
+last_updated: "2026-04-25T00:00:00Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 3
   completed_phases: 2
@@ -16,8 +16,8 @@ progress:
 
 # Project State: Dicticus
 
-**Last Updated:** 2026-04-24
-**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS - Phase 19 discussed)
+**Last Updated:** 2026-04-25
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS - Phase 19.7 context gathered)
 
 ## Project Reference
 
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 19 (AI Cleanup iOS) — code-complete; UAT 2026-04-25 surfaced 14 items routed to follow-on phases (see `19-UAT-FINDINGS.md`)
-Plan: 6 of 6 (all done)
-Status: Roadmap extended. **Next:** DESIGN.md (invoking `/design-md`), then 19.7 macOS Hygiene + 19.5 CH-Determinism (parallel-able), then 19.6 iOS UX. Phase 18 iCloud Sync deferred.
+Phase: 19.7 (macOS Hygiene) — context gathered 2026-04-25; ready for `/gsd-plan-phase 19.7`
+Plan: 0 of TBD
+Status: 18 implementation decisions captured across M1/M2/M3/D1. **Next:** `/gsd-plan-phase 19.7` (or proceed with DESIGN.md → 19.5 → 19.6 in parallel). Phase 18 iCloud Sync deferred.
 Last activity: 2026-04-24 — Executed Plan 19-06 (Wave 5): Added `cleanupService: CleanupProvider?` property-injection seam to DictationViewModel; rewrote stopDictation() to route through TextProcessingService.process(text:language:mode:confidence:) with mode branching on AppGroup aiCleanupEnabled AND provider.isLoaded (D-13/D-23/D-26). Removed direct HistoryService.save from DictationViewModel to avoid double-saves (TextProcessingService Step 4 is the sole save site). Added .onChange(of: warmupService.isLlmReady) in DicticusApp to inject cleanupServiceInstance on Step 4 success, clear on failure. Flipped Wave 0 CleanupService test shims (testTimeoutFallback now runs as D-26 unloaded-fallback test; rest env-gated on DICTICUS_TEST_MODEL_PATH with clean skip messages). 4 atomic commits: d43d4a4 (RED), d994e8f (TextProcessingService routing), 4d2834e (DicticusApp injection), f5e49df (CleanupService test flip). iOS: 70 tests / 62 passed / 8 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
