@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 19.7 (macOS Hygiene) context gathered. 18 decisions across M1 hotkey re-auth (sticky banner + always-visible re-register button + AX/KeyboardShortcuts liveness check + mdfind multi-copy launch warning), M2 multi-install (dev-only scripts/install-local.sh + scripts/uninstall.sh; DMG unchanged), M3 permission status (add Input Monitoring 3rd row + correct wrong PermissionManager comment + per-pane deep-links + hide-when-all-granted), D1 app icon (assets/icon-master.png + scripts/generate-icons.sh + same glyph/shape iOS↔macOS + rebuild-first-then-debug). CONTEXT.md + DISCUSSION-LOG.md written to .planning/phases/19.7-macos-hygiene/."
-last_updated: "2026-04-25T00:00:00Z"
-last_activity: 2026-04-25
+stopped_at: "Completed Plan 19-05 (Wave 4 — Settings UI: AiCleanupSection + inline download panel + RAM-gated explainer + Swiss German toggle). 2 atomic commits (8156489 create, 89babf3 mount). SettingsToggleTests 4/4 green. iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED."
+last_updated: "2026-04-25T06:30:52.410Z"
+last_activity: 2026-04-25 -- Phase 19.7 planning complete
 progress:
-  total_phases: 3
-  completed_phases: 2
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 17
+  completed_plans: 14
+  percent: 82
 ---
 
 # Project State: Dicticus
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 Phase: 19.7 (macOS Hygiene) — context gathered 2026-04-25; ready for `/gsd-plan-phase 19.7`
 Plan: 0 of TBD
-Status: 18 implementation decisions captured across M1/M2/M3/D1. **Next:** `/gsd-plan-phase 19.7` (or proceed with DESIGN.md → 19.5 → 19.6 in parallel). Phase 18 iCloud Sync deferred.
-Last activity: 2026-04-24 — Executed Plan 19-06 (Wave 5): Added `cleanupService: CleanupProvider?` property-injection seam to DictationViewModel; rewrote stopDictation() to route through TextProcessingService.process(text:language:mode:confidence:) with mode branching on AppGroup aiCleanupEnabled AND provider.isLoaded (D-13/D-23/D-26). Removed direct HistoryService.save from DictationViewModel to avoid double-saves (TextProcessingService Step 4 is the sole save site). Added .onChange(of: warmupService.isLlmReady) in DicticusApp to inject cleanupServiceInstance on Step 4 success, clear on failure. Flipped Wave 0 CleanupService test shims (testTimeoutFallback now runs as D-26 unloaded-fallback test; rest env-gated on DICTICUS_TEST_MODEL_PATH with clean skip messages). 4 atomic commits: d43d4a4 (RED), d994e8f (TextProcessingService routing), 4d2834e (DicticusApp injection), f5e49df (CleanupService test flip). iOS: 70 tests / 62 passed / 8 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
+Status: Ready to execute
+Last activity: 2026-04-25 -- Phase 19.7 planning complete
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
