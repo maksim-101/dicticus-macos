@@ -6,7 +6,7 @@ import SwiftUI
 /// - Status badge icon (checkmark/clock/xmark) with semantic color
 /// - Permission name
 /// - Status label ("Granted" / "Required" / "Denied")
-/// - Action button: "Grant Access" for pending, "Open Settings" for denied
+/// - Action button: "Grant Access" for pending, "Repair in System Settings" for denied
 struct PermissionRow: View {
     let title: String
     let status: PermissionStatus
@@ -37,7 +37,7 @@ struct PermissionRow: View {
                     .fixedSize(horizontal: true, vertical: false)
 
                 if status != .granted {
-                    Button(status == .denied ? "Open Settings" : "Grant Access") {
+                    Button(status == .denied ? "Repair in System Settings" : "Grant Access") {
                         if status == .denied {
                             SystemSettingsURL.open(settingsURL)
                         } else {
