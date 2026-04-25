@@ -11,6 +11,8 @@ feeds_into: [DESIGN.md, 19.5, 19.6, 19.7, B2-hotfix]
 
 User-reported issues from physical-device UAT after Phase 19 code-complete. Each item is mapped to the follow-on phase that owns it. This file is consumed by `/gsd-discuss-phase` for 19.5, 19.6, and 19.7 so we don't re-derive context.
 
+> **Round 2 (post-19.7 ship):** see `19-UAT-FINDINGS-postship.md` for B5/B6 (Swiss currency mistranslation + decimal separator) and S7/S8 (cross-platform 19.5 scope). Both files must be read together when planning 19.5.
+
 ---
 
 ## Bugs
