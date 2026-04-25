@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped, verifier 22/22 must-haves passed, D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 resolved. Code review: 0 critical, 5 warning, 6 info (advisory)."
-last_updated: "2026-04-25T07:30:00.000Z"
-last_activity: 2026-04-25 -- Phase 19.7 complete
+stopped_at: "Phase 19.5 (AI Cleanup CH-Determinism) context gathered — cross-platform per S7 (iOS+macOS in same phase). Decisions cover Swiss-toggle default flip + macOS UI, B5 anti-flip pipeline, ASCII apostrophe + universal-period numbers, B2 hotfix folded into plan, hardcoded Helvetism list. Ready for /gsd-plan-phase 19.5."
+last_updated: "2026-04-25T15:58:00.000Z"
+last_activity: 2026-04-25 -- Phase 19.5 context gathered
 progress:
   total_phases: 4
   completed_phases: 4
@@ -28,10 +28,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 19.7 (macOS Hygiene) — COMPLETE 2026-04-25 — verifier 22/22, D1 Finder UAT approved
-Plan: 4 of 4 (all shipped)
-Status: Phase complete; next candidates: DESIGN.md generation, Phase 19.5 (CH-determinism), Phase 19.6 (iOS UX)
-Last activity: 2026-04-25 -- Phase 19.7 complete
+Phase: 19.5 (AI Cleanup CH-Determinism) — CONTEXT gathered 2026-04-25
+Plan: 0 of 0 (planning not yet started)
+Status: Context committed (`19.5-CONTEXT.md`). Ready for `/gsd-plan-phase 19.5`. Cross-platform scope confirmed (iOS + macOS in same phase per S7).
+Resume file: .planning/phases/19.5-ai-cleanup-ch-determinism/19.5-CONTEXT.md
+Last activity: 2026-04-25 -- Phase 19.5 context gathered
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
