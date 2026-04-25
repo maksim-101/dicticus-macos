@@ -1,3 +1,4 @@
 macOS/build/
+macOS/build-verify/
 .env
 .env.build
