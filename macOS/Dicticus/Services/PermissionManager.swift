@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 @preconcurrency import ApplicationServices
+import IOKit.hid
 
 /// Status of a single macOS permission.
 enum PermissionStatus: Equatable {
@@ -51,18 +52,24 @@ private let axTrustedPromptKey: String =
 class PermissionManager: ObservableObject {
     @Published var microphoneStatus: PermissionStatus = .pending
     @Published var accessibilityStatus: PermissionStatus = .pending
+    @Published var inputMonitoringStatus: PermissionStatus = .pending
     @Published var hasCompletedOnboarding = false
 
     private static let onboardingKey = "hasCompletedOnboarding"
 
     private var pollTimer: Timer?
 
-    /// True when both required permissions are .granted.
-    /// Input Monitoring is NOT needed — KeyboardShortcuts uses Carbon RegisterEventHotKey,
-    /// not NSEvent.addGlobalMonitorForEventsMatchingMask.
+    /// True when all three required permissions are .granted.
+    ///
+    /// Input Monitoring IS required — `ModifierHotkeyListener` uses
+    /// `NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged)` which on
+    /// macOS 15+ is gated by Input Monitoring. KeyboardShortcuts (Carbon
+    /// RegisterEventHotKey) covers Accessibility but not the modifier-listener
+    /// path — both must be granted for hotkeys to fire reliably.
     var allGranted: Bool {
         microphoneStatus == .granted &&
-        accessibilityStatus == .granted
+        accessibilityStatus == .granted &&
+        inputMonitoringStatus == .granted
     }
 
     /// Check current permission states without triggering OS prompts.
@@ -81,6 +88,16 @@ class PermissionManager: ObservableObject {
         // both first-time prompts and re-requests via AXIsProcessTrustedWithOptions.
         let axTrusted = AXIsProcessTrusted()
         accessibilityStatus = axTrusted ? .granted : .pending
+
+        // Input Monitoring: IOHIDCheckAccess reflects current TCC state.
+        // Required by ModifierHotkeyListener's NSEvent.addGlobalMonitorForEvents(.flagsChanged).
+        let hidAccess = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        switch hidAccess {
+        case kIOHIDAccessTypeGranted: inputMonitoringStatus = .granted
+        case kIOHIDAccessTypeDenied:  inputMonitoringStatus = .denied
+        case kIOHIDAccessTypeUnknown: inputMonitoringStatus = .pending
+        default:                      inputMonitoringStatus = .pending
+        }
     }
 
     /// Trigger the OS microphone permission prompt. Updates status after user responds.
@@ -96,6 +113,15 @@ class PermissionManager: ObservableObject {
         // Use the module-level cached key (avoids Swift 6 concurrency error on C global)
         let options: NSDictionary = [axTrustedPromptKey: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
+        // Do not update status here — polling picks it up within 2 seconds
+    }
+
+    /// Trigger the OS Input Monitoring permission prompt.
+    /// IOHIDRequestAccess shows the system prompt; the result is not immediate —
+    /// the user must approve in System Settings. Polling via startPolling()
+    /// will detect the change.
+    func requestInputMonitoring() {
+        _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
         // Do not update status here — polling picks it up within 2 seconds
     }
 
