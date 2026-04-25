@@ -52,6 +52,19 @@ To uninstall by hand, remove these four locations:
 
 **TCC permission entries:** macOS does not let any app clean its own Privacy & Security entries. After uninstalling, open **System Settings > Privacy & Security** and remove **Dicticus** from **Microphone**, **Accessibility**, and **Input Monitoring** before reinstalling — otherwise stale TCC entries from previous bundle copies can block hotkeys.
 
+## Updating the app icon
+
+The app icon is generated from a single source: `assets/icon-master.png` (1024×1024 PNG, committed to the repo).
+
+To change the icon:
+
+1. Replace `assets/icon-master.png` with a new 1024×1024 PNG.
+2. Run `./scripts/generate-icons.sh` to fan the master out to:
+   - all ten macOS appiconset PNGs (16/32/128/256/512 × 1x and 2x)
+   - the single iOS `AppIcon.png` (iOS 18 unified icon model)
+3. Commit the regenerated PNGs along with your master change — generated outputs are tracked in git so PR reviewers can spot unintended icon changes visually.
+4. Clean-build (`scripts/build-dmg.sh` or `xcodebuild -scheme Dicticus -configuration Release clean build`) before verifying in Finder; LaunchServices caches stale icons aggressively. If the new icon does not appear after a clean build, run `killall Dock Finder` and `sudo mdutil -E /` to nuke icon caches.
+
 ## Usage
 
 - **macOS**: Hold your configured hotkey (default: Fn+Shift), speak, release.
