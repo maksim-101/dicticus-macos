@@ -39,6 +39,19 @@ A fully local dictation app for macOS and iOS. Hold a key or trigger a shortcut,
 3. Download the ASR model (one-time setup).
 4. Follow the in-app guides to setup the **Start Dictation** Siri Shortcut.
 
+## Manual uninstall
+
+Prefer the script: `./scripts/uninstall.sh` quits Dicticus, removes the app bundle, preference files, and the LaunchAtLogin entry, then prompts before deleting the ~3 GB model cache.
+
+To uninstall by hand, remove these four locations:
+
+1. `/Applications/Dicticus.app`
+2. `~/Library/Preferences/com.dicticus.*.plist`
+3. `~/Library/Application Support/Dicticus/` (contains the Gemma LLM, Parakeet ASR cache, and `history.sqlite`)
+4. `~/Library/LaunchAgents/com.dicticus.app.plist` (LaunchAtLogin entry; only present if you enabled "Start at login")
+
+**TCC permission entries:** macOS does not let any app clean its own Privacy & Security entries. After uninstalling, open **System Settings > Privacy & Security** and remove **Dicticus** from **Microphone**, **Accessibility**, and **Input Monitoring** before reinstalling — otherwise stale TCC entries from previous bundle copies can block hotkeys.
+
 ## Usage
 
 - **macOS**: Hold your configured hotkey (default: Fn+Shift), speak, release.
