@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed Plan 19-05 (Wave 4 — Settings UI: AiCleanupSection + inline download panel + RAM-gated explainer + Swiss German toggle). 2 atomic commits (8156489 create, 89babf3 mount). SettingsToggleTests 4/4 green. iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED."
-last_updated: "2026-04-25T06:30:52.410Z"
-last_activity: 2026-04-25 -- Phase 19.7 planning complete
+stopped_at: "Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped, verifier 22/22 must-haves passed, D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 resolved. Code review: 0 critical, 5 warning, 6 info (advisory)."
+last_updated: "2026-04-25T07:30:00.000Z"
+last_activity: 2026-04-25 -- Phase 19.7 complete
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_phases: 4
+  total_plans: 21
+  completed_plans: 18
+  percent: 86
 ---
 
 # Project State: Dicticus
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 19.7 (macOS Hygiene) — context gathered 2026-04-25; ready for `/gsd-plan-phase 19.7`
-Plan: 0 of TBD
-Status: Ready to execute
-Last activity: 2026-04-25 -- Phase 19.7 planning complete
+Phase: 19.7 (macOS Hygiene) — COMPLETE 2026-04-25 — verifier 22/22, D1 Finder UAT approved
+Plan: 4 of 4 (all shipped)
+Status: Phase complete; next candidates: DESIGN.md generation, Phase 19.5 (CH-determinism), Phase 19.6 (iOS UX)
+Last activity: 2026-04-25 -- Phase 19.7 complete
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
@@ -78,8 +78,8 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending phy
 - Phase 17: Keyboard extension dictation bounce blocked by iOS 26 restrictions — Apple broke all programmatic URL-opening from keyboard extensions. Keyboard typing works; dictation pivot to Phase 17.5.
 - Phase 18: iCloud Sync conflict resolution for Dictionary entries — DEFERRED, polish phases (19.5/19.6/19.7) take priority.
 - iOS 26 `SpeechAnalyzer` supports German — benchmark vs Parakeet v3 before committing to model download flow long-term.
-- **macOS hotkey regression (M1):** Multi-install TCC pollution — 4 Dicticus.app copies on disk produce conflicting permission entries. Blocks daily macOS dictation. Owned by Phase 19.7.
-- **macOS app icon missing on latest build (D1):** Today 06:08 (23.8 MB) build shows no Finder icon. Investigate `AppIcon.appiconset` config; owned by Phase 19.7.
+- ~~**macOS hotkey regression (M1):**~~ Resolved by Phase 19.7 — Repair banner + Re-register button + multi-copy probe + install-local.sh consolidator. (Long-term fix: ship as DMG with Sparkle in v2.2.)
+- ~~**macOS app icon missing on latest build (D1):**~~ Resolved by Phase 19.7 — canonical `assets/icon-master.png` + `scripts/generate-icons.sh` regenerated 10 macOS PNGs; user UAT confirmed Finder shows icon 2026-04-25.
 - **Parakeet ASR cache regression (B2):** After app relaunch, prompts to re-download Parakeet model that was already cached. Phase-14 territory; integrated into 19.5 as hotfix; needs `/gsd-debug` to scope.
 
 ## Roadmap Evolution
@@ -89,6 +89,6 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending phy
 
 ## Session Continuity
 
-Last session: 2026-04-24T19:44:28Z
-Stopped at: Completed Plan 19-05 (Wave 4 — Settings UI: AiCleanupSection + inline download panel + RAM-gated explainer + Swiss German toggle). 2 atomic commits (8156489 create, 89babf3 mount). SettingsToggleTests 4/4 green. iOS: 68 tests / 59 passed / 9 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
-Resume file: Run `/gsd-execute-phase 19` to execute Plan 19-06 (Wave 5 — DictationViewModel pipeline integration: inject cleanupServiceInstance into TextProcessingService when aiCleanupEnabled AppGroup key is ON)
+Last session: 2026-04-25T07:30:00Z
+Stopped at: Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped (15 atomic commits + 1 hotfix), verifier 22/22 must-haves passed, code review advisory (0 critical / 5 warning / 6 info), D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 all resolved. macOS Debug build SUCCEEDED.
+Resume file: Run `/gsd-discuss-phase` for next phase candidate (DESIGN.md generation, 19.5 CH-determinism, or 19.6 iOS UX)

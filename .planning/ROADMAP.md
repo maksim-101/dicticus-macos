@@ -30,7 +30,7 @@
 | **DESIGN.md** | v2.1 | Cross-platform design tokens (brand, color, typography, spacing, motion) + per-platform sections (iOS/macOS/Windows) + asset inventory | Next | Prerequisite for 19.6 |
 | 19.5. AI Cleanup CH-Determinism | v2.1 | CHF currency formatter, `1'250` apostrophe, Swiss German default ON, Helvetism prompt block, Parakeet ASR cache hotfix (B2) | Planned | Driven by Swiss-German research + Phase 19 UAT |
 | 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
-| 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Planned (4 plans) | Unblocks daily macOS dictation |
+| 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
 
 ---
 
@@ -79,12 +79,12 @@
 
 **Requirements:** M1, M2, M3, D1 (UAT row IDs from `19-UAT-FINDINGS.md`); D-01..D-18 (CONTEXT.md decisions)
 
-**Plans:** 4 plans
-- [ ] 19.7-01-PLAN.md — M2 dev install/uninstall scripts (D-01..D-03) + README "Manual uninstall"
-- [ ] 19.7-02-PLAN.md — M3 Input Monitoring permission row + per-row Repair label + hide-when-all-granted (D-08..D-12)
-- [ ] 19.7-03-PLAN.md — M1 Hotkey re-authorization flow: Repair banner + Re-register button + multi-copy warning (D-04..D-07)
-- [ ] 19.7-04-PLAN.md — D1 Icon canonicalization: assets/icon-master.png + scripts/generate-icons.sh + regenerated PNGs + README (D-13..D-17)
+**Plans:** 4 plans (all complete)
+- [x] 19.7-01-PLAN.md — M2 dev install/uninstall scripts (D-01..D-03) + README "Manual uninstall"
+- [x] 19.7-02-PLAN.md — M3 Input Monitoring permission row + per-row Repair label + hide-when-all-granted (D-08..D-12)
+- [x] 19.7-03-PLAN.md — M1 Hotkey re-authorization flow: Repair banner + Re-register button + multi-copy warning (D-04..D-07)
+- [x] 19.7-04-PLAN.md — D1 Icon canonicalization: assets/icon-master.png + scripts/generate-icons.sh + regenerated PNGs + README (D-13..D-17)
 
 ---
 
-*Last updated: 2026-04-25 — Phase 19.7 (macOS Hygiene) planned: 4 plans across 3 waves (Wave 1: 19.7-01 + 19.7-04 parallel, Wave 2: 19.7-02, Wave 3: 19.7-03). Phase 18 iCloud Sync deferred.*
+*Last updated: 2026-04-25 — Phase 19.7 (macOS Hygiene) complete: all 4 plans shipped, verifier passed 22/22 must-haves, D1 Finder UAT user-approved. Phase 18 iCloud Sync deferred. Code review surfaced 11 advisory findings (0 critical, 5 warnings, 6 info) in 19.7-REVIEW.md — suitable for follow-up cleanup.*
