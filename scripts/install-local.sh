@@ -70,11 +70,13 @@ else
 fi
 
 echo "=== Step 4: Trash stale copies ==="
-for p in "${STALE_COPIES[@]}"; do
-    dest="$TRASH_DIR/Dicticus-stale-$TIMESTAMP-$(basename "$(dirname "$p")").app"
-    echo "  mv $p -> $dest"
-    mv "$p" "$dest"
-done
+if [ ${#STALE_COPIES[@]} -gt 0 ]; then
+    for p in "${STALE_COPIES[@]}"; do
+        dest="$TRASH_DIR/Dicticus-stale-$TIMESTAMP-$(basename "$(dirname "$p")").app"
+        echo "  mv $p -> $dest"
+        mv "$p" "$dest"
+    done
+fi
 
 echo "=== Step 5: Install fresh build to $CANONICAL_APP ==="
 if [ -d "$CANONICAL_APP" ]; then
