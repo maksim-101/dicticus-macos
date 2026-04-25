@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 19 (AI Cleanup iOS) — ALL 6 PLANS COMPLETE pending physical-device UAT
-Plan: 6 of 6 (Wave 5 complete — DictationViewModel + DicticusApp pipeline integration)
-Status: Phase 19 code-complete. CLEAN-01 + CLEAN-02 delivered. Phase-level SUMMARY pending (19-SUMMARY.md roll-up to be authored before phase close-out).
+Phase: 19 (AI Cleanup iOS) — code-complete; UAT 2026-04-25 surfaced 14 items routed to follow-on phases (see `19-UAT-FINDINGS.md`)
+Plan: 6 of 6 (all done)
+Status: Roadmap extended. **Next:** DESIGN.md (invoking `/design-md`), then 19.7 macOS Hygiene + 19.5 CH-Determinism (parallel-able), then 19.6 iOS UX. Phase 18 iCloud Sync deferred.
 Last activity: 2026-04-24 — Executed Plan 19-06 (Wave 5): Added `cleanupService: CleanupProvider?` property-injection seam to DictationViewModel; rewrote stopDictation() to route through TextProcessingService.process(text:language:mode:confidence:) with mode branching on AppGroup aiCleanupEnabled AND provider.isLoaded (D-13/D-23/D-26). Removed direct HistoryService.save from DictationViewModel to avoid double-saves (TextProcessingService Step 4 is the sole save site). Added .onChange(of: warmupService.isLlmReady) in DicticusApp to inject cleanupServiceInstance on Step 4 success, clear on failure. Flipped Wave 0 CleanupService test shims (testTimeoutFallback now runs as D-26 unloaded-fallback test; rest env-gated on DICTICUS_TEST_MODEL_PATH with clean skip messages). 4 atomic commits: d43d4a4 (RED), d994e8f (TextProcessingService routing), 4d2834e (DicticusApp injection), f5e49df (CleanupService test flip). iOS: 70 tests / 62 passed / 8 skipped / 0 failed on iPhone 17; zero Swift 6 concurrency warnings. macOS: BUILD SUCCEEDED.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
@@ -76,12 +76,16 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending phy
 ## Active Concerns / Risks
 
 - Phase 17: Keyboard extension dictation bounce blocked by iOS 26 restrictions — Apple broke all programmatic URL-opening from keyboard extensions. Keyboard typing works; dictation pivot to Phase 17.5.
-- Phase 18: iCloud Sync conflict resolution for Dictionary entries.
+- Phase 18: iCloud Sync conflict resolution for Dictionary entries — DEFERRED, polish phases (19.5/19.6/19.7) take priority.
 - iOS 26 `SpeechAnalyzer` supports German — benchmark vs Parakeet v3 before committing to model download flow long-term.
+- **macOS hotkey regression (M1):** Multi-install TCC pollution — 4 Dicticus.app copies on disk produce conflicting permission entries. Blocks daily macOS dictation. Owned by Phase 19.7.
+- **macOS app icon missing on latest build (D1):** Today 06:08 (23.8 MB) build shows no Finder icon. Investigate `AppIcon.appiconset` config; owned by Phase 19.7.
+- **Parakeet ASR cache regression (B2):** After app relaunch, prompts to re-download Parakeet model that was already cached. Phase-14 territory; integrated into 19.5 as hotfix; needs `/gsd-debug` to scope.
 
 ## Roadmap Evolution
 
 - Phase 17.5 inserted after Phase 17: Inline Shortcut Dictation — Auto-Return Flow (URGENT). Replaces keyboard extension bounce approach blocked by iOS 26.
+- 2026-04-25: Phase 19 UAT split into 4 follow-on tracks: DESIGN.md (next, prerequisite for 19.6), 19.5 (CH-determinism + B2 hotfix), 19.6 (iOS UX), 19.7 (macOS hygiene). Findings inventory: `.planning/phases/19-ai-cleanup-ios/19-UAT-FINDINGS.md`. Phase 18 iCloud Sync deferred.
 
 ## Session Continuity
 

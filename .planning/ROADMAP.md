@@ -25,8 +25,12 @@
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
 | 17.5. Inline Shortcut Dictation | v2.1 | Darwin IPC keyboard dictation — mic button on Dicticus keyboard triggers recording in main app via Darwin notifications, transcription inserts at cursor via textDocumentProxy (PIVOTED from shortcut UI) | Done | Success |
-| 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Not started | - |
-| 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Code Complete | Pending physical-device UAT |
+| 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Deferred | - |
+| 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Code Complete | Pending physical-device UAT (findings → 19.5/19.6) |
+| **DESIGN.md** | v2.1 | Cross-platform design tokens (brand, color, typography, spacing, motion) + per-platform sections (iOS/macOS/Windows) + asset inventory | Next | Prerequisite for 19.6 |
+| 19.5. AI Cleanup CH-Determinism | v2.1 | CHF currency formatter, `1'250` apostrophe, Swiss German default ON, Helvetism prompt block, Parakeet ASR cache hotfix (B2) | Planned | Driven by Swiss-German research + Phase 19 UAT |
+| 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
+| 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Planned | Unblocks daily macOS dictation |
 
 ---
 
@@ -69,4 +73,4 @@
 - [x] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
 
 ---
-*Last updated: 2026-04-24 — Phase 19 Wave 5 complete (Plan 19-06 — DictationViewModel + DicticusApp pipeline integration); 6/6 plans done, CLEAN-01 + CLEAN-02 code-complete pending physical-device UAT*
+*Last updated: 2026-04-25 — Phase 19 UAT findings captured. Roadmap extended with DESIGN.md (next), 19.5 (CH-determinism + B2 hotfix), 19.6 (iOS UX), 19.7 (macOS hygiene). Phase 18 iCloud Sync deferred.*
