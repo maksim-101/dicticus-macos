@@ -40,26 +40,35 @@ struct MenuBarView: View {
                     Divider()
                 }
 
-                // Permission rows — always visible per D-05/D-22
-                VStack(spacing: 4) {
-                    PermissionRow(
-                        title: "Microphone",
-                        status: permissionManager.microphoneStatus,
-                        grantAction: {
-                            Task { await permissionManager.requestMicrophone() }
-                        },
-                        settingsURL: SystemSettingsURL.microphone,
-                        showRestartHint: true
-                    )
-                    PermissionRow(
-                        title: "Accessibility",
-                        status: permissionManager.accessibilityStatus,
-                        grantAction: { permissionManager.requestAccessibility() },
-                        settingsURL: SystemSettingsURL.accessibility
-                    )
-                }
+                // Permission rows — visible only while at least one is not .granted (D-11).
+                // Quieter steady-state UI; loud only when action is needed.
+                if !permissionManager.allGranted {
+                    VStack(spacing: 4) {
+                        PermissionRow(
+                            title: "Microphone",
+                            status: permissionManager.microphoneStatus,
+                            grantAction: {
+                                Task { await permissionManager.requestMicrophone() }
+                            },
+                            settingsURL: SystemSettingsURL.microphone,
+                            showRestartHint: true
+                        )
+                        PermissionRow(
+                            title: "Accessibility",
+                            status: permissionManager.accessibilityStatus,
+                            grantAction: { permissionManager.requestAccessibility() },
+                            settingsURL: SystemSettingsURL.accessibility
+                        )
+                        PermissionRow(
+                            title: "Input Monitoring",
+                            status: permissionManager.inputMonitoringStatus,
+                            grantAction: { permissionManager.requestInputMonitoring() },
+                            settingsURL: SystemSettingsURL.inputMonitoring
+                        )
+                    }
 
-                Divider()
+                    Divider()
+                }
 
                 // AI Cleanup model info — always visible
                 AiCleanupInfoView()
