@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 import CoreGraphics
 @testable import Dicticus
 
@@ -150,5 +151,54 @@ final class ModifierHotkeyListenerTests: XCTestCase {
         )
 
         XCTAssertNil(result, "Expected nil when flags are identical (no transition)")
+    }
+
+    // MARK: - Release debounce — shouldFireRelease (debug session ptt-stops-mid-hold)
+
+    /// Spurious-flag-drop case: the global monitor delivered a `flagsChanged` event whose
+    /// flags were missing the combo, but the live system state at debounce time still has
+    /// the combo present. This is the bug we're guarding against — release MUST be suppressed.
+    func testShouldFireRelease_liveFlagsStillContainCombo_returnsFalse() {
+        let combo: NSEvent.ModifierFlags = [.function, .control]
+        let live: NSEvent.ModifierFlags = [.function, .control]
+
+        XCTAssertFalse(
+            ModifierHotkeyListener.shouldFireRelease(liveFlags: live, comboFlags: combo),
+            "Transient flag drop: live system state still contains combo — release must be discarded"
+        )
+    }
+
+    /// Genuine release case: live system flags no longer contain the combo at debounce time.
+    func testShouldFireRelease_liveFlagsMissingCombo_returnsTrue() {
+        let combo: NSEvent.ModifierFlags = [.function, .control]
+        let live: NSEvent.ModifierFlags = []
+
+        XCTAssertTrue(
+            ModifierHotkeyListener.shouldFireRelease(liveFlags: live, comboFlags: combo),
+            "Real release: live system state missing combo flags — release must fire"
+        )
+    }
+
+    /// Partial release case: one combo flag dropped, the other still held.
+    /// Live state lacks the combo as a whole → release should fire.
+    func testShouldFireRelease_partialRelease_returnsTrue() {
+        let combo: NSEvent.ModifierFlags = [.function, .control]
+        let live: NSEvent.ModifierFlags = [.function]
+
+        XCTAssertTrue(
+            ModifierHotkeyListener.shouldFireRelease(liveFlags: live, comboFlags: combo),
+            "Partial release: live state lacks at least one combo flag — release must fire"
+        )
+    }
+
+    /// Irrelevant flags (e.g. CapsLock) on top of the combo must not be misread as a release.
+    func testShouldFireRelease_irrelevantFlagsIgnored_returnsFalse() {
+        let combo: NSEvent.ModifierFlags = [.function, .control]
+        let live: NSEvent.ModifierFlags = [.function, .control, .capsLock, .command]
+
+        XCTAssertFalse(
+            ModifierHotkeyListener.shouldFireRelease(liveFlags: live, comboFlags: combo),
+            "Irrelevant flags (CapsLock/Command) must be masked out before the superset check"
+        )
     }
 }

@@ -42,6 +42,12 @@ class HotkeyManager: ObservableObject {
     /// D-03: Suppress key repeat — ignore keyDown when already down.
     private var isKeyDown = false
 
+    /// Mode that started the currently-active recording. Used by `handleKeyUp`
+    /// to reject release events whose mode does not match — defends against
+    /// spurious release events from the modifier listener (see debug session
+    /// `ptt-stops-mid-hold`).
+    private var activeRecordingMode: DictationMode?
+
     /// Weak reference to TranscriptionService — set via setup().
     private weak var transcriptionService: TranscriptionService?
 
@@ -255,6 +261,7 @@ class HotkeyManager: ObservableObject {
         do {
             try service.startRecording()
             isRecording = true
+            activeRecordingMode = mode
         } catch {
             let notification = DicticusNotification.recordingFailed(error)
             lastPostedNotification = notification
@@ -270,15 +277,27 @@ class HotkeyManager: ObservableObject {
     /// Per D-16: Silence-only recordings silently discarded.
     func handleKeyUp(mode: DictationMode) {
         guard isKeyDown else { return }
+
+        // Reject release events whose mode does not match the currently-active recording.
+        // Defends against spurious modifier-listener releases (debug session ptt-stops-mid-hold)
+        // and against cross-talk between the modifier listener and KeyboardShortcuts paths.
+        // Placed BEFORE the isKeyDown reset so a real release immediately after isn't lost.
+        if let active = activeRecordingMode, active != mode {
+            hotkeyLog.info("handleKeyUp rejected — mode mismatch (active=\(String(describing: active), privacy: .public) received=\(String(describing: mode), privacy: .public))")
+            return
+        }
+
         isKeyDown = false
 
         guard let service = transcriptionService,
               service.state == .recording else {
             isRecording = false
+            activeRecordingMode = nil
             return
         }
 
         isRecording = false
+        activeRecordingMode = nil
 
         // Task inherits @MainActor isolation from the enclosing @MainActor class,
         // so self.textInjector access is safe without crossing isolation boundaries.
