@@ -15,5 +15,10 @@
   { "input": "15 EUR 50", "expected": "15.50 EUR" },
   { "input": "Es kostet 15 Franken 50.", "expected": "Es kostet 15.50 Franken." },
   { "input": "15 Franken 5 Stück", "expected": "15 Franken 5 Stück" },
-  { "input": "15 Franken 100", "expected": "15 Franken 100" }
+  { "input": "15 Franken 100", "expected": "15 Franken 100" },
+
+  { "input": "15 Franken 50 Rappen", "expected": "CHF 15.50", "category": "currency_fold" },
+  { "input": "15 Franken 5 Rappen",  "expected": "CHF 15.05", "category": "currency_fold" },
+  { "input": "10 Euro 75 Cent",       "expected": "€10.75",   "category": "currency_fold" },
+  { "input": "CHF 15.50",              "expected": "CHF 15.50", "category": "currency_fold" }
 ]
