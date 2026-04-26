@@ -146,6 +146,7 @@ struct MenuBarView: View {
                 // AI Cleanup model info — always visible
                 AiCleanupInfoView()
                     .environmentObject(warmupService)
+                SwissGermanToggleRow()       // Phase 19.5 D-A2
 
                 Divider()
 
