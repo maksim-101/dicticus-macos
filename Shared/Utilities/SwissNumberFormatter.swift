@@ -117,9 +117,56 @@ public struct SwissNumberFormatter {
     }
 
     private static func parseGerman(_ s: String) -> Decimal? {
-        // German: period thousands, comma decimal. To use Decimal(string:locale:),
-        // the locale's grouping/decimal separators must match the input.
+        // German: period thousands, comma decimal. WR-02 fix (Phase 19.5):
+        // `Decimal(string:locale:)` does not strictly validate German
+        // thousands-separator positions and its tolerance has changed across
+        // iOS/macOS versions (some accept "5.70" as 570, others return nil).
+        // We pre-classify before delegating so the Foundation call sees only
+        // input that we have proven matches German conventions:
+        //   - If a comma is present, treat it as a German decimal and pass
+        //     through (de_DE has comma=decimal, period=thousands).
+        //   - If no comma is present, accept only inputs whose period
+        //     positions form a strict 3-digit grouping pattern from the
+        //     right; otherwise return nil so the caller falls back to
+        //     parseSwiss (e.g., "5.70" → nil → parseSwiss → 5.70).
+        // This locks the testSwissPeriodDecimalRoundtrip / B3 invariants
+        // independent of Foundation version drift.
+        if s.contains(",") {
+            return Decimal(string: s, locale: Locale(identifier: "de_DE"))
+        }
+        guard isStrictGermanThousands(s) else { return nil }
         return Decimal(string: s, locale: Locale(identifier: "de_DE"))
+    }
+
+    /// Validate that `s` either contains no `.` (a pure integer) or has
+    /// `.` separators sitting at strict 3-digit-from-right positions
+    /// (German thousands grouping). Used to gate `parseGerman` for
+    /// non-comma inputs so ambiguous strings like `"5.70"` correctly fall
+    /// through to `parseSwiss` instead of being misread as `570`.
+    /// Sign and any leading `+`/`-` are tolerated. Non-digit characters
+    /// other than `.` cause rejection.
+    private static func isStrictGermanThousands(_ s: String) -> Bool {
+        // Strip an optional leading sign for inspection.
+        var body = Substring(s)
+        if let first = body.first, first == "-" || first == "+" {
+            body = body.dropFirst()
+        }
+        guard !body.isEmpty else { return false }
+        // Reject anything that isn't digit-or-period.
+        for ch in body where !(ch.isNumber || ch == ".") { return false }
+        // Pure integer (no period) — accept.
+        if !body.contains(".") { return true }
+        // Period segments: every segment after the first must be exactly 3
+        // digits long; the first segment must be 1-3 digits long. Empty
+        // segments (leading/trailing/double dots) are rejected.
+        let segments = body.split(separator: ".", omittingEmptySubsequences: false)
+        guard segments.count >= 2 else { return false }
+        let first = segments.first!
+        guard (1...3).contains(first.count) else { return false }
+        for seg in segments.dropFirst() {
+            guard seg.count == 3 else { return false }
+        }
+        return true
     }
 
     /// Emit a Decimal with ASCII apostrophe thousands and period decimal,
