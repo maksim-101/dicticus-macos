@@ -108,6 +108,43 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, "This is clean output.")
     }
 
+    // MARK: - Gemma chat-template fragment strip (Phase 19.5 UAT followup)
+
+    /// UAT-discovered leak: Gemma occasionally emits `</start_of_turn>` (an
+    /// XML-shaped hallucination of the real `<end_of_turn>` EOG token) as
+    /// plain text — these slip past `llama_vocab_is_eog` because they are
+    /// not the actual special token. Without the strip, they end up in the
+    /// user's clipboard.
+    func testStripPreambleRemovesLeakedStartOfTurnCloseTag() {
+        let input = "Hello world </start_of_turn>"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleRemovesLeakedEndOfTurnTag() {
+        let input = "Hello <end_of_turn> world"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleRemovesLeakedStartOfTurnWithRoleTag() {
+        let input = "<start_of_turn>model\nHello world"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleRemovesLeakedBosEosTags() {
+        let input = "<bos>Hello world<eos>"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleHandlesMultipleLeakedTags() {
+        let input = "Hello <end_of_turn> brave </start_of_turn> world"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello brave world")
+    }
+
     func testStripPreamblePreservesApostrophesInContractions() {
         let input = "Don't stop it's working."
         let result = CleanupService.stripPreamble(input)

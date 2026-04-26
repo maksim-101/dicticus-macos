@@ -240,18 +240,18 @@ class CleanupService: ObservableObject, CleanupProvider {
                 cleaned = CurrencyAntiFlip.revertCurrencyFlip(input: text, output: cleaned)
             }
 
-            // D-19: Post-LLM Swiss safety-net — catch any ß the LLM slipped in
+            // D-19: Post-LLM Swiss ß→ss safety-net — catch any ß the LLM slipped in
             // despite the D-18 prompt instruction. WR-03 fix (Phase 19.5):
             // gated on the SAME `useSwissGerman` snapshot taken at the top of
             // cleanup(); a mid-inference toggle change cannot desync prompt
             // intent and post-pass formatting.
+            //
+            // Phase 19.5 follow-up: SwissNumberFormatter no longer runs here —
+            // it moved to TextProcessingService Step 3b so it also fires for
+            // plain dictation and for LLM timeout/failure paths (which return
+            // the raw input text from this catch block).
             if useSwissGerman {
-                // D-19: Swiss safety-net (existing — unchanged).
                 cleaned = ITNUtility.applySwissITN(to: cleaned)
-                // D-C2 / D-C3 (Phase 19.5): Universal-period decimal + ASCII-apostrophe
-                // thousands. Replaces D-20's LLM-only approach with a deterministic pass.
-                // Graceful-degradation: unparseable tokens emit unchanged.
-                cleaned = SwissNumberFormatter.format(cleaned)
             }
 
             return cleaned.isEmpty ? text : cleaned
@@ -419,6 +419,26 @@ class CleanupService: ObservableObject, CleanupProvider {
             }
         }
         result = result.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Step 0.5: Strip leaked Gemma chat-template fragments. Phase 19.5 UAT
+        // surfaced the model occasionally emitting `</start_of_turn>` (an XML-
+        // shaped hallucination of the real `<end_of_turn>` EOG token) and
+        // related close-tag variants as plain text — these slip past
+        // `llama_vocab_is_eog` because they are not the actual special token
+        // and end up in the user's clipboard. Match the four canonical
+        // open/close shapes plus a trailing role tag (`model`/`user`) and the
+        // `<bos>`/`<eos>` markers. Case-insensitive in case the model
+        // capitalizes oddly.
+        if let chatTemplateRegex = try? NSRegularExpression(
+            pattern: #"</?(?:start_of_turn|end_of_turn)>(?:\s*(?:model|user))?|<bos>|<eos>|<\|endoftext\|>"#,
+            options: [.caseInsensitive]
+        ) {
+            let r = NSRange(result.startIndex..<result.endIndex, in: result)
+            result = chatTemplateRegex.stringByReplacingMatches(
+                in: result, options: [], range: r, withTemplate: ""
+            )
+            result = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
 
         // Step 1: Normalize whitespace and fix contractions
         while result.contains("  ") {
