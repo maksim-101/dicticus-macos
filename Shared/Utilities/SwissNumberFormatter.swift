@@ -37,11 +37,75 @@ public struct SwissNumberFormatter {
     /// Reformat every numeric token in `text` to ASCII-apostrophe-thousands
     /// + period-decimal. Non-numeric tokens are emitted unchanged.
     public static func format(_ text: String) -> String {
-        // Tokenize by whitespace and re-join — preserves spacing, matches
-        // the established pattern in ITNUtility.applyEnglishITN.
-        let tokens = text.split(separator: " ", omittingEmptySubsequences: false)
+        // UAT-discovered cross-token gap (Phase 19.5 follow-up):
+        // Gemma occasionally detokenizes German decimals with a stray space
+        // after the comma — `"1.250, 70"` instead of `"1.250,70"`. The
+        // tokenizer below splits on whitespace, so without a pre-pass
+        // `"1.250,"` and `"70"` would be reformatted independently and the
+        // user sees `"1'250, 70"`. Collapse `<digit>, <1-2 digits>` only
+        // when the right side is bounded by whitespace or end-of-string,
+        // which matches the cents/decimal shape and avoids merging genuine
+        // lists like `"5, 6 oder 7"` (right side longer than 2 digits or
+        // followed by a non-numeric token).
+        let bridged = bridgeCrossTokenDecimal(text)
+        let tokens = bridged.split(separator: " ", omittingEmptySubsequences: false)
         let reformed = tokens.map(reformatToken)
         return reformed.joined(separator: " ")
+    }
+
+    /// Conservative cross-token bridges applied before tokenization.
+    ///
+    /// **Bridge 1 — Gemma decimal detokenization (existing).**
+    ///   `"<thousand-pattern>, <1-2 digits>"` → `"<thousand-pattern>,<1-2 digits>"`
+    ///   only when the LEFT side is a period-grouped thousand pattern (e.g.
+    ///   `1.250`, `1.000.250`) and the right side is bounded by whitespace,
+    ///   punctuation, or end-of-string. Requiring the period prefix avoids
+    ///   merging bare-digit lists like `"5, 6 oder 7"` while still catching
+    ///   the Gemma-detokenization case `"1.250, 70"` → `"1.250,70"`.
+    ///
+    /// **Bridge 2 — Split-cents-with-currency-between (Phase 19.5 UAT B3 fix).**
+    ///   `"<1-3 digits> <currency> <2 digits>"` → `"<int>.<cents> <currency>"`
+    ///   when the right side is exactly 2 digits and bounded by a non-digit
+    ///   or end-of-string. Recovers from the original B3 case where ASR
+    ///   transcribes spoken Swiss prices as three separate tokens (e.g.
+    ///   "fünfzehn Franken fünfzig" → `"15 Franken 50"`) and the LLM either
+    ///   leaves them literal (macOS path) or worse, concatenates them
+    ///   (`"15'500 Franken"`, iOS path — that mangling is unrecoverable
+    ///   post-LLM, but this bridge stops the LLM from being asked the
+    ///   question on the macOS path AND covers the case where iOS happens
+    ///   to leave the tokens literal).
+    ///   Restricting the right side to exactly 2 digits avoids false
+    ///   positives like `"15 Franken 5 Stück"` where `"5 Stück"` is a
+    ///   separate phrase. The leading `(?<!\d)` and `(?<![.,'\u{2019}])`
+    ///   lookbehinds prevent matching inside an already-formatted thousand
+    ///   pattern like `"1.250 Franken 50"` (which would otherwise match
+    ///   `"250 Franken 50"`).
+    ///
+    /// Returns input unchanged on regex compile failure (graceful-degradation, D-26).
+    private static func bridgeCrossTokenDecimal(_ text: String) -> String {
+        var result = text
+        // Bridge 1: cross-token German decimal.
+        let pattern1 = #"(\d+(?:\.\d{3})+),\s+(\d{1,2})(?=$|\s|[.,;:?!])"#
+        if let r1 = try? NSRegularExpression(pattern: pattern1, options: []) {
+            let range = NSRange(result.startIndex..<result.endIndex, in: result)
+            result = r1.stringByReplacingMatches(
+                in: result, options: [], range: range, withTemplate: "$1,$2"
+            )
+        }
+        // Bridge 2: split-cents with currency between (B3 original-case fix).
+        // NB: U+2019 (right single quote) is written literally in the negative
+        // lookbehind class. ICU regex accepts `\uhhhh` (no braces) but not
+        // Swift's `\u{hhhh}` brace form, and the raw-string delimiter `#"..."#`
+        // does NOT process `\u{...}`. Embedding the literal U+2019 sidesteps
+        // both pitfalls.
+        let pattern2 = "(?<!\\d)(?<![.,'\u{2019}])(\\d{1,3})\\s+(Franken|CHF|Euro|EUR|€|\\$|£)\\s+(\\d{2})(?=\\D|$)"
+        if let r2 = try? NSRegularExpression(pattern: pattern2, options: [.caseInsensitive]) {
+            let range = NSRange(result.startIndex..<result.endIndex, in: result)
+            result = r2.stringByReplacingMatches(
+                in: result, options: [], range: range, withTemplate: "$1.$3 $2"
+            )
+        }
+        return result
     }
 
     // MARK: - Internals
@@ -82,6 +146,24 @@ public struct SwissNumberFormatter {
             core = afterGlyph
         }
 
+        // UAT-discovered phantom-zero (Phase 19.5 follow-up): Foundation's
+        // `Decimal(string: "Euro", locale: ...)` returns Optional(0) — same
+        // for "EUR", "ein", and other strings that Foundation interprets as
+        // a degenerate exponent form ("E…"). Without this guard, parseSwiss
+        // / parseGerman silently parse currency words to 0 and emitSwiss
+        // rewrites them to literal "0" in the output. Restrict the parser
+        // path to tokens whose core contains only digits and number
+        // punctuation (`.`, `,`, `'`, U+2019, sign).
+        let numericChars: Set<Character> = [
+            "0","1","2","3","4","5","6","7","8","9",
+            ".", ",", "'", "\u{2019}", "+", "-"
+        ]
+        let hasDigit = core.contains(where: { $0.isNumber })
+        let onlyNumericChars = core.allSatisfy({ numericChars.contains($0) })
+        guard hasDigit, onlyNumericChars else {
+            return token
+        }
+
         // B3 (Phase 19.5 revision): pre-classify by punctuation pattern,
         // do NOT speculatively parseSwiss first.
         //
@@ -117,57 +199,73 @@ public struct SwissNumberFormatter {
     }
 
     private static func parseGerman(_ s: String) -> Decimal? {
-        // German: period thousands, comma decimal. WR-02 fix (Phase 19.5):
-        // `Decimal(string:locale:)` does not strictly validate German
-        // thousands-separator positions and its tolerance has changed across
-        // iOS/macOS versions (some accept "5.70" as 570, others return nil).
-        // We pre-classify before delegating so the Foundation call sees only
-        // input that we have proven matches German conventions:
-        //   - If a comma is present, treat it as a German decimal and pass
-        //     through (de_DE has comma=decimal, period=thousands).
-        //   - If no comma is present, accept only inputs whose period
-        //     positions form a strict 3-digit grouping pattern from the
-        //     right; otherwise return nil so the caller falls back to
-        //     parseSwiss (e.g., "5.70" → nil → parseSwiss → 5.70).
-        // This locks the testSwissPeriodDecimalRoundtrip / B3 invariants
-        // independent of Foundation version drift.
-        if s.contains(",") {
-            return Decimal(string: s, locale: Locale(identifier: "de_DE"))
+        // German: period thousands, comma decimal. UAT-discovered regression
+        // (Phase 19.5 follow-up): `Decimal(string: "1.250", locale: de_DE)`
+        // returns 1 on macOS — Foundation truncates at the first period and
+        // ignores grouping, so `Decimal(string: "1.250,70", de_DE)` is also 1.
+        // We therefore parse manually rather than trusting locale handling:
+        //   1. Split optional leading sign.
+        //   2. Split on the LAST comma to separate integer / decimal parts.
+        //   3. Validate the integer part as either pure digits or strict
+        //      3-digit-grouped period thousands (e.g. "1.250" or "1.000.250").
+        //   4. Validate the decimal part as digits only.
+        //   5. Reassemble as `<sign><intDigits>.<fracDigits>` (or just
+        //      `<sign><intDigits>`) and parse with `en_US_POSIX`, which
+        //      handles a single-period decimal predictably.
+        // Returns nil for any malformed shape so the caller falls back to
+        // parseSwiss (e.g. "5.70" → no period-thousand pattern → nil →
+        // parseSwiss → 5.70).
+        var sign = ""
+        var body = s
+        if let first = body.first, first == "-" || first == "+" {
+            sign = String(first)
+            body = String(body.dropFirst())
         }
-        guard isStrictGermanThousands(s) else { return nil }
-        return Decimal(string: s, locale: Locale(identifier: "de_DE"))
+        guard !body.isEmpty else { return nil }
+
+        let intPart: String
+        let fracPart: String?
+        if let commaIdx = body.lastIndex(of: ",") {
+            intPart = String(body[body.startIndex..<commaIdx])
+            let frac = String(body[body.index(after: commaIdx)...])
+            guard !frac.isEmpty, frac.allSatisfy({ $0.isNumber }) else { return nil }
+            // Reject more than one comma — ambiguous in German.
+            guard !intPart.contains(",") else { return nil }
+            fracPart = frac
+        } else {
+            intPart = body
+            fracPart = nil
+        }
+
+        guard let intDigits = stripAndValidateGermanThousands(intPart) else { return nil }
+
+        let canonical: String
+        if let frac = fracPart {
+            canonical = "\(sign)\(intDigits).\(frac)"
+        } else {
+            canonical = "\(sign)\(intDigits)"
+        }
+        return Decimal(string: canonical, locale: Locale(identifier: "en_US_POSIX"))
     }
 
-    /// Validate that `s` either contains no `.` (a pure integer) or has
-    /// `.` separators sitting at strict 3-digit-from-right positions
-    /// (German thousands grouping). Used to gate `parseGerman` for
-    /// non-comma inputs so ambiguous strings like `"5.70"` correctly fall
-    /// through to `parseSwiss` instead of being misread as `570`.
-    /// Sign and any leading `+`/`-` are tolerated. Non-digit characters
-    /// other than `.` cause rejection.
-    private static func isStrictGermanThousands(_ s: String) -> Bool {
-        // Strip an optional leading sign for inspection.
-        var body = Substring(s)
-        if let first = body.first, first == "-" || first == "+" {
-            body = body.dropFirst()
+    /// Validate that `s` is either pure digits or a strict 3-digit-grouped
+    /// German thousands pattern (`1`, `123`, `1.250`, `1.000.250`, …) and
+    /// return the digit-only form. Empty input or any other shape returns nil.
+    private static func stripAndValidateGermanThousands(_ s: String) -> String? {
+        guard !s.isEmpty else { return nil }
+        if !s.contains(".") {
+            return s.allSatisfy({ $0.isNumber }) ? s : nil
         }
-        guard !body.isEmpty else { return false }
-        // Reject anything that isn't digit-or-period.
-        for ch in body where !(ch.isNumber || ch == ".") { return false }
-        // Pure integer (no period) — accept.
-        if !body.contains(".") { return true }
-        // Period segments: every segment after the first must be exactly 3
-        // digits long; the first segment must be 1-3 digits long. Empty
-        // segments (leading/trailing/double dots) are rejected.
-        let segments = body.split(separator: ".", omittingEmptySubsequences: false)
-        guard segments.count >= 2 else { return false }
+        let segments = s.split(separator: ".", omittingEmptySubsequences: false)
+        guard segments.count >= 2 else { return nil }
         let first = segments.first!
-        guard (1...3).contains(first.count) else { return false }
+        guard (1...3).contains(first.count), first.allSatisfy({ $0.isNumber }) else { return nil }
         for seg in segments.dropFirst() {
-            guard seg.count == 3 else { return false }
+            guard seg.count == 3, seg.allSatisfy({ $0.isNumber }) else { return nil }
         }
-        return true
+        return segments.joined()
     }
+
 
     /// Emit a Decimal with ASCII apostrophe thousands and period decimal,
     /// preserving the fraction-digit count of `sample` so 5.70 stays 5.70.
