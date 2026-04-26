@@ -31,7 +31,7 @@
 | 19.5. AI Cleanup CH-Determinism | v2.1 | 5/5 | Complete   | 2026-04-26 |
 | 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
 | 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
-| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | Demote LLM from authoritative rewriter to optional polish: rules-first deterministic cleanup (filler removal, currency-fold, self-correction in Swift), Gemma temp 0.1 + Levenshtein verification gate + "Lightly edit" prompt, raw/polished toggle (default raw), iOS history detail view (raw + cleaned visibility), HistoryService graceful degradation (replace fatalError fallback to per-app container), simulator crash fix | Planned | Cross-platform parity macOS↔iOS |
+| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 1/5 | In Progress|  |
 
 ---
 
@@ -94,8 +94,8 @@
 
 **Requirements:** None directly — follow-on from Phase 19.5 UAT findings (Gemma hallucination "ausgeflogen"→"ausgezogen", currency literal "Franken Rappen", missed self-corrections, iOS history truncation, simulator crash at HistoryService.swift:61). Cross-platform parity: ships on macOS and iOS together (per cross-platform parity convention).
 
-**Plans:** 5 plans (planned 2026-04-26)
-- [ ] 20-01-PLAN.md — Wave 0 RED test scaffolding (Levenshtein, Filler, SelfCorrection, RulesCleanup fixtures, gate + fallback test stubs)
+**Plans:** 1/5 plans executed
+- [x] 20-01-PLAN.md — Wave 0 RED test scaffolding (Levenshtein, Filler, SelfCorrection, RulesCleanup fixtures, gate + fallback test stubs)
 - [ ] 20-02-PLAN.md — Action 1 (Rein in LLM): temp 0.1, "Lightly edit" prompt, LevenshteinDistance utility, gateLLMOutput helper
 - [ ] 20-03-PLAN.md — Action 2 (Rules-first deterministic): FillerWordRemover + SelfCorrectionResolver + currency-fold + RulesCleanupService + Step 2c/3a wiring in TextProcessingService
 - [ ] 20-04-PLAN.md — Action 4 (Resilience): HistoryService graceful App-Group fallback + appGroupAvailable flag + Settings warning rows (iOS + macOS)

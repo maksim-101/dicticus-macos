@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: complete
-stopped_at: "Phase 19.5 closed 2026-04-26 — UAT hotfix landed in 2 atomic commits (6268f11 chat-template strip; e8c665e Swiss formatter hardening). Pending follow-ons (AI cleanup demotion, iOS history detail view, HistoryService graceful degradation, simulator crash fix) re-scoped into Phase 20."
-last_updated: "2026-04-26T13:30:00.000Z"
-last_activity: 2026-04-26 -- 19.5 UAT hotfix committed; Phase 20 planning next
+milestone_name: Keyboard Extension & Polish
+status: executing
+stopped_at: Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped (15 atomic commits + 1 hotfix), verifier 22/22 must-haves passed, code review advisory (0 critical / 5 warning / 6 info), D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 all resolved. macOS Debug build SUCCEEDED.
+last_updated: "2026-04-26T17:34:36.961Z"
+last_activity: 2026-04-26 -- Phase 20 execution started
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 26
+  total_plans: 27
   completed_plans: 23
-  percent: 88
+  percent: 85
 ---
 
 # Project State: Dicticus
@@ -24,13 +24,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** v2.1 — Keyboard Extension (text at cursor without app switching)
+**Current focus:** Phase 20 — ai-cleanup-demotion-uat-visibility
 
 ## Current Position
 
-Phase: 19.5 (AI Cleanup CH-Determinism) — COMPLETE 2026-04-26
-Plan: 5 of 5 shipped + UAT hotfix landed (2 atomic commits)
-Status: UAT hotfix committed. Two `Foundation Decimal(string:locale:)` bugs (period-truncation, phantom-zero) replaced with manual German parser + cross-token bridge. Chat-template fragment strip added. Cross-platform Shared/ changes shipped on both macOS and iOS. Remaining UAT findings (AI cleanup quality demotion, iOS history detail view, HistoryService graceful degradation, simulator crash) re-scoped into Phase 20.
+Phase: 20 (ai-cleanup-demotion-uat-visibility) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 20
 
 UAT hotfix commits:
   • 6268f11 — fix(19.5): strip leaked Gemma chat-template fragments
@@ -39,7 +39,7 @@ UAT hotfix commits:
 Next: `/gsd-plan-phase 20` — AI Cleanup Demotion + UAT Visibility (rules-first deterministic, optional LLM polish, raw/polished toggle, iOS history detail view, HistoryService graceful degradation).
 
 Resume file: ROADMAP.md → Phase 20 (to be planned)
-Last activity: 2026-04-26 -- 19.5 closed; Phase 20 planning queued
+Last activity: 2026-04-26 -- Phase 20 execution started
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
