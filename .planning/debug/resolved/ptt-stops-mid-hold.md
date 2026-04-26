@@ -1,6 +1,13 @@
 ---
 slug: ptt-stops-mid-hold
-status: root_cause_found
+status: resolved
+resolved_date: 2026-04-25
+resolved_via: on-device UAT — user dictated 20–30 s through AI cleanup mode (Fn+Control) with no interruption
+fix_commit: bd17a86
+fix_files:
+  - macOS/Dicticus/Services/HotkeyManager.swift
+  - macOS/Dicticus/Services/ModifierHotkeyListener.swift
+  - macOS/DicticusTests/ModifierHotkeyListenerTests.swift
 trigger: "Push-to-talk recording stops mid-utterance on macOS even while both hotkey keys are held down. Most reliably reproducible in AI cleanup mode during longer dictations — user keeps both keys pressed but recording stops and transcribes anyway."
 created: 2026-04-25
 updated: 2026-04-25
