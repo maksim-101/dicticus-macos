@@ -2,26 +2,45 @@ import Foundation
 
 /// Central orchestrator for the text processing pipeline.
 ///
-/// Per TEXT-03: ASR -> Dictionary -> Rule-based ITN -> [LLM Cleanup] -> Injection.
+/// Phase 20 D-02 pipeline shape:
+///   Step 1   — Dictionary replacements
+///   Step 2   — Rule-based ITN
+///   Step 2b  — Swiss German ß → ss (Helvetisms, gated on useSwissGerman)
+///   Step 2c  — RulesCleanupService (filler / self-correction / currency-fold)
+///              [snapshot `rulesCleanedText` here for the Step 3a gate]
+///   Step 3   — LLM cleanup (only when mode == .aiCleanup AND provider loaded)
+///   Step 3a  — Levenshtein verification gate against the Step 2c snapshot
+///              (only when the LLM call succeeded — D-19 fallback path is
+///              additive: a thrown LLM returns its input unchanged, which
+///              equals `rulesCleanedText`, so the gate is the identity).
+///   Step 3b  — Swiss number formatter (post-pass canonicalization)
+///   Step 4   — HistoryService.save (D-38 — `text` post-pipeline,
+///              `rawText` pre-pipeline)
 ///
-/// This service coordinates the individual processing steps to ensure consistency
-/// and correct ordering between plain and AI cleanup modes.
+/// Cross-platform parity (CLAUDE.md memory `feedback_cleanup_cross_platform_parity`):
+/// every change ships on macOS and iOS together via `Shared/`.
 @MainActor
 class TextProcessingService: ObservableObject {
 
     private let dictionaryService: DictionaryService
     private let cleanupService: CleanupProvider?
     private let historyService: HistoryService
+    /// Phase 20 D-02 — deterministic rules-first cleanup. Defaulted so
+    /// existing call sites (DicticusApp, DictationViewModel) compile
+    /// without modification.
+    private let rulesCleanupService: RulesCleanupService
 
     /// Initialize with required services.
     init(
         dictionaryService: DictionaryService = .shared,
         cleanupService: CleanupProvider?,
-        historyService: HistoryService = .shared
+        historyService: HistoryService = .shared,
+        rulesCleanupService: RulesCleanupService = RulesCleanupService()
     ) {
         self.dictionaryService = dictionaryService
         self.cleanupService = cleanupService
         self.historyService = historyService
+        self.rulesCleanupService = rulesCleanupService
     }
 
     /// Process the transcribed text based on the mode and language.
@@ -42,6 +61,17 @@ class TextProcessingService: ObservableObject {
             processedText = ITNUtility.applySwissITN(to: processedText)
         }
 
+        // Step 2c (Phase 20 D-02): rules-first deterministic cleanup.
+        // Filler removal, self-correction (comma-prefixed connectors only),
+        // currency-fold. Runs on BOTH plain and AI-cleanup paths so the
+        // rules pass is the new primary cleanup layer regardless of mode.
+        processedText = rulesCleanupService.clean(processedText, language: language)
+        // Snapshot for the Step 3a Levenshtein gate. Capturing here means
+        // the gate's reference baseline is the rules-cleaned text — not the
+        // raw ASR. This is the contract that makes the gate a fail-safe
+        // for LLM hallucination over the rules-cleaned ground truth.
+        let rulesCleanedText = processedText
+
         // Step 3: AI Cleanup
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
             let lowerText = processedText.lowercased()
@@ -55,6 +85,18 @@ class TextProcessingService: ObservableObject {
                 text: processedText,
                 language: language,
                 dictionaryContext: filteredContext
+            )
+
+            // Step 3a (Phase 20 D-01): Levenshtein verification gate.
+            // Reject LLM output as hallucination if it diverges too far from
+            // the rules-cleaned baseline. The gate is ADDITIVE to D-19's
+            // existing LLM-failure fallback: when CleanupService.cleanup
+            // throws or times out it returns its input unchanged, i.e.
+            // `processedText == rulesCleanedText` here, so the normalized
+            // distance is 0 and the gate trivially passes (identity).
+            processedText = CleanupService.gateLLMOutput(
+                rulesCleaned: rulesCleanedText,
+                llmOutput: processedText
             )
         }
 

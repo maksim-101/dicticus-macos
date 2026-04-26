@@ -47,10 +47,91 @@ public struct SwissNumberFormatter {
         // which matches the cents/decimal shape and avoids merging genuine
         // lists like `"5, 6 oder 7"` (right side longer than 2 digits or
         // followed by a non-numeric token).
-        let bridged = bridgeCrossTokenDecimal(text)
+        //
+        // Phase 20 (D-02 Action 2): `foldCurrencyUnits` runs FIRST so that
+        // patterns like "15 Franken 50 Rappen" collapse to "CHF 15.50" before
+        // the lower-precision `bridgeCrossTokenDecimal` ever sees them.
+        // Order: fold → bridge → token-level reformat.
+        let folded = foldCurrencyUnits(text)
+        let bridged = bridgeCrossTokenDecimal(folded)
         let tokens = bridged.split(separator: " ", omittingEmptySubsequences: false)
         let reformed = tokens.map(reformatToken)
         return reformed.joined(separator: " ")
+    }
+
+    /// Phase 20 D-02 Action 2: collapse spoken-out currency-unit pairs into
+    /// canonical glyph-prefixed decimal form.
+    ///
+    /// Patterns (case-insensitive). Cents are zero-padded to 2 digits.
+    ///   - `<int> Franken|CHF <0-99> Rappen|Rp.`  → `CHF <int>.<cents>`
+    ///   - `<int> Euro|EUR|€ <0-99> Cent|Ct.`     → `€<int>.<cents>`
+    ///   - `<int> Dollar|USD|$ <0-99> Cents?`     → `USD <int>.<cents>`
+    ///   - `<int> Pfund|Pound[s]|GBP|£ <0-99> Pence|p.` → `GBP <int>.<cents>`
+    ///
+    /// Idempotent: the patterns require the spoken `<unit>` keyword on both
+    /// sides, so already-folded forms (`"CHF 15.50"`) do not match. Inputs
+    /// without the second unit ("100 Franken") also do not match — bare
+    /// integers are left for downstream passes.
+    ///
+    /// Runs BEFORE `bridgeCrossTokenDecimal` in `format(_:)` so the folded
+    /// canonical form is what the rest of the pipeline sees. Returns the
+    /// input unchanged on regex compile failure (graceful-degradation, D-26).
+    public static func foldCurrencyUnits(_ text: String) -> String {
+        var result = text
+        // Each entry: (regex pattern, currency family handler closure).
+        // The handler builds the replacement from the captured integer +
+        // cents groups so we can zero-pad cents in code.
+        struct CurrencyPattern {
+            let pattern: String
+            let format: (_ integerPart: String, _ cents: String) -> String
+        }
+
+        let patterns: [CurrencyPattern] = [
+            CurrencyPattern(
+                pattern: #"(\d+)\s+(?:Franken|CHF)\s+(\d{1,2})\s+(?:Rappen|Rp\.?)"#,
+                format: { i, c in "CHF \(i).\(zeroPad(c))" }
+            ),
+            CurrencyPattern(
+                pattern: #"(\d+)\s+(?:Euro|EUR|€)\s+(\d{1,2})\s+(?:Cent|Ct\.?)"#,
+                format: { i, c in "€\(i).\(zeroPad(c))" }
+            ),
+            CurrencyPattern(
+                pattern: #"(\d+)\s+(?:Dollar|USD|\$)\s+(\d{1,2})\s+Cent[s]?"#,
+                format: { i, c in "USD \(i).\(zeroPad(c))" }
+            ),
+            CurrencyPattern(
+                pattern: #"(\d+)\s+(?:Pfund|Pounds?|GBP|£)\s+(\d{1,2})\s+(?:Pence|p\.?)"#,
+                format: { i, c in "GBP \(i).\(zeroPad(c))" }
+            ),
+        ]
+
+        for cp in patterns {
+            guard let regex = try? NSRegularExpression(
+                pattern: cp.pattern,
+                options: [.caseInsensitive]
+            ) else { continue }
+
+            let nsResult = result as NSString
+            let fullRange = NSRange(location: 0, length: nsResult.length)
+            let matches = regex.matches(in: result, options: [], range: fullRange)
+            // Apply matches in reverse so range arithmetic stays stable.
+            for match in matches.reversed() {
+                guard match.numberOfRanges >= 3,
+                      let intRange = Range(match.range(at: 1), in: result),
+                      let centsRange = Range(match.range(at: 2), in: result),
+                      let fullMatchRange = Range(match.range, in: result)
+                else { continue }
+                let integerPart = String(result[intRange])
+                let cents = String(result[centsRange])
+                let replacement = cp.format(integerPart, cents)
+                result.replaceSubrange(fullMatchRange, with: replacement)
+            }
+        }
+        return result
+    }
+
+    private static func zeroPad(_ s: String) -> String {
+        return s.count == 1 ? "0" + s : s
     }
 
     /// Conservative cross-token bridges applied before tokenization.
