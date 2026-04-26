@@ -1,0 +1,12 @@
+[
+  { "input": "1250", "expected": "1'250" },
+  { "input": "1.250", "expected": "1'250" },
+  { "input": "1'250", "expected": "1'250" },
+  { "input": "5,70", "expected": "5.70" },
+  { "input": "5.70", "expected": "5.70" },
+  { "input": "CHF 1250", "expected": "CHF 1'250" },
+  { "input": "EUR 6,70", "expected": "EUR 6.70" },
+  { "input": "€6,70", "expected": "€6.70" },
+  { "input": "$1250", "expected": "$1'250" },
+  { "input": "Hello world", "expected": "Hello world" }
+]
