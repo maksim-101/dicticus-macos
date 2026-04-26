@@ -119,8 +119,9 @@ class CleanupService: ObservableObject, CleanupProvider {
         // Sampler chain: conservative settings for text cleanup (AICLEAN-02)
         // llama_sampler_chain_init returns UnsafeMutablePointer<llama_sampler>?
         let samplerChain = llama_sampler_chain_init(llama_sampler_chain_default_params())
-        // Temperature 0.2: very low for deterministic corrections
-        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.2))
+        // Phase 20 D-01: temperature reduced from 0.2 → 0.1 to reduce hallucination rate.
+        // Levenshtein gate (CleanupService.gateLLMOutput, plan 20.02) is the fail-safe.
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.1))
         // Top-K 40: limit vocabulary to top candidates
         llama_sampler_chain_add(samplerChain, llama_sampler_init_top_k(40))
         // Top-P 0.9: nucleus sampling
@@ -551,4 +552,62 @@ enum CleanupError: Error, Sendable {
     case contextCreationFailed
     /// LLM inference exceeded the 5-second timeout (D-18)
     case timeout
+}
+
+// MARK: - Phase 20 Levenshtein verification gate (D-01)
+
+extension CleanupService {
+
+    /// Single tunable knob — surfaces in CONTEXT.md as the UAT calibration target.
+    /// Increase to be MORE permissive of LLM edits (the gate accepts more);
+    /// decrease to reject MORE aggressively. Downstream code MUST reference this
+    /// constant by name and never magic-number 0.30 inline.
+    public static let levenshteinGateThreshold: Double = 0.30
+
+    /// Pure helper. Returns `llmOutput` if it is plausibly a light edit of
+    /// `rulesCleaned`; otherwise returns `rulesCleaned` (LLM is rejected as
+    /// hallucination / over-rewrite).
+    ///
+    /// Distance is computed over normalized forms (lowercased, whitespace-collapsed,
+    /// soft punctuation `, . ! ? : ; '` stripped) so reorderings like
+    /// `"15 CHF"` vs `"CHF 15"` and casing/punctuation-only edits do not
+    /// register as wholesale rewrites.
+    ///
+    /// Currency symbols are NOT stripped — the rules pass already canonicalized
+    /// currency, and a missing symbol is a real semantic loss the gate should
+    /// catch (defense-in-depth alongside `CurrencyAntiFlip.revertCurrencyFlip`).
+    ///
+    /// - Parameters:
+    ///   - rulesCleaned: deterministic Swift-side cleanup output (rules pass).
+    ///   - llmOutput: post-stripPreamble LLM output.
+    ///   - threshold: normalized-distance ceiling. Defaults to
+    ///     `levenshteinGateThreshold` (0.30) — pass an explicit value only for
+    ///     calibration / testing.
+    /// - Returns: `llmOutput` when normalizedDistance ≤ threshold, else
+    ///   `rulesCleaned`.
+    public static func gateLLMOutput(rulesCleaned: String,
+                                     llmOutput: String,
+                                     threshold: Double = levenshteinGateThreshold) -> String {
+        let lhs = normalizeForGate(rulesCleaned)
+        let rhs = normalizeForGate(llmOutput)
+        let dist = LevenshteinDistance.normalizedDistance(lhs, rhs)
+        return dist > threshold ? rulesCleaned : llmOutput
+    }
+
+    /// Lowercase + soft-punctuation strip + whitespace-collapse. Keeps
+    /// currency symbols, digits, and letters intact.
+    private static func normalizeForGate(_ s: String) -> String {
+        let lowered = s.lowercased()
+        // Collapse whitespace runs to single space, strip soft punctuation.
+        let stripped = lowered
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: "?", with: "")
+            .replacingOccurrences(of: "!", with: "")
+            .replacingOccurrences(of: ":", with: "")
+            .replacingOccurrences(of: ";", with: "")
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "\u{2019}", with: "")  // typographic apostrophe
+        return stripped.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
 }
