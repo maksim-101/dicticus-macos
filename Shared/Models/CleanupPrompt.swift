@@ -19,28 +19,51 @@ struct CleanupPrompt {
             : custom
     }
 
-    static func build(text: String, language: String? = nil, dictionaryContext: [String: String]? = nil) -> String {
+    /// Build the cleanup prompt.
+    ///
+    /// - Parameters:
+    ///   - text: the raw transcribed text to be polished.
+    ///   - language: detected language code (`"de"` / `"en"`).
+    ///   - dictionaryContext: user-defined replacement pairs.
+    ///   - useSwissGerman: explicit Swiss-toggle snapshot. When `nil` (legacy
+    ///     callers), the AppGroup `useSwissGerman` key is read once. WR-03 fix
+    ///     (Phase 19.5): `CleanupService.cleanup` now snapshots this toggle at
+    ///     the top of the call and passes the same value to both this builder
+    ///     and the post-LLM Swiss formatting pass, so a mid-inference toggle
+    ///     change cannot cause prompt/post-pass disagreement.
+    static func build(
+        text: String,
+        language: String? = nil,
+        dictionaryContext: [String: String]? = nil,
+        useSwissGerman: Bool? = nil
+    ) -> String {
         let instruction = userInstruction()
-        
+
         var prompt = "<start_of_turn>user\n"
         prompt += "INSTRUCTION: \(instruction)\n"
-        
+
         if let dict = dictionaryContext, !dict.isEmpty {
             prompt += "DICTIONARY:\n"
             for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
                 prompt += "- \(original) -> \(replacement)\n"
             }
         }
-        
+
         if let lang = language {
             prompt += "LANGUAGE: \(lang == "de" ? "German" : "English")\n"
         }
 
         // D-18: Swiss German orthography prompt extension (scoped to German only).
-        // Gated on BOTH the shared useSwissGerman AppGroup toggle AND language == "de".
+        // Gated on BOTH the Swiss-toggle decision AND language == "de".
         // Standard-German dictation stays untouched even if the Swiss toggle is ON.
-        let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
-        if swissDefaults.bool(forKey: "useSwissGerman") && language == "de" {
+        // WR-03 fix: prefer the explicit `useSwissGerman` argument when provided
+        // (CleanupService snapshots it once); fall back to reading the AppGroup
+        // for legacy callers / direct unit tests.
+        let swissEnabled: Bool = useSwissGerman ?? {
+            let suite = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+            return suite.bool(forKey: "useSwissGerman")
+        }()
+        if swissEnabled && language == "de" {
             prompt += "STYLE: Use Swiss German orthography (never use ß, always ss). "
             prompt += "Use Swiss thousands separator style (e.g. 1'250, not 1.250).\n"
             // D-D2 (Phase 19.5): Helvetism preservation block.
