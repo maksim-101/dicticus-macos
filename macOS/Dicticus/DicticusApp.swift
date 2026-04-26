@@ -46,6 +46,7 @@ struct DicticusApp: App {
                     || (hotkeyManager.pipelineState == .transcribing)
                     || (hotkeyManager.pipelineState == .cleaning))
                 .task {
+                    SwissDefaultMigration.runIfNeeded()  // D-A3 — must precede any useSwissGerman reader
                     // Check permissions at launch so iconName reads correct state immediately
                     // (prevents mic.slash showing when permissions are already granted but
                     // status is still .pending from init)

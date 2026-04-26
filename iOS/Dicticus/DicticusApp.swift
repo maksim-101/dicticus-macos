@@ -36,6 +36,7 @@ struct DicticusApp: App {
                             }
                     }
                     .onAppear {
+                        SwissDefaultMigration.runIfNeeded()  // D-A3 — first-launch belt-and-suspenders before scenePhase fires
                         let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
                         if !hasSeenWhatsNewV2 && !pendingDictation {
                             showingWhatsNew = true
@@ -51,6 +52,10 @@ struct DicticusApp: App {
         // stale-false from a prior session gets corrected.
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                SwissDefaultMigration.runIfNeeded()  // D-A3 — must run before any useSwissGerman reader
+                // D-D1 (Phase 19.5): Re-read FS on foreground so a download that completed
+                // in the background flips hasModels to true here, and a stale-false from a
+                // prior session gets corrected.
                 if hasCompletedOnboarding {
                     warmupService.checkHasModels()
                     if warmupService.hasModels {
