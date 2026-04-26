@@ -49,6 +49,14 @@ struct AiCleanupSection: View {
 
     var body: some View {
         Section {
+            // Phase 20.04 ACT-4-RESILIENCE: surface graceful fallback state.
+            // Read at view-build time; the flag is set during HistoryService.init()
+            // before any view appears and is immutable for the process lifetime,
+            // so static read is sufficient (no @Published / observation needed).
+            if !HistoryService.appGroupAvailable {
+                appGroupFallbackWarningRow
+            }
+
             if IOSModelWarmupService.isAiCleanupSupported {
                 aiCleanupToggle
                 if aiCleanupEnabledValue {
@@ -111,6 +119,27 @@ struct AiCleanupSection: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    /// Phase 20.04 ACT-4-RESILIENCE: non-blocking diagnostic row shown only when
+    /// HistoryService fell back to per-app applicationSupport storage (i.e. the
+    /// `group.com.dicticus` App Group container did not resolve at launch).
+    /// Surfaces the degraded state so users notice misconfigured signing /
+    /// missing entitlements before they assume keyboard-extension parity.
+    private var appGroupFallbackWarningRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("History storage degraded")
+                    .font(.subheadline.weight(.semibold))
+                Text("Dicticus is using local app storage for transcription history. History will not be visible to the Dicticus keyboard extension. Reinstall the app if this is unexpected.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 
     /// Status row — reflects Wave 3's `llmStatus` / `isLlmReady` when the toggle is ON.
