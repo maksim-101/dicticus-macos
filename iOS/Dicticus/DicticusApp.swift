@@ -46,10 +46,17 @@ struct DicticusApp: App {
                     .environmentObject(warmupService)
             }
         }
+        // D-D1 (Phase 19.5): On scenePhase .active we re-read FS so a download
+        // that completed in the background flips hasModels to true here, and a
+        // stale-false from a prior session gets corrected.
         .onChange(of: scenePhase) { _, newPhase in
-            // Only auto-warmup if onboarding is done and models exist
-            if newPhase == .active && hasCompletedOnboarding && warmupService.hasModels {
-                warmupService.warmup()
+            if newPhase == .active {
+                if hasCompletedOnboarding {
+                    warmupService.checkHasModels()
+                    if warmupService.hasModels {
+                        warmupService.warmup()
+                    }
+                }
             }
         }
         .onChange(of: warmupService.isReady) { _, isReady in
