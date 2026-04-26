@@ -21,11 +21,13 @@ final class SettingsToggleTests: XCTestCase {
         defaults = try XCTUnwrap(UserDefaults(suiteName: Self.suiteName))
         defaults.removeObject(forKey: Self.aiCleanupKey)
         defaults.removeObject(forKey: Self.swissGermanKey)
+        defaults.removeObject(forKey: "swissDefaultMigratedV2_1")
     }
 
     override func tearDown() async throws {
         defaults.removeObject(forKey: Self.aiCleanupKey)
         defaults.removeObject(forKey: Self.swissGermanKey)
+        defaults.removeObject(forKey: "swissDefaultMigratedV2_1")
         try await super.tearDown()
     }
 
@@ -38,12 +40,44 @@ final class SettingsToggleTests: XCTestCase {
         XCTAssertFalse(defaults.bool(forKey: Self.aiCleanupKey))
     }
 
-    // MARK: - D-15: useSwissGerman defaults OFF
+    // MARK: - D-A3: Migration tests (Phase 19.5)
 
-    func testSwissGermanDefaultOff() {
-        let storedObject = defaults.object(forKey: Self.swissGermanKey)
-        XCTAssertNil(storedObject, "useSwissGerman must have no stored value → toggle renders OFF")
-        XCTAssertFalse(defaults.bool(forKey: Self.swissGermanKey))
+    func testSwissGermanDefaultOnAfterMigration() {
+        // Pre-migration: object is nil. Post-migration: object is true.
+        let suite = UserDefaults(suiteName: Self.suiteName) ?? .standard
+        XCTAssertNil(suite.object(forKey: Self.swissGermanKey),
+                     "Pre-migration the key must be unset")
+
+        SwissDefaultMigration.runIfNeeded()
+
+        XCTAssertNotNil(suite.object(forKey: Self.swissGermanKey),
+                        "Migration must set useSwissGerman explicitly (D-A3)")
+        XCTAssertTrue(suite.bool(forKey: Self.swissGermanKey),
+                      "Default must be ON post-migration (D-A1)")
+        XCTAssertTrue(suite.bool(forKey: "swissDefaultMigratedV2_1"),
+                      "Migration flag must be set so subsequent runs are no-ops")
+    }
+
+    func testMigrationIsIdempotent() {
+        let suite = UserDefaults(suiteName: Self.suiteName) ?? .standard
+        SwissDefaultMigration.runIfNeeded()
+        // User flips OFF after migration.
+        suite.set(false, forKey: Self.swissGermanKey)
+        // Second run must NOT re-flip — respects user choice.
+        SwissDefaultMigration.runIfNeeded()
+        XCTAssertFalse(suite.bool(forKey: Self.swissGermanKey),
+                       "Migration must not overwrite the user's later opt-out")
+    }
+
+    func testMigrationDoesNotOverwriteExplicitFalse() {
+        let suite = UserDefaults(suiteName: Self.suiteName) ?? .standard
+        // User explicitly set OFF before migration ever ran.
+        suite.set(false, forKey: Self.swissGermanKey)
+        // Migration runs.
+        SwissDefaultMigration.runIfNeeded()
+        // The migration only writes when the key is unset; an explicit false stays false.
+        XCTAssertFalse(suite.bool(forKey: Self.swissGermanKey),
+                       "Migration must not overwrite an explicit pre-migration OFF")
     }
 
     // MARK: - Toggles are orthogonal (D-15: independent keys)
