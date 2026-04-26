@@ -171,7 +171,21 @@ class CleanupService: ObservableObject, CleanupProvider {
             isInferring = false
         }
 
-        let prompt = CleanupPrompt.build(text: text, language: language, dictionaryContext: dictionaryContext)
+        // WR-03 fix (Phase 19.5): Snapshot the Swiss-toggle decision exactly
+        // ONCE at the top of cleanup() and pass that same value to both the
+        // prompt builder and the post-LLM Swiss formatting pass. Without this
+        // snapshot, a user toggling the setting during the 0.5-8 s inference
+        // window could cause prompt/post-pass disagreement (prompt instructs
+        // Swiss output but post-pass skips formatting, or vice versa).
+        let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+        let useSwissGerman = swissDefaults.bool(forKey: "useSwissGerman")
+
+        let prompt = CleanupPrompt.build(
+            text: text,
+            language: language,
+            dictionaryContext: dictionaryContext,
+            useSwissGerman: useSwissGerman
+        )
         log.info("Prompt (\(prompt.count, privacy: .public) chars, lang=\(language, privacy: .public)): \(prompt.prefix(500), privacy: .public)")
 
         // Run inference in a detached task with timeout (D-04 iOS / D-18 macOS)
@@ -227,10 +241,11 @@ class CleanupService: ObservableObject, CleanupProvider {
             }
 
             // D-19: Post-LLM Swiss safety-net — catch any ß the LLM slipped in
-            // despite the D-18 prompt instruction. Gated by the shared AppGroup
-            // `useSwissGerman` key so the regex is free when Swiss toggle is OFF.
-            let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
-            if swissDefaults.bool(forKey: "useSwissGerman") {
+            // despite the D-18 prompt instruction. WR-03 fix (Phase 19.5):
+            // gated on the SAME `useSwissGerman` snapshot taken at the top of
+            // cleanup(); a mid-inference toggle change cannot desync prompt
+            // intent and post-pass formatting.
+            if useSwissGerman {
                 // D-19: Swiss safety-net (existing — unchanged).
                 cleaned = ITNUtility.applySwissITN(to: cleaned)
                 // D-C2 / D-C3 (Phase 19.5): Universal-period decimal + ASCII-apostrophe
