@@ -43,6 +43,27 @@ struct CleanupPrompt {
         if swissDefaults.bool(forKey: "useSwissGerman") && language == "de" {
             prompt += "STYLE: Use Swiss German orthography (never use ß, always ss). "
             prompt += "Use Swiss thousands separator style (e.g. 1'250, not 1.250).\n"
+            // D-D2 (Phase 19.5): Helvetism preservation block.
+            prompt += "HELVETISMS: Prefer these Swiss German words when applicable: "
+            prompt += SwissHelvetisms.words.joined(separator: ", ")
+            prompt += ".\n"
+        }
+
+        // D-B1b (Phase 19.5): Currency anti-flip prompt anchor. Fires on ANY
+        // de-language input that contains a currency token, regardless of the
+        // Swiss toggle (per D-B2 — Gemma's EUR bias is a German-language issue,
+        // not a Swiss-only one).
+        // W8 lock: detect on raw `text`. sanitizeControlTokens only strips
+        // Gemma turn tokens (never present in user dictation), so detection
+        // on raw text is equivalent and avoids reordering existing code.
+        if language == "de" {
+            let detectedCurrencies = CurrencyAntiFlip.detectCurrencies(in: text)
+            if !detectedCurrencies.isEmpty {
+                let labels = detectedCurrencies.map(\.text).joined(separator: ", ")
+                prompt += "STRICT: Keep currency exactly as written ("
+                prompt += labels
+                prompt += "). Do NOT translate, convert, or substitute one currency for another.\n"
+            }
         }
 
         let sanitizedText = sanitizeControlTokens(text)
