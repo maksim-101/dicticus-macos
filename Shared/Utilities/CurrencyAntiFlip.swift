@@ -91,9 +91,14 @@ public struct CurrencyAntiFlip {
 
     // MARK: - Internals
 
-    // Bounded patterns — avoid catastrophic backtracking. Each alternative is anchored
-    // at word boundaries and matches a single literal token.
-    private static let pattern = #"\b(CHF|Franken|Fr\.|Rappen|EUR|Euro|€|USD|Dollar|\$|GBP|Pfund|£)\b"#
+    // Bounded patterns — avoid catastrophic backtracking. Each alternative is
+    // bounded by "not adjacent to a letter or digit" lookarounds rather than
+    // ASCII `\b`. WR-01 fix (Phase 19.5): `\b` requires a `\w`↔`\W` transition,
+    // so for non-word currency glyphs (`€`, `$`, `£`) and abbreviation forms
+    // (`Fr.`, trailing `.` is non-word) the trailing/leading `\b` cannot match
+    // in common positions (start/end of string, glyph followed by space, etc.).
+    // The Unicode-aware lookarounds match the actual semantic boundary we want.
+    private static let pattern = #"(?<![\p{L}\p{N}])(CHF|Franken|Fr\.|Rappen|EUR|Euro|€|USD|Dollar|\$|GBP|Pfund|£)(?![\p{L}\p{N}])"#
 
     private static func family(of token: String) -> Family? {
         let lowered = token.lowercased()
