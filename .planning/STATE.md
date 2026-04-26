@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Phase 19.5 (AI Cleanup CH-Determinism) complete — all 5 plans shipped, code review (0 critical, 3 warnings → all fixed), verifier PASS (13/13 fix tags wired). Ready for next phase or 19 close-out."
-last_updated: "2026-04-26T07:10:00.000Z"
-last_activity: 2026-04-26 -- Phase 19.5 complete (verified)
+status: complete
+stopped_at: "Phase 19.5 closed 2026-04-26 — UAT hotfix landed in 2 atomic commits (6268f11 chat-template strip; e8c665e Swiss formatter hardening). Pending follow-ons (AI cleanup demotion, iOS history detail view, HistoryService graceful degradation, simulator crash fix) re-scoped into Phase 20."
+last_updated: "2026-04-26T13:30:00.000Z"
+last_activity: 2026-04-26 -- 19.5 UAT hotfix committed; Phase 20 planning next
 progress:
   total_phases: 5
   completed_phases: 5
@@ -29,10 +29,17 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 19.5 (AI Cleanup CH-Determinism) — COMPLETE 2026-04-26
-Plan: 5 of 5 (all plans shipped)
-Status: Phase 19.5 complete. Verifier PASS (13/13 fix tags wired). Code review 0 critical / 3 warnings (all fixed: WR-01/02/03) / 6 info backlogged. Ready for next phase.
-Resume file: .planning/phases/19.5-ai-cleanup-ch-determinism/19.5-VERIFICATION.md
-Last activity: 2026-04-26 -- Phase 19.5 verified and complete
+Plan: 5 of 5 shipped + UAT hotfix landed (2 atomic commits)
+Status: UAT hotfix committed. Two `Foundation Decimal(string:locale:)` bugs (period-truncation, phantom-zero) replaced with manual German parser + cross-token bridge. Chat-template fragment strip added. Cross-platform Shared/ changes shipped on both macOS and iOS. Remaining UAT findings (AI cleanup quality demotion, iOS history detail view, HistoryService graceful degradation, simulator crash) re-scoped into Phase 20.
+
+UAT hotfix commits:
+  • 6268f11 — fix(19.5): strip leaked Gemma chat-template fragments
+  • e8c665e — fix(19.5): post-LLM Swiss formatter hardening (Decimal guards + cross-token bridges)
+
+Next: `/gsd-plan-phase 20` — AI Cleanup Demotion + UAT Visibility (rules-first deterministic, optional LLM polish, raw/polished toggle, iOS history detail view, HistoryService graceful degradation).
+
+Resume file: ROADMAP.md → Phase 20 (to be planned)
+Last activity: 2026-04-26 -- 19.5 closed; Phase 20 planning queued
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
