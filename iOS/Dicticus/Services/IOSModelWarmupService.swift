@@ -125,6 +125,10 @@ class IOSModelWarmupService: ObservableObject {
 
     /// Start FluidAudio + Parakeet TDT v3 initialization in a background Task.
     func warmup() {
+        // D-D1 (Phase 19.5): Re-check FS on every warmup invocation to avoid
+        // relying on stale init-time state after backgrounding / FS mutations.
+        checkHasModels()
+        guard hasModels else { return }
         guard !isWarming && !isReady else { return }
         isWarming = true
         error = nil
