@@ -92,7 +92,7 @@ struct AiCleanupSection: View {
     }
 
     private var swissGermanToggle: some View {
-        Toggle(isOn: appGroupBinding("useSwissGerman", default: false)) {
+        Toggle(isOn: appGroupBinding("useSwissGerman", default: true)) {
             Label("Swiss German Spelling", systemImage: "character.bubble")
         }
     }
