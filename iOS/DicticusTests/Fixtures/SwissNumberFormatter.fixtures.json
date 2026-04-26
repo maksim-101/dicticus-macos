@@ -8,5 +8,12 @@
   { "input": "EUR 6,70", "expected": "EUR 6.70" },
   { "input": "€6,70", "expected": "€6.70" },
   { "input": "$1250", "expected": "$1'250" },
-  { "input": "Hello world", "expected": "Hello world" }
+  { "input": "Hello world", "expected": "Hello world" },
+  { "input": "15 Franken 50", "expected": "15.50 Franken" },
+  { "input": "15 Euro 50", "expected": "15.50 Euro" },
+  { "input": "15 CHF 50", "expected": "15.50 CHF" },
+  { "input": "15 EUR 50", "expected": "15.50 EUR" },
+  { "input": "Es kostet 15 Franken 50.", "expected": "Es kostet 15.50 Franken." },
+  { "input": "15 Franken 5 Stück", "expected": "15 Franken 5 Stück" },
+  { "input": "15 Franken 100", "expected": "15 Franken 100" }
 ]

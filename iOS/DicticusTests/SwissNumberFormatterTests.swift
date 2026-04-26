@@ -68,6 +68,67 @@ final class SwissNumberFormatterTests: XCTestCase {
         XCTAssertEqual(result, "$1'250")
     }
 
+    // MARK: - B3 split-cents-with-currency-between (Phase 19.5 UAT followup)
+
+    /// Original B3 ("15 Franken 50" → "15.50 Franken") relies on the post-LLM
+    /// bridge to merge the cents back into the price when ASR splits them
+    /// across the currency word. macOS LLM keeps them literal; iOS LLM
+    /// occasionally concatenates them. The bridge handles the literal path.
+    func testSplitCentsFrankenBridge() {
+        XCTAssertEqual(SwissNumberFormatter.format("15 Franken 50"), "15.50 Franken")
+    }
+
+    func testSplitCentsEuroBridge() {
+        XCTAssertEqual(SwissNumberFormatter.format("15 Euro 50"), "15.50 Euro")
+    }
+
+    func testSplitCentsCHFBridge() {
+        XCTAssertEqual(SwissNumberFormatter.format("15 CHF 50"), "15.50 CHF")
+    }
+
+    func testSplitCentsEURBridge() {
+        XCTAssertEqual(SwissNumberFormatter.format("15 EUR 50"), "15.50 EUR")
+    }
+
+    func testSplitCentsEuroGlyphBridge() {
+        XCTAssertEqual(SwissNumberFormatter.format("15 € 50"), "15.50 €")
+    }
+
+    func testSplitCentsBoundedBySentenceEnd() {
+        XCTAssertEqual(
+            SwissNumberFormatter.format("Es kostet 15 Franken 50."),
+            "Es kostet 15.50 Franken."
+        )
+    }
+
+    func testSplitCentsRejectsSingleDigitRightSide() {
+        // "5 Stück" should not be eaten as cents — single-digit right side
+        // is ambiguous and far more likely a separate quantity word.
+        XCTAssertEqual(
+            SwissNumberFormatter.format("15 Franken 5 Stück"),
+            "15 Franken 5 Stück"
+        )
+    }
+
+    func testSplitCentsRejectsThreeDigitRightSide() {
+        // "100" is a clean amount, not cents — leave the literal alone.
+        XCTAssertEqual(
+            SwissNumberFormatter.format("15 Franken 100"),
+            "15 Franken 100"
+        )
+    }
+
+    func testSplitCentsDoesNotEatThousandsPattern() {
+        // "1.250 Franken 50" must NOT match "250 Franken 50" inside the
+        // thousand pattern. The `(?<![.,'\u{2019}])` lookbehind prevents this.
+        // After both bridges + format() we expect: thousand-pattern → Swiss
+        // apostrophe, NO trailing ".50" merge.
+        XCTAssertEqual(
+            SwissNumberFormatter.format("1.250 Franken 50"),
+            "1'250 Franken 50"
+        )
+    }
+
     // MARK: - Fixture corpus
 
     func testFixturesCorpus() throws {
