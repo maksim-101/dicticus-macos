@@ -216,12 +216,27 @@ class CleanupService: ObservableObject, CleanupProvider {
             var cleaned = Self.stripPreamble(result)
             log.info("After strip (\(cleaned.count, privacy: .public) chars): \(cleaned.prefix(500), privacy: .public)")
 
+            // D-B1c (Phase 19.5): Currency anti-flip post-LLM revert. Fires on
+            // language == "de" regardless of Swiss toggle (per D-B2). Reverts any
+            // model-substituted currency labels (e.g., EUR ← CHF) using positional
+            // best-match against the input. Numeric values stay as the model wrote
+            // them — only the currency LABEL is corrected. Graceful-degradation:
+            // utility returns its `output` argument unchanged on any unexpected shape.
+            if language == "de" {
+                cleaned = CurrencyAntiFlip.revertCurrencyFlip(input: text, output: cleaned)
+            }
+
             // D-19: Post-LLM Swiss safety-net — catch any ß the LLM slipped in
             // despite the D-18 prompt instruction. Gated by the shared AppGroup
             // `useSwissGerman` key so the regex is free when Swiss toggle is OFF.
             let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
             if swissDefaults.bool(forKey: "useSwissGerman") {
+                // D-19: Swiss safety-net (existing — unchanged).
                 cleaned = ITNUtility.applySwissITN(to: cleaned)
+                // D-C2 / D-C3 (Phase 19.5): Universal-period decimal + ASCII-apostrophe
+                // thousands. Replaces D-20's LLM-only approach with a deterministic pass.
+                // Graceful-degradation: unparseable tokens emit unchanged.
+                cleaned = SwissNumberFormatter.format(cleaned)
             }
 
             return cleaned.isEmpty ? text : cleaned
