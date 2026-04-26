@@ -1,15 +1,22 @@
 import Foundation
 import NaturalLanguage
 
+// Phase 20 D-01: verb changed Rewrite → "Lightly edit" and the LLM is no longer
+// asked to remove fillers or convert spelled numbers — those tasks moved to the
+// deterministic Swift rules pass (RulesCleanupService, plan 20-03). The LLM is
+// now reined in to grammar / punctuation / capitalization fixes only, with the
+// Levenshtein gate (CleanupService.gateLLMOutput) as a structural fail-safe.
+
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
 
     static let defaultInstruction = """
-    Rewrite the following transcribed text to be polished and grammatically correct. \
-    Remove filler words and repetition. Write numbers as digits. \
-    Apply the dictionary replacements if any. Output ONLY the polished text.
+    Lightly edit the following transcribed text. Fix obvious grammar, punctuation, and capitalization. \
+    Do not paraphrase, summarize, or add information. \
+    Apply the dictionary replacements if any. Output ONLY the polished text. \
+    If the input is already correct, output it unchanged.
     """
 
     static func userInstruction() -> String {
