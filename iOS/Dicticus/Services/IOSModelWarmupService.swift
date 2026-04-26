@@ -124,11 +124,15 @@ class IOSModelWarmupService: ObservableObject {
     }
 
     /// Start FluidAudio + Parakeet TDT v3 initialization in a background Task.
-    func warmup() {
+    /// Pass `force: true` from explicit user actions (Download / Retry button) so the
+    /// download path is not blocked by the no-models guard.
+    func warmup(force: Bool = false) {
         // D-D1 (Phase 19.5): Re-check FS on every warmup invocation to avoid
         // relying on stale init-time state after backgrounding / FS mutations.
+        // The guard prevents auto-launch sites from silently kicking off a
+        // ~2.7 GB download; explicit user actions bypass it via `force`.
         checkHasModels()
-        guard hasModels else { return }
+        guard hasModels || force else { return }
         guard !isWarming && !isReady else { return }
         isWarming = true
         error = nil
@@ -254,11 +258,12 @@ class IOSModelWarmupService: ObservableObject {
         isWarming = false
     }
 
-    /// Reset error state and retry warmup.
+    /// Reset error state and retry warmup. Explicit user action — passes
+    /// `force: true` so the no-models guard does not block the download path.
     func retry() {
         error = nil
         isReady = false
-        warmup()
+        warmup(force: true)
     }
 
     /// Expose the initialized AsrManager for IOSTranscriptionService.
