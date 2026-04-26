@@ -28,7 +28,7 @@
 | 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Deferred | - |
 | 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Code Complete | Pending physical-device UAT (findings → 19.5/19.6) |
 | **DESIGN.md** | v2.1 | Cross-platform design tokens (brand, color, typography, spacing, motion) + per-platform sections (iOS/macOS/Windows) + asset inventory | Next | Prerequisite for 19.6 |
-| 19.5. AI Cleanup CH-Determinism | v2.1 | CHF currency formatter, `1'250` apostrophe, Swiss German default ON, Helvetism prompt block, Parakeet ASR cache hotfix (B2) | Planned (5 plans) | Driven by Swiss-German research + Phase 19 UAT |
+| 19.5. AI Cleanup CH-Determinism | v2.1 | 4/5 | In Progress|  |
 | 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
 | 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
 
@@ -54,11 +54,11 @@
 
 **Requirements:** None directly — parent CLEAN-01, CLEAN-02 already met by Phase 19. This phase tightens correctness from B5/B6/S7/S8 UAT findings + B2 regression hotfix.
 
-**Plans:** 5 plans
-- [ ] 19.5-01-PLAN.md — B2 Parakeet warmup hotfix (D-D1)
-- [ ] 19.5-02-PLAN.md — Swiss default migration + iOS default flip + macOS toggle UI (D-A1, D-A2, D-A3)
-- [ ] 19.5-03-PLAN.md — New Shared utilities: SwissHelvetisms, CurrencyAntiFlip, SwissNumberFormatter (D-D2, D-B1a, D-B1c, D-C1, D-C2, D-C3)
-- [ ] 19.5-04-PLAN.md — Wire utilities into CleanupPrompt (HELVETISMS + STRICT) and CleanupService (revert + number formatter) (D-B1b, D-B1c, D-D2, D-C2/C3)
+**Plans:** 4/5 plans executed
+- [x] 19.5-01-PLAN.md — B2 Parakeet warmup hotfix (D-D1)
+- [x] 19.5-02-PLAN.md — Swiss default migration + iOS default flip + macOS toggle UI (D-A1, D-A2, D-A3)
+- [x] 19.5-03-PLAN.md — New Shared utilities: SwissHelvetisms, CurrencyAntiFlip, SwissNumberFormatter (D-D2, D-B1a, D-B1c, D-C1, D-C2, D-C3)
+- [x] 19.5-04-PLAN.md — Wire utilities into CleanupPrompt (HELVETISMS + STRICT) and CleanupService (revert + number formatter) (D-B1b, D-B1c, D-D2, D-C2/C3)
 - [ ] 19.5-05-PLAN.md — Tests + fixtures for migration, utilities, and B5/B6 integration regression
 
 ---
