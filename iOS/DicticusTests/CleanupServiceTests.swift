@@ -244,4 +244,68 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(de, 3)
         XCTAssertGreaterThanOrEqual(en, 3)
     }
+
+    // MARK: - Phase 20.01 RED: prompt verb + Levenshtein gate
+    //
+    // The four tests below reference symbols that DO NOT EXIST yet —
+    // CleanupPrompt.defaultInstruction (today the prompt is built inline),
+    // CleanupService.gateLLMOutput, CleanupService.levenshteinGateThreshold.
+    // Plan 20.02 ships these. The test target build will fail with
+    // "cannot find ... in scope" until then. That is the planner-required
+    // RED state — do NOT stub the implementations here.
+
+    /// Plan 20.02 must change the cleanup prompt verb from "Rewrite" to
+    /// "Lightly edit" — the LLM-rein-in lever (ACT-1-LLM-REIN). The prompt
+    /// definition moves into `CleanupPrompt.defaultInstruction` so this
+    /// test can assert against a single named source-of-truth.
+    func testDefaultInstructionUsesLightlyEdit() {
+        XCTAssertTrue(
+            CleanupPrompt.defaultInstruction.contains("Lightly edit"),
+            "ACT-1: prompt must use the 'Lightly edit' verb after plan 20.02 lands"
+        )
+        XCTAssertFalse(
+            CleanupPrompt.defaultInstruction.contains("Rewrite"),
+            "ACT-1: prompt must NOT contain the 'Rewrite' verb (overly aggressive)"
+        )
+    }
+
+    /// Levenshtein gate rejects an LLM hallucination — the LLM produced
+    /// a wholly different sentence, the gate must return the rules-cleaned
+    /// text instead. Threshold: 0.30 of max(len). Distance for these two
+    /// strings is well above 0.30 × max(len), so the gate must trip.
+    func testLevenshteinGateRejectsHallucination() {
+        let rulesCleaned = "Ich bin nach Hause gegangen."
+        let llmOutput = "Heute war ein wunderschöner Tag und ich bin durch den Wald spaziert."
+        let result = CleanupService.gateLLMOutput(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput,
+            threshold: 0.30
+        )
+        XCTAssertEqual(result, rulesCleaned,
+            "Hallucination must be rejected — gate returns the rules-cleaned text")
+    }
+
+    /// Light edit (punctuation + casing only) must pass the gate — the
+    /// LLM did its job, hand the polished text downstream.
+    func testLevenshteinGateAcceptsLightEdit() {
+        let rulesCleaned = "ich gehe nach hause"
+        let llmOutput = "Ich gehe nach Hause."
+        let result = CleanupService.gateLLMOutput(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput,
+            threshold: 0.30
+        )
+        XCTAssertEqual(result, llmOutput,
+            "Light edit (punctuation + casing) must pass the gate — distance under threshold")
+    }
+
+    /// The threshold is a single named constant for UAT tuning. Downstream
+    /// plans MUST reference `CleanupService.levenshteinGateThreshold` by
+    /// name and never magic-number 0.30 inline. This test fails if the
+    /// constant is missing or has the wrong default.
+    func testLevenshteinGateThresholdIsNamedConstant() {
+        XCTAssertEqual(CleanupService.levenshteinGateThreshold, 0.30,
+            accuracy: 0.0001,
+            "Threshold must be the named constant 0.30 for UAT tuning")
+    }
 }
