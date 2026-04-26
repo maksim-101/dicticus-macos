@@ -126,6 +126,66 @@ final class CleanupServiceTests: XCTestCase {
                        "No KV-cache bleed between calls (D-06) — 'velt' from call 1 must not appear in call 2")
     }
 
+    // MARK: - 19.5 B5/B6 regression (integration)
+
+    /// B5 lock — CHF utterance must NOT be flipped to EUR/Euro post-LLM.
+    /// Exercises CurrencyAntiFlip.revertCurrencyFlip wiring in CleanupService.
+    func testCurrencyAntiFlipCHFIntegration() async throws {
+        try XCTSkipIf(modelPathFromEnv == nil,
+                      "Integration test skipped — set DICTICUS_TEST_MODEL_PATH to enable")
+
+        let service = CleanupService(inferenceTimeoutSeconds: 8.0)
+        try service.loadModel(from: modelPathFromEnv!)
+
+        // Toggle OFF; revert is gated on `language == "de"`, not on the Swiss toggle.
+        let suite = UserDefaults(suiteName: "group.com.dicticus") ?? .standard
+        suite.removeObject(forKey: "useSwissGerman")
+
+        let out = await service.cleanup(text: "Ich habe 5 Franken bezahlt",
+                                         language: "de",
+                                         dictionaryContext: nil)
+        XCTAssertFalse(out.contains("Euro"), "B5: currency LABEL must not flip to Euro. Got: \(out)")
+        XCTAssertFalse(out.contains("EUR"),  "B5: currency CODE must not flip to EUR. Got: \(out)")
+    }
+
+    /// B6 lock — Swiss toggle ON must produce period decimals (no comma decimals).
+    func testSwissDecimalPeriodIntegration() async throws {
+        try XCTSkipIf(modelPathFromEnv == nil,
+                      "Integration test skipped — set DICTICUS_TEST_MODEL_PATH to enable")
+
+        let service = CleanupService(inferenceTimeoutSeconds: 8.0)
+        try service.loadModel(from: modelPathFromEnv!)
+
+        let suite = UserDefaults(suiteName: "group.com.dicticus") ?? .standard
+        suite.set(true, forKey: "useSwissGerman")
+
+        let out = await service.cleanup(text: "Das kostet 5 Euro 70",
+                                         language: "de",
+                                         dictionaryContext: nil)
+        let commaDecimal = try NSRegularExpression(pattern: #"\d,\d"#)
+        let r = NSRange(out.startIndex..<out.endIndex, in: out)
+        XCTAssertEqual(commaDecimal.numberOfMatches(in: out, range: r), 0,
+                       "B6: Swiss-toggle-ON must produce period decimal. Got: \(out)")
+    }
+
+    /// D-C1 lock — thousands separator must be ASCII apostrophe (U+0027), never U+2019.
+    func testSwissApostropheThousandsIntegration() async throws {
+        try XCTSkipIf(modelPathFromEnv == nil,
+                      "Integration test skipped — set DICTICUS_TEST_MODEL_PATH to enable")
+
+        let service = CleanupService(inferenceTimeoutSeconds: 8.0)
+        try service.loadModel(from: modelPathFromEnv!)
+
+        let suite = UserDefaults(suiteName: "group.com.dicticus") ?? .standard
+        suite.set(true, forKey: "useSwissGerman")
+
+        let out = await service.cleanup(text: "Das macht 1250 Franken",
+                                         language: "de",
+                                         dictionaryContext: nil)
+        XCTAssertFalse(out.contains("\u{2019}"),
+                       "D-C1: thousands separator must be ASCII apostrophe. Got: \(out)")
+    }
+
     // MARK: - CLEAN-02: Real-model inference (integration)
 
     func testRealModelInference() async throws {
