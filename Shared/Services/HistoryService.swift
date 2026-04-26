@@ -49,23 +49,84 @@ struct TranscriptionEntry: Identifiable, Codable, FetchableRecord, PersistableRe
 class HistoryService: ObservableObject {
 
     static let shared = HistoryService()
-    
+
     private let dbPool: DatabasePool
+
+    /// URL of the on-disk SQLite file backing this instance. Exposed for diagnostics
+    /// and tests (Phase 20.04 / ACT-4-RESILIENCE) so the fallback path can be asserted
+    /// without depending on entitlements.
+    let databaseFileURL: URL
+
     private static let log = Logger(subsystem: "com.dicticus", category: "history")
+
+    /// Backing storage for the App-Group resolution outcome. Set during init.
+    /// Settings UIs read this to surface a non-blocking diagnostic warning row.
+    /// `true` on the happy path (App Group container resolved); `false` when init
+    /// fell back to `applicationSupportDirectory`.
+    static private(set) var appGroupAvailable: Bool = true
+
+    /// Log-once guard — ensures the fallback warning is emitted at most once per
+    /// process lifetime regardless of how many times `resolveStorage` runs (singleton
+    /// + any test factories combined).
+    private static var didLogFallback = false
+
+    /// Internal storage backend resolution result — discriminates the App-Group
+    /// happy path from the per-app applicationSupport fallback.
+    private enum StorageBackend {
+        case appGroup(URL)
+        case applicationSupport(URL)
+
+        var url: URL {
+            switch self {
+            case .appGroup(let u), .applicationSupport(let u):
+                return u
+            }
+        }
+    }
+
+    /// Resolve the storage backend. Provider closure is injectable so unit tests
+    /// can simulate the App-Group-missing path by returning nil without entitlements.
+    private static func resolveStorage(provider: () -> URL?) -> StorageBackend {
+        if let groupURL = provider() {
+            return .appGroup(groupURL)
+        }
+        if !didLogFallback {
+            didLogFallback = true
+            log.warning("App Group container 'group.com.dicticus' not found — falling back to per-app applicationSupport. History will NOT be visible to keyboard extensions until entitlements are restored.")
+        }
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.dicticus.fallback"
+        return .applicationSupport(appSupport.appendingPathComponent(bundleID, isDirectory: true))
+    }
 
     @Published private(set) var entries: [TranscriptionEntry] = []
 
-    private init() {
+    /// Default initializer used by the `shared` singleton — resolves the App Group
+    /// container via the standard FileManager API.
+    private convenience init() {
+        self.init(containerURLProvider: {
+            FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.dicticus")
+        })
+    }
+
+    /// Designated initializer — accepts an injectable container-URL provider so
+    /// tests can exercise the fallback path. Default callers go through the
+    /// no-arg `convenience init` above.
+    private init(containerURLProvider: () -> URL?) {
+        let backend = Self.resolveStorage(provider: containerURLProvider)
+        switch backend {
+        case .appGroup:
+            Self.appGroupAvailable = true
+        case .applicationSupport:
+            Self.appGroupAvailable = false
+        }
+        let containerURL = backend.url
+        let dbFolder = containerURL.appendingPathComponent("Database", isDirectory: true)
+        let dbURL = dbFolder.appendingPathComponent("History.sqlite")
+        self.databaseFileURL = dbURL
         do {
-            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.dicticus") else {
-                fatalError("App Group container not found")
-            }
-            let dbFolder = containerURL.appendingPathComponent("Database", isDirectory: true)
             try FileManager.default.createDirectory(at: dbFolder, withIntermediateDirectories: true)
-            
-            let dbURL = dbFolder.appendingPathComponent("History.sqlite")
             self.dbPool = try DatabasePool(path: dbURL.path)
-            
             try migrate()
             load()
         } catch {
@@ -73,6 +134,15 @@ class HistoryService: ObservableObject {
             fatalError("Failed to initialize History database")
         }
     }
+
+    #if DEBUG
+    /// Test seam (Phase 20.04 / ACT-4-RESILIENCE). Bypasses the singleton so
+    /// each call constructs a fresh instance against the supplied provider —
+    /// pass `{ nil }` to force the applicationSupport fallback path.
+    static func makeForTesting(containerURLProvider: @escaping () -> URL?) -> HistoryService {
+        return HistoryService(containerURLProvider: containerURLProvider)
+    }
+    #endif
 
     private func migrate() throws {
         var migrator = DatabaseMigrator()
