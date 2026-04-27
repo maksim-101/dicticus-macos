@@ -142,4 +142,53 @@ final class SwissNumberFormatterTests: XCTestCase {
                            "Fixture failed: input='\(p.input)'")
         }
     }
+
+    // MARK: - Phase 20.06 F-20-UAT-02 — fold idempotency + no-Euro-Euro
+
+    func testFoldCurrencyUnitsIsIdempotent() {
+        let inputs = [
+            "15 Franken 50 Rappen",
+            "10 Euro 25 Cent",
+            "CHF 15.50",
+            "€10.25",
+            "110.57 €",
+            "4.50 Franken",
+            "Hello world",
+            "1'250 Franken",
+            "ich habe 5 Franken bezahlt"
+        ]
+        for input in inputs {
+            let once = SwissNumberFormatter.foldCurrencyUnits(input)
+            let twice = SwissNumberFormatter.foldCurrencyUnits(once)
+            XCTAssertEqual(once, twice,
+                "foldCurrencyUnits must be idempotent — failed for input: '\(input)' once='\(once)' twice='\(twice)'")
+        }
+    }
+
+    func testFoldDoesNotProduceEuroEuroOnGlyphPrefixed() {
+        let result = SwissNumberFormatter.format("110.57 €")
+        XCTAssertFalse(result.contains("Euro Euro"),
+            "F-20-UAT-02: must not duplicate Euro token. Got: '\(result)'")
+        XCTAssertFalse(result.contains("€ Euro"),
+            "F-20-UAT-02: must not emit '€ Euro'. Got: '\(result)'")
+        XCTAssertFalse(result.contains("Euro €"),
+            "F-20-UAT-02: must not emit 'Euro €'. Got: '\(result)'")
+    }
+
+    func testFoldDoesNotAppendWordWhenGlyphAdjacent() {
+        let result = SwissNumberFormatter.format("ich habe 110.57 € ausgegeben")
+        XCTAssertFalse(result.contains("Euro Euro"), "Got: '\(result)'")
+        XCTAssertFalse(result.contains("€ Euro"), "Got: '\(result)'")
+        XCTAssertFalse(result.contains("Euro €"), "Got: '\(result)'")
+    }
+
+    func testFoldStillCollapsesSpokenOutCHF() {
+        // Existing Phase 20.03 contract — must not regress.
+        XCTAssertEqual(SwissNumberFormatter.foldCurrencyUnits("15 Franken 50 Rappen"), "CHF 15.50")
+    }
+
+    func testFoldStillCollapsesSpokenOutEUR() {
+        // Existing Phase 20.03 contract — must not regress.
+        XCTAssertEqual(SwissNumberFormatter.foldCurrencyUnits("10 Euro 25 Cent"), "€10.25")
+    }
 }
