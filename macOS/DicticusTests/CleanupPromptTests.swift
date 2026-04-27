@@ -55,10 +55,13 @@ final class CleanupPromptTests: XCTestCase {
 
     func testDefaultInstructionContent() {
         let instruction = CleanupPrompt.defaultInstruction
+        // Phase 20.02 ACT-1 reined in the LLM verb from "Rewrite" to
+        // "Lightly edit"; digit conversion moved to ITN/SwissNumberFormatter.
+        XCTAssertTrue(instruction.contains("Lightly edit"), "Default must use the reined-in verb")
         XCTAssertTrue(instruction.contains("polished"), "Default must instruct polishing")
-        XCTAssertTrue(instruction.contains("grammatically correct"), "Default must cover grammar")
-        XCTAssertTrue(instruction.contains("digits"), "Default must instruct digits for numbers")
+        XCTAssertTrue(instruction.contains("grammar"), "Default must cover grammar")
         XCTAssertTrue(instruction.contains("dictionary"), "Default must instruct dictionary usage")
+        XCTAssertTrue(instruction.contains("Do not paraphrase"), "Default must forbid paraphrasing")
     }
 
     // MARK: - Custom instruction
