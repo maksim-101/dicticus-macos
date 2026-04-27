@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 20.06 (AI Cleanup Behavioural Hotfix) SHIPPED 2026-04-27 — 4 plans complete + in-phase iOS warmup/onboarding/Settings-reactivity/HistoryRow-chevron/ASR-cache-path fixes. UAT GREEN on Phase 20.06's stated goal (LLM hallucination demotion). Two new failure modes captured as follow-on phases: 20.07 (rules-only ASR-mishearing recovery) and 20.08 (LLM Swiss-ification suppression on the AI-cleanup ON path).
-last_updated: "2026-04-27T19:30:00.000Z"
-last_activity: 2026-04-27 -- Phase 20.06 shipped, Phase 20 closure unblocked
+stopped_at: Phase 20.08 context gathered
+last_updated: "2026-04-27T19:07:56.615Z"
+last_activity: 2026-04-27 -- Phase 20.06 shipped (Phase 20 closure unblocked)
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 35
-  completed_plans: 32
-  percent: 91
+  total_phases: 9
+  completed_phases: 6
+  total_plans: 31
+  completed_plans: 31
+  percent: 100
 ---
 
 # Project State: Dicticus
@@ -35,7 +35,7 @@ Builds verified: iOS BUILD SUCCEEDED on iPhone 17 sim (OS 26.4.1). macOS Debug p
 
 Next: `/gsd-discuss-phase 20.08` — LLM Swiss-Ification Suppression (more pressing than 20.07 since it affects the default AI-cleanup ON path). Phase 20.07 queued behind it.
 
-Resume file: ROADMAP.md → Phase 20.08 (to be planned), then Phase 20.07
+Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-CONTEXT.md
 Last activity: 2026-04-27 -- Phase 20.06 shipped (Phase 20 closure unblocked)
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
@@ -94,6 +94,6 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending phy
 
 ## Session Continuity
 
-Last session: 2026-04-25T07:30:00Z
-Stopped at: Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped (15 atomic commits + 1 hotfix), verifier 22/22 must-haves passed, code review advisory (0 critical / 5 warning / 6 info), D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 all resolved. macOS Debug build SUCCEEDED.
+Last session: 2026-04-27T19:07:56.610Z
+Stopped at: Phase 20.08 context gathered
 Resume file: Run `/gsd-discuss-phase` for next phase candidate (DESIGN.md generation, 19.5 CH-determinism, or 19.6 iOS UX)
