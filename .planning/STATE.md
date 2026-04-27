@@ -3,44 +3,40 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped (15 atomic commits + 1 hotfix), verifier 22/22 must-haves passed, code review advisory (0 critical / 5 warning / 6 info), D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 all resolved. macOS Debug build SUCCEEDED.
-last_updated: "2026-04-27T04:59:54.917Z"
-last_activity: 2026-04-27 -- Phase 20.06 planning complete
+stopped_at: Phase 20.06 (AI Cleanup Behavioural Hotfix) SHIPPED 2026-04-27 — 4 plans complete + in-phase iOS warmup/onboarding/Settings-reactivity/HistoryRow-chevron/ASR-cache-path fixes. UAT GREEN on Phase 20.06's stated goal (LLM hallucination demotion). Two new failure modes captured as follow-on phases: 20.07 (rules-only ASR-mishearing recovery) and 20.08 (LLM Swiss-ification suppression on the AI-cleanup ON path).
+last_updated: "2026-04-27T19:30:00.000Z"
+last_activity: 2026-04-27 -- Phase 20.06 shipped, Phase 20 closure unblocked
 progress:
-  total_phases: 7
-  completed_phases: 6
-  total_plans: 31
-  completed_plans: 28
-  percent: 90
+  total_phases: 8
+  completed_phases: 8
+  total_plans: 35
+  completed_plans: 32
+  percent: 91
 ---
 
 # Project State: Dicticus
 
-**Last Updated:** 2026-04-25
-**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS - Phase 19.7 context gathered)
+**Last Updated:** 2026-04-27
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 SHIPPED)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 20 — ai-cleanup-demotion-uat-visibility
+**Current focus:** Phase 20.06 shipped → Phase 20.08 next (LLM Swiss-ification suppression — fresh UAT showed Gemma 4 E2B still translates clean High German to Swiss dialect on the AI-cleanup ON + Swiss ON path; 20.06's preservation-first prompt is ignored). Phase 20.07 (rules-only ASR-mishearing recovery) is queued behind it.
 
 ## Current Position
 
-Phase: 20 (ai-cleanup-demotion-uat-visibility) — CODE COMPLETE; UAT REGRESSIONS LOGGED
-Plan: 5 of 5 plans shipped
-Status: Ready to execute
-Resume: `/gsd-plan-phase 20.06` — see UAT-FINDINGS.md for scope (4 findings: HELVETISMS dialect preservation, currency idempotency, iOS long-press gesture, iOS chevron discoverability)
+Phase: 20.06 (ai-cleanup-behavioural-hotfix) — SHIPPED 2026-04-27
+Plans: 4 of 4 complete + 20.06-05-FIX (iOS warmup hang + onboarding progress + Settings @AppStorage reactivity + HistoryRow duplicate-chevron + ASR cache-path check via FluidAudio API)
+UAT: GREEN on Phase 20.06's stated goal (LLM hallucination demotion + currency idempotency on the AI-cleanup-ON path). Post-ship rebuild surfaced two new failure modes: rules-only `4, Franken50 Euro` (→ Phase 20.07) and LLM Swiss-ification of clean High German on AI-cleanup ON + Swiss ON (→ Phase 20.08).
+Builds verified: iOS BUILD SUCCEEDED on iPhone 17 sim (OS 26.4.1). macOS Debug previously verified.
 
-UAT hotfix commits:
-  • 6268f11 — fix(19.5): strip leaked Gemma chat-template fragments
-  • e8c665e — fix(19.5): post-LLM Swiss formatter hardening (Decimal guards + cross-token bridges)
+Next: `/gsd-discuss-phase 20.08` — LLM Swiss-Ification Suppression (more pressing than 20.07 since it affects the default AI-cleanup ON path). Phase 20.07 queued behind it.
 
-Next: `/gsd-plan-phase 20` — AI Cleanup Demotion + UAT Visibility (rules-first deterministic, optional LLM polish, raw/polished toggle, iOS history detail view, HistoryService graceful degradation).
-
-Resume file: ROADMAP.md → Phase 20 (to be planned)
-Last activity: 2026-04-27 -- Phase 20.06 planning complete
+Resume file: ROADMAP.md → Phase 20.08 (to be planned), then Phase 20.07
+Last activity: 2026-04-27 -- Phase 20.06 shipped (Phase 20 closure unblocked)
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT

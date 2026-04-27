@@ -31,8 +31,10 @@
 | 19.5. AI Cleanup CH-Determinism | v2.1 | 5/5 | Complete   | 2026-04-26 |
 | 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
 | 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
-| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Code Complete; UAT Behavioural-Failed | 4 findings logged 2026-04-27 → 20.06 |
-| 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 0/4 | Planned | HELVETISMS dialect preservation + currency idempotency + iOS history gestures |
+| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Shipped 2026-04-27 | UAT findings closed via Phase 20.06; AI-cleanup path GREEN on the test sentence |
+| 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 4/4 | Shipped 2026-04-27 | HELVETISMS dialect preserved + currency idempotency + iOS history gestures + Settings-toggle reactivity (UAT GREEN on AI-cleanup path) |
+| 20.07. Rules-only ASR-Mishearing Recovery | v2.1 | 0/? | Planned | Rules-only Swiss path produces unrecoverable shapes when ASR drifts (e.g. `4, Franken50 Euro`) — needs an aggressive split-rule with false-positive guards |
+| 20.08. LLM Swiss-Ification Suppression | v2.1 | 0/? | Planned | AI-cleanup ON + Swiss ON path: LLM still translates clean High German into Swiss dialect (`auf der anderen Seite` → `uf de andere Siite`, `wahrscheinlich` → `wahrschiinli`) despite 20.06's preservation-first prompt. Likely fix: drop the helvetisms reference list and/or add a helvetism-delta demotion gate |
 
 ---
 
@@ -123,10 +125,46 @@
 **Plans:** 4 plans
 
 Plans:
-- [ ] 20.06-01-PLAN.md — Wave 1: HELVETISMS prompt rework — preservation-first wording + NEGATIVE list of HG→CH-G traps + tests (F-20-UAT-01, F-20-UAT-05)
-- [ ] 20.06-02-PLAN.md — Wave 2: Currency idempotency + speaker-explicit anchor + STRICT prompt extension (F-20-UAT-02) — depends on 20.06-01 (shared CleanupPrompt.swift)
-- [ ] 20.06-03-PLAN.md — Wave 1: iOS HistoryRow .contextMenu Copy + trailing chevron (F-20-UAT-03, F-20-UAT-04)
-- [ ] 20.06-04-PLAN.md — Wave 3: Manual UAT re-run gate; flips Phase 20 + 20.06 to Shipped on GREEN (F-20-UAT-01..05) — depends on 20.06-01, 02, 03
+- [x] 20.06-01-PLAN.md — Wave 1: HELVETISMS prompt rework — preservation-first wording + NEGATIVE list of HG→CH-G traps + tests (F-20-UAT-01, F-20-UAT-05)
+- [x] 20.06-02-PLAN.md — Wave 2: Currency idempotency + speaker-explicit anchor + STRICT prompt extension (F-20-UAT-02) — depends on 20.06-01 (shared CleanupPrompt.swift)
+- [x] 20.06-03-PLAN.md — Wave 1: iOS HistoryRow .contextMenu Copy + trailing chevron (F-20-UAT-03, F-20-UAT-04)
+- [x] 20.06-04-PLAN.md — Wave 3: Manual UAT re-run gate; flips Phase 20 + 20.06 to Shipped on GREEN (F-20-UAT-01..05) — depends on 20.06-01, 02, 03
+- [x] 20.06-05-FIX (in-phase) — iOS warmup hang + fake progress UI + Settings AI-cleanup-toggle reactivity (real FluidAudio progressHandler + CleanupService nonisolated load + @AppStorage in AiCleanupSection)
+
+**UAT outcome (2026-04-27):**
+- Configuration B (iOS, AI cleanup ON, Swiss ON — the critical case): ✅ GREEN. Output `Das hat mich dann ca. 4.50 Franken gekostet.` — currency preserved, dialect preserved, no hang.
+- Configuration A (iOS, AI cleanup OFF, Swiss ON): ⚠️ deferred to 20.07. ASR drift on this run produced `4, Franken50 Euro` — an unrecoverable shape for the rules-only path. Not a 20.06-introduced regression in `SwissNumberFormatter`; the formatter's bridge regex cannot rescue tokens with letters glued to digits without a more aggressive split-rule.
+- Settings UX bug (AI Cleanup toggle → Download Required panel reveal lag): ✅ fixed in-phase via `@AppStorage` refactor.
+
+---
+
+### Phase 20.07: Rules-only ASR-Mishearing Recovery
+**Goal:** Recover currency phrases on the rules-only path (Swiss ON, AI cleanup OFF) when ASR drifts to shapes like `4, Franken50 Euro` (comma after the digit, currency-word concatenated to the cents). Today's `SwissNumberFormatter.bridgeCrossTokenDecimal` requires whitespace-separated tokens and bails on any token containing letters; the rules-only path therefore emits the corrupted ASR verbatim.
+
+**Requirements:** None directly — follow-on to Phase 20.06 UAT findings.
+
+**Tentative scope:**
+- Add a pre-tokenization regex to split `<currency-word><digits>` patterns (`Franken50` → `Franken 50`).
+- Strip leading punctuation from the integer side of the currency phrase (`4,` → `4`) before bridging.
+- False-positive guards: only fire when the trailing digit run is exactly 2 digits AND the currency-word matches the strict alternation already used by Bridge 2.
+- Fixtures: a UAT replay table covering the 2 known mishearings (`4 Franken 50 Euro`, `4, Franken50 Euro`) plus a deliberately-not-currency adjacency case (e.g. `Frankreich50` should NOT split).
+
+**Plans:** TBD — opens after a fresh round of rules-only UAT to widen the failure-mode catalog.
+
+---
+
+### Phase 20.08: LLM Swiss-Ification Suppression
+**Goal:** Stop the LLM from rewriting clean High German into Swiss German dialect on the AI-cleanup ON + Swiss ON path. UAT 2026-04-27 (post-20.06 ship): user dictated standard High German and the LLM produced `uf de andere Siite, wahrschiinli, alli mini, wuer ich denn, het, hie usfiltere`. Phase 20.06's preservation-first prompt (`HELVETISMS: Preserve the speaker's dialect register exactly. Do NOT replace High German words with Swiss German equivalents.`) is being ignored by Gemma 4 E2B because the appended `SwissHelvetisms.words` reference list is interpreted as a preferred vocabulary.
+
+**Requirements:** None directly — follow-on to Phase 20.06 UAT findings (post-ship).
+
+**Tentative scope:**
+- Drop the `SwissHelvetisms.words` reference list from the prompt entirely — keep only the negative instruction.
+- Add a "helvetism-delta" demotion gate: if cleaned output contains ≥N helvetism tokens not present in the raw ASR, fall back to rules-only (mirrors 20.06's Levenshtein gate but content-aware).
+- Few-shot examples in the prompt: input `auf der anderen Seite` → output `auf der anderen Seite` (NOT `uf de andere Siite`).
+- Fixtures: UAT replay table covering 5+ Swiss-ification traps (`auf de`, `wahrschiinli`, `alli mini`, `het`, `wuer`).
+
+**Plans:** TBD — opens via `/gsd-discuss-phase 20.08`.
 
 ---
 
