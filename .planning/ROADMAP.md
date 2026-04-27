@@ -34,7 +34,7 @@
 | 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Shipped 2026-04-27 | UAT findings closed via Phase 20.06; AI-cleanup path GREEN on the test sentence |
 | 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 4/4 | Shipped 2026-04-27 | HELVETISMS dialect preserved + currency idempotency + iOS history gestures + Settings-toggle reactivity (UAT GREEN on AI-cleanup path) |
 | 20.07. Rules-only ASR-Mishearing Recovery | v2.1 | 0/? | Planned | Rules-only Swiss path produces unrecoverable shapes when ASR drifts (e.g. `4, Franken50 Euro`) — needs an aggressive split-rule with false-positive guards |
-| 20.08. LLM Swiss-Ification Suppression | v2.1 | 0/? | Planned | AI-cleanup ON + Swiss ON path: LLM still translates clean High German into Swiss dialect (`auf der anderen Seite` → `uf de andere Siite`, `wahrscheinlich` → `wahrschiinli`) despite 20.06's preservation-first prompt. Likely fix: drop the helvetisms reference list and/or add a helvetism-delta demotion gate |
+| 20.08. LLM Swiss-Ification Suppression | v2.1 | 0/4 | Planned | AI-cleanup ON + Swiss ON path: LLM still translates clean High German into Swiss dialect (`auf der anderen Seite` → `uf de andere Siite`, `wahrscheinlich` → `wahrschiinli`) despite 20.06's preservation-first prompt. Fix: dialect-suppression gate + empirical prompt restructure via spike harness |
 
 ---
 
@@ -156,15 +156,21 @@ Plans:
 ### Phase 20.08: LLM Swiss-Ification Suppression
 **Goal:** Stop the LLM from rewriting clean High German into Swiss German dialect on the AI-cleanup ON + Swiss ON path. UAT 2026-04-27 (post-20.06 ship): user dictated standard High German and the LLM produced `uf de andere Siite, wahrschiinli, alli mini, wuer ich denn, het, hie usfiltere`. Phase 20.06's preservation-first prompt (`HELVETISMS: Preserve the speaker's dialect register exactly. Do NOT replace High German words with Swiss German equivalents.`) is being ignored by Gemma 4 E2B because the appended `SwissHelvetisms.words` reference list is interpreted as a preferred vocabulary.
 
-**Requirements:** None directly — follow-on to Phase 20.06 UAT findings (post-ship).
+**Requirements:** R1, R2, R3, R4, R5, R6, R7, R8, R9 (locally defined in `20.08-RESEARCH.md` §6 + `20.08-VALIDATION.md`).
 
-**Tentative scope:**
-- Drop the `SwissHelvetisms.words` reference list from the prompt entirely — keep only the negative instruction.
-- Add a "helvetism-delta" demotion gate: if cleaned output contains ≥N helvetism tokens not present in the raw ASR, fall back to rules-only (mirrors 20.06's Levenshtein gate but content-aware).
-- Few-shot examples in the prompt: input `auf der anderen Seite` → output `auf der anderen Seite` (NOT `uf de andere Siite`).
-- Fixtures: UAT replay table covering 5+ Swiss-ification traps (`auf de`, `wahrschiinli`, `alli mini`, `het`, `wuer`).
+**Approach:** Two-pronged structural fix —
+1. **Dialect-suppression gate** (`CleanupService.gateLLMDialect`) inserted in `TextProcessingService.swift` BEFORE the existing Levenshtein gate. Demotes to `rulesCleanedText` if the LLM injects any token from `SwissDialectForms.tokens` that was not present in the raw ASR (speaker-said exception preserved).
+2. **Empirical prompt restructure** via debug-only macOS spike harness (`CleanupSpikeView`) running 5 fixtures × 4 candidate prompt variants with pinned sampler seed (0xDEADBEEF). Winning variant ships in `CleanupPrompt.swift` HELVETISMS block, pivoting from "preserve speaker's register" (D-05 pivot) to "Standard High German output".
 
-**Plans:** TBD — opens via `/gsd-discuss-phase 20.08`.
+**Cross-platform parity rule:** dialect gate + SwissDialectForms data + integration tests ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity). `CleanupPromptTests.swift` remains macOS-only by 20.06-01 precedent.
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 20.08-01-PLAN.md — Wave 1: `Shared/Models/SwissDialectForms.swift` (curated 38-token list, homographs `de`/`sind`/`müesli` excluded, CC BY-SA 4.0 attribution) + iOS + macOS parity tests (R4, R5)
+- [ ] 20.08-02-PLAN.md — Wave 2: `CleanupService.gateLLMDialect` + `tokenizeForDialectGate` + integration call at `TextProcessingService.swift` ~line 97 (BEFORE existing `gateLLMOutput`) + R1/R2/R3 unit tests + R7 stacking-safe integration test on both platforms (depends on 20.08-01)
+- [ ] 20.08-03-PLAN.md — Wave 3 (CHECKPOINT): macOS Debug-only spike harness `CleanupSpikeView` — runs 5 fixtures × 4 prompt variants with seed 0xDEADBEEF; user picks winner and records `20.08-SPIKE-RESULTS.md` with verbatim prompt block to ship in Plan 04 (R8) (depends on 20.08-02)
+- [ ] 20.08-04-PLAN.md — Wave 4 (CHECKPOINT): replace HELVETISMS block in `CleanupPrompt.swift` with spike-winner verbatim text + R6 contract tests on macOS + R9 UAT replay on macOS Release + iOS Release; phase ships GREEN (depends on 20.08-03)
 
 ---
 
@@ -181,4 +187,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-25 — Phase 19.7 (macOS Hygiene) complete: all 4 plans shipped, verifier passed 22/22 must-haves, D1 Finder UAT user-approved. Phase 18 iCloud Sync deferred. Code review surfaced 11 advisory findings (0 critical, 5 warnings, 6 info) in 19.7-REVIEW.md — suitable for follow-up cleanup.*
+*Last updated: 2026-04-27 — Phase 20.08 (LLM Swiss-Ification Suppression) plans created: 4 plans across 4 waves; gate-then-spike-then-prompt structure; Plans 03 and 04 carry user checkpoints (manual spike harness + R9 UAT replay).*
