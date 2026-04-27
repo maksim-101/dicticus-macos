@@ -73,10 +73,23 @@ struct CleanupPrompt {
         if swissEnabled && language == "de" {
             prompt += "STYLE: Use Swiss German orthography (never use ß, always ss). "
             prompt += "Use Swiss thousands separator style (e.g. 1'250, not 1.250).\n"
-            // D-D2 (Phase 19.5): Helvetism preservation block.
-            prompt += "HELVETISMS: Prefer these Swiss German words when applicable: "
-            prompt += SwissHelvetisms.words.joined(separator: ", ")
-            prompt += ".\n"
+            // Phase 20.06 F-20-UAT-01: HELVETISMS block reworked preservation-first.
+            // Phase 19.5 D-D2 wording ("Prefer these Swiss German words when applicable")
+            // caused Gemma 4 E2B to translate High German → Swiss German dialect
+            // (auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, …) on UAT 2026-04-27.
+            // The block now leads with explicit preservation, restricts allowed
+            // normalizations, enumerates a NEGATIVE trap list, and keeps the positive
+            // word list as a vocabulary anchor only for words the speaker actually used.
+            prompt += "HELVETISMS: Preserve the speaker's dialect register exactly. "
+            prompt += "Only change ß→ss and decimal-comma→period. "
+            prompt += "Do NOT replace High German words with Swiss German equivalents. "
+            prompt += "Specifically: do NOT apply any of these substitutions — "
+            prompt += "auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, einkaufen→iikaufe, "
+            prompt += "natürlich→natürli, Dingen→Sache, gegessen→gässe, später→speter, "
+            prompt += "beiden→beidne, Seite→Siite, etwas→öppis, Kleines→chliins, "
+            prompt += "gekauft→chauft. "
+            prompt += "If — and only if — the speaker actually used a Swiss word, keep it as-is "
+            prompt += "(reference list: \(SwissHelvetisms.words.joined(separator: ", "))).\n"
         }
 
         // D-B1b (Phase 19.5): Currency anti-flip prompt anchor. Fires on ANY
