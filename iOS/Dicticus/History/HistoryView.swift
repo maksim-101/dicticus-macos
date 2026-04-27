@@ -88,6 +88,13 @@ struct HistoryRow: View {
             }
         }
         .padding(.vertical, 4)
+        .contextMenu {
+            Button {
+                copyToClipboard()
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+        }
         .accessibilityElement(children: .combine)
     }
 
