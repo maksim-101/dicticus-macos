@@ -106,6 +106,9 @@ struct CleanupPrompt {
                 prompt += "STRICT: Keep currency exactly as written ("
                 prompt += labels
                 prompt += "). Do NOT translate, convert, or substitute one currency for another.\n"
+                // Phase 20.06 F-20-UAT-02: speaker-explicit anchor against the
+                // wrong-direction Franken→Euro flip the LLM exhibited on UAT.
+                prompt += "Explicit currency words from the speaker are authoritative — never substitute Franken with Euro or vice versa.\n"
             }
         }
 

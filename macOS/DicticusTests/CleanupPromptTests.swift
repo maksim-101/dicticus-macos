@@ -159,4 +159,22 @@ final class CleanupPromptTests: XCTestCase {
             "HELVETISMS must still surface at least one canonical Swiss word as a positive anchor"
         )
     }
+
+    // MARK: - Phase 20.06 F-20-UAT-02 — STRICT speaker-explicit currency anchor
+
+    func testStrictBlockContainsSpeakerExplicitCurrencyAnchor() {
+        let prompt = CleanupPrompt.build(text: "Das hat 5 Franken gekostet", language: "de", useSwissGerman: true)
+        XCTAssertTrue(
+            prompt.contains("Explicit currency words from the speaker are authoritative — never substitute Franken with Euro or vice versa."),
+            "STRICT block must contain the speaker-explicit currency anchor (F-20-UAT-02). Got prompt:\n\(prompt)"
+        )
+    }
+
+    func testStrictBlockNotEmittedWithoutCurrency() {
+        let prompt = CleanupPrompt.build(text: "Heute ist ein schöner Tag", language: "de", useSwissGerman: true)
+        XCTAssertFalse(
+            prompt.contains("Explicit currency words from the speaker are authoritative"),
+            "STRICT speaker-explicit anchor must only fire when input contains a currency token"
+        )
+    }
 }
