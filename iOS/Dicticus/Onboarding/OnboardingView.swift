@@ -126,18 +126,19 @@ struct OnboardingView: View {
                 
                 if !warmupService.hasModels && !warmupService.isWarming {
                     Button("Download Now (Wi-Fi Recommended)") {
-                        warmupService.warmup()
+                        warmupService.warmup(force: true)
                     }
                     .buttonStyle(.borderedProminent)
                 } else if warmupService.isWarming {
                     VStack(spacing: 12) {
                         ProgressView(value: warmupService.downloadProgress, total: 1.0)
                             .progressViewStyle(.linear)
-                        
+
                         Text(warmupService.downloadStatus)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        
+                            .multilineTextAlignment(.center)
+
                         Text("\(Int(warmupService.downloadProgress * 100))%")
                             .font(.caption2).monospacedDigit()
                             .foregroundColor(.accentColor)

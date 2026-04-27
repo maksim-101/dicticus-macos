@@ -32,18 +32,18 @@ struct AiCleanupSection: View {
     @State private var isModelCached: Bool = IOSModelDownloadService.isModelCached()
 
     // MARK: - AppGroup suite (D-08)
+    //
+    // Phase 20.06 UAT fix: use `@AppStorage` (not a manual UserDefaults Binding)
+    // for `aiCleanupEnabled`. SwiftUI does not observe synchronous reads of
+    // `UserDefaults.bool(forKey:)`, so the prior implementation showed a stale
+    // download panel until an unrelated re-render (e.g. record-button tap) ran.
+    // `@AppStorage` registers a KVO observer that invalidates the view body
+    // immediately when the toggle flips.
 
     private static let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus")!
 
-    private func appGroupBinding(_ key: String, default defaultValue: Bool) -> Binding<Bool> {
-        Binding(
-            get: {
-                let defaults = Self.appGroupDefaults
-                return defaults.object(forKey: key) == nil ? defaultValue : defaults.bool(forKey: key)
-            },
-            set: { Self.appGroupDefaults.set($0, forKey: key) }
-        )
-    }
+    @AppStorage("aiCleanupEnabled", store: appGroupDefaults) private var aiCleanupEnabled: Bool = false
+    @AppStorage("useSwissGerman", store: appGroupDefaults) private var useSwissGerman: Bool = true
 
     // MARK: - Body
 
@@ -59,7 +59,7 @@ struct AiCleanupSection: View {
 
             if IOSModelWarmupService.isAiCleanupSupported {
                 aiCleanupToggle
-                if aiCleanupEnabledValue {
+                if aiCleanupEnabled {
                     statusRow
                     if !isModelCached {
                         downloadPanel
@@ -88,19 +88,14 @@ struct AiCleanupSection: View {
 
     // MARK: - Subviews
 
-    private var aiCleanupEnabledValue: Bool {
-        let defaults = Self.appGroupDefaults
-        return defaults.object(forKey: "aiCleanupEnabled") == nil ? false : defaults.bool(forKey: "aiCleanupEnabled")
-    }
-
     private var aiCleanupToggle: some View {
-        Toggle(isOn: appGroupBinding("aiCleanupEnabled", default: false)) {
+        Toggle(isOn: $aiCleanupEnabled) {
             Label("AI Cleanup", systemImage: "sparkles")
         }
     }
 
     private var swissGermanToggle: some View {
-        Toggle(isOn: appGroupBinding("useSwissGerman", default: true)) {
+        Toggle(isOn: $useSwissGerman) {
             Label("Swiss German Spelling", systemImage: "character.bubble")
         }
     }

@@ -35,7 +35,11 @@ class CleanupService: ObservableObject, CleanupProvider {
 
     /// Whether the LLM model is loaded and ready for inference.
     /// Set to true after successful loadModel() call.
-    private(set) var isLoaded = false
+    /// nonisolated(unsafe): loadModel runs off-MainActor (see Phase 20.06 fix —
+    /// llama_model_load_from_file is a synchronous ~30s C call that previously
+    /// blocked the UI when invoked via MainActor.run). Reads from cleanup()
+    /// (MainActor) happen long after warmup completes — race window is benign.
+    nonisolated(unsafe) private(set) var isLoaded = false
 
     // MARK: - llama.cpp resources (kept warm between calls)
 
@@ -75,14 +79,19 @@ class CleanupService: ObservableObject, CleanupProvider {
     ///     back to raw ASR text. Default 8.0 (D-04, iOS-tuned).
     ///   - maxOutputTokens: Upper bound on generated tokens. Default 512 —
     ///     dictation outputs are always ≤ input length so 512 is generous.
-    init(inferenceTimeoutSeconds: TimeInterval = 8.0, maxOutputTokens: Int32 = 512) {
+    /// nonisolated so the warmup pipeline can construct the service from a
+    /// background `Task.detached`, avoiding a MainActor hop just to allocate
+    /// a couple of stored properties.
+    nonisolated init(inferenceTimeoutSeconds: TimeInterval = 8.0, maxOutputTokens: Int32 = 512) {
         self.inferenceTimeoutSeconds = inferenceTimeoutSeconds
         self.maxOutputTokens = maxOutputTokens
     }
 
     /// Initialize the llama.cpp backend.
     /// Must be called once before loadModel(). Called during app warmup.
-    static func initializeBackend() {
+    /// nonisolated so the warmup pipeline can call it from a `Task.detached`
+    /// without bouncing through MainActor.
+    nonisolated static func initializeBackend() {
         llama_backend_init()
     }
 
@@ -93,7 +102,13 @@ class CleanupService: ObservableObject, CleanupProvider {
     ///
     /// - Parameter modelPath: File path to the cached GGUF model
     /// - Throws: CleanupError if model file cannot be loaded or context creation fails
-    func loadModel(from modelPath: String) throws {
+    ///
+    /// nonisolated: `llama_model_load_from_file` is a synchronous C call that
+    /// takes ~30s on iOS for a 3 GB GGUF. Calling it on MainActor freezes the
+    /// UI (Phase 20.06 hotfix — black-screen reproduce). All mutated state is
+    /// either `nonisolated(unsafe)` (model/context/sampler/isLoaded) or `let`
+    /// (config), so it's safe to run from a detached background task.
+    nonisolated func loadModel(from modelPath: String) throws {
         // Model parameters: offload all layers to Metal GPU (D-05)
         var modelParams = llama_model_default_params()
         modelParams.n_gpu_layers = 99  // All layers on Metal GPU

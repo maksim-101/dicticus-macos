@@ -145,14 +145,14 @@ class ModelWarmupService: ObservableObject {
 
                     let modelPath = ModelDownloadService.modelPath().path
                     warmupLog.info("LLM model path: \(modelPath)")
-                    let cleanup = try await MainActor.run { () throws -> CleanupService in
-                        CleanupService.initializeBackend()
-                        // Preserve pre-extraction macOS timeout (5 s) — the shared
-                        // init default is 8 s, tuned for iOS (D-04).
-                        let service = CleanupService(inferenceTimeoutSeconds: 5.0)
-                        try service.loadModel(from: modelPath)
-                        return service
-                    }
+                    // Phase 20.06 hotfix: CleanupService.init and .loadModel are now
+                    // nonisolated, so `llama_model_load_from_file` (synchronous ~30s C
+                    // call) runs on this detached task instead of blocking MainActor.
+                    CleanupService.initializeBackend()
+                    // Preserve pre-extraction macOS timeout (5 s) — the shared
+                    // init default is 8 s, tuned for iOS (D-04).
+                    let cleanup = CleanupService(inferenceTimeoutSeconds: 5.0)
+                    try cleanup.loadModel(from: modelPath)
 
                     warmupLog.info("LLM model loaded successfully")
                     await MainActor.run {
