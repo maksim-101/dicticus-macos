@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
 stopped_at: Phase 20.08 context gathered
-last_updated: "2026-04-27T19:07:56.615Z"
-last_activity: 2026-04-27 -- Phase 20.06 shipped (Phase 20 closure unblocked)
+last_updated: "2026-04-27T20:10:44.434Z"
+last_activity: 2026-04-27 -- Phase 20.08 execution started
 progress:
   total_phases: 9
   completed_phases: 6
-  total_plans: 31
+  total_plans: 35
   completed_plans: 31
-  percent: 100
+  percent: 89
 ---
 
 # Project State: Dicticus
@@ -24,11 +24,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 20.06 shipped → Phase 20.08 next (LLM Swiss-ification suppression — fresh UAT showed Gemma 4 E2B still translates clean High German to Swiss dialect on the AI-cleanup ON + Swiss ON path; 20.06's preservation-first prompt is ignored). Phase 20.07 (rules-only ASR-mishearing recovery) is queued behind it.
+**Current focus:** Phase 20.08 — llm-swiss-ification-suppression
 
 ## Current Position
 
-Phase: 20.06 (ai-cleanup-behavioural-hotfix) — SHIPPED 2026-04-27
+Phase: 20.08 (llm-swiss-ification-suppression) — EXECUTING
+Plan: 1 of 4
 Plans: 4 of 4 complete + 20.06-05-FIX (iOS warmup hang + onboarding progress + Settings @AppStorage reactivity + HistoryRow duplicate-chevron + ASR cache-path check via FluidAudio API)
 UAT: GREEN on Phase 20.06's stated goal (LLM hallucination demotion + currency idempotency on the AI-cleanup-ON path). Post-ship rebuild surfaced two new failure modes: rules-only `4, Franken50 Euro` (→ Phase 20.07) and LLM Swiss-ification of clean High German on AI-cleanup ON + Swiss ON (→ Phase 20.08).
 Builds verified: iOS BUILD SUCCEEDED on iPhone 17 sim (OS 26.4.1). macOS Debug previously verified.
@@ -36,7 +37,7 @@ Builds verified: iOS BUILD SUCCEEDED on iPhone 17 sim (OS 26.4.1). macOS Debug p
 Next: `/gsd-discuss-phase 20.08` — LLM Swiss-Ification Suppression (more pressing than 20.07 since it affects the default AI-cleanup ON path). Phase 20.07 queued behind it.
 
 Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-CONTEXT.md
-Last activity: 2026-04-27 -- Phase 20.06 shipped (Phase 20 closure unblocked)
+Last activity: 2026-04-27 -- Phase 20.08 execution started
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT

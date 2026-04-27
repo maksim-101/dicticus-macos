@@ -34,7 +34,7 @@
 | 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Shipped 2026-04-27 | UAT findings closed via Phase 20.06; AI-cleanup path GREEN on the test sentence |
 | 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 4/4 | Shipped 2026-04-27 | HELVETISMS dialect preserved + currency idempotency + iOS history gestures + Settings-toggle reactivity (UAT GREEN on AI-cleanup path) |
 | 20.07. Rules-only ASR-Mishearing Recovery | v2.1 | 0/? | Planned | Rules-only Swiss path produces unrecoverable shapes when ASR drifts (e.g. `4, Franken50 Euro`) — needs an aggressive split-rule with false-positive guards |
-| 20.08. LLM Swiss-Ification Suppression | v2.1 | 0/4 | Planned | AI-cleanup ON + Swiss ON path: LLM still translates clean High German into Swiss dialect (`auf der anderen Seite` → `uf de andere Siite`, `wahrscheinlich` → `wahrschiinli`) despite 20.06's preservation-first prompt. Fix: dialect-suppression gate + empirical prompt restructure via spike harness |
+| 20.08. LLM Swiss-Ification Suppression | v2.1 | 1/4 | In Progress|  |
 
 ---
 
@@ -164,10 +164,10 @@ Plans:
 
 **Cross-platform parity rule:** dialect gate + SwissDialectForms data + integration tests ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity). `CleanupPromptTests.swift` remains macOS-only by 20.06-01 precedent.
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
-- [ ] 20.08-01-PLAN.md — Wave 1: `Shared/Models/SwissDialectForms.swift` (curated 38-token list, homographs `de`/`sind`/`müesli` excluded, CC BY-SA 4.0 attribution) + iOS + macOS parity tests (R4, R5)
+- [x] 20.08-01-PLAN.md — Wave 1: `Shared/Models/SwissDialectForms.swift` (curated 38-token list, homographs `de`/`sind`/`müesli` excluded, CC BY-SA 4.0 attribution) + iOS + macOS parity tests (R4, R5)
 - [ ] 20.08-02-PLAN.md — Wave 2: `CleanupService.gateLLMDialect` + `tokenizeForDialectGate` + integration call at `TextProcessingService.swift` ~line 97 (BEFORE existing `gateLLMOutput`) + R1/R2/R3 unit tests + R7 stacking-safe integration test on both platforms (depends on 20.08-01)
 - [ ] 20.08-03-PLAN.md — Wave 3 (CHECKPOINT): macOS Debug-only spike harness `CleanupSpikeView` — runs 5 fixtures × 4 prompt variants with seed 0xDEADBEEF; user picks winner and records `20.08-SPIKE-RESULTS.md` with verbatim prompt block to ship in Plan 04 (R8) (depends on 20.08-02)
 - [ ] 20.08-04-PLAN.md — Wave 4 (CHECKPOINT): replace HELVETISMS block in `CleanupPrompt.swift` with spike-winner verbatim text + R6 contract tests on macOS + R9 UAT replay on macOS Release + iOS Release; phase ships GREEN (depends on 20.08-03)
