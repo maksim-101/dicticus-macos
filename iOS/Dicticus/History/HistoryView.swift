@@ -3,7 +3,7 @@ import SwiftUI
 struct HistoryView: View {
     @EnvironmentObject var historyService: HistoryService
     @State private var searchText = ""
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -15,12 +15,17 @@ struct HistoryView: View {
                     )
                 } else {
                     ForEach(historyService.entries) { entry in
-                        HistoryRow(entry: entry)
+                        NavigationLink(value: entry) {
+                            HistoryRow(entry: entry)
+                        }
                     }
                     .onDelete(perform: deleteEntries)
                 }
             }
             .navigationTitle("History")
+            .navigationDestination(for: TranscriptionEntry.self) { entry in
+                HistoryDetailView(entry: entry)
+            }
             .searchable(text: $searchText, prompt: "Search transcriptions")
             .onChange(of: searchText) { _, newValue in
                 historyService.load(query: newValue)
@@ -32,7 +37,7 @@ struct HistoryView: View {
             }
         }
     }
-    
+
     private func deleteEntries(at offsets: IndexSet) {
         for index in offsets {
             if let id = historyService.entries[index].id {
@@ -45,7 +50,7 @@ struct HistoryView: View {
 struct HistoryRow: View {
     let entry: TranscriptionEntry
     @State private var showingCopiedMessage = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -85,9 +90,16 @@ struct HistoryRow: View {
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
     }
-    
+
     private func copyToClipboard() {
-        UIPasteboard.general.string = entry.text
+        let toCopy: String
+        switch CleanupCopyMode.current {
+        case .raw:
+            toCopy = entry.rawText.isEmpty ? entry.text : entry.rawText
+        case .polished:
+            toCopy = entry.text
+        }
+        UIPasteboard.general.string = toCopy
         withAnimation {
             showingCopiedMessage = true
         }

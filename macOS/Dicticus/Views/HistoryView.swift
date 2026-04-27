@@ -3,6 +3,7 @@ import SwiftUI
 /// A window view for browsing transcription history.
 ///
 /// Per UX-02/UX-03/UX-04: Searchable list with copy support and highlighting.
+/// Per Phase 20.05: Inline disclosure exposing raw vs polished output for UAT/visibility.
 struct HistoryView: View {
     @EnvironmentObject var historyService: HistoryService
     @State private var searchText = ""
@@ -23,7 +24,7 @@ struct HistoryView: View {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                
+
                 TextField("Search history\u{2026}", text: $searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
@@ -31,9 +32,9 @@ struct HistoryView: View {
                     .onChange(of: searchText) { _, newValue in
                         historyService.load(query: newValue)
                     }
-                
+
                 if !searchText.isEmpty {
-                    Button(action: { 
+                    Button(action: {
                         searchText = ""
                         historyService.load(query: "")
                     }) {
@@ -86,9 +87,9 @@ struct HistoryView: View {
                 Text("\(historyService.entries.count) entries")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                
+
                 Spacer()
-                
+
                 if !selection.isEmpty {
                     Button("Delete Selected") {
                         for uuid in selection {
@@ -140,77 +141,153 @@ struct HistoryRow: View {
     let entry: TranscriptionEntry
     let formatter: DateFormatter
     let searchTerm: String
-    
+
     @State private var showCopied = false
+    @State private var isExpanded: Bool = false
+    @State private var selectedVariant: CleanupCopyMode = .raw
+
+    private var displayedText: String {
+        switch selectedVariant {
+        case .raw:
+            return entry.rawText.isEmpty ? entry.text : entry.rawText
+        case .polished:
+            return entry.text
+        }
+    }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(formatter.string(from: entry.createdAt))
-                        .font(.system(size: 11, weight: .medium))
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top, spacing: 12) {
+                // Disclosure chevron
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                    
-                    HStack(spacing: 4) {
-                        TagView(text: entry.language.uppercased(), color: .blue)
-                        TagView(text: entry.mode == "plain" ? "Plain" : "Cleanup", color: entry.mode == "plain" ? .gray : .purple)
-                    }
+                        .frame(width: 14, height: 14)
                 }
-                
-                highlightedText(entry.text, term: searchTerm)
-                    .font(.system(size: 13))
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            
-            Spacer()
-            
-            // Dedicated Copy Button (UX Requirement)
-            Button {
-                copyToClipboard(entry.text)
-                withAnimation {
-                    showCopied = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    withAnimation { showCopied = false }
-                }
-            } label: {
-                Group {
-                    if showCopied {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    } else {
-                        Image(systemName: "doc.on.doc")
+                .buttonStyle(.plain)
+                .help(isExpanded ? "Collapse" : "Show raw / polished")
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(formatter.string(from: entry.createdAt))
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            TagView(text: entry.language.uppercased(), color: .blue)
+                            TagView(text: entry.mode == "plain" ? "Plain" : "Cleanup", color: entry.mode == "plain" ? .gray : .purple)
+                        }
+                    }
+
+                    highlightedText(entry.text, term: searchTerm)
+                        .font(.system(size: 13))
+                        .lineLimit(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                // Dedicated Copy Button (UX Requirement)
+                Button {
+                    copyToClipboard(rowCopyText())
+                    withAnimation {
+                        showCopied = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        withAnimation { showCopied = false }
+                    }
+                } label: {
+                    Group {
+                        if showCopied {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            Image(systemName: "doc.on.doc")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .font(.system(size: 12))
+                    .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.plain)
+                .help("Copy to clipboard (uses Settings > Copy mode)")
+            }
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Variant", selection: $selectedVariant) {
+                        Text("Raw").tag(CleanupCopyMode.raw)
+                        Text("Polished").tag(CleanupCopyMode.polished)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+
+                    ScrollView {
+                        Text(displayedText)
+                            .font(.system(size: 12))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 200)
+
+                    HStack {
+                        Spacer()
+                        Button {
+                            copyToClipboard(displayedText)
+                            withAnimation { showCopied = true }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                withAnimation { showCopied = false }
+                            }
+                        } label: {
+                            Label("Copy \(selectedVariant == .raw ? "Raw" : "Polished")",
+                                  systemImage: "doc.on.doc")
+                                .font(.system(size: 11))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
                 }
-                .font(.system(size: 12))
-                .frame(width: 20, height: 20)
+                .padding(.leading, 26)
+                .padding(.top, 4)
+                .padding(.bottom, 4)
             }
-            .buttonStyle(.plain)
-            .help("Copy to clipboard")
         }
         .padding(.vertical, 8)
     }
-    
+
+    /// Per-row Copy honors the global default; in-disclosure Copy honors the in-view Picker.
+    private func rowCopyText() -> String {
+        switch CleanupCopyMode.current {
+        case .raw:
+            return entry.rawText.isEmpty ? entry.text : entry.rawText
+        case .polished:
+            return entry.text
+        }
+    }
+
     private func copyToClipboard(_ text: String) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
     }
-    
+
     /// Helper to generate highlighted text based on search term
     private func highlightedText(_ text: String, term: String) -> Text {
         guard !term.isEmpty, let range = text.range(of: term, options: .caseInsensitive) else {
             return Text(text)
         }
-        
+
         let beforeRange = text[..<range.lowerBound]
         let matchRange = text[range]
         let afterRange = text[range.upperBound...]
-        
+
         return Text(String(beforeRange))
             + Text(String(matchRange))
                 .bold()
@@ -222,7 +299,7 @@ struct HistoryRow: View {
 struct TagView: View {
     let text: String
     let color: Color
-    
+
     var body: some View {
         Text(text)
             .font(.system(size: 9, weight: .bold))
