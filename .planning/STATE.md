@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 20 code-complete; UAT 2026-04-27 surfaced behavioural regressions — LLM translates High German → Swiss German dialect when Swiss toggle ON (HELVETISMS prompt too broad), wrong-direction currency flip (Franken→Euro on iOS, "Euro Euro" duplication on macOS), iOS long-press shows path/link instead of text, iOS truncation discoverability gap (HistoryDetailView shipped but tap not surfaced). 4 findings + 1 minor logged in 20-UAT-FINDINGS.md. Phase 20.06 needed to fix behaviourally (artifact-level Phase 20 verification still 12/12 GREEN).
-last_updated: "2026-04-27T00:00:00.000Z"
-last_activity: 2026-04-27 -- Phase 20 UAT complete; Phase 20.06 plan needed
+stopped_at: Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped (15 atomic commits + 1 hotfix), verifier 22/22 must-haves passed, code review advisory (0 critical / 5 warning / 6 info), D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 all resolved. macOS Debug build SUCCEEDED.
+last_updated: "2026-04-27T04:59:54.917Z"
+last_activity: 2026-04-27 -- Phase 20.06 planning complete
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 27
-  completed_plans: 27
-  percent: 100
+  total_phases: 7
+  completed_phases: 6
+  total_plans: 31
+  completed_plans: 28
+  percent: 90
 ---
 
 # Project State: Dicticus
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 Phase: 20 (ai-cleanup-demotion-uat-visibility) — CODE COMPLETE; UAT REGRESSIONS LOGGED
 Plan: 5 of 5 plans shipped
-Status: Phase 20.06 needed (behavioural hotfix). UAT findings: .planning/phases/20-ai-cleanup-demotion-uat-visibility/20-UAT-FINDINGS.md
+Status: Ready to execute
 Resume: `/gsd-plan-phase 20.06` — see UAT-FINDINGS.md for scope (4 findings: HELVETISMS dialect preservation, currency idempotency, iOS long-press gesture, iOS chevron discoverability)
 
 UAT hotfix commits:
@@ -40,7 +40,7 @@ UAT hotfix commits:
 Next: `/gsd-plan-phase 20` — AI Cleanup Demotion + UAT Visibility (rules-first deterministic, optional LLM polish, raw/polished toggle, iOS history detail view, HistoryService graceful degradation).
 
 Resume file: ROADMAP.md → Phase 20 (to be planned)
-Last activity: 2026-04-26 -- Phase 20 execution started
+Last activity: 2026-04-27 -- Phase 20.06 planning complete
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
