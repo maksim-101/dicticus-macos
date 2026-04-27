@@ -28,6 +28,19 @@ struct SettingsView: View {
 
                 AiCleanupSection()   // Phase 19 Wave 4 — CLEAN-01
 
+                Section {
+                    Picker("Copy from history rows", selection: copyModeBinding) {
+                        Text("Raw").tag(CleanupCopyMode.raw)
+                        Text("Polished").tag(CleanupCopyMode.polished)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("settings.copyMode")
+                } header: {
+                    Text("History")
+                } footer: {
+                    Text("Choose what the Copy button on each history row puts on your clipboard. Raw = unedited ASR output; Polished = post-cleanup text.")
+                }
+
                 Section("Integration") {
                     NavigationLink(destination: SetupGuidesView()) {
                         Label("Setup Guides", systemImage: "questionmark.circle")
@@ -130,6 +143,13 @@ struct SettingsView: View {
         }
     }
     
+    private var copyModeBinding: Binding<CleanupCopyMode> {
+        Binding(
+            get: { CleanupCopyMode.current },
+            set: { CleanupCopyMode.current = $0 }
+        )
+    }
+
     private static let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus")!
 
     private func appGroupBinding(_ key: String, default defaultValue: Bool) -> Binding<Bool> {
