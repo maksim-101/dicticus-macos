@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0528BC851625382CEEC52741 /* CleanupSpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A122EFDB00326E2C4702EAF /* CleanupSpikeView.swift */; };
 		064AC4F957C8EF696D6B7219 /* CurrencyAntiFlip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739AB9DAFF19908E5ED03849 /* CurrencyAntiFlip.swift */; };
 		073413FEAF9F48DB66227D05 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0413050843463E9F8CA2EE0 /* DictionaryService.swift */; };
 		0B251534313C3C9924FFFF75 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA9C4B75271791A883189FC /* HistoryView.swift */; };
@@ -124,6 +125,7 @@
 		685C77F14D62DFF404AEC44C /* SparkleUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdater.swift; sourceTree = "<group>"; };
 		698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRow.swift; sourceTree = "<group>"; };
 		6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManagerTests.swift; sourceTree = "<group>"; };
+		6A122EFDB00326E2C4702EAF /* CleanupSpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupSpikeView.swift; sourceTree = "<group>"; };
 		6B52A66AA25C8485BD037DF6 /* CleanupCopyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCopyMode.swift; sourceTree = "<group>"; };
 		6C1F75D0E0C65116FAFDBF26 /* ITNUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ITNUtility.swift; sourceTree = "<group>"; };
 		70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManagerTests.swift; sourceTree = "<group>"; };
@@ -290,6 +292,7 @@
 			isa = PBXGroup;
 			children = (
 				41F13903D57CF4BA4E734A3C /* AiCleanupInfoView.swift */,
+				6A122EFDB00326E2C4702EAF /* CleanupSpikeView.swift */,
 				2D6EAC45934BA02E00EE3D4E /* DictionaryView.swift */,
 				FAA9C4B75271791A883189FC /* HistoryView.swift */,
 				3C2FE4D163039817544B746E /* HotkeySettingsView.swift */,
@@ -487,6 +490,7 @@
 				6584AA0D48759E0CB309B073 /* CleanupPrompt.swift in Sources */,
 				503C6C930CABE10A827C672C /* CleanupProvider.swift in Sources */,
 				A9AA25E1C6D1BFCEFD1E4974 /* CleanupService.swift in Sources */,
+				0528BC851625382CEEC52741 /* CleanupSpikeView.swift in Sources */,
 				064AC4F957C8EF696D6B7219 /* CurrencyAntiFlip.swift in Sources */,
 				5216110B217D89AAF9AE75E8 /* DictationMode.swift in Sources */,
 				B6676509A8F22E2B5AD9D74C /* DicticusApp.swift in Sources */,
