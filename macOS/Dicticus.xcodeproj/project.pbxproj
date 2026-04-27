@@ -72,6 +72,7 @@
 		F02F9ADF3A14E1893A9FB86C /* ModifierHotkeyListenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9ACE74779B554BB24700B58 /* ModifierHotkeyListenerTests.swift */; };
 		F091E0461FF34468152BD434 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C2109BE8A6945F9B0A118D59 /* KeyboardShortcuts */; };
 		F1D688F080622255ECE193C4 /* TextProcessingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C80ED16FD0F19347A8CF3B /* TextProcessingServiceTests.swift */; };
+		AB59134D767D8C7E9DFFF247 /* SwissDialectForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = F452E54468F5A1D879EFC822 /* SwissDialectForms.swift */; };
 		F31584404AC6807E50F37208 /* SwissHelvetisms.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9E348896EA5C944445BAEB /* SwissHelvetisms.swift */; };
 		F649510C18EE78D7333FB9C5 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 09CF30D7134E0AFC4C73F1EB /* LaunchAtLogin */; };
 		F6BB8CBCCE3B9B70756B6C39 /* TextInjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FEF465F3ABEBBFD0389EB5 /* TextInjectorTests.swift */; };
@@ -150,6 +151,7 @@
 		E8A0E6E52D5145B754E1607B /* KeyboardShortcuts+Names.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcuts+Names.swift"; sourceTree = "<group>"; };
 		EC9B62BECB9E34B3E1839ECA /* SwissNumberFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissNumberFormatter.swift; sourceTree = "<group>"; };
 		ED987F4A27CFA0994DED7105 /* TextProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextProcessingService.swift; sourceTree = "<group>"; };
+		F452E54468F5A1D879EFC822 /* SwissDialectForms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissDialectForms.swift; sourceTree = "<group>"; };
 		ED9E348896EA5C944445BAEB /* SwissHelvetisms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissHelvetisms.swift; sourceTree = "<group>"; };
 		F374F460F68CBDCBA30B3DFF /* CleanupCopyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCopyMode.swift; sourceTree = "<group>"; };
 		F562774C8D2D436CE727855D /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
@@ -323,6 +325,7 @@
 				F374F460F68CBDCBA30B3DFF /* CleanupCopyMode.swift */,
 				6112C8832354201428B61A5E /* CleanupPrompt.swift */,
 				B0070ED7F0DEDD5E6F26CCA3 /* DictationMode.swift */,
+				F452E54468F5A1D879EFC822 /* SwissDialectForms.swift */,
 				ED9E348896EA5C944445BAEB /* SwissHelvetisms.swift */,
 				D7CB6EC65267F521F855AC00 /* TranscriptionResult.swift */,
 			);
@@ -510,6 +513,7 @@
 				1718F875E73BC178C22EA283 /* SparkleUpdater.swift in Sources */,
 				4502BB093F97658271459556 /* SwissDefaultMigration.swift in Sources */,
 				F8E5DB3EF11FF7174FDC5C3B /* SwissGermanToggleRow.swift in Sources */,
+				AB59134D767D8C7E9DFFF247 /* SwissDialectForms.swift in Sources */,
 				F31584404AC6807E50F37208 /* SwissHelvetisms.swift in Sources */,
 				1CB1C7B6D6A821C760AF4282 /* SwissNumberFormatter.swift in Sources */,
 				2CCDDDB512E51308F0A0D6D5 /* SystemSettingsURLs.swift in Sources */,
