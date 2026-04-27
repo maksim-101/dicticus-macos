@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 19.7 (macOS Hygiene) complete — 4/4 plans shipped (15 atomic commits + 1 hotfix), verifier 22/22 must-haves passed, code review advisory (0 critical / 5 warning / 6 info), D1 Finder UAT user-approved 2026-04-25. M1/M2/M3/D1 all resolved. macOS Debug build SUCCEEDED.
-last_updated: "2026-04-26T17:34:36.961Z"
-last_activity: 2026-04-26 -- Phase 20 execution started
+stopped_at: Phase 20 (AI Cleanup Demotion + UAT Visibility) code-complete — 5/5 plans shipped (Wave 1 RED scaffolding, Action 1 LLM rein-in, Action 2 rules-first, Action 4 graceful App-Group fallback, Action 3 raw/polished visibility). Pending /gsd-verify-work + /gsd-uat (Gemma hallucination resilience, currency-fold, self-correction, raw/polished toggle, App-Group-stripped Settings warning).
+last_updated: "2026-04-27T00:00:00.000Z"
+last_activity: 2026-04-27 -- Phase 20 plan-level work complete
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 27
-  completed_plans: 23
-  percent: 85
+  completed_plans: 27
+  percent: 100
 ---
 
 # Project State: Dicticus
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 20 (ai-cleanup-demotion-uat-visibility) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 20
+Phase: 20 (ai-cleanup-demotion-uat-visibility) — CODE COMPLETE
+Plan: 5 of 5
+Status: Pending /gsd-verify-work + UAT
 
 UAT hotfix commits:
   • 6268f11 — fix(19.5): strip leaked Gemma chat-template fragments
