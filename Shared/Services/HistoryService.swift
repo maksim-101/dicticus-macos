@@ -3,7 +3,13 @@ import GRDB
 import os.log
 
 /// Metadata for a transcription history entry.
-struct TranscriptionEntry: Identifiable, Codable, FetchableRecord, PersistableRecord {
+///
+/// Phase 20.05 ACT-3-VISIBILITY: `Hashable` is required so iOS HistoryView can
+/// use `NavigationLink(value: entry)` + `.navigationDestination(for: TranscriptionEntry.self)`
+/// for value-based routing into HistoryDetailView. All stored properties are
+/// already Hashable (`Int64?`, `UUID`, `String`, `Date`, `Double`), so Swift
+/// synthesises the conformance — no custom `==` or `hash(into:)` needed.
+struct TranscriptionEntry: Identifiable, Codable, Hashable, FetchableRecord, PersistableRecord {
     var id: Int64? // SQLite RowID
     var uuid: UUID
     var text: String
