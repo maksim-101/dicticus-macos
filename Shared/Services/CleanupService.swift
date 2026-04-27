@@ -688,3 +688,137 @@ extension CleanupService {
             .filter { !$0.isEmpty }
     }
 }
+
+// MARK: - Phase 20.08 Spike harness helpers (DEBUG-only, D-02/D-03)
+
+#if DEBUG
+extension CleanupService {
+
+    /// DEBUG-only helper for the Phase 20.08 prompt-spike harness.
+    ///
+    /// Bypasses `CleanupPrompt.build(...)` and feeds an arbitrary pre-built
+    /// prompt string directly to the same inference loop used by `cleanup(...)`.
+    /// Mirrors the production isInferring guard, state transition, and
+    /// task-group timeout structure from cleanup() lines 178-242 — the only
+    /// difference is the prompt source (caller-supplied vs CleanupPrompt.build).
+    ///
+    /// Returns the post-stripPreamble LLM output, or empty string on
+    /// model-not-loaded / concurrent-call / timeout / inference failure.
+    ///
+    /// CONCURRENCY: callers MUST invoke this sequentially. The shared
+    /// `isInferring` guard (CleanupService.swift line 155, 178-181) rejects
+    /// concurrent calls. The spike harness UI loops
+    /// `for input in inputs { for variant in variants { let out = await ... } }`.
+    func cleanupWithExplicitPrompt(_ prompt: String) async -> String {
+        let log = Logger(subsystem: "com.dicticus", category: "cleanup-spike")
+
+        guard isLoaded, let model = model, let context = context, let sampler = sampler else {
+            log.warning("cleanupWithExplicitPrompt: model not loaded")
+            return ""
+        }
+
+        guard !isInferring else {
+            log.warning("cleanupWithExplicitPrompt: inference already in progress")
+            return ""
+        }
+
+        isInferring = true
+        state = .cleaning
+        defer {
+            state = .idle
+            isInferring = false
+        }
+
+        // Mirror cleanup() lines 207-242 verbatim: capture nonisolated(unsafe)
+        // C-pointer aliases, then run a throwing task group with a sleep-throw
+        // timeout task + the static inference task. Return whichever finishes
+        // first; cancel the loser.
+        nonisolated(unsafe) let unsafeModel = model
+        nonisolated(unsafe) let unsafeContext = context
+        nonisolated(unsafe) let unsafeSampler = sampler
+        let maxTokens = maxOutputTokens
+        let timeout = self.inferenceTimeoutSeconds
+
+        do {
+            let result = try await withThrowingTaskGroup(of: String.self) { group in
+                group.addTask {
+                    try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                    throw CleanupError.timeout
+                }
+
+                group.addTask {
+                    return Self.runInference(
+                        prompt: prompt,
+                        model: unsafeModel,
+                        context: unsafeContext,
+                        sampler: unsafeSampler,
+                        maxTokens: maxTokens
+                    )
+                }
+
+                guard let firstResult = try await group.next() else {
+                    return ""
+                }
+                group.cancelAll()
+                return firstResult
+            }
+
+            log.info("Spike LLM raw (\(result.count, privacy: .public) chars)")
+            return Self.stripPreamble(result)
+        } catch {
+            log.error("cleanupWithExplicitPrompt error: \(error.localizedDescription, privacy: .public)")
+            return ""
+        }
+    }
+
+    /// DEBUG-only sampler-seed override for spike reproducibility (D-03).
+    ///
+    /// Tears down the current sampler chain (`llama_sampler_free`) and
+    /// rebuilds it VERBATIM from CleanupService.loadModel lines 136-146
+    /// with `seed` substituted for the random `UInt32.random(in: ...)` in
+    /// `llama_sampler_init_dist`. All other chain nodes (temperature 0.1,
+    /// top-K 40, top-P 0.9) are reconstructed identically so spike output
+    /// matches production sampler behavior except for determinism.
+    ///
+    /// Pass `nil` (or call again with a fresh random seed) to restore
+    /// non-deterministic sampling. Production code never calls this — the
+    /// `#if DEBUG` wrap guarantees the symbol does not exist in Release.
+    ///
+    /// PRECONDITION: `loadModel()` has completed (isLoaded == true). Calling
+    /// this before warmup is a no-op (logged warning).
+    func setSamplerSeed(_ seed: UInt32?) {
+        let log = Logger(subsystem: "com.dicticus", category: "cleanup-spike")
+
+        guard isLoaded else {
+            log.warning("setSamplerSeed: called before loadModel completed — no-op")
+            return
+        }
+
+        guard !isInferring else {
+            log.warning("setSamplerSeed: inference in progress — refusing to mutate sampler")
+            return
+        }
+
+        // Tear down the existing sampler chain (allocated in loadModel via
+        // llama_sampler_chain_init). llama_sampler_free walks the chain and
+        // releases all child samplers added with llama_sampler_chain_add.
+        if let oldSampler = sampler {
+            llama_sampler_free(oldSampler)
+            sampler = nil
+        }
+
+        // Rebuild the chain verbatim from loadModel lines 136-146 with the
+        // requested seed (or a fresh random one if seed == nil — matches
+        // production behavior).
+        let resolvedSeed: UInt32 = seed ?? UInt32.random(in: 0...UInt32.max)
+        let samplerChain = llama_sampler_chain_init(llama_sampler_chain_default_params())
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.1))
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_top_k(40))
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_top_p(0.9, 1))
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_dist(resolvedSeed))
+        sampler = samplerChain
+
+        log.info("setSamplerSeed: rebuilt sampler chain with seed \(resolvedSeed, privacy: .public)")
+    }
+}
+#endif
