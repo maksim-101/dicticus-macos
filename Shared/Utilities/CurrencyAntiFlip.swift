@@ -53,6 +53,39 @@ public struct CurrencyAntiFlip {
         }
     }
 
+    // MARK: - Speaker-explicit word-form detection (Phase 20.06 F-20-UAT-02)
+
+    /// Set of currency families the speaker named by WORD ("Franken", "Euro",
+    /// "Dollar", "Pfund"). Glyphs (€/$/£) and 3-letter codes (CHF/EUR/USD/GBP)
+    /// do NOT count — those are normalizations, not what the speaker actually said.
+    ///
+    /// Used by `revertCurrencyFlip` to upgrade canonical-label decisions: when the
+    /// speaker used "Franken" and the LLM emitted "Euro" at that index, the revert
+    /// restores the WORD form ("Franken"), not the CODE form ("CHF").
+    public static func speakerExplicitCurrencies(in text: String) -> Set<Family> {
+        // Word-form alternatives only. Bounded pattern, anchored by Unicode-aware
+        // non-letter/non-digit lookarounds (matches existing `pattern` style).
+        let wordPattern = #"(?<![\p{L}\p{N}])(Franken|Rappen|Euro|Dollar|Pfund|Pounds?)(?![\p{L}\p{N}])"#
+        guard let regex = try? NSRegularExpression(pattern: wordPattern, options: [.caseInsensitive]) else {
+            return []
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, options: [], range: range)
+        var result = Set<Family>()
+        for match in matches {
+            guard let r = Range(match.range, in: text) else { continue }
+            let word = String(text[r]).lowercased()
+            switch word {
+            case "franken", "rappen": result.insert(.chf)
+            case "euro":              result.insert(.eur)
+            case "dollar":            result.insert(.usd)
+            case "pfund", "pound", "pounds": result.insert(.gbp)
+            default: continue
+            }
+        }
+        return result
+    }
+
     // MARK: - Post-LLM revert (D-B1c)
 
     /// If the LLM flipped the currency family (e.g., input had CHF/Franken,
@@ -69,18 +102,42 @@ public struct CurrencyAntiFlip {
         // No flip — input families are a subset of (or equal to) output families.
         let inputFamilies = Set(inputTokens.map(\.family))
         let outputFamilies = Set(outputTokens.map(\.family))
-        if inputFamilies == outputFamilies { return output }
+
+        // Phase 20.06 F-20-UAT-02: speaker-explicit word-form anchor.
+        // Even when family SETS match, the LLM may have substituted ONE flipped
+        // family at a positional index where the speaker used a word — e.g.
+        // input "110.57 € + 4.50 Franken" (families {.eur, .chf}) →
+        // output "110.57 Euro + 4.50 Euro" (families {.eur} — set MISMATCH).
+        // The set-mismatch case is handled below; the position-by-position
+        // word-form anchor handling kicks in when revert proceeds.
+
+        // No flip case (input families ⊆ output families) AND no positional
+        // mismatch — return output unchanged.
+        if inputFamilies == outputFamilies && inputTokens.count == outputTokens.count {
+            // Even when families match in aggregate, check if any position has a
+            // speaker-explicit word the LLM rewrote to a different form (e.g.
+            // word "Franken" → code "CHF" at the same index). For now this case
+            // is a no-op; the speaker-explicit upgrade applies only when there
+            // IS a family flip at the position. Return output unchanged.
+            return output
+        }
 
         // Different counts — too risky to positional-revert; bail.
         guard inputTokens.count == outputTokens.count else { return output }
 
-        // Positional best-match revert: replace each output token with the
-        // canonical label for the input's family at that position.
+        let speakerWords = speakerExplicitCurrencies(in: input)
+
+        // Positional best-match revert with speaker-explicit word-form upgrade.
         var result = output
         for (index, outputToken) in outputTokens.enumerated().reversed() {
             let targetFamily = inputTokens[index].family
             if outputToken.family != targetFamily {
-                let replacement = canonicalLabel(for: targetFamily, mirroring: outputToken.text)
+                let isSpeakerWord = speakerWords.contains(targetFamily)
+                let replacement = canonicalLabel(
+                    for: targetFamily,
+                    mirroring: outputToken.text,
+                    preferWordForm: isSpeakerWord
+                )
                 if let replacementRange = rangeOfMatch(text: outputToken.text, in: result, occurrence: index) {
                     result.replaceSubrange(replacementRange, with: replacement)
                 }
@@ -113,8 +170,20 @@ public struct CurrencyAntiFlip {
 
     /// Pick a canonical label for `target` that visually mirrors `mirror`.
     /// If `mirror` was a 3-letter code (uppercase), use the target's code.
+    /// If `preferWordForm == true` (speaker said the word), force the word form
+    /// regardless of mirror shape — this is the F-20-UAT-02 word-form anchor.
     /// Otherwise use the target's most common spelled form.
-    private static func canonicalLabel(for target: Family, mirroring mirror: String) -> String {
+    private static func canonicalLabel(for target: Family,
+                                       mirroring mirror: String,
+                                       preferWordForm: Bool = false) -> String {
+        if preferWordForm {
+            switch target {
+            case .chf: return "Franken"
+            case .eur: return "Euro"
+            case .usd: return "Dollar"
+            case .gbp: return "Pfund"
+            }
+        }
         let isCode = mirror == mirror.uppercased() && mirror.count == 3
         switch target {
         case .chf: return isCode ? "CHF" : "Franken"
