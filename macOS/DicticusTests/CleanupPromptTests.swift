@@ -93,4 +93,70 @@ final class CleanupPromptTests: XCTestCase {
         let prompt = CleanupPrompt.build(text: "hello", language: "en")
         XCTAssertTrue(prompt.hasSuffix("OUTPUT:"), "Prompt must end with 'OUTPUT:' to prime model response")
     }
+
+    // MARK: - Phase 20.06 F-20-UAT-01 — HELVETISMS preservation-first
+
+    func testHelvetismsBlockIsPreservationFirst() {
+        let prompt = CleanupPrompt.build(text: "ich gehe auf die andere Seite", language: "de", useSwissGerman: true)
+        XCTAssertTrue(
+            prompt.contains("Preserve the speaker's dialect register exactly."),
+            "HELVETISMS block must lead with the preservation-first sentence (F-20-UAT-01)"
+        )
+    }
+
+    func testHelvetismsBlockAllowsOnlyOrthographyAndDecimalNormalizations() {
+        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
+        XCTAssertTrue(
+            prompt.contains("Only change ß→ss and decimal-comma→period."),
+            "HELVETISMS must restrict allowed normalizations to ß→ss and decimal-comma→period"
+        )
+    }
+
+    func testHelvetismsBlockForbidsHighGermanToSwissGermanReplacement() {
+        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
+        XCTAssertTrue(
+            prompt.contains("Do NOT replace High German words with Swiss German equivalents."),
+            "HELVETISMS must explicitly forbid HG→CH-G word replacement"
+        )
+    }
+
+    func testHelvetismsBlockEnumeratesNegativeTraps() {
+        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
+        let traps = [
+            "auf→uf", "ausgeflogen→usgfloge", "gekostet→choschtet",
+            "einkaufen→iikaufe", "natürlich→natürli", "Dingen→Sache",
+            "gegessen→gässe", "später→speter", "beiden→beidne",
+            "Seite→Siite", "etwas→öppis", "Kleines→chliins",
+            "gekauft→chauft"
+        ]
+        for trap in traps {
+            XCTAssertTrue(
+                prompt.contains(trap),
+                "HELVETISMS NEGATIVE list must contain trap '\(trap)' (F-20-UAT-01)"
+            )
+        }
+    }
+
+    func testHelvetismsBlockOnlyEmittedWhenSwissAndGerman() {
+        let withoutSwiss = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: false)
+        XCTAssertFalse(
+            withoutSwiss.contains("Preserve the speaker's dialect register"),
+            "HELVETISMS must NOT be emitted when Swiss toggle is OFF"
+        )
+        let englishWithSwiss = CleanupPrompt.build(text: "x", language: "en", useSwissGerman: true)
+        XCTAssertFalse(
+            englishWithSwiss.contains("Preserve the speaker's dialect register"),
+            "HELVETISMS must NOT be emitted when language is not 'de' (existing gate preserved)"
+        )
+    }
+
+    func testHelvetismsBlockStillReferencesPositiveWordList() {
+        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
+        // At least one canonical Helvetism from SwissHelvetisms.words must still appear
+        // so the LLM has a positive vocabulary anchor when the speaker uses Swiss words.
+        XCTAssertTrue(
+            prompt.contains("Velo") || prompt.contains("Trottoir") || prompt.contains("Spital"),
+            "HELVETISMS must still surface at least one canonical Swiss word as a positive anchor"
+        )
+    }
 }
