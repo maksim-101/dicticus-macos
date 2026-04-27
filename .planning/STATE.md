@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 20 (AI Cleanup Demotion + UAT Visibility) code-complete — 5/5 plans shipped (Wave 1 RED scaffolding, Action 1 LLM rein-in, Action 2 rules-first, Action 4 graceful App-Group fallback, Action 3 raw/polished visibility). Pending /gsd-verify-work + /gsd-uat (Gemma hallucination resilience, currency-fold, self-correction, raw/polished toggle, App-Group-stripped Settings warning).
+stopped_at: Phase 20 code-complete; UAT 2026-04-27 surfaced behavioural regressions — LLM translates High German → Swiss German dialect when Swiss toggle ON (HELVETISMS prompt too broad), wrong-direction currency flip (Franken→Euro on iOS, "Euro Euro" duplication on macOS), iOS long-press shows path/link instead of text, iOS truncation discoverability gap (HistoryDetailView shipped but tap not surfaced). 4 findings + 1 minor logged in 20-UAT-FINDINGS.md. Phase 20.06 needed to fix behaviourally (artifact-level Phase 20 verification still 12/12 GREEN).
 last_updated: "2026-04-27T00:00:00.000Z"
-last_activity: 2026-04-27 -- Phase 20 plan-level work complete
+last_activity: 2026-04-27 -- Phase 20 UAT complete; Phase 20.06 plan needed
 progress:
   total_phases: 6
   completed_phases: 5
@@ -28,9 +28,10 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 20 (ai-cleanup-demotion-uat-visibility) — CODE COMPLETE
-Plan: 5 of 5
-Status: Pending /gsd-verify-work + UAT
+Phase: 20 (ai-cleanup-demotion-uat-visibility) — CODE COMPLETE; UAT REGRESSIONS LOGGED
+Plan: 5 of 5 plans shipped
+Status: Phase 20.06 needed (behavioural hotfix). UAT findings: .planning/phases/20-ai-cleanup-demotion-uat-visibility/20-UAT-FINDINGS.md
+Resume: `/gsd-plan-phase 20.06` — see UAT-FINDINGS.md for scope (4 findings: HELVETISMS dialect preservation, currency idempotency, iOS long-press gesture, iOS chevron discoverability)
 
 UAT hotfix commits:
   • 6268f11 — fix(19.5): strip leaked Gemma chat-template fragments

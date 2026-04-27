@@ -31,7 +31,8 @@
 | 19.5. AI Cleanup CH-Determinism | v2.1 | 5/5 | Complete   | 2026-04-26 |
 | 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
 | 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
-| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Code Complete | Pending /gsd-verify-work + UAT |
+| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Code Complete; UAT Behavioural-Failed | 4 findings logged 2026-04-27 → 20.06 |
+| 20.06. AI Cleanup Behavioural Hotfix | v2.1 | TBD | Planned | HELVETISMS dialect preservation + currency idempotency + iOS history gestures |
 
 ---
 
@@ -102,6 +103,24 @@
 - [x] 20-05-PLAN.md — Action 3 (Visibility): iOS HistoryDetailView + macOS inline disclosure + CleanupCopyMode UserDefault + Settings parity row
 
 **Out of scope:** Phase 19.6 (iOS UX polish, depends on DESIGN.md), Phase 18 (iCloud Sync, deferred).
+
+---
+
+### Phase 20.06: AI Cleanup Behavioural Hotfix
+**Goal:** Close the gap between Phase 20's *artifact-level success* (12/12 must-haves verified) and its *behavioural goal* ("demote the LLM"). UAT 2026-04-27 surfaced four real regressions that the Phase 20 test matrix did not cover. Fix them, re-run UAT, then declare Phase 20 done.
+
+**Requirements:** None directly — corrective follow-on to Phase 20 + Phase 19.5 HELVETISMS.
+
+**Findings to address** (full triage in `.planning/phases/20-ai-cleanup-demotion-uat-visibility/20-UAT-FINDINGS.md`):
+- F-20-UAT-01 🔴 HELVETISMS prompt block reworded so LLM preserves speaker dialect (no HG→Swiss German translation). Add NEGATIVE list of common traps (auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, ...).
+- F-20-UAT-02 🔴 Currency-fold idempotency + speaker-explicit-currency-wins. Fix "110.57 €" → "110.57 Euro Euro" duplication and "4.50 Franken" → "4.50 Euro" wrong-direction flip. Audit `SwissNumberFormatter.foldCurrencyUnits` + `CurrencyAntiFlip`.
+- F-20-UAT-03 🟡 iOS long-press on history row: replace SwiftUI Text auto-detection (showing path/link preview) with explicit `.contextMenu { Copy }`.
+- F-20-UAT-04 🟡 iOS row chevron + verify NavigationLink fires (parity with macOS chevron from 20.05). HistoryDetailView shipped but tap not discoverable.
+- F-20-UAT-05 🟢 Re-test number-drift "110.57"→"100.57" after F-20-UAT-01 (likely no separate fix needed).
+
+**Cross-platform parity rule:** HELVETISMS prompt + currency formatter changes must ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity).
+
+**Plans:** TBD — to be produced by `/gsd-plan-phase 20.06`.
 
 ---
 
