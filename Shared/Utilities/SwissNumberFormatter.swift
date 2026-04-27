@@ -77,10 +77,16 @@ public struct SwissNumberFormatter {
     /// canonical form is what the rest of the pipeline sees. Returns the
     /// input unchanged on regex compile failure (graceful-degradation, D-26).
     public static func foldCurrencyUnits(_ text: String) -> String {
+        // Phase 20.06 F-20-UAT-02: idempotency guard.
+        // Each pattern requires the SECOND unit keyword (Rappen/Cent/Cents/Pence) so
+        // already-folded forms ("CHF 15.50") cannot match. This was Phase 20.03's
+        // intended idempotency mechanism. UAT 2026-04-27 surfaced a different
+        // failure mode: the LLM (or a misconfigured upstream pass) can emit
+        // duplicated currency tokens like "110.57 € Euro" or "110.57 Euro Euro"
+        // BEFORE this function runs. A post-fold de-duplication pass collapses
+        // those duplicates without altering single-token forms.
         var result = text
-        // Each entry: (regex pattern, currency family handler closure).
-        // The handler builds the replacement from the captured integer +
-        // cents groups so we can zero-pad cents in code.
+
         struct CurrencyPattern {
             let pattern: String
             let format: (_ integerPart: String, _ cents: String) -> String
@@ -127,6 +133,38 @@ public struct SwissNumberFormatter {
                 result.replaceSubrange(fullMatchRange, with: replacement)
             }
         }
+
+        // Phase 20.06 F-20-UAT-02: collapse adjacent duplicate currency tokens.
+        // Catches "Euro Euro", "€ Euro", "Euro €", "Franken Franken", "CHF CHF" etc.
+        // Bounded patterns — each alternative is fully anchored, no nesting, no
+        // unbounded quantifiers — so backtracking is O(n) at worst.
+        let dedupePatterns: [String] = [
+            // Word-word duplications (case-insensitive).
+            #"\b(Euro|Franken|Dollar|Pfund|CHF|EUR|USD|GBP)\s+\1\b"#,
+            // Glyph then word of the SAME family.
+            #"€\s+Euro\b"#,
+            #"\bEuro\s+€"#,
+            #"\$\s+Dollar\b"#,
+            #"\bDollar\s+\$"#,
+            #"£\s+Pfund\b"#,
+            #"\bPfund\s+£"#,
+        ]
+        for pattern in dedupePatterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { continue }
+            let nsResult = result as NSString
+            let fullRange = NSRange(location: 0, length: nsResult.length)
+            let matches = regex.matches(in: result, options: [], range: fullRange)
+            for match in matches.reversed() {
+                guard let r = Range(match.range, in: result) else { continue }
+                // Replace the duplicate run with the LEADING token (preserves the
+                // form the user/LLM committed to first, glyph-or-word).
+                let matched = String(result[r])
+                // Take the first non-whitespace word/glyph and emit only that.
+                let firstToken = matched.split(whereSeparator: { $0.isWhitespace }).first.map(String.init) ?? matched
+                result.replaceSubrange(r, with: firstToken)
+            }
+        }
+
         return result
     }
 
