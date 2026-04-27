@@ -626,3 +626,65 @@ extension CleanupService {
         return stripped.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
     }
 }
+
+// MARK: - Phase 20.08 Dialect-suppression gate (D-06..D-08)
+
+extension CleanupService {
+
+    /// Phase 20.08 D-06..D-08. Pre-Levenshtein dialect-suppression gate.
+    /// Returns `llmOutput` if it introduces zero unsolicited Swiss dialect
+    /// forms relative to `rulesCleaned`; otherwise returns `rulesCleaned`
+    /// (LLM rejected as Swiss-ifier).
+    ///
+    /// "Unsolicited" = present in the LLM output AND in `SwissDialectForms.tokens`
+    /// AND NOT present in the rules-cleaned baseline.
+    ///
+    /// Threshold = strict >= 1 (D-07). Aligned to the threat model: this user
+    /// does not dictate Swiss German, so any unsolicited dialect form is
+    /// rejected. The "speaker actually said it" exception is honoured by the
+    /// `!baseline.contains(tok)` clause.
+    ///
+    /// Graceful degradation contract: empty inputs, zero matches, and any
+    /// other unexpected shape return `llmOutput` unchanged (no demotion).
+    /// Mirrors the CurrencyAntiFlip safety contract.
+    ///
+    /// - Parameters:
+    ///   - rulesCleaned: deterministic Swift-side cleanup output (rules pass).
+    ///   - llmOutput: post-stripPreamble LLM output.
+    /// - Returns: `llmOutput` when delta == 0; else `rulesCleaned`.
+    public static func gateLLMDialect(rulesCleaned: String,
+                                      llmOutput: String) -> String {
+        let baseline = Set(tokenizeForDialectGate(rulesCleaned))
+        let candidate = tokenizeForDialectGate(llmOutput)
+        let dialectSet = Set(SwissDialectForms.tokens)
+        for tok in candidate where dialectSet.contains(tok) && !baseline.contains(tok) {
+            #if DEBUG
+            os_log("gateLLMDialect: demoted on token '%{public}@'", log: .default, type: .info, tok)
+            #endif
+            return rulesCleaned
+        }
+        return llmOutput
+    }
+
+    /// Word-level tokenization tuned for dialect-form detection.
+    /// Differs from `normalizeForGate` (which collapses to a single string for
+    /// distance comparison): this returns an array of lowercased word tokens
+    /// suitable for set membership.
+    ///
+    /// Edge cases (per RESEARCH.md §3 table):
+    /// - Case mismatch -> lowercased before split
+    /// - Trailing punctuation -> stripped via separators charset
+    /// - Apostrophes inside word (s'het, d'Mueter) -> preserved as single token
+    /// - Hyphenated words -> split on hyphen (per SwissHelvetisms convention)
+    ///
+    /// Internal (not private) so tests can verify tokenization edge cases.
+    static func tokenizeForDialectGate(_ s: String) -> [String] {
+        let lowered = s.lowercased()
+        let separators = CharacterSet.whitespacesAndNewlines
+            .union(CharacterSet(charactersIn: ".,!?;:\"„“”«»()[]{}—–-"))
+        return lowered.unicodeScalars
+            .split { separators.contains($0) }
+            .map { String(String.UnicodeScalarView($0)) }
+            .filter { !$0.isEmpty }
+    }
+}

@@ -101,4 +101,32 @@ final class TextProcessingServiceTests: XCTestCase {
         XCTAssertEqual(mock.callCount, 0,
                        "Cleanup must be skipped when provider.isLoaded == false")
     }
+
+    // MARK: - Phase 20.08 R7: dialect gate stacks before Levenshtein
+
+    /// Phase 20.08 R7: dialect gate runs BEFORE Levenshtein gate.
+    /// Mock LLM returns Swiss-ified output — final processedText must NOT
+    /// contain Swiss dialect tokens (gate demoted to rules-cleaned baseline),
+    /// proving the dialect gate fires BEFORE the structural Levenshtein gate.
+    ///
+    /// Word-boundary check: substring "uf " is also inside "auf ", so
+    /// dialect-token presence is verified via the same tokenizer the gate
+    /// uses (`tokenizeForDialectGate`), not raw substring `.contains`.
+    func testDialectGateRunsBeforeLevenshteinAndDemotes() async {
+        let mock = MockCleanupProvider()
+        mock.returnValue = "uf de andere Siite"
+        let service = TextProcessingService(cleanupService: mock)
+
+        let output = await service.process(
+            text: "auf der anderen seite",
+            language: "de",
+            mode: .aiCleanup
+        )
+
+        let outputTokens = Set(CleanupService.tokenizeForDialectGate(output))
+        XCTAssertFalse(outputTokens.contains("uf"),
+            "Phase 20.08 R7: dialect gate must demote — output must not contain Swiss form 'uf' as a word token")
+        XCTAssertFalse(outputTokens.contains("siite"),
+            "Phase 20.08 R7: dialect gate must demote — output must not contain Swiss form 'siite' as a word token")
+    }
 }

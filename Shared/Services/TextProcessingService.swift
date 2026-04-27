@@ -87,6 +87,18 @@ class TextProcessingService: ObservableObject {
                 dictionaryContext: filteredContext
             )
 
+            // Step 3a-pre (Phase 20.08 D-08): dialect-suppression gate. Runs
+            // BEFORE the Levenshtein gate so a Swiss-ified LLM output is
+            // demoted on the cheap token-set check before the more expensive
+            // distance comparison. Both gates demote to the same target
+            // (rulesCleanedText), so stacking is safe — if the dialect gate
+            // demotes, the Levenshtein gate trivially passes (dist == 0
+            // against itself, well under the 0.30 threshold). Identity
+            // pass-through, no double-demotion artefact.
+            processedText = CleanupService.gateLLMDialect(
+                rulesCleaned: rulesCleanedText,
+                llmOutput: processedText
+            )
             // Step 3a (Phase 20 D-01): Levenshtein verification gate.
             // Reject LLM output as hallucination if it diverges too far from
             // the rules-cleaned baseline. The gate is ADDITIVE to D-19's
