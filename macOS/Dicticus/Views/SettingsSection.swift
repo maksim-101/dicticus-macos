@@ -92,6 +92,39 @@ struct SettingsSection: View {
 
             Divider()
 
+            // Phase 20.05 ACT-3-VISIBILITY: Copy mode parity row.
+            // Writes the same UserDefaults key (`cleanupCopyMode`) consumed by
+            // every per-row Copy button across iOS + macOS.
+            Text("History")
+                .font(.headline)
+                .padding(.horizontal)
+                .padding(.top, 4)
+
+            HStack {
+                Text("Copy from rows")
+                    .font(.body)
+                Spacer()
+                Picker("", selection: copyModeBinding) {
+                    Text("Raw").tag(CleanupCopyMode.raw)
+                    Text("Polished").tag(CleanupCopyMode.polished)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 180)
+                .accessibilityLabel("Copy mode for history rows")
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 4)
+
+            Text("Raw = unedited ASR output. Polished = post-cleanup text.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+
             Button(action: {
                 openWindow(id: "dictionary")
                 NSApp.activate(ignoringOtherApps: true)
@@ -106,6 +139,16 @@ struct SettingsSection: View {
             .padding(.horizontal)
             .padding(.vertical, 4)
         }
+    }
+
+    /// Phase 20.05 ACT-3-VISIBILITY: Binding into the cross-platform
+    /// `CleanupCopyMode.current` (UserDefaults.standard, key `cleanupCopyMode`).
+    /// Read by every per-row Copy button on both platforms.
+    private var copyModeBinding: Binding<CleanupCopyMode> {
+        Binding(
+            get: { CleanupCopyMode.current },
+            set: { CleanupCopyMode.current = $0 }
+        )
     }
 
     /// Phase 20.04 ACT-4-RESILIENCE: macOS parity diagnostic row.
