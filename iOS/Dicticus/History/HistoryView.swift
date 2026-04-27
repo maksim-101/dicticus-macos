@@ -52,40 +52,50 @@ struct HistoryRow: View {
     @State private var showingCopiedMessage = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(entry.createdAt, style: .date)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(entry.language.uppercased())
-                    .font(.caption2).bold()
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(4)
-                    .accessibilityLabel("Language: \(entry.language == "de" ? "German" : "English")")
-            }
-
-            Text(entry.text)
-                .font(.body)
-                .lineLimit(3)
-
-            HStack {
-                Label("\(Int(entry.confidence * 100))%", systemImage: "waveform")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .accessibilityLabel("Confidence: \(Int(entry.confidence * 100)) percent")
-
-                Spacer()
-
-                Button(action: copyToClipboard) {
-                    Label(showingCopiedMessage ? "Copied" : "Copy", systemImage: "doc.on.doc")
-                        .font(.caption2)
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(entry.createdAt, style: .date)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text(entry.language.uppercased())
+                        .font(.caption2).bold()
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor.opacity(0.1))
+                        .cornerRadius(4)
+                        .accessibilityLabel("Language: \(entry.language == "de" ? "German" : "English")")
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(showingCopiedMessage ? "Copied to clipboard" : "Copy transcription")
+
+                Text(entry.text)
+                    .font(.body)
+                    .lineLimit(3)
+
+                HStack {
+                    Label("\(Int(entry.confidence * 100))%", systemImage: "waveform")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .accessibilityLabel("Confidence: \(Int(entry.confidence * 100)) percent")
+
+                    Spacer()
+
+                    Button(action: copyToClipboard) {
+                        Label(showingCopiedMessage ? "Copied" : "Copy", systemImage: "doc.on.doc")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(showingCopiedMessage ? "Copied to clipboard" : "Copy transcription")
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Phase 20.06 F-20-UAT-04: visible tap affordance for NavigationLink push to HistoryDetailView.
+            // Mirrors macOS Phase 20.05 chevron, but static (iOS pushes; macOS expands inline).
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         }
         .padding(.vertical, 4)
         .contextMenu {
