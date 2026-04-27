@@ -32,7 +32,7 @@
 | 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
 | 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
 | 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Code Complete; UAT Behavioural-Failed | 4 findings logged 2026-04-27 → 20.06 |
-| 20.06. AI Cleanup Behavioural Hotfix | v2.1 | TBD | Planned | HELVETISMS dialect preservation + currency idempotency + iOS history gestures |
+| 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 0/4 | Planned | HELVETISMS dialect preservation + currency idempotency + iOS history gestures |
 
 ---
 
@@ -120,7 +120,13 @@
 
 **Cross-platform parity rule:** HELVETISMS prompt + currency formatter changes must ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity).
 
-**Plans:** TBD — to be produced by `/gsd-plan-phase 20.06`.
+**Plans:** 4 plans
+
+Plans:
+- [ ] 20.06-01-PLAN.md — Wave 1: HELVETISMS prompt rework — preservation-first wording + NEGATIVE list of HG→CH-G traps + tests (F-20-UAT-01, F-20-UAT-05)
+- [ ] 20.06-02-PLAN.md — Wave 2: Currency idempotency + speaker-explicit anchor + STRICT prompt extension (F-20-UAT-02) — depends on 20.06-01 (shared CleanupPrompt.swift)
+- [ ] 20.06-03-PLAN.md — Wave 1: iOS HistoryRow .contextMenu Copy + trailing chevron (F-20-UAT-03, F-20-UAT-04)
+- [ ] 20.06-04-PLAN.md — Wave 3: Manual UAT re-run gate; flips Phase 20 + 20.06 to Shipped on GREEN (F-20-UAT-01..05) — depends on 20.06-01, 02, 03
 
 ---
 
