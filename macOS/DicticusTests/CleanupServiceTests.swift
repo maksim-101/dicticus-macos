@@ -234,4 +234,45 @@ final class CleanupServiceTests: XCTestCase {
         _ = await service.cleanup(text: "hello world", language: "en")
         XCTAssertEqual(service.state, .idle, "State must return to idle after cleanup")
     }
+
+    // MARK: - Phase 20.08 dialect-suppression gate (R1, R2, R3)
+
+    /// R1: Gate must DEMOTE when LLM injects a Swiss dialect form that was
+    /// not present in the raw rules-cleaned baseline.
+    func testGateLLMDialectDemotesOnUnsolicitedToken() {
+        let rulesCleaned = "auf der Seite"
+        let llmOutput = "uf de Siite"
+        let result = CleanupService.gateLLMDialect(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput
+        )
+        XCTAssertEqual(result, rulesCleaned,
+            "Phase 20.08 R1: unsolicited Swiss dialect tokens ('uf', 'siite') must trigger demotion")
+    }
+
+    /// R2: Gate must PASS THROUGH when LLM output has zero dialect-token
+    /// delta from the rules-cleaned baseline.
+    func testGateLLMDialectPassesOnCleanLLMOutput() {
+        let rulesCleaned = "heute war ich am See"
+        let llmOutput = "Heute war ich am See."
+        let result = CleanupService.gateLLMDialect(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput
+        )
+        XCTAssertEqual(result, llmOutput,
+            "Phase 20.08 R2: clean LLM output (no dialect tokens) must pass the gate")
+    }
+
+    /// R3: Gate must HONOUR the speaker-said exception — if a Swiss form
+    /// is present in the raw baseline, the LLM is allowed to keep it.
+    func testGateLLMDialectAcceptsSwissAlreadyInRaw() {
+        let rulesCleaned = "uf de Berg"
+        let llmOutput = "uf de Berg."
+        let result = CleanupService.gateLLMDialect(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput
+        )
+        XCTAssertEqual(result, llmOutput,
+            "Phase 20.08 R3: dialect tokens already in raw baseline are speaker-said and must pass")
+    }
 }
