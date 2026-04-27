@@ -103,4 +103,58 @@ final class CurrencyAntiFlipTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - Phase 20.06 F-20-UAT-02 — speaker-explicit currency anchor
+
+    func testSpeakerExplicitCurrenciesReturnsWordFormFamilies() {
+        let result = CurrencyAntiFlip.speakerExplicitCurrencies(in: "5 Franken und 10 Euro")
+        XCTAssertEqual(result, Set([.chf, .eur]))
+        // Glyph-only mentions are NOT speaker-explicit (the speaker did not say the word).
+        let glyphOnly = CurrencyAntiFlip.speakerExplicitCurrencies(in: "5 € und 10 $")
+        XCTAssertTrue(glyphOnly.isEmpty, "Glyph-only must NOT count as speaker-explicit. Got: \(glyphOnly)")
+    }
+
+    func testSpeakerExplicitCurrenciesIgnoresAbbreviations() {
+        // CHF / EUR / USD / GBP are codes, not spoken words.
+        let result = CurrencyAntiFlip.speakerExplicitCurrencies(in: "5 CHF und 10 EUR")
+        XCTAssertTrue(result.isEmpty,
+            "Three-letter codes must NOT count as speaker-explicit words. Got: \(result)")
+    }
+
+    func testRevertHandlesSpeakerExplicitWordWhenLLMFlipsToDefaultEuro() {
+        let input = "Das hat 4.50 Franken gekostet"
+        let output = "Das hat 4.50 Euro gekostet"
+        let reverted = CurrencyAntiFlip.revertCurrencyFlip(input: input, output: output)
+        XCTAssertTrue(reverted.contains("Franken"),
+            "F-20-UAT-02: speaker-explicit Franken must be restored. Got: '\(reverted)'")
+        XCTAssertFalse(reverted.contains("Euro"),
+            "F-20-UAT-02: Euro must be removed when speaker said Franken. Got: '\(reverted)'")
+    }
+
+    func testRevertHandlesMixedDictationWithSpeakerExplicitFranken() {
+        // Speaker glyph € at first position, speaker word "Franken" at second.
+        // LLM flipped both to Euro. Revert must:
+        //   - leave first position alone (speaker used glyph, not word — no anchor)
+        //     OR restore to Euro/€ (no flip detected at glyph position)
+        //   - restore "Franken" at second position (speaker used the word)
+        let input = "110.57 € ausgegeben und 4.50 Franken gekostet"
+        let output = "110.57 Euro ausgegeben und 4.50 Euro gekostet"
+        let reverted = CurrencyAntiFlip.revertCurrencyFlip(input: input, output: output)
+        // Second position must be restored to Franken (speaker-explicit word).
+        XCTAssertTrue(reverted.contains("Franken"),
+            "Speaker-explicit 'Franken' at second position must be restored. Got: '\(reverted)'")
+    }
+
+    func testRevertWordFormAnchorBeatsCodeFormCanonical() {
+        // When speaker used the WORD "Franken" and LLM emitted the CODE "EUR",
+        // restore the WORD form (Franken) — not the CODE form (CHF). Speaker-explicit
+        // word takes precedence over canonicalLabel mirroring.
+        let input = "5 Franken"
+        let output = "5 EUR"
+        let reverted = CurrencyAntiFlip.revertCurrencyFlip(input: input, output: output)
+        XCTAssertTrue(reverted.contains("Franken"),
+            "Word-form anchor must beat code-form canonical when speaker used the word. Got: '\(reverted)'")
+        XCTAssertFalse(reverted.contains("CHF"),
+            "Must NOT emit 'CHF' when speaker said 'Franken'. Got: '\(reverted)'")
+    }
 }
