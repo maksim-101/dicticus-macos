@@ -41,12 +41,10 @@ struct CleanupSpikeView: View {
                 Grid(alignment: .topLeading, horizontalSpacing: 12, verticalSpacing: 12) {
                     GridRow {
                         Text("Input").bold()
-                        Text("Variant (a)\ndrop ref list").bold()
-                        Text("Variant (b)\ndrop trap list").bold()
-                        Text("Variant (c)\nminimal").bold()
-                        Text("Variant (d)\n(a) + few-shot").bold()
+                        Text("Variant (e)\nHigh German +\nSwiss orthography").bold()
+                        Text("Variant (f)\n(e) + non-biasing\nfew-shot").bold()
                     }
-                    Divider().gridCellColumns(5)
+                    Divider().gridCellColumns(3)
                     ForEach(rows) { row in
                         GridRow {
                             Text(row.input)
@@ -80,13 +78,11 @@ struct CleanupSpikeView: View {
             progress = "Input \(i + 1)/\(inputs.count)..."
             var outputs: [String] = []
             let variants: [(String) -> String] = [
-                SpikeFixtures.buildVariantA,
-                SpikeFixtures.buildVariantB,
-                SpikeFixtures.buildVariantC,
-                SpikeFixtures.buildVariantD
+                SpikeFixtures.buildVariantE,
+                SpikeFixtures.buildVariantF
             ]
             for (vIdx, variant) in variants.enumerated() {
-                progress = "Input \(i + 1)/\(inputs.count) — variant \(vIdx + 1)/4..."
+                progress = "Input \(i + 1)/\(inputs.count) — variant \(vIdx + 1)/2..."
                 let prompt = variant(input)
                 let out = await cleanupService.cleanupWithExplicitPrompt(prompt)
                 outputs.append(out)
@@ -120,67 +116,43 @@ enum SpikeFixtures {
         "Ich wäre gerne früher zu Hause gewesen."
     ]
 
-    /// Variant (a): drop SwissHelvetisms reference list, keep negative trap list, reframe to one-way directive.
-    /// Per RESEARCH.md §1 lines 113-118 (verbatim).
-    static func buildVariantA(_ input: String) -> String {
+    /// Variant (e): single-rule "Standard High German + Swiss orthography only".
+    /// New contract per user 2026-04-28: do NOT preserve Swiss vocabulary at all
+    /// (drop helvetism reference list, drop dialect-form trap list). Cleanup
+    /// goal is plain Standard High German with only orthographic adaptation.
+    /// The Plan 02 helvetism-delta gate catches any dialect leakage.
+    static func buildVariantE(_ input: String) -> String {
         return """
         <start_of_turn>user
-        INSTRUCTION: Lightly edit the following German dictation for grammar, punctuation, and capitalization. Do not paraphrase.
+        INSTRUCTION: Edit the following German dictation for grammar, punctuation, and capitalization. Do not paraphrase. Do not substitute any word with a different word.
         LANGUAGE: de
-        STYLE: Use Swiss German orthography (never use ß, always ss). Use Swiss thousands separator style (e.g. 1'250, not 1.250).
-        RULE: Output Standard High German words and grammar. Apply Swiss orthography conventions only. Do NOT replace any High German word with its Swiss German dialect form. Forbidden substitutions include: auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, einkaufen→iikaufe, natürlich→natürli, Dingen→Sache, gegessen→gässe, später→speter, beiden→beidne, Seite→Siite, etwas→öppis, Kleines→chliins, gekauft→chauft.
+        RULE 1: Output Standard High German words and grammar exactly as dictated.
+        RULE 2: Apply Swiss orthography only — write ss instead of ß; write thousands as 1'250 not 1.250.
         INPUT: \(input)
         OUTPUT:<end_of_turn>
         <start_of_turn>model
         """
     }
 
-    /// Variant (b): drop trap list, keep SwissHelvetisms reference list.
-    /// Per RESEARCH.md §1 lines 122-126.
-    static func buildVariantB(_ input: String) -> String {
-        let ref = SwissHelvetisms.words.joined(separator: ", ")
+    /// Variant (f): variant (e) + non-biasing few-shot.
+    /// Each example demonstrates one rule (ß→ss, identity preservation,
+    /// thousands separator) with diverse content so the model cannot copy
+    /// any specific phrase — sidesteps the variant (d) collapse where
+    /// few-shot examples bled into outputs.
+    static func buildVariantF(_ input: String) -> String {
         return """
         <start_of_turn>user
-        INSTRUCTION: Lightly edit the following German dictation for grammar, punctuation, and capitalization. Do not paraphrase.
+        INSTRUCTION: Edit the following German dictation for grammar, punctuation, and capitalization. Do not paraphrase. Do not substitute any word with a different word.
         LANGUAGE: de
-        STYLE: Use Swiss German orthography (never use ß, always ss). Use Swiss thousands separator style (e.g. 1'250, not 1.250).
-        RULE: Output Standard High German words and grammar. Apply Swiss orthography conventions only. Do NOT replace any High German word with its Swiss German dialect form.
-        REFERENCE: When the speaker uses one of these Swiss substantive words, keep it: \(ref).
-        INPUT: \(input)
-        OUTPUT:<end_of_turn>
-        <start_of_turn>model
-        """
-    }
-
-    /// Variant (c): minimal — drop both lists, single one-way directive.
-    /// Per RESEARCH.md §1 lines 130-133.
-    static func buildVariantC(_ input: String) -> String {
-        return """
-        <start_of_turn>user
-        INSTRUCTION: Lightly edit the following German dictation for grammar, punctuation, and capitalization. Do not paraphrase.
-        LANGUAGE: de
-        STYLE: Use Swiss German orthography (never use ß, always ss). Use Swiss thousands separator style (e.g. 1'250, not 1.250).
-        RULE: Output Standard High German words and grammar. Apply Swiss orthography conventions only. Do NOT replace any High German word with its Swiss German dialect form.
-        INPUT: \(input)
-        OUTPUT:<end_of_turn>
-        <start_of_turn>model
-        """
-    }
-
-    /// Variant (d): variant (a) + few-shot positive examples.
-    /// Per RESEARCH.md §1 lines 137-145.
-    static func buildVariantD(_ input: String) -> String {
-        return """
-        <start_of_turn>user
-        INSTRUCTION: Lightly edit the following German dictation for grammar, punctuation, and capitalization. Do not paraphrase.
-        LANGUAGE: de
-        STYLE: Use Swiss German orthography (never use ß, always ss). Use Swiss thousands separator style (e.g. 1'250, not 1.250).
-        RULE: Output Standard High German words and grammar. Apply Swiss orthography conventions only. Do NOT replace any High German word with its Swiss German dialect form.
+        RULE 1: Output Standard High German words and grammar exactly as dictated.
+        RULE 2: Apply Swiss orthography only — write ss instead of ß; write thousands as 1'250 not 1.250.
         EXAMPLES:
-        INPUT: auf der anderen Seite
-        OUTPUT: auf der anderen Seite
-        INPUT: ich bin am Freitag ausgeflogen und habe etwas gekauft
-        OUTPUT: ich bin am Freitag ausgeflogen und habe etwas gekauft
+        INPUT: das war groß und teuer
+        OUTPUT: das war gross und teuer
+        INPUT: ich gehe morgen einkaufen
+        OUTPUT: ich gehe morgen einkaufen
+        INPUT: 1.250 Franken sind genug
+        OUTPUT: 1'250 Franken sind genug
         INPUT: \(input)
         OUTPUT:<end_of_turn>
         <start_of_turn>model
