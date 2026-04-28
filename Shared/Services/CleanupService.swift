@@ -764,11 +764,39 @@ extension CleanupService {
             }
 
             log.info("Spike LLM raw (\(result.count, privacy: .public) chars)")
-            return Self.stripPreamble(result)
+            return Self.cleanSpikeOutput(result)
         } catch {
             log.error("cleanupWithExplicitPrompt error: \(error.localizedDescription, privacy: .public)")
             return ""
         }
+    }
+
+    /// Spike-specific post-processor.
+    ///
+    /// Gemma 4 E2B at temp 0.1 sometimes (a) emits markdown-blockquote `>` line
+    /// prefixes and (b) keeps generating past `<end_of_turn>` when that token
+    /// is not flagged EOG by `llama_vocab_is_eog`, producing duplicate
+    /// paragraphs. Production cleanup() doesn't hit this because its prompt
+    /// shape and post-strip pipeline differ. For spike comparison we want a
+    /// single clean answer per cell: truncate at the first chat-template
+    /// marker or blank-line break, then strip leading `>` per line.
+    private nonisolated static func cleanSpikeOutput(_ raw: String) -> String {
+        var out = raw
+        for marker in ["<end_of_turn>", "<start_of_turn>", "<eos>", "<|endoftext|>"] {
+            if let r = out.range(of: marker) { out = String(out[..<r.lowerBound]) }
+        }
+        if let r = out.range(of: "\n\n") { out = String(out[..<r.lowerBound]) }
+        out = out
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line -> String in
+                var s = String(line)
+                while let first = s.first, first == ">" || first == " " || first == "\t" {
+                    s.removeFirst()
+                }
+                return s
+            }
+            .joined(separator: "\n")
+        return out.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// DEBUG-only sampler-seed override for spike reproducibility (D-03).
