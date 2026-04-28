@@ -782,7 +782,14 @@ extension CleanupService {
     /// marker or blank-line break, then strip leading `>` per line.
     private nonisolated static func cleanSpikeOutput(_ raw: String) -> String {
         var out = raw
-        for marker in ["<end_of_turn>", "<start_of_turn>", "<eos>", "<|endoftext|>"] {
+        // Include closing-tag variants (e.g. `</start_of_turn>`) — Gemma 4 E2B
+        // occasionally emits these as stray tokens; substring matching on
+        // `<start_of_turn>` does not catch them due to the leading `/`.
+        for marker in [
+            "</start_of_turn>", "</end_of_turn>",
+            "<end_of_turn>", "<start_of_turn>",
+            "<eos>", "<|endoftext|>",
+        ] {
             if let r = out.range(of: marker) { out = String(out[..<r.lowerBound]) }
         }
         if let r = out.range(of: "\n\n") { out = String(out[..<r.lowerBound]) }
