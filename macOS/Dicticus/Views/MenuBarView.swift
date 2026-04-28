@@ -187,6 +187,12 @@ struct MenuBarView: View {
 
                 Divider()
 
+#if DEBUG
+                Button("Cleanup Spike (Debug)…") {
+                    openWindow(id: "cleanup-spike")
+                }
+#endif
+
                 Button("Check for Updates...") {
                     updater.checkForUpdates()
                 }
