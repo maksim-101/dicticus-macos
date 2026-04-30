@@ -168,8 +168,9 @@ final class CleanupServiceTests: XCTestCase {
                        "B6: Swiss-toggle-ON must produce period decimal. Got: \(out)")
     }
 
-    /// D-C1 lock — thousands separator must be ASCII apostrophe (U+0027), never U+2019.
-    func testSwissApostropheThousandsIntegration() async throws {
+    /// Phase 20.08 apostrophe-strike — thousands grouping is dropped entirely.
+    /// Output must not carry ASCII `'` or U+2019 between digits of an integer.
+    func testSwissNoThousandsSeparatorIntegration() async throws {
         try XCTSkipIf(modelPathFromEnv == nil,
                       "Integration test skipped — set DICTICUS_TEST_MODEL_PATH to enable")
 
@@ -182,8 +183,11 @@ final class CleanupServiceTests: XCTestCase {
         let out = await service.cleanup(text: "Das macht 1250 Franken",
                                          language: "de",
                                          dictionaryContext: nil)
-        XCTAssertFalse(out.contains("\u{2019}"),
-                       "D-C1: thousands separator must be ASCII apostrophe. Got: \(out)")
+        // Apostrophe-strike: no thousands separator of any kind between digits.
+        let groupedDigits = try NSRegularExpression(pattern: "\\d['\u{2019}]\\d")
+        let r = NSRange(out.startIndex..<out.endIndex, in: out)
+        XCTAssertEqual(groupedDigits.numberOfMatches(in: out, range: r), 0,
+                       "Phase 20.08: integers must not be grouped with apostrophes. Got: \(out)")
     }
 
     // MARK: - CLEAN-02: Real-model inference (integration)

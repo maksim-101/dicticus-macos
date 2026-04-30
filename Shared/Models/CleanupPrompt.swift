@@ -72,7 +72,10 @@ struct CleanupPrompt {
         }()
         if swissEnabled && language == "de" {
             prompt += "STYLE: Use Swiss German orthography (never use ß, always ss). "
-            prompt += "Use Swiss thousands separator style (e.g. 1'250, not 1.250).\n"
+            // Phase 20.08 apostrophe-strike: thousands separator was dropped
+            // from the deterministic output (years like 2026 should not become
+            // 2'026). The prompt no longer asks for any thousands grouping.
+            prompt += "Write integers with no thousands separator (e.g. 1250, not 1.250 or 1'250).\n"
             // Phase 20.06 F-20-UAT-01: HELVETISMS block reworked preservation-first.
             // Phase 19.5 D-D2 wording ("Prefer these Swiss German words when applicable")
             // caused Gemma 4 E2B to translate High German → Swiss German dialect
