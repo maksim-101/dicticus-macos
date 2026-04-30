@@ -214,6 +214,29 @@ public struct SwissNumberFormatter {
                 in: result, options: [], range: range, withTemplate: "$1,$2"
             )
         }
+        // Bridge 1.5 (Phase 20.08): word-form cardinal cents prep. ITN keeps
+        // German cardinals 1–9 spelled out per the project's "spell out one
+        // through nine" style rule, so utterances like "vier Franken 50" reach
+        // this stage as a word-Integer + digit-cents mix that Bridge 2 cannot
+        // match (its first capture is `\d+`). Digitize the word-form integer
+        // ONLY when the full currency-cents context is present; we don't want
+        // to convert a bare "vier Äpfel" or "vier Franken" (no cents) — the
+        // style rule still applies outside the cents-fold context. After this
+        // pass, Bridge 2 below folds the result to "4.50 Franken".
+        let cardinalWordToDigit: [(String, String)] = [
+            ("eins", "1"), ("ein", "1"),
+            ("zwei", "2"), ("drei", "3"), ("vier", "4"), ("fünf", "5"),
+            ("sechs", "6"), ("sieben", "7"), ("acht", "8"), ("neun", "9"),
+        ]
+        for (word, digit) in cardinalWordToDigit {
+            let prePattern = "(?<!\\w)\(word)\\s+(Franken|CHF|Euro|EUR|€|\\$|£)\\s+(\\d{2})(?=\\D|$)"
+            if let rPre = try? NSRegularExpression(pattern: prePattern, options: [.caseInsensitive]) {
+                let range = NSRange(result.startIndex..<result.endIndex, in: result)
+                result = rPre.stringByReplacingMatches(
+                    in: result, options: [], range: range, withTemplate: "\(digit) $1 $2"
+                )
+            }
+        }
         // Bridge 2: split-cents with currency between (B3 original-case fix).
         // NB: U+2019 (right single quote) is written literally in the negative
         // lookbehind class. ICU regex accepts `\uhhhh` (no braces) but not
