@@ -112,13 +112,14 @@ class TextProcessingService: ObservableObject {
             )
         }
 
-        // Step 3b: Swiss number formatting (D-C1/D-C2/D-C3) — runs AFTER any
+        // Step 3b: Swiss number formatting (D-C2/D-C3) — runs AFTER any
         // LLM cleanup so Gemma's German-decimal output (e.g. "2,5 Kilo",
         // "1.250,70") gets normalized to Swiss form. Runs whenever the toggle
         // is ON regardless of cleanup mode, so:
-        //   • plain dictation also gets `1.250 → 1'250` and `2,5 → 2.5`
+        //   • plain dictation also gets `1.250 → 1250` and `2,5 → 2.5`
         //   • LLM timeout / failure (CleanupService returns raw text on catch)
         //     does not silently lose Swiss number formatting
+        // Phase 20.08: thousands grouping was struck (year-bug fix).
         // Idempotent on already-Swiss output, so a future re-introduction of
         // the post-LLM call inside CleanupService would not double-format.
         if swissDefaults.bool(forKey: "useSwissGerman") {

@@ -1,12 +1,14 @@
 import Foundation
 
-/// D-C1 / D-C2 / D-C3: Post-LLM number-formatting pass for Swiss output.
+/// D-C2 / D-C3: Post-LLM number-formatting pass for Swiss output.
 ///
 /// Replaces the Phase 19 D-20 LLM-only thousands-separator approach with a
-/// deterministic post-pass:
-///   - ASCII straight apostrophe `'` (U+0027) thousands separator, NOT
-///     U+2019 right-single-quote that `NumberFormatter` for `de_CH`
-///     emits by default. Per D-C1.
+/// deterministic post-pass. Phase 20.08 strikes the original D-C1
+/// apostrophe-thousands rule: rendering `"2026"` as `"2'026"` was wrong
+/// for years and the simpler fix is to emit no thousands separator at all.
+///
+///   - No thousands grouping (apostrophe-strike, Phase 20.08). Years like
+///     `2026` and amounts like `10000` flow through unchanged.
 ///   - Period decimal separator on every numeric token (currency and
 ///     non-currency alike) when Swiss toggle is ON. Per D-C2.
 ///
@@ -34,8 +36,9 @@ import Foundation
 ///   reformatting and re-attach it to the result.
 public struct SwissNumberFormatter {
 
-    /// Reformat every numeric token in `text` to ASCII-apostrophe-thousands
-    /// + period-decimal. Non-numeric tokens are emitted unchanged.
+    /// Reformat every numeric token in `text` to no-grouping + period-decimal.
+    /// Non-numeric tokens are emitted unchanged. Phase 20.08 dropped the
+    /// apostrophe thousands separator (years like 2026 should not become 2'026).
     public static func format(_ text: String) -> String {
         // UAT-discovered cross-token gap (Phase 19.5 follow-up):
         // Gemma occasionally detokenizes German decimals with a stray space
@@ -217,7 +220,7 @@ public struct SwissNumberFormatter {
         // Swift's `\u{hhhh}` brace form, and the raw-string delimiter `#"..."#`
         // does NOT process `\u{...}`. Embedding the literal U+2019 sidesteps
         // both pitfalls.
-        let pattern2 = "(?<!\\d)(?<![.,'\u{2019}])(\\d{1,3})\\s+(Franken|CHF|Euro|EUR|€|\\$|£)\\s+(\\d{2})(?=\\D|$)"
+        let pattern2 = "(?<!\\d)(?<![.,'\u{2019}])(\\d+)\\s+(Franken|CHF|Euro|EUR|€|\\$|£)\\s+(\\d{2})(?=\\D|$)"
         if let r2 = try? NSRegularExpression(pattern: pattern2, options: [.caseInsensitive]) {
             let range = NSRange(result.startIndex..<result.endIndex, in: result)
             result = r2.stringByReplacingMatches(
@@ -386,14 +389,18 @@ public struct SwissNumberFormatter {
     }
 
 
-    /// Emit a Decimal with ASCII apostrophe thousands and period decimal,
+    /// Emit a Decimal with no thousands grouping and period decimal,
     /// preserving the fraction-digit count of `sample` so 5.70 stays 5.70.
+    /// (Apostrophe-strike: Phase 20.08.)
     private static func emitSwiss(_ value: Decimal, originalSampleForFractionDigits sample: String) -> String {
         let formatter = NumberFormatter()
         formatter.locale = Locale(identifier: "de_CH")
         formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = true
-        formatter.groupingSeparator = "'"        // explicit ASCII apostrophe — D-C1
+        // Apostrophe-strike (Phase 20.08): years like "2026" were being
+        // rendered as "2'026", which is wrong by Swiss orthography. Simpler
+        // fix than a year-range heuristic — drop thousands grouping entirely.
+        // Period decimal still applies (D-C2).
+        formatter.usesGroupingSeparator = false
         formatter.decimalSeparator = "."         // explicit period — D-C2
         // Preserve the input's fraction digits when possible.
         let fractionDigits = fractionDigitCount(of: sample)
