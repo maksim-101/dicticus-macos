@@ -2,3 +2,18 @@ macOS/build/
 macOS/build-verify/
 .env
 .env.build
+
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+
+# Claude Code session state — local-only, includes worktrees + per-machine settings
+.claude/
+
+# .remember/ keeps source-of-truth memory files (now.md, today-*.md, recent.md,
+# archive.md) but the autonomous save logs are local-only churn. The
+# `.remember/.gitignore` already excludes new files, but historical log files
+# were already tracked before that gitignore landed; they're being untracked
+# in the same commit that adds this rule.
+.remember/logs/
+.remember/tmp/
