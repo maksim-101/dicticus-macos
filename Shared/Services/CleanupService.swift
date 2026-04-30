@@ -131,16 +131,22 @@ class CleanupService: ObservableObject, CleanupProvider {
         }
         self.context = ctx
 
-        // Sampler chain: conservative settings for text cleanup (AICLEAN-02)
-        // llama_sampler_chain_init returns UnsafeMutablePointer<llama_sampler>?
+        // Sampler chain: conservative settings for text cleanup (AICLEAN-02).
+        // Phase 20.08: chain order matches llama-server's conventional order
+        // (top_k → top_p → temp → dist). Earlier macOS code applied temp first,
+        // which peaks the distribution before filtering and can collapse into
+        // degenerate token loops on long inputs (observed on F4 in spike). The
+        // /tmp/spike-harness path uses the conventional order and produces
+        // clean output on identical params; aligning macOS removes the
+        // divergence and unblocks long-sentence cleanup.
         let samplerChain = llama_sampler_chain_init(llama_sampler_chain_default_params())
-        // Phase 20 D-01: temperature reduced from 0.2 → 0.1 to reduce hallucination rate.
-        // Levenshtein gate (CleanupService.gateLLMOutput, plan 20.02) is the fail-safe.
-        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.1))
         // Top-K 40: limit vocabulary to top candidates
         llama_sampler_chain_add(samplerChain, llama_sampler_init_top_k(40))
         // Top-P 0.9: nucleus sampling
         llama_sampler_chain_add(samplerChain, llama_sampler_init_top_p(0.9, 1))
+        // Phase 20 D-01: temperature reduced from 0.2 → 0.1 to reduce hallucination rate.
+        // Levenshtein gate (CleanupService.gateLLMOutput, plan 20.02) is the fail-safe.
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.1))
         // Distribution sampling with random seed
         llama_sampler_chain_add(samplerChain, llama_sampler_init_dist(UInt32.random(in: 0...UInt32.max)))
         self.sampler = samplerChain
@@ -842,14 +848,14 @@ extension CleanupService {
             sampler = nil
         }
 
-        // Rebuild the chain verbatim from loadModel lines 136-146 with the
-        // requested seed (or a fresh random one if seed == nil — matches
-        // production behavior).
+        // Rebuild the chain to match loadModel — Phase 20.08 conventional
+        // order (top_k → top_p → temp → dist). Must stay in lockstep with
+        // loadModel's chain or seeded reproducibility breaks.
         let resolvedSeed: UInt32 = seed ?? UInt32.random(in: 0...UInt32.max)
         let samplerChain = llama_sampler_chain_init(llama_sampler_chain_default_params())
-        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.1))
         llama_sampler_chain_add(samplerChain, llama_sampler_init_top_k(40))
         llama_sampler_chain_add(samplerChain, llama_sampler_init_top_p(0.9, 1))
+        llama_sampler_chain_add(samplerChain, llama_sampler_init_temp(0.1))
         llama_sampler_chain_add(samplerChain, llama_sampler_init_dist(resolvedSeed))
         sampler = samplerChain
 
