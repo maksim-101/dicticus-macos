@@ -715,7 +715,7 @@ extension CleanupService {
     /// `isInferring` guard (CleanupService.swift line 155, 178-181) rejects
     /// concurrent calls. The spike harness UI loops
     /// `for input in inputs { for variant in variants { let out = await ... } }`.
-    func cleanupWithExplicitPrompt(_ prompt: String) async -> String {
+    func cleanupWithExplicitPrompt(_ prompt: String, timeoutSeconds: TimeInterval? = nil) async -> String {
         let log = Logger(subsystem: "com.dicticus", category: "cleanup-spike")
 
         guard isLoaded, let model = model, let context = context, let sampler = sampler else {
@@ -743,7 +743,7 @@ extension CleanupService {
         nonisolated(unsafe) let unsafeContext = context
         nonisolated(unsafe) let unsafeSampler = sampler
         let maxTokens = maxOutputTokens
-        let timeout = self.inferenceTimeoutSeconds
+        let timeout = timeoutSeconds ?? self.inferenceTimeoutSeconds
 
         do {
             let result = try await withThrowingTaskGroup(of: String.self) { group in
@@ -799,11 +799,42 @@ extension CleanupService {
             if let r = out.range(of: marker) { out = String(out[..<r.lowerBound]) }
         }
         if let r = out.range(of: "\n\n") { out = String(out[..<r.lowerBound]) }
+        // Strip stray output-template prefixes Gemma 4 E2B emits when primed
+        // by a structural-looking prompt trailer. Observed Wave A artifacts:
+        // "_response>", "<response>", "OUTPUT:". Match case-insensitively at
+        // the start of the trimmed output only.
+        let trimmedLeading = out.drop(while: { $0.isWhitespace })
+        for prefix in ["_response>", "<response>", "OUTPUT:", "Output:", "output:"] {
+            if trimmedLeading.lowercased().hasPrefix(prefix.lowercased()) {
+                if let r = out.range(of: prefix, options: .caseInsensitive) {
+                    out = String(out[r.upperBound...])
+                }
+                break
+            }
+        }
+        // Phase 20.08: BPE-fragmented chat-template leak. When Gemma emits
+        // `<end_of_turn>` mid-decode, the leading `<...of_` portion is sometimes
+        // truncated by upstream marker stripping (line 794-800) while the
+        // SentencePiece-rendered tail `▁turn>` / `_turn>` / `turn>` survives at
+        // the start. Catch any dangling chat-template tail at the leading edge.
+        if let regex = try? NSRegularExpression(
+            pattern: #"^\s*[_▁<]?(?:(?:start|end)_of_)?turn>\s*"#,
+            options: [.caseInsensitive]
+        ) {
+            let nsOut = out as NSString
+            let range = NSRange(location: 0, length: nsOut.length)
+            out = regex.stringByReplacingMatches(in: out, options: [], range: range, withTemplate: "")
+        }
         out = out
             .split(separator: "\n", omittingEmptySubsequences: false)
             .map { line -> String in
                 var s = String(line)
-                while let first = s.first, first == ">" || first == " " || first == "\t" {
+                // Strip leading quote-marker, whitespace, and stray
+                // punctuation (":" / "," / ";") that Gemma sometimes emits
+                // as a structural opener before the actual cleaned text.
+                while let first = s.first,
+                      first == ">" || first == " " || first == "\t" ||
+                      first == ":" || first == "," || first == ";" {
                     s.removeFirst()
                 }
                 return s

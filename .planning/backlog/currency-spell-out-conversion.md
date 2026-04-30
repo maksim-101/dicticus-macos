@@ -1,9 +1,53 @@
 ---
 title: Currency spell-out → numeric conversion
 captured: 2026-04-28
+updated: 2026-04-30
 source: user-feedback (Phase 20.08 spike checkpoint, variant E review)
-status: backlog
+status: partially-shipped
 ---
+
+## 2026-04-30 update — Bridge 1.5 covers the common case
+
+Phase 20.08 spike (variant g15) shipped a partial fix:
+`SwissNumberFormatter` now has a **Bridge 1.5** word-cardinal cents prep
+that digitizes 1–9 (`eins`, `ein`, `zwei`, `drei`, `vier`, `fünf`,
+`sechs`, `sieben`, `acht`, `neun`) **only** when followed by
+currency + 2-digit cents. Combined with ITN's existing ≥10 digitization
+and `SwissNumberFormatter` Bridge 2 cents-fold, the pipeline now handles:
+
+- `"vier Franken fünfzig"` → ITN(fünfzig→50) → Bridge 1.5(vier→4) →
+  Bridge 2 → `"4.50 Franken"` ✓
+- `"ungefähr vier Franken fünfzig"` → leading qualifier preserved ✓
+- `"fünfzehn Franken fünfzig"` → ITN handles both (≥10) → Bridge 2 →
+  `"15.50 Franken"` ✓ (already worked pre-20.08)
+
+Bridge 1.5 is a hardcoded 9-word lookup. Tests/fixtures for it were
+explicitly **skipped** per discussion 2026-04-30 — fixtures would just
+regurgitate the lookup table at itself, locking in current behavior
+without extending coverage. If the lookup grows or the rule evolves,
+revisit fixture coverage at that point.
+
+## Still-open gaps
+
+- `"achtzig Rappen"` — sub-unit-only amount (no integer Franken). Rappen
+  not in Bridge 1.5/2 currency regex; no fold pattern for sub-units alone.
+- `"ein Franken"` / `"eine Mark"` — singular without cents stays as word
+  ("ein"). Bridge 1.5 requires `\d{2}` cents to follow.
+- `"vier Komma fünfzig Franken"` — explicit decimal phrasing not handled.
+- `"vier fünfzig Franken"` — colloquial elision (no "Komma", no "Franken
+  fünfzig" structure).
+- English locale (USD, EUR, GBP) — separate locale path.
+- Mixed currencies in one utterance — likely rare, defer.
+
+If real users surface any of these, escalate to a follow-on phase
+targeting `Shared/Utilities/ITNUtility.swift` and/or
+`Shared/Utilities/SwissNumberFormatter.swift`. Cross-platform: must
+ship macOS + iOS together (per `feedback_cleanup_cross_platform_parity`).
+
+---
+
+## Original entry (2026-04-28, pre-20.08)
+
 
 # Currency spell-out conversion in dictation output
 
