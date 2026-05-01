@@ -135,10 +135,15 @@ struct CleanupPrompt {
         prompt += "Verwende KEINEN Schweizerdeutsch-Dialekt — schreibe \"Woche\" nicht \"Wuche\", \"Zürich\" nicht \"Züri\", \"ich gehe\" nicht \"i gang\". "
         prompt += "Etablierte englische Fachbegriffe bleiben Englisch (Deadline, Meeting, Workaround, E-Mail, Team, Product Owner, Release). "
         prompt += "Untypische englische Adjektive oder Verben in deutschen Sätzen ins Deutsche übertragen — \"realistic\" → \"realistisch\", \"awesome\" → \"toll\", \"appreciate\" → \"schätzen\". "
-        // Phase 20.08 Plan 05 (R-G15-01 fix): positive constraint on numeric tokens.
-        // Keep this directive list-free — VARIANT-G-RATIONALE §3 documents the
-        // priming trap when negative example lists are surfaced to Gemma 4 E2B.
-        prompt += "Zahlen, Beträge und Mengenangaben bleiben unverändert — keine Ziffern hinzufügen, weglassen oder umstellen, auch wenn der Kontext eine andere Zahl plausibler erscheinen lässt. "
+        // Phase 20.08 Plan 05 (R-G15-01 fix): the digit-preservation behaviour is
+        // taught via the 5th positive ORIGINAL/KORRIGIERT exemplar below — not via
+        // a negative-instruction directive. VARIANT-G-RATIONALE §3 documents the
+        // priming trap that bit Draft 1: negative-example lists become "things on
+        // the table" for Gemma 4 E2B. The 80-cell harness sweep
+        // (/tmp/dicticus-harness, 4 prompt variants × 10 seeds × 2 input forms)
+        // showed the directive contributed zero measurable signal vs the exemplar
+        // alone, while the negative phrasing pattern matched the priming-trap
+        // shape called out in §3 — so the directive was dropped before UAT.
         prompt += "Gib genau eine bereinigte Version aus, sonst nichts.\n"
         prompt += "\n"
         prompt += "ORIGINAL: ich habe heute mit dem product owner gesprochen über die deadline und er meinte das ist nicht realistic.\n"
