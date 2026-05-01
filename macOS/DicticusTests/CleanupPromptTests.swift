@@ -283,5 +283,76 @@ final class CleanupPromptTests: XCTestCase {
             promptEnglish.contains("vielleicht sogar um die 102.50 franken"),
             "Plan 05 5th exemplar must not appear in English prompts."
         )
+        XCTAssertFalse(
+            promptEnglish.contains("Gestern musste ich früh aufstehen"),
+            "Plan 05 iteration-2 6th exemplar must not appear in English prompts."
+        )
+    }
+
+    // MARK: - Phase 20.08-05 iteration 2 — past-tense correction exemplar
+    //
+    // After the 2026-05-01 macOS UAT confirmed R-G15-01 closure but surfaced a
+    // residual gap: `Gestern muss ich dann auch noch einkaufen` was left in
+    // present tense despite the sentence-initial past-tense time adverb. A 6th
+    // positive ORIGINAL/KORRIGIERT exemplar was added to teach the
+    // time-adverb→tense agreement pattern via in-context demonstration (no
+    // negative directive — VARIANT-G-RATIONALE §3 priming-trap discipline).
+
+    /// R6 positive: 6th tense-correction exemplar present on Swiss + de.
+    func testVariantG15IncludesPastTenseExemplar() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: true
+        )
+        XCTAssertTrue(
+            prompt.contains("gestern muss ich früh aufstehen weil ich einen termin hatte."),
+            "Iteration-2 6th exemplar ORIGINAL line (lowercase, present tense) must appear."
+        )
+        XCTAssertTrue(
+            prompt.contains("Gestern musste ich früh aufstehen, weil ich einen Termin hatte."),
+            "Iteration-2 6th exemplar KORRIGIERT line (capitalised, past tense) must appear."
+        )
+    }
+
+    /// R6 D3-gating: 6th exemplar fires on de-only (Swiss OFF) — same as 5th.
+    func testVariantG15PastTenseExemplarFiresOnDeOnly() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: false
+        )
+        XCTAssertTrue(
+            prompt.contains("Gestern musste ich früh aufstehen, weil ich einen Termin hatte."),
+            "Iteration-2 6th exemplar must fire on ALL German input regardless of Swiss toggle."
+        )
+    }
+
+    /// R6 iteration-3 order lock: the currency-preservation exemplar
+    /// (`102.50 Franken`) must appear AFTER the tense-correction exemplar
+    /// (`Gestern musste ich früh aufstehen`). Iteration 2's UAT regressed
+    /// R-G15-01 because the tense-rewrite sat closest to the runtime ORIGINAL,
+    /// biasing Gemma's recency-weighted edit budget away from digit identity.
+    /// The currency exemplar must remain the LAST exemplar (anchor position).
+    func testVariantG15CurrencyExemplarIsLastExemplar() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: true
+        )
+        guard let tenseRange = prompt.range(of: "Gestern musste ich früh aufstehen"),
+              let currencyRange = prompt.range(of: "Vielleicht sogar um die 102.50 Franken")
+        else {
+            XCTFail("Both tense and currency exemplars must be present in the prompt.")
+            return
+        }
+        XCTAssertLessThan(
+            tenseRange.lowerBound,
+            currencyRange.lowerBound,
+            "Currency-preservation exemplar must appear AFTER the tense exemplar (anchor-position contract — see iteration-3 reorder)."
+        )
     }
 }

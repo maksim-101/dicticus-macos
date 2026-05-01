@@ -158,10 +158,30 @@ struct CleanupPrompt {
         prompt += "ORIGINAL: letzte woche war ich in zürich auf einer grossen konferenz.\n"
         prompt += "KORRIGIERT: Letzte Woche war ich in Zürich auf einer grossen Konferenz.\n"
         prompt += "\n"
-        // Phase 20.08 Plan 05 (R-G15-01 fix): 5th exemplar — 3-digit decimal currency
-        // in colloquial-modal context. Mirrors the exact failure shape from the
-        // 2026-05-01 UAT (`vielleicht sogar um die 102.50 Franken` → variant g15
-        // mutated to `12.50 Franken`). Identity edit: only capitalisation + period.
+        // Phase 20.08-05 iteration 3: tense exemplar moved AHEAD of the currency
+        // exemplar. Iteration 2's UAT regressed R-G15-01 (`102.50 Franken` →
+        // `12.50 Franken`) because the tense-rewrite sat in the position closest
+        // to the runtime ORIGINAL, biasing Gemma's recency-weighted edit budget
+        // toward rewrites and away from digit identity. Reordering keeps the
+        // currency-preservation exemplar last (anchor position) so digit
+        // preservation remains the dominant primer; the tense lesson is still
+        // demonstrated one slot earlier.
+        //
+        // 5th exemplar — past-tense correction when a sentence-initial time
+        // adverb (`gestern`) signals past tense but the verb arrives in present
+        // (`muss`). Surfaced by the 2026-05-01 macOS UAT pass where
+        // `Gestern muss ich dann auch noch einkaufen` was left uncorrected.
+        // Positive-exemplar approach mirrors VARIANT-G-RATIONALE §3 priming-trap
+        // discipline — no "always agree tense with time adverb" directive.
+        prompt += "ORIGINAL: gestern muss ich früh aufstehen weil ich einen termin hatte.\n"
+        prompt += "KORRIGIERT: Gestern musste ich früh aufstehen, weil ich einen Termin hatte.\n"
+        prompt += "\n"
+        // 6th (anchor) exemplar — Phase 20.08 Plan 05 R-G15-01 fix: 3-digit
+        // decimal currency in colloquial-modal context. Mirrors the exact
+        // failure shape from the 2026-05-01 UAT (`vielleicht sogar um die
+        // 102.50 Franken` → variant g15 mutated to `12.50 Franken`). Identity
+        // edit: only capitalisation + period. Position-last is load-bearing —
+        // see iteration-3 reorder rationale above.
         prompt += "ORIGINAL: ich habe bestimmt über 99 franken ausgegeben vielleicht sogar um die 102.50 franken.\n"
         prompt += "KORRIGIERT: Ich habe bestimmt über 99 Franken ausgegeben. Vielleicht sogar um die 102.50 Franken.\n"
         prompt += "\n"
