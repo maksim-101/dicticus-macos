@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 20.08 context gathered
-last_updated: "2026-04-30T22:00:00.000Z"
-last_activity: 2026-04-30 -- Phase 20.08 housekeeping: variant (e)→(g15) pivot reconciled across planning artifacts
+stopped_at: Phase 20.08 Plan 04 UAT FAILED — gap-closure required
+last_updated: "2026-05-01T07:15:00.000Z"
+last_activity: 2026-05-01 -- Phase 20.08 Plan 04 Tasks A+B shipped (variant g15 prompt restructure, R6 tests green); Task C UAT FAILED on both platforms (cross-platform 102.50→12.50 currency truncation); gap-closure plan required
 progress:
   total_phases: 9
   completed_phases: 6
@@ -16,29 +16,30 @@ progress:
 
 # Project State: Dicticus
 
-**Last Updated:** 2026-04-30
-**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 SHIPPED; Phase 20.08 in Wave-B variant-pivot prep for Plan 04)
+**Last Updated:** 2026-05-01
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 SHIPPED; Phase 20.08 Plan 04 code shipped, UAT FAILED, gap-closure required)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 20.08 — llm-swiss-ification-suppression
+**Current focus:** Phase 20.08 — llm-swiss-ification-suppression — gap closure on R-G15-01 (currency-digit truncation)
 
 ## Current Position
 
-Phase: 20.08 (llm-swiss-ification-suppression) — EXECUTING; 3/4 plans shipped, Plan 04 awaits implementation under Wave-B variant pivot
-Plan: 4 of 4 (next)
-Plans: 20.08-01, 02, 03 shipped; 20.08-04 retargeted from variant (e) to **variant (g15)** after post-Plan-03 UAT exposed identity-preservation failures (lowercase nouns, `und Und` clause-seam duplication, `Würdigten` meaning-inference scar)
+Phase: 20.08 (llm-swiss-ification-suppression) — EXECUTING; 3/4 plans shipped, Plan 04 code shipped on `0c6e883` but UAT FAILED → gap closure required before phase ships
+Plan: 4 of 4 (Tasks A+B SHIPPED; Task C FAILED — see `20.08-04-UAT-RESULTS.md`)
+Plans: 20.08-01, 02, 03 shipped; 20.08-04 Tasks A+B shipped (variant (g15) prompt restructure + R6 tests on macOS, all green); Task C UAT 2026-05-01 reproduced **R-G15-01 currency-digit truncation** cross-platform (`102.50 Franken` → `12.50 Franken` on macOS Release AND iOS Release). Primary anti-Swiss-ification contract HELD on both platforms (zero Swiss particles, zero ß, Standard High German). User verdict: FAIL.
 Wave-B sibling work shipped: sampler reorder (`78738a4`), SwissNumberFormatter Bridge 1.5 (`17005f3`), apostrophe-strike (`435004b`), spike pipeline mirror + anglicism differentiation (`8daf91a`)
-UAT: GREEN on Phase 20.06's goal (LLM hallucination demotion + currency idempotency). Phase 20.08 Plan 03 spike picked variant (e); UAT on multi-clause real input rejected variant (e); Wave-B re-spike chose variant (g15) — 7/7 fixtures pass at production sampler, 0/8 muessen ASCII-fold drift on F3.
-Builds verified: iOS BUILD SUCCEEDED on iPhone 17 sim (OS 26.4.1). macOS Debug previously verified.
+UAT verdict 2026-05-01: macOS+iOS Release builds — anti-Swiss-ification PASS, currency preservation FAIL. Phase 20.06 STRICT speaker-explicit currency anchor was removed from German path by the variant (g15) verbatim contract; that removal is implicated in the regression.
+Builds verified: macOS Debug + Release green (CleanupPromptTests 14/14 pass). iOS Debug + Release green (xcodegen + xcodebuild + Xcode device deployment to iPhone 17 Pro Max).
+Fn hotkey combo (push-to-talk on macOS) confirmed functional during UAT.
 
-Next: implement Plan 04 — restructure `Shared/Models/CleanupPrompt.swift` per VARIANT-G-RATIONALE §4 D3 (two-layer German conditional), ship variant (g15) verbatim from `20.08-SPIKE-RESULTS.md` "Wave B Update", update R6 contract tests to lock g15 markers, R9 UAT replay on macOS + iOS Release.
+Next: run `/gsd-plan-phase 20.08 --gaps` to plan the corrective pass. Gap plan must address R-G15-01 (currency-digit truncation) as hard blocker — either restore Phase 20.06 STRICT currency anchor inside the variant (g15) user turn, or add a 5th `ORIGINAL/KORRIGIERT` example demonstrating digit-preservation on 3-digit decimal currency. R-G15-02 (iOS language-detection bleed) is real but appears upstream of the prompt — flag in gap plan but likely separate phase.
 
-Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-VARIANT-G-RATIONALE.md (canonical brief) + 20.08-04-PLAN.md (updated 2026-04-30)
-Last activity: 2026-04-30 -- Phase 20.08 housekeeping: variant pivot reconciled across SPIKE-RESULTS, 03-SUMMARY, 04-PLAN, RATIONALE, ROADMAP
+Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-04-UAT-RESULTS.md (UAT verdict + findings) + 20.08-04-SUMMARY.md (Plan 04 disposition) + 20.08-VARIANT-G-RATIONALE.md (canonical brief)
+Last activity: 2026-05-01 -- Plan 04 Tasks A+B shipped (`0c6e883`), Task C UAT FAILED on both platforms, gap-closure triggered; UAT-RESULTS + SUMMARY artifacts written
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
