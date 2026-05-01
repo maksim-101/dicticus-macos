@@ -108,6 +108,43 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, "This is clean output.")
     }
 
+    // MARK: - Gemma chat-template fragment strip (Phase 19.5 UAT followup)
+
+    /// UAT-discovered leak: Gemma occasionally emits `</start_of_turn>` (an
+    /// XML-shaped hallucination of the real `<end_of_turn>` EOG token) as
+    /// plain text — these slip past `llama_vocab_is_eog` because they are
+    /// not the actual special token. Without the strip, they end up in the
+    /// user's clipboard.
+    func testStripPreambleRemovesLeakedStartOfTurnCloseTag() {
+        let input = "Hello world </start_of_turn>"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleRemovesLeakedEndOfTurnTag() {
+        let input = "Hello <end_of_turn> world"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleRemovesLeakedStartOfTurnWithRoleTag() {
+        let input = "<start_of_turn>model\nHello world"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleRemovesLeakedBosEosTags() {
+        let input = "<bos>Hello world<eos>"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello world")
+    }
+
+    func testStripPreambleHandlesMultipleLeakedTags() {
+        let input = "Hello <end_of_turn> brave </start_of_turn> world"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertEqual(result, "Hello brave world")
+    }
+
     func testStripPreamblePreservesApostrophesInContractions() {
         let input = "Don't stop it's working."
         let result = CleanupService.stripPreamble(input)
@@ -196,5 +233,46 @@ final class CleanupServiceTests: XCTestCase {
         // After cleanup completes, state returns to idle
         _ = await service.cleanup(text: "hello world", language: "en")
         XCTAssertEqual(service.state, .idle, "State must return to idle after cleanup")
+    }
+
+    // MARK: - Phase 20.08 dialect-suppression gate (R1, R2, R3)
+
+    /// R1: Gate must DEMOTE when LLM injects a Swiss dialect form that was
+    /// not present in the raw rules-cleaned baseline.
+    func testGateLLMDialectDemotesOnUnsolicitedToken() {
+        let rulesCleaned = "auf der Seite"
+        let llmOutput = "uf de Siite"
+        let result = CleanupService.gateLLMDialect(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput
+        )
+        XCTAssertEqual(result, rulesCleaned,
+            "Phase 20.08 R1: unsolicited Swiss dialect tokens ('uf', 'siite') must trigger demotion")
+    }
+
+    /// R2: Gate must PASS THROUGH when LLM output has zero dialect-token
+    /// delta from the rules-cleaned baseline.
+    func testGateLLMDialectPassesOnCleanLLMOutput() {
+        let rulesCleaned = "heute war ich am See"
+        let llmOutput = "Heute war ich am See."
+        let result = CleanupService.gateLLMDialect(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput
+        )
+        XCTAssertEqual(result, llmOutput,
+            "Phase 20.08 R2: clean LLM output (no dialect tokens) must pass the gate")
+    }
+
+    /// R3: Gate must HONOUR the speaker-said exception — if a Swiss form
+    /// is present in the raw baseline, the LLM is allowed to keep it.
+    func testGateLLMDialectAcceptsSwissAlreadyInRaw() {
+        let rulesCleaned = "uf de Berg"
+        let llmOutput = "uf de Berg."
+        let result = CleanupService.gateLLMDialect(
+            rulesCleaned: rulesCleaned,
+            llmOutput: llmOutput
+        )
+        XCTAssertEqual(result, llmOutput,
+            "Phase 20.08 R3: dialect tokens already in raw baseline are speaker-said and must pass")
     }
 }

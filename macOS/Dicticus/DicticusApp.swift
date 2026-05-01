@@ -24,6 +24,12 @@ struct DicticusApp: App {
     // TextProcessingService orchestrates Dictionary, ITN, and CleanupService.
     @State private var textProcessingService: TextProcessingService?
 
+    // Phase 20.08 D-02: openWindow accessor for the DEBUG-only Cleanup Spike
+    // command. Declared at the App level so the .commands menu entry below can
+    // imperatively open the spike window. Always available; only the menu
+    // entry that uses it is gated by #if DEBUG.
+    @Environment(\.openWindow) private var openWindow
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()
@@ -46,6 +52,7 @@ struct DicticusApp: App {
                     || (hotkeyManager.pipelineState == .transcribing)
                     || (hotkeyManager.pipelineState == .cleaning))
                 .task {
+                    SwissDefaultMigration.runIfNeeded()  // D-A3 — must precede any useSwissGerman reader
                     // Check permissions at launch so iconName reads correct state immediately
                     // (prevents mic.slash showing when permissions are already granted but
                     // status is still .pending from init)
@@ -107,6 +114,29 @@ struct DicticusApp: App {
             HistoryView()
                 .environmentObject(HistoryService.shared)
         }
+
+#if DEBUG
+        // Phase 20.08 D-02: prompt-spike harness for AI-cleanup A/B comparison.
+        // DEBUG-only — kept behind #if DEBUG for future LLM-prompt iterations
+        // rather than removed after Phase 20.08 ships (D-Discretion).
+        WindowGroup("Cleanup Spike", id: "cleanup-spike") {
+            if let cleanup = cleanupService {
+                CleanupSpikeView()
+                    .environmentObject(cleanup)
+            } else {
+                Text("CleanupService not loaded yet — wait for warmup.")
+                    .padding()
+            }
+        }
+        .commands {
+            CommandGroup(after: .windowList) {
+                Button("Cleanup Spike (Debug)…") {
+                    openWindow(id: "cleanup-spike")
+                }
+                .keyboardShortcut("k", modifiers: [.command, .shift, .option])
+            }
+        }
+#endif
     }
 
     /// Menu bar icon view — uses a colored NSImage for recording (isTemplate=false bypasses

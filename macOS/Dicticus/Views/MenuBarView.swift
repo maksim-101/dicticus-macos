@@ -25,6 +25,7 @@ struct MenuBarView: View {
     @EnvironmentObject var updater: SparkleUpdater
     @Environment(\.openWindow) private var openWindow
     @State private var showOnboarding = false
+    @State private var showMultiCopyDetail = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -32,6 +33,78 @@ struct MenuBarView: View {
                 OnboardingView(isPresented: $showOnboarding)
                     .environmentObject(permissionManager)
             } else {
+                // D-05: Repair banner — sticky when AX is denied post-onboarding,
+                // OR when KeyboardShortcuts registration silently failed (D-04 layer 2).
+                if (permissionManager.accessibilityStatus == .denied && permissionManager.hasCompletedOnboarding)
+                    || hotkeyManager.registrationFailed {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                            Text("Hotkeys disabled — Accessibility permission missing.")
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer()
+                            Button("Repair") {
+                                SystemSettingsURL.open(SystemSettingsURL.accessibility)
+                            }
+                            .controlSize(.small)
+                            .fixedSize(horizontal: true, vertical: false)
+                        }
+                        Text("Relaunch Dicticus after granting.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 24)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .background(Color.red.opacity(0.08))
+                    .cornerRadius(6)
+
+                    Divider()
+                }
+
+                // D-07: Multi-copy warning — shown when launch-only mdfind returned > 1 path.
+                if permissionManager.multipleDicticusCopies.count > 1 {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundColor(.orange)
+                            Text("Multiple Dicticus copies detected — may cause permission issues.")
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer()
+                            Button(showMultiCopyDetail ? "Hide" : "Show") {
+                                showMultiCopyDetail.toggle()
+                            }
+                            .controlSize(.small)
+                            .fixedSize(horizontal: true, vertical: false)
+                        }
+                        if showMultiCopyDetail {
+                            VStack(alignment: .leading, spacing: 2) {
+                                ForEach(permissionManager.multipleDicticusCopies, id: \.self) { url in
+                                    Text(url.path)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                                Text("Run scripts/install-local.sh to consolidate.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .padding(.top, 2)
+                            }
+                            .padding(.leading, 24)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .background(Color.orange.opacity(0.08))
+                    .cornerRadius(6)
+
+                    Divider()
+                }
+
                 // Warm-up status row — hidden after models are ready (UI-SPEC Model Warm-up Row)
                 WarmupRow()
                     .environmentObject(warmupService)
@@ -40,30 +113,40 @@ struct MenuBarView: View {
                     Divider()
                 }
 
-                // Permission rows — always visible per D-05/D-22
-                VStack(spacing: 4) {
-                    PermissionRow(
-                        title: "Microphone",
-                        status: permissionManager.microphoneStatus,
-                        grantAction: {
-                            Task { await permissionManager.requestMicrophone() }
-                        },
-                        settingsURL: SystemSettingsURL.microphone,
-                        showRestartHint: true
-                    )
-                    PermissionRow(
-                        title: "Accessibility",
-                        status: permissionManager.accessibilityStatus,
-                        grantAction: { permissionManager.requestAccessibility() },
-                        settingsURL: SystemSettingsURL.accessibility
-                    )
-                }
+                // Permission rows — visible only while at least one is not .granted (D-11).
+                // Quieter steady-state UI; loud only when action is needed.
+                if !permissionManager.allGranted {
+                    VStack(spacing: 4) {
+                        PermissionRow(
+                            title: "Microphone",
+                            status: permissionManager.microphoneStatus,
+                            grantAction: {
+                                Task { await permissionManager.requestMicrophone() }
+                            },
+                            settingsURL: SystemSettingsURL.microphone,
+                            showRestartHint: true
+                        )
+                        PermissionRow(
+                            title: "Accessibility",
+                            status: permissionManager.accessibilityStatus,
+                            grantAction: { permissionManager.requestAccessibility() },
+                            settingsURL: SystemSettingsURL.accessibility
+                        )
+                        PermissionRow(
+                            title: "Input Monitoring",
+                            status: permissionManager.inputMonitoringStatus,
+                            grantAction: { permissionManager.requestInputMonitoring() },
+                            settingsURL: SystemSettingsURL.inputMonitoring
+                        )
+                    }
 
-                Divider()
+                    Divider()
+                }
 
                 // AI Cleanup model info — always visible
                 AiCleanupInfoView()
                     .environmentObject(warmupService)
+                SwissGermanToggleRow()       // Phase 19.5 D-A2
 
                 Divider()
 
@@ -104,6 +187,12 @@ struct MenuBarView: View {
 
                 Divider()
 
+#if DEBUG
+                Button("Cleanup Spike (Debug)…") {
+                    openWindow(id: "cleanup-spike")
+                }
+#endif
+
                 Button("Check for Updates...") {
                     updater.checkForUpdates()
                 }
@@ -123,6 +212,10 @@ struct MenuBarView: View {
 
             // Load persisted onboarding state and show flow if not yet completed
             permissionManager.loadOnboardingState()
+
+            // D-07: launch-only mdfind probe for stale Dicticus.app copies on disk
+            permissionManager.checkMultipleInstalls()
+
             if !permissionManager.hasCompletedOnboarding {
                 showOnboarding = true
             }

@@ -35,6 +35,7 @@ targets:
     deploymentTarget: "15.0"
     sources:
       - path: Dicticus
+      - path: ../Shared
     resources:
       - path: Dicticus/Assets.xcassets
     info:
@@ -43,8 +44,8 @@ targets:
         LSUIElement: true
         NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
         CFBundleIdentifier: com.dicticus.app
-        CFBundleVersion: "3"
-        CFBundleShortVersionString: "1.1.1"
+        CFBundleVersion: "4"
+        CFBundleShortVersionString: "1.2.0"
         SUFeedURL: "https://maksim-101.github.io/dicticus-macos/appcast.xml"
         SUPublicEDKey: "svsiIi/mzzxOO1K9AJ7yAXboJb+U0wDoLCoLM1hEqjc="
         SUEnableAutomaticChecks: YES
@@ -52,6 +53,8 @@ targets:
       path: Dicticus/Dicticus.entitlements
       properties:
         com.apple.security.app-sandbox: false
+        com.apple.security.application-groups:
+          - group.com.dicticus
         com.apple.security.device.audio-input: true
         com.apple.security.cs.disable-library-validation: true
         com.apple.security.cs.allow-unsigned-executable-memory: true
@@ -82,6 +85,10 @@ targets:
         product: Sparkle
       - package: GRDB
         product: GRDB
+    scheme:
+      testTargets:
+        - DicticusTests
+      gatherCoverageData: false
 
   DicticusTests:
     type: bundle.unit-test

@@ -24,6 +24,18 @@ struct SettingsSection: View {
                 .padding(.horizontal)
                 .padding(.top, 4)
 
+            // Phase 20.04 ACT-4-RESILIENCE: parity warning row.
+            // macOS rarely hits this path (App Group resolution is more reliable
+            // on macOS than iOS) but cross-platform-parity convention requires
+            // symmetric surfacing. Reads the static flag set during HistoryService
+            // init — immutable for the process lifetime so no observation needed.
+            if !HistoryService.appGroupAvailable {
+                appGroupFallbackWarningRow
+                    .padding(.horizontal)
+                    .padding(.vertical, 4)
+                Divider()
+            }
+
             // Launch at Login toggle — SMAppService is source of truth, not UserDefaults (D-02/D-04)
             LaunchAtLogin.Toggle("Launch at Login")
                 .padding(.horizontal)
@@ -80,6 +92,39 @@ struct SettingsSection: View {
 
             Divider()
 
+            // Phase 20.05 ACT-3-VISIBILITY: Copy mode parity row.
+            // Writes the same UserDefaults key (`cleanupCopyMode`) consumed by
+            // every per-row Copy button across iOS + macOS.
+            Text("History")
+                .font(.headline)
+                .padding(.horizontal)
+                .padding(.top, 4)
+
+            HStack {
+                Text("Copy from rows")
+                    .font(.body)
+                Spacer()
+                Picker("", selection: copyModeBinding) {
+                    Text("Raw").tag(CleanupCopyMode.raw)
+                    Text("Polished").tag(CleanupCopyMode.polished)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 180)
+                .accessibilityLabel("Copy mode for history rows")
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 4)
+
+            Text("Raw = unedited ASR output. Polished = post-cleanup text.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+
             Button(action: {
                 openWindow(id: "dictionary")
                 NSApp.activate(ignoringOtherApps: true)
@@ -94,5 +139,35 @@ struct SettingsSection: View {
             .padding(.horizontal)
             .padding(.vertical, 4)
         }
+    }
+
+    /// Phase 20.05 ACT-3-VISIBILITY: Binding into the cross-platform
+    /// `CleanupCopyMode.current` (UserDefaults.standard, key `cleanupCopyMode`).
+    /// Read by every per-row Copy button on both platforms.
+    private var copyModeBinding: Binding<CleanupCopyMode> {
+        Binding(
+            get: { CleanupCopyMode.current },
+            set: { CleanupCopyMode.current = $0 }
+        )
+    }
+
+    /// Phase 20.04 ACT-4-RESILIENCE: macOS parity diagnostic row.
+    /// Shown only when HistoryService fell back to per-app applicationSupport
+    /// storage. macOS-specific copy: omits the keyboard-extension reference
+    /// (no equivalent on macOS — the keyboard scenario is iOS-only).
+    private var appGroupFallbackWarningRow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("History storage degraded")
+                    .font(.callout.weight(.semibold))
+                Text("Dicticus is using local app storage for transcription history. Reinstall the app if this is unexpected.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
