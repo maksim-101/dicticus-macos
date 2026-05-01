@@ -16,19 +16,22 @@ import XCTest
 ///   }
 ///   ```
 ///
-/// Ship-list discipline: the German list is intentionally 4 tokens and
-/// the English list 5 tokens. Words like `also`, `ja`, `genau`, `well`,
-/// `so`, `like`, `you know` are NOT fillers — they are content. The
-/// adversarial cases below lock that boundary.
+/// Ship-list discipline: the German list is 5 tokens (4 original + `naja`
+/// added in 20.08-05 iteration 2 after the 2026-05-01 UAT surfaced
+/// `naja, vielleicht so` as residual filler) and the English list 5 tokens.
+/// Words like `also`, `ja`, `genau`, `well`, `so`, `like`, `you know` are
+/// NOT fillers — they are content. The adversarial cases below lock that
+/// boundary.
 final class FillerWordRemoverTests: XCTestCase {
 
     // MARK: - Ship-list constants
 
     func testGermanFillerShipList() {
-        // Exactly 4 — adding new tokens without explicit planner approval
+        // Exactly 5 — adding new tokens without explicit planner approval
         // weakens the false-positive defense for `also`/`ja`/`genau`.
+        // `naja` added in 20.08-05 iteration 2 (planner-approved).
         XCTAssertEqual(FillerWordRemover.germanFillers,
-                       ["äh", "ähm", "ehm", "hmm"])
+                       ["äh", "ähm", "ehm", "hmm", "naja"])
     }
 
     func testEnglishFillerShipList() {
@@ -67,6 +70,25 @@ final class FillerWordRemoverTests: XCTestCase {
         XCTAssertEqual(
             FillerWordRemover.strip("ähm, vielleicht", language: "de"),
             "vielleicht"
+        )
+    }
+
+    // 20.08-05 iteration 2: positive `naja` cases.
+    func testGermanNajaMidSentence() {
+        // From the 2026-05-01 UAT — `naja, vielleicht so 50% geringer`.
+        XCTAssertEqual(
+            FillerWordRemover.strip(
+                "der Verkehr während der Schulferien naja, vielleicht so 50% geringer",
+                language: "de"
+            ),
+            "der Verkehr während der Schulferien vielleicht so 50% geringer"
+        )
+    }
+
+    func testGermanNajaLeadingCapitalized() {
+        XCTAssertEqual(
+            FillerWordRemover.strip("Naja, das stimmt schon.", language: "de"),
+            "Das stimmt schon."
         )
     }
 
