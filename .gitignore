@@ -3,6 +3,11 @@ macOS/build-verify/
 .env
 .env.build
 
+# Release artifacts — built locally by scripts/build-dmg.sh, distributed via
+# GitHub Releases, not via git.
+Dicticus.dmg
+*.dmg
+
 # macOS Finder metadata
 .DS_Store
 **/.DS_Store
