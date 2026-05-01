@@ -108,14 +108,21 @@ struct CleanupPrompt {
         return prompt
     }
 
-    /// Variant (g15) German-language user-turn body. Verbatim from
-    /// `20.08-SPIKE-RESULTS.md` "Wave B Update" section.
+    /// Variant (g15) German-language user-turn body. Originally verbatim from
+    /// `20.08-SPIKE-RESULTS.md` "Wave B Update" section; additively patched in
+    /// Phase 20.08 Plan 05 to close R-G15-01 (currency-digit truncation
+    /// reproduced cross-platform on 2026-05-01 UAT — see
+    /// `20.08-04-UAT-RESULTS.md` and `20.08-05-PLAN.md`). Plan 05 adds (a) a
+    /// positive German directive forbidding digit/amount mutation, and (b) a
+    /// 5th ORIGINAL/KORRIGIERT exemplar demonstrating preservation of a 3-digit
+    /// decimal currency in colloquial-modal context.
     ///
     /// `swissOrthography` controls ONLY whether the
     /// `mit Schweizer Rechtschreibung (ss statt ß, Umlaute ä/ö/ü bleiben)`
     /// clause appears inside the INSTRUCTION line (per VARIANT-G-RATIONALE §4
-    /// D3). The 4 ORIGINAL/KORRIGIERT exemplars and RULE 1 (Standard-Hochdeutsch)
-    /// fire unconditionally on every German input.
+    /// D3). All 5 ORIGINAL/KORRIGIERT exemplars, RULE 1 (Standard-Hochdeutsch),
+    /// the anti-dialect directive, the anglicism two-tier rule, and the new
+    /// digit-preservation directive fire unconditionally on every German input.
     private static func buildGermanVariantG15(text: String, swissOrthography: Bool) -> String {
         let orthographyClause = swissOrthography
             ? " mit Schweizer Rechtschreibung (ss statt ß, Umlaute ä/ö/ü bleiben)"
@@ -128,6 +135,10 @@ struct CleanupPrompt {
         prompt += "Verwende KEINEN Schweizerdeutsch-Dialekt — schreibe \"Woche\" nicht \"Wuche\", \"Zürich\" nicht \"Züri\", \"ich gehe\" nicht \"i gang\". "
         prompt += "Etablierte englische Fachbegriffe bleiben Englisch (Deadline, Meeting, Workaround, E-Mail, Team, Product Owner, Release). "
         prompt += "Untypische englische Adjektive oder Verben in deutschen Sätzen ins Deutsche übertragen — \"realistic\" → \"realistisch\", \"awesome\" → \"toll\", \"appreciate\" → \"schätzen\". "
+        // Phase 20.08 Plan 05 (R-G15-01 fix): positive constraint on numeric tokens.
+        // Keep this directive list-free — VARIANT-G-RATIONALE §3 documents the
+        // priming trap when negative example lists are surfaced to Gemma 4 E2B.
+        prompt += "Zahlen, Beträge und Mengenangaben bleiben unverändert — keine Ziffern hinzufügen, weglassen oder umstellen, auch wenn der Kontext eine andere Zahl plausibler erscheinen lässt. "
         prompt += "Gib genau eine bereinigte Version aus, sonst nichts.\n"
         prompt += "\n"
         prompt += "ORIGINAL: ich habe heute mit dem product owner gesprochen über die deadline und er meinte das ist nicht realistic.\n"
@@ -141,6 +152,13 @@ struct CleanupPrompt {
         prompt += "\n"
         prompt += "ORIGINAL: letzte woche war ich in zürich auf einer grossen konferenz.\n"
         prompt += "KORRIGIERT: Letzte Woche war ich in Zürich auf einer grossen Konferenz.\n"
+        prompt += "\n"
+        // Phase 20.08 Plan 05 (R-G15-01 fix): 5th exemplar — 3-digit decimal currency
+        // in colloquial-modal context. Mirrors the exact failure shape from the
+        // 2026-05-01 UAT (`vielleicht sogar um die 102.50 Franken` → variant g15
+        // mutated to `12.50 Franken`). Identity edit: only capitalisation + period.
+        prompt += "ORIGINAL: ich habe bestimmt über 99 franken ausgegeben vielleicht sogar um die 102.50 franken.\n"
+        prompt += "KORRIGIERT: Ich habe bestimmt über 99 Franken ausgegeben. Vielleicht sogar um die 102.50 Franken.\n"
         prompt += "\n"
         prompt += "ORIGINAL: \(sanitizedText)\n"
         prompt += "KORRIGIERT:<end_of_turn>\n"
