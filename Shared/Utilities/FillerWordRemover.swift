@@ -3,13 +3,18 @@ import Foundation
 /// Phase 20 D-02 Action 2: deterministic per-language filler-word removal.
 ///
 /// Conservative ship list (intentionally narrow — see CONTEXT.md
-/// "PHASE-20 SCOPE NOTE"): the German list ships only the unambiguous
-/// hesitation tokens `{äh, ähm, ehm, hmm}`; the English list ships
+/// "PHASE-20 SCOPE NOTE"): the German list ships the unambiguous
+/// hesitation tokens `{äh, ähm, ehm, hmm, naja}`; the English list ships
 /// `{uh, um, umm, er, erm}`. Tokens like `also`, `halt`, `ja`, `genau`,
 /// `well`, `so`, `like` are NOT removed — they have semantic meaning
 /// that the rules pass must not destroy. Adversarial fixtures lock the
 /// boundary (see `iOS/DicticusTests/Fixtures/RulesCleanup.fixtures.json`
 /// `rc-de-adv-filler-*` and `rc-en-adv-filler-*`).
+///
+/// Phase 20.08-05 iteration 2: `naja` added after the 2026-05-01 macOS UAT
+/// surfaced "naja, vielleicht so" as a residual filler phrase the LLM grammar
+/// pass could not justify removing on its own. Single-token form only — the
+/// two-word spelling `na ja` is rare in modern German and out of scope.
 ///
 /// Behaviour summary (see RESEARCH.md and 20-03-PLAN action A):
 ///   - Case-insensitive token-boundary regex match per language.
@@ -27,10 +32,10 @@ public enum FillerWordRemover {
 
     // MARK: - Ship-list constants (locked by FillerWordRemoverTests)
 
-    /// Exactly 4 tokens — see ship-list test
+    /// Exactly 5 tokens — see ship-list test
     /// `testGermanFillerShipList`. Adding tokens without explicit planner
     /// approval weakens the false-positive defense for `also`/`ja`/`genau`.
-    public static let germanFillers: Set<String> = ["äh", "ähm", "ehm", "hmm"]
+    public static let germanFillers: Set<String> = ["äh", "ähm", "ehm", "hmm", "naja"]
 
     /// Exactly 5 tokens — see `testEnglishFillerShipList`.
     public static let englishFillers: Set<String> = ["uh", "um", "umm", "er", "erm"]
