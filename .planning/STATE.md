@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
 stopped_at: Phase 20.08 context gathered
-last_updated: "2026-04-27T20:10:44.434Z"
-last_activity: 2026-04-27 -- Phase 20.08 execution started
+last_updated: "2026-04-30T22:00:00.000Z"
+last_activity: 2026-04-30 -- Phase 20.08 housekeeping: variant (e)→(g15) pivot reconciled across planning artifacts
 progress:
   total_phases: 9
   completed_phases: 6
@@ -16,8 +16,8 @@ progress:
 
 # Project State: Dicticus
 
-**Last Updated:** 2026-04-27
-**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 SHIPPED)
+**Last Updated:** 2026-04-30
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 SHIPPED; Phase 20.08 in Wave-B variant-pivot prep for Plan 04)
 
 ## Project Reference
 
@@ -28,16 +28,17 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: 20.08 (llm-swiss-ification-suppression) — EXECUTING
-Plan: 1 of 4
-Plans: 4 of 4 complete + 20.06-05-FIX (iOS warmup hang + onboarding progress + Settings @AppStorage reactivity + HistoryRow duplicate-chevron + ASR cache-path check via FluidAudio API)
-UAT: GREEN on Phase 20.06's stated goal (LLM hallucination demotion + currency idempotency on the AI-cleanup-ON path). Post-ship rebuild surfaced two new failure modes: rules-only `4, Franken50 Euro` (→ Phase 20.07) and LLM Swiss-ification of clean High German on AI-cleanup ON + Swiss ON (→ Phase 20.08).
+Phase: 20.08 (llm-swiss-ification-suppression) — EXECUTING; 3/4 plans shipped, Plan 04 awaits implementation under Wave-B variant pivot
+Plan: 4 of 4 (next)
+Plans: 20.08-01, 02, 03 shipped; 20.08-04 retargeted from variant (e) to **variant (g15)** after post-Plan-03 UAT exposed identity-preservation failures (lowercase nouns, `und Und` clause-seam duplication, `Würdigten` meaning-inference scar)
+Wave-B sibling work shipped: sampler reorder (`78738a4`), SwissNumberFormatter Bridge 1.5 (`17005f3`), apostrophe-strike (`435004b`), spike pipeline mirror + anglicism differentiation (`8daf91a`)
+UAT: GREEN on Phase 20.06's goal (LLM hallucination demotion + currency idempotency). Phase 20.08 Plan 03 spike picked variant (e); UAT on multi-clause real input rejected variant (e); Wave-B re-spike chose variant (g15) — 7/7 fixtures pass at production sampler, 0/8 muessen ASCII-fold drift on F3.
 Builds verified: iOS BUILD SUCCEEDED on iPhone 17 sim (OS 26.4.1). macOS Debug previously verified.
 
-Next: `/gsd-discuss-phase 20.08` — LLM Swiss-Ification Suppression (more pressing than 20.07 since it affects the default AI-cleanup ON path). Phase 20.07 queued behind it.
+Next: implement Plan 04 — restructure `Shared/Models/CleanupPrompt.swift` per VARIANT-G-RATIONALE §4 D3 (two-layer German conditional), ship variant (g15) verbatim from `20.08-SPIKE-RESULTS.md` "Wave B Update", update R6 contract tests to lock g15 markers, R9 UAT replay on macOS + iOS Release.
 
-Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-CONTEXT.md
-Last activity: 2026-04-27 -- Phase 20.08 execution started
+Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-VARIANT-G-RATIONALE.md (canonical brief) + 20.08-04-PLAN.md (updated 2026-04-30)
+Last activity: 2026-04-30 -- Phase 20.08 housekeeping: variant pivot reconciled across SPIKE-RESULTS, 03-SUMMARY, 04-PLAN, RATIONALE, ROADMAP
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
@@ -95,6 +96,6 @@ Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending phy
 
 ## Session Continuity
 
-Last session: 2026-04-27T19:07:56.610Z
-Stopped at: Phase 20.08 context gathered
-Resume file: Run `/gsd-discuss-phase` for next phase candidate (DESIGN.md generation, 19.5 CH-determinism, or 19.6 iOS UX)
+Last session: 2026-04-30T22:00:00.000Z
+Stopped at: Phase 20.08 planning artifacts reconciled with variant (g15) reality (post-Plan-03 ad-hoc work captured in VARIANT-G-RATIONALE §10)
+Resume file: `.planning/phases/20.08-llm-swiss-ification-suppression/20.08-04-PLAN.md` — implement Plan 04 (variant g15 swap + two-layer conditional + R6 tests + UAT replay)

@@ -34,7 +34,7 @@
 | 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Shipped 2026-04-27 | UAT findings closed via Phase 20.06; AI-cleanup path GREEN on the test sentence |
 | 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 4/4 | Shipped 2026-04-27 | HELVETISMS dialect preserved + currency idempotency + iOS history gestures + Settings-toggle reactivity (UAT GREEN on AI-cleanup path) |
 | 20.07. Rules-only ASR-Mishearing Recovery | v2.1 | 0/? | Planned | Rules-only Swiss path produces unrecoverable shapes when ASR drifts (e.g. `4, Franken50 Euro`) — needs an aggressive split-rule with false-positive guards |
-| 20.08. LLM Swiss-Ification Suppression | v2.1 | 3/4 | In Progress|  |
+| 20.08. LLM Swiss-Ification Suppression | v2.1 | 3/4 | In Progress | Wave-A (Plans 01–03) shipped variant (e); post-UAT pivot 2026-04-29 → variant (g15) (see `20.08-VARIANT-G-RATIONALE.md`); Plan 04 awaits implementation under the two-layer German conditional |
 
 ---
 
@@ -164,13 +164,13 @@ Plans:
 
 **Cross-platform parity rule:** dialect gate + SwissDialectForms data + integration tests ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity). `CleanupPromptTests.swift` remains macOS-only by 20.06-01 precedent.
 
-**Plans:** 3/4 plans executed
+**Plans:** 3/4 plans executed; Wave-B variant pivot 2026-04-29 (variant e → variant g15) — see `20.08-VARIANT-G-RATIONALE.md`
 
 Plans:
 - [x] 20.08-01-PLAN.md — Wave 1: `Shared/Models/SwissDialectForms.swift` (curated 38-token list, homographs `de`/`sind`/`müesli` excluded, CC BY-SA 4.0 attribution) + iOS + macOS parity tests (R4, R5)
 - [x] 20.08-02-PLAN.md — Wave 2: `CleanupService.gateLLMDialect` + `tokenizeForDialectGate` + integration call at `TextProcessingService.swift` ~line 97 (BEFORE existing `gateLLMOutput`) + R1/R2/R3 unit tests + R7 stacking-safe integration test on both platforms (depends on 20.08-01)
-- [x] 20.08-03-PLAN.md — Wave 3 (CHECKPOINT): macOS Debug-only spike harness `CleanupSpikeView` — runs 5 fixtures × 4 prompt variants with seed 0xDEADBEEF; user picks winner and records `20.08-SPIKE-RESULTS.md` with verbatim prompt block to ship in Plan 04 (R8) (depends on 20.08-02)
-- [ ] 20.08-04-PLAN.md — Wave 4 (CHECKPOINT): replace HELVETISMS block in `CleanupPrompt.swift` with spike-winner verbatim text + R6 contract tests on macOS + R9 UAT replay on macOS Release + iOS Release; phase ships GREEN (depends on 20.08-03)
+- [x] 20.08-03-PLAN.md — Wave 3 (CHECKPOINT): macOS Debug-only spike harness `CleanupSpikeView` — runs 5 fixtures × 4 prompt variants with seed 0xDEADBEEF; user picked variant (e), recorded in `20.08-SPIKE-RESULTS.md`. **SUPERSEDED:** post-checkpoint UAT exposed identity-preservation failures (lowercase nouns, `und Und`, `Würdigten` mishear scar) → Wave-B re-spike → variant (g15) ships instead. See `20.08-VARIANT-G-RATIONALE.md` §1.5 + §10.
+- [ ] 20.08-04-PLAN.md — Wave 4 (CHECKPOINT): restructure `CleanupPrompt.swift` German branch into the two-layer conditional from VARIANT-G-RATIONALE §4 D3, ship variant (g15) verbatim from `20.08-SPIKE-RESULTS.md` "Wave B Update", update R6 contract tests to lock g15 markers (`Standard-Hochdeutsch`, `ORIGINAL:`/`KORRIGIERT:` few-shot frame, two-layer gating), R9 UAT replay on macOS Release + iOS Release; phase ships GREEN (depends on 20.08-03 + Wave-B post-Plan-03 ad-hoc work: sampler reorder `78738a4`, Bridge 1.5 `17005f3`, apostrophe-strike `435004b`, spike pipeline mirror `8daf91a`)
 
 ---
 
@@ -187,4 +187,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-27 — Phase 20.08 (LLM Swiss-Ification Suppression) plans created: 4 plans across 4 waves; gate-then-spike-then-prompt structure; Plans 03 and 04 carry user checkpoints (manual spike harness + R9 UAT replay).*
+*Last updated: 2026-04-30 — Phase 20.08 Wave-B variant pivot recorded: variant (e) winner from Plan 03 superseded post-UAT (lowercase nouns, `und Und`, meaning-inference scars); variant (g15) is the production-ready replacement (4-shot ORIGINAL/KORRIGIERT German-language prompt, 7/7 fixtures pass, 0/8 muessen drift). Plan 04 surface area updated: two-layer German conditional, no thousands-separator clause, anglicism differentiation duty added. Sibling deterministic-Swift work shipped (sampler reorder, SwissNumberFormatter Bridge 1.5, apostrophe-strike). Canonical brief: `20.08-VARIANT-G-RATIONALE.md`.*
