@@ -44,6 +44,46 @@ struct CleanupPrompt {
         dictionaryContext: [String: String]? = nil,
         useSwissGerman: Bool? = nil
     ) -> String {
+        // WR-03 fix: prefer the explicit `useSwissGerman` argument when provided
+        // (CleanupService snapshots it once); fall back to reading the AppGroup
+        // for legacy callers / direct unit tests.
+        let swissEnabled: Bool = useSwissGerman ?? {
+            let suite = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
+            return suite.bool(forKey: "useSwissGerman")
+        }()
+
+        // Phase 20.08 D-05 / variant-g pivot: for German input, ship variant (g15)
+        // verbatim as the entire user-turn body (replaces INSTRUCTION/DICTIONARY/
+        // LANGUAGE/INPUT/OUTPUT framing). Two-layer German conditional per
+        // VARIANT-G-RATIONALE §4 A2 / D3:
+        //   - language == "de"            → variant (g15) INSTRUCTION + 4-shot
+        //                                    ORIGINAL/KORRIGIERT frame + RULE 1
+        //                                    (Standard-Hochdeutsch). Fires on
+        //                                    ALL German input regardless of toggle.
+        //   - swissEnabled && language=="de" → orthography clause
+        //                                    (`ss statt ß, Umlaute ä/ö/ü bleiben`)
+        //                                    embedded inside the INSTRUCTION line.
+        // Body verbatim from .planning/phases/20.08-llm-swiss-ification-suppression/
+        // 20.08-SPIKE-RESULTS.md "Wave B Update" section. Multi-seed verified at
+        // production sampler (temp 0.1, top-k 40, top-p 0.9, seed 0xDEADBEEF):
+        // 7/7 fixtures pass, 0/8 muessen ASCII-fold drift on F3.
+        //
+        // Reference Swift builder: macOS/Dicticus/Views/CleanupSpikeView.swift::
+        // SpikeFixtures.buildVariantG15 (Debug-only spike harness).
+        //
+        // Defense-in-depth: Plan 20.08-02's CleanupService.gateLLMDialect remains
+        // the structural backstop if the LLM injects dialect tokens absent from
+        // the raw ASR. Currency anti-flip and dictionary-context features are
+        // dropped from the German path by the variant (g15) verbatim contract;
+        // the third few-shot example (`1250 Franken 20`) demonstrates currency
+        // preservation via positive exemplar.
+        if language == "de" {
+            return buildGermanVariantG15(text: text, swissOrthography: swissEnabled)
+        }
+
+        // Non-German path (English / unknown): existing
+        // INSTRUCTION / DICTIONARY / LANGUAGE / INPUT / OUTPUT framing per A1
+        // (KEEP base defaultInstruction for non-German).
         let instruction = userInstruction()
 
         var prompt = "<start_of_turn>user\n"
@@ -60,66 +100,52 @@ struct CleanupPrompt {
             prompt += "LANGUAGE: \(lang == "de" ? "German" : "English")\n"
         }
 
-        // D-18: Swiss German orthography prompt extension (scoped to German only).
-        // Gated on BOTH the Swiss-toggle decision AND language == "de".
-        // Standard-German dictation stays untouched even if the Swiss toggle is ON.
-        // WR-03 fix: prefer the explicit `useSwissGerman` argument when provided
-        // (CleanupService snapshots it once); fall back to reading the AppGroup
-        // for legacy callers / direct unit tests.
-        let swissEnabled: Bool = useSwissGerman ?? {
-            let suite = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
-            return suite.bool(forKey: "useSwissGerman")
-        }()
-        if swissEnabled && language == "de" {
-            prompt += "STYLE: Use Swiss German orthography (never use ß, always ss). "
-            // Phase 20.08 apostrophe-strike: thousands separator was dropped
-            // from the deterministic output (years like 2026 should not become
-            // 2'026). The prompt no longer asks for any thousands grouping.
-            prompt += "Write integers with no thousands separator (e.g. 1250, not 1.250 or 1'250).\n"
-            // Phase 20.06 F-20-UAT-01: HELVETISMS block reworked preservation-first.
-            // Phase 19.5 D-D2 wording ("Prefer these Swiss German words when applicable")
-            // caused Gemma 4 E2B to translate High German → Swiss German dialect
-            // (auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, …) on UAT 2026-04-27.
-            // The block now leads with explicit preservation, restricts allowed
-            // normalizations, enumerates a NEGATIVE trap list, and keeps the positive
-            // word list as a vocabulary anchor only for words the speaker actually used.
-            prompt += "HELVETISMS: Preserve the speaker's dialect register exactly. "
-            prompt += "Only change ß→ss and decimal-comma→period. "
-            prompt += "Do NOT replace High German words with Swiss German equivalents. "
-            prompt += "Specifically: do NOT apply any of these substitutions — "
-            prompt += "auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, einkaufen→iikaufe, "
-            prompt += "natürlich→natürli, Dingen→Sache, gegessen→gässe, später→speter, "
-            prompt += "beiden→beidne, Seite→Siite, etwas→öppis, Kleines→chliins, "
-            prompt += "gekauft→chauft. "
-            prompt += "If — and only if — the speaker actually used a Swiss word, keep it as-is "
-            prompt += "(reference list: \(SwissHelvetisms.words.joined(separator: ", "))).\n"
-        }
-
-        // D-B1b (Phase 19.5): Currency anti-flip prompt anchor. Fires on ANY
-        // de-language input that contains a currency token, regardless of the
-        // Swiss toggle (per D-B2 — Gemma's EUR bias is a German-language issue,
-        // not a Swiss-only one).
-        // W8 lock: detect on raw `text`. sanitizeControlTokens only strips
-        // Gemma turn tokens (never present in user dictation), so detection
-        // on raw text is equivalent and avoids reordering existing code.
-        if language == "de" {
-            let detectedCurrencies = CurrencyAntiFlip.detectCurrencies(in: text)
-            if !detectedCurrencies.isEmpty {
-                let labels = detectedCurrencies.map(\.text).joined(separator: ", ")
-                prompt += "STRICT: Keep currency exactly as written ("
-                prompt += labels
-                prompt += "). Do NOT translate, convert, or substitute one currency for another.\n"
-                // Phase 20.06 F-20-UAT-02: speaker-explicit anchor against the
-                // wrong-direction Franken→Euro flip the LLM exhibited on UAT.
-                prompt += "Explicit currency words from the speaker are authoritative — never substitute Franken with Euro or vice versa.\n"
-            }
-        }
-
         let sanitizedText = sanitizeControlTokens(text)
         prompt += "INPUT: \(sanitizedText)<end_of_turn>\n"
         prompt += "<start_of_turn>model\n"
         prompt += "OUTPUT:"
-        
+
+        return prompt
+    }
+
+    /// Variant (g15) German-language user-turn body. Verbatim from
+    /// `20.08-SPIKE-RESULTS.md` "Wave B Update" section.
+    ///
+    /// `swissOrthography` controls ONLY whether the
+    /// `mit Schweizer Rechtschreibung (ss statt ß, Umlaute ä/ö/ü bleiben)`
+    /// clause appears inside the INSTRUCTION line (per VARIANT-G-RATIONALE §4
+    /// D3). The 4 ORIGINAL/KORRIGIERT exemplars and RULE 1 (Standard-Hochdeutsch)
+    /// fire unconditionally on every German input.
+    private static func buildGermanVariantG15(text: String, swissOrthography: Bool) -> String {
+        let orthographyClause = swissOrthography
+            ? " mit Schweizer Rechtschreibung (ss statt ß, Umlaute ä/ö/ü bleiben)"
+            : ""
+        let sanitizedText = sanitizeControlTokens(text)
+
+        var prompt = "<start_of_turn>user\n"
+        prompt += "Bereinige die folgende deutsche Sprachaufnahme. "
+        prompt += "Schreibe Standard-Hochdeutsch\(orthographyClause). "
+        prompt += "Verwende KEINEN Schweizerdeutsch-Dialekt — schreibe \"Woche\" nicht \"Wuche\", \"Zürich\" nicht \"Züri\", \"ich gehe\" nicht \"i gang\". "
+        prompt += "Etablierte englische Fachbegriffe bleiben Englisch (Deadline, Meeting, Workaround, E-Mail, Team, Product Owner, Release). "
+        prompt += "Untypische englische Adjektive oder Verben in deutschen Sätzen ins Deutsche übertragen — \"realistic\" → \"realistisch\", \"awesome\" → \"toll\", \"appreciate\" → \"schätzen\". "
+        prompt += "Gib genau eine bereinigte Version aus, sonst nichts.\n"
+        prompt += "\n"
+        prompt += "ORIGINAL: ich habe heute mit dem product owner gesprochen über die deadline und er meinte das ist nicht realistic.\n"
+        prompt += "KORRIGIERT: Ich habe heute mit dem Product Owner über die Deadline gesprochen, und er meinte, das ist nicht realistisch.\n"
+        prompt += "\n"
+        prompt += "ORIGINAL: ich gestern gehen markt und kaufen viele apfel weil ich brauchen für kuchen.\n"
+        prompt += "KORRIGIERT: Ich bin gestern auf den Markt gegangen und habe viele Äpfel gekauft, weil ich sie für den Kuchen brauche.\n"
+        prompt += "\n"
+        prompt += "ORIGINAL: das hotel hat ungefähr 1250 franken 20 gekostet und das war zu viel.\n"
+        prompt += "KORRIGIERT: Das Hotel hat ungefähr 1250 Franken 20 gekostet, und das war zu viel.\n"
+        prompt += "\n"
+        prompt += "ORIGINAL: letzte woche war ich in zürich auf einer grossen konferenz.\n"
+        prompt += "KORRIGIERT: Letzte Woche war ich in Zürich auf einer grossen Konferenz.\n"
+        prompt += "\n"
+        prompt += "ORIGINAL: \(sanitizedText)\n"
+        prompt += "KORRIGIERT:<end_of_turn>\n"
+        prompt += "<start_of_turn>model\n"
+
         return prompt
     }
 
