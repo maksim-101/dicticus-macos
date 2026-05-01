@@ -210,42 +210,13 @@ final class CleanupPromptTests: XCTestCase {
 
     // MARK: - Phase 20.08 Plan 05 R6 — R-G15-01 currency-digit truncation fix
     //
-    // Plan 05 patches variant (g15) additively to close R-G15-01: a positive
-    // German directive forbidding digit/amount mutation + a 5th
-    // ORIGINAL/KORRIGIERT exemplar mirroring the 2026-05-01 UAT failure shape
-    // (`vielleicht sogar um die 102.50 Franken` mutated to `12.50 Franken`
-    // cross-platform on macOS + iOS Release). See
-    // .planning/phases/20.08-llm-swiss-ification-suppression/20.08-05-PLAN.md.
-
-    /// R6 positive: digit-preservation directive present on Swiss + de.
-    func testVariantG15IncludesDigitPreservationDirective() {
-        let prompt = CleanupPrompt.build(
-            text: "irgendwas",
-            language: "de",
-            dictionaryContext: nil,
-            useSwissGerman: true
-        )
-        XCTAssertTrue(
-            prompt.contains("Zahlen, Beträge und Mengenangaben bleiben unverändert"),
-            "Plan 05 digit-preservation directive must appear in the variant (g15) INSTRUCTION block."
-        )
-    }
-
-    /// R6 D3-gating: digit-preservation directive fires on de-only (Swiss OFF).
-    /// Per VARIANT-G-RATIONALE §4 D3, only the orthography clause is toggle-gated;
-    /// the new directive must fire on ALL German input.
-    func testVariantG15DigitDirectiveFiresOnDeOnly() {
-        let prompt = CleanupPrompt.build(
-            text: "irgendwas",
-            language: "de",
-            dictionaryContext: nil,
-            useSwissGerman: false
-        )
-        XCTAssertTrue(
-            prompt.contains("Zahlen, Beträge und Mengenangaben bleiben unverändert"),
-            "Plan 05 directive must fire on ALL German input (de-only branch must include it)."
-        )
-    }
+    // Plan 05 closes R-G15-01 (`vielleicht sogar um die 102.50 Franken` mutated
+    // to `12.50 Franken` cross-platform in the 2026-05-01 UAT) via a single
+    // additive change: one new 5th ORIGINAL/KORRIGIERT exemplar mirroring the
+    // exact failure shape. The earlier directive-sentence approach was dropped
+    // before UAT — see CleanupPrompt.swift::buildGermanVariantG15 inline comment
+    // and 20.08-05-UAT-RESULTS.md for the harness data + VARIANT-G-RATIONALE §3
+    // priming-trap rationale.
 
     /// R6 positive: new 5th ORIGINAL/KORRIGIERT exemplar present on Swiss + de.
     /// Mirrors the exact failure shape from the 2026-05-01 UAT.
@@ -266,7 +237,39 @@ final class CleanupPromptTests: XCTestCase {
         )
     }
 
-    /// R6 regression guard: Plan 05 additions must not leak into the English
+    /// R6 D3-gating: new 5th exemplar fires on de-only (Swiss OFF).
+    /// Per VARIANT-G-RATIONALE §4 D3, only the orthography clause is toggle-gated;
+    /// the 5th exemplar must fire on ALL German input.
+    func testVariantG15ExemplarFiresOnDeOnly() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: false
+        )
+        XCTAssertTrue(
+            prompt.contains("Vielleicht sogar um die 102.50 Franken"),
+            "Plan 05 5th exemplar must fire on ALL German input (de-only branch must include it)."
+        )
+    }
+
+    /// R6 negative: the dropped directive must NOT reappear. Pure regression
+    /// guard against a future re-introduction of negative-instruction phrasing
+    /// (the priming-trap pattern documented in VARIANT-G-RATIONALE §3).
+    func testVariantG15DoesNotIncludeDigitDirective() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: true
+        )
+        XCTAssertFalse(
+            prompt.contains("Zahlen, Beträge und Mengenangaben bleiben unverändert"),
+            "Plan 05 directive was dropped — re-introducing negative-instruction phrasing risks the §3 priming trap."
+        )
+    }
+
+    /// R6 regression guard: Plan 05 5th exemplar must not leak into the English
     /// path (the EN branch keeps INSTRUCTION/DICTIONARY/LANGUAGE/INPUT/OUTPUT
     /// framing per VARIANT-G-RATIONALE §4 A1).
     func testPlan05AdditionsGatedOnGerman() {
@@ -275,10 +278,6 @@ final class CleanupPromptTests: XCTestCase {
             language: "en",
             dictionaryContext: nil,
             useSwissGerman: true
-        )
-        XCTAssertFalse(
-            promptEnglish.contains("Zahlen, Beträge und Mengenangaben bleiben unverändert"),
-            "Plan 05 directive must not appear in English prompts."
         )
         XCTAssertFalse(
             promptEnglish.contains("vielleicht sogar um die 102.50 franken"),
