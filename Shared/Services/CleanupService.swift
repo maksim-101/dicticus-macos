@@ -121,7 +121,12 @@ class CleanupService: ObservableObject, CleanupProvider {
         // Context parameters for dictation cleanup
         var ctxParams = llama_context_default_params()
         ctxParams.n_ctx = 2048       // Context window (prompt + output)
-        ctxParams.n_batch = 512      // Batch size for prompt processing
+        // n_batch must accommodate the full prompt — runInference submits the
+        // entire prompt as one llama_decode call (no chunking). Plan 20.08-05's
+        // German variant (g15) prompt + a 250-token utterance crosses 512 tokens
+        // and triggers GGML_ABORT inside llama_context::decode. Match n_batch to
+        // n_ctx so any prompt fitting the context window decodes in one batch.
+        ctxParams.n_batch = 2048     // Batch size for prompt processing
         ctxParams.n_threads = 4      // CPU threads (Metal handles matrix ops)
 
         guard let ctx = llama_init_from_model(loadedModel, ctxParams) else {
