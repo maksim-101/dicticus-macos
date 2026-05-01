@@ -1,0 +1,118 @@
+name: Dicticus
+options:
+  bundleIdPrefix: com.dicticus
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  SWIFT_VERSION: "6.0"
+  IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+  MARKETING_VERSION: "2.0"
+  CURRENT_PROJECT_VERSION: "1"
+  ENABLE_USER_SCRIPT_SANDBOXING: YES
+  SWIFT_EMIT_LOC_STRINGS: YES
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.0.0
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio.git
+    from: 0.13.6
+  llama:
+    url: https://github.com/mattt/llama.swift.git
+    from: 2.8832.0
+
+targets:
+  Dicticus:
+    type: application
+    platform: iOS
+    sources: 
+      - path: Dicticus
+      - path: ../Shared
+    entitlements:
+      path: Dicticus/Dicticus.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.dicticus
+        com.apple.developer.kernel.increased-memory-limit: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
+      INFOPLIST_FILE: Dicticus/Info.plist
+      GENERATE_INFOPLIST_FILE: YES
+      CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
+      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+      OTHER_LDFLAGS: "-framework llama"
+      INFOPLIST_KEY_CFBundleURLTypes:
+        - CFBundleURLName: com.dicticus.ios
+          CFBundleURLSchemes:
+            - dicticus
+    dependencies:
+      - package: GRDB
+        product: GRDB
+      - package: FluidAudio
+        product: FluidAudio
+      - package: llama
+        product: LlamaSwift
+      - target: DicticusWidget
+
+  DicticusWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DicticusWidget
+      - path: Dicticus/LiveActivity/DictationActivity.swift
+      - path: Dicticus/Intents/StopDictationIntent.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios.widget
+      INFOPLIST_FILE: DicticusWidget/Info.plist
+      GENERATE_INFOPLIST_FILE: YES
+      SKIP_INSTALL: YES
+      PRODUCT_NAME: DicticusWidget
+      SWIFT_VERSION: "6.0"
+      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+    info:
+      path: DicticusWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Dicticus
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        NSSupportsLiveActivities: true
+
+  DicticusTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DicticusTests
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Dicticus
+
+  DicticusUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: DicticusUITests
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      TEST_TARGET_NAME: Dicticus
+      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+    dependencies:
+      - target: Dicticus
+
+schemes:
+  Dicticus:
+    build:
+      targets:
+        Dicticus: [all]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - DicticusTests
+        - DicticusUITests
+    archive:
+      config: Release
+    profile:
+      config: Release

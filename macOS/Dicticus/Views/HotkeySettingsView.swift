@@ -8,6 +8,8 @@ import KeyboardShortcuts
 /// Per UI-SPEC: Section heading "Hotkeys" (.headline, semibold), recorder rows
 /// match PermissionRow horizontal padding pattern.
 struct HotkeySettingsView: View {
+    @EnvironmentObject var hotkeyManager: HotkeyManager
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Hotkeys")
@@ -30,6 +32,19 @@ struct HotkeySettingsView: View {
                         .font(.body)
                     Spacer()
                     KeyboardShortcuts.Recorder(for: .aiCleanup)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+
+                HStack {
+                    Text("Re-register hotkeys")
+                        .font(.body)
+                    Spacer()
+                    Button("Re-register") {
+                        hotkeyManager.reregisterAll()
+                    }
+                    .controlSize(.small)
+                    .fixedSize(horizontal: true, vertical: false)
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 4)

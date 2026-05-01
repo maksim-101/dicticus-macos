@@ -85,6 +85,20 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
     /// Accessed only from the main thread (NSEvent handler runs on main thread).
     private var previousNSFlags: NSEvent.ModifierFlags = []
 
+    /// In-flight release-debounce task (see debug session `ptt-stops-mid-hold`).
+    /// macOS's HID dispatcher occasionally emits a spurious `flagsChanged` event during long
+    /// modifier-only holds, briefly clearing a combo bit even though the user's fingers
+    /// are still pressing. We delay the release fire by `releaseDebounceMillis` and re-check
+    /// the live system flags before committing — if the combo is still satisfied we discard
+    /// the transient. Cancelled and replaced on every new release-candidate, and cancelled
+    /// on press events.
+    private var pendingReleaseTask: Task<Void, Never>?
+
+    /// Debounce window for spurious-flag-drop suppression. 60 ms is well below the ~150 ms
+    /// human-perception threshold for push-to-talk release-to-action, so real releases
+    /// remain imperceptibly latency-free.
+    private static let releaseDebounceMillis: UInt64 = 60
+
     // MARK: - Lifecycle
 
     /// Start monitoring modifier key changes via NSEvent global monitor.
@@ -111,11 +125,33 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
                 cleanupCombo: cleanup
             ) {
                 if transition.isPress {
+                    // Cancel any in-flight release debounce — a press supersedes a pending release.
+                    self.pendingReleaseTask?.cancel()
+                    self.pendingReleaseTask = nil
                     log.info("combo activated: \(String(describing: transition.mode), privacy: .public)")
                     self.onComboActivated?(transition.mode)
                 } else {
-                    log.info("combo released: \(String(describing: transition.mode), privacy: .public)")
-                    self.onComboReleased?(transition.mode)
+                    // Debounce: re-verify against live NSEvent.modifierFlags after a brief delay.
+                    // macOS's HID dispatcher can emit transient flag-drops during long holds;
+                    // a confirmed release must show the combo missing in the LIVE system state.
+                    let comboFlags = (transition.mode == .plain ? plain : cleanup).nsFlags
+                    self.pendingReleaseTask?.cancel()
+                    self.pendingReleaseTask = Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: ModifierHotkeyListener.releaseDebounceMillis * 1_000_000)
+                        guard !Task.isCancelled, let self else { return }
+                        let live = NSEvent.modifierFlags
+                        if ModifierHotkeyListener.shouldFireRelease(liveFlags: live, comboFlags: comboFlags) {
+                            log.info("combo released: \(String(describing: transition.mode), privacy: .public)")
+                            self.onComboReleased?(transition.mode)
+                        } else {
+                            // Resync `previousNSFlags` to live state so the next genuine release
+                            // is detected (otherwise `prev` would no longer be a superset of the
+                            // combo and `detectNSTransition` could miss the real release).
+                            self.previousNSFlags = live
+                            log.info("release discarded — transient flag drop (\(String(describing: transition.mode), privacy: .public))")
+                        }
+                        self.pendingReleaseTask = nil
+                    }
                 }
             }
         }
@@ -134,6 +170,30 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
         }
         monitor = nil
         previousNSFlags = []
+        pendingReleaseTask?.cancel()
+        pendingReleaseTask = nil
+    }
+
+    // MARK: - Pure release decision (testable)
+
+    /// Decide whether a candidate release event should fire after the debounce window.
+    ///
+    /// Pure function — given the live system modifier flags at debounce time, return
+    /// `true` only if the combo is genuinely no longer held. If the live state still
+    /// contains every combo flag, the original release event was a transient HID
+    /// dispatcher hiccup and must be discarded.
+    static func shouldFireRelease(
+        liveFlags: NSEvent.ModifierFlags,
+        comboFlags: NSEvent.ModifierFlags
+    ) -> Bool {
+        let relevantMask: NSEvent.ModifierFlags = [
+            .function,
+            .shift,
+            .control,
+            .option
+        ]
+        let live = liveFlags.intersection(relevantMask)
+        return !live.isSuperset(of: comboFlags)
     }
 
     // MARK: - Pure transition detection — NSEvent.ModifierFlags (testable)

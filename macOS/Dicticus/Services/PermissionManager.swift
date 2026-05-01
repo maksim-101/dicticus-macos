@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 @preconcurrency import ApplicationServices
+import IOKit.hid
 
 /// Status of a single macOS permission.
 enum PermissionStatus: Equatable {
@@ -51,18 +52,29 @@ private let axTrustedPromptKey: String =
 class PermissionManager: ObservableObject {
     @Published var microphoneStatus: PermissionStatus = .pending
     @Published var accessibilityStatus: PermissionStatus = .pending
+    @Published var inputMonitoringStatus: PermissionStatus = .pending
     @Published var hasCompletedOnboarding = false
+
+    /// Paths of all com.dicticus.macos bundles found on disk at launch time.
+    /// Only populated by the once-per-launch checkMultipleInstalls() call;
+    /// NOT refreshed by the 2s polling timer (D-07: mdfind every 2s would be wasteful).
+    @Published var multipleDicticusCopies: [URL] = []
 
     private static let onboardingKey = "hasCompletedOnboarding"
 
     private var pollTimer: Timer?
 
-    /// True when both required permissions are .granted.
-    /// Input Monitoring is NOT needed — KeyboardShortcuts uses Carbon RegisterEventHotKey,
-    /// not NSEvent.addGlobalMonitorForEventsMatchingMask.
+    /// True when all three required permissions are .granted.
+    ///
+    /// Input Monitoring IS required — `ModifierHotkeyListener` uses
+    /// `NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged)` which on
+    /// macOS 15+ is gated by Input Monitoring. KeyboardShortcuts (Carbon
+    /// RegisterEventHotKey) covers Accessibility but not the modifier-listener
+    /// path — both must be granted for hotkeys to fire reliably.
     var allGranted: Bool {
         microphoneStatus == .granted &&
-        accessibilityStatus == .granted
+        accessibilityStatus == .granted &&
+        inputMonitoringStatus == .granted
     }
 
     /// Check current permission states without triggering OS prompts.
@@ -81,6 +93,16 @@ class PermissionManager: ObservableObject {
         // both first-time prompts and re-requests via AXIsProcessTrustedWithOptions.
         let axTrusted = AXIsProcessTrusted()
         accessibilityStatus = axTrusted ? .granted : .pending
+
+        // Input Monitoring: IOHIDCheckAccess reflects current TCC state.
+        // Required by ModifierHotkeyListener's NSEvent.addGlobalMonitorForEvents(.flagsChanged).
+        let hidAccess = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        switch hidAccess {
+        case kIOHIDAccessTypeGranted: inputMonitoringStatus = .granted
+        case kIOHIDAccessTypeDenied:  inputMonitoringStatus = .denied
+        case kIOHIDAccessTypeUnknown: inputMonitoringStatus = .pending
+        default:                      inputMonitoringStatus = .pending
+        }
     }
 
     /// Trigger the OS microphone permission prompt. Updates status after user responds.
@@ -96,6 +118,15 @@ class PermissionManager: ObservableObject {
         // Use the module-level cached key (avoids Swift 6 concurrency error on C global)
         let options: NSDictionary = [axTrustedPromptKey: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
+        // Do not update status here — polling picks it up within 2 seconds
+    }
+
+    /// Trigger the OS Input Monitoring permission prompt.
+    /// IOHIDRequestAccess shows the system prompt; the result is not immediate —
+    /// the user must approve in System Settings. Polling via startPolling()
+    /// will detect the change.
+    func requestInputMonitoring() {
+        _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
         // Do not update status here — polling picks it up within 2 seconds
     }
 
@@ -127,5 +158,37 @@ class PermissionManager: ObservableObject {
     /// Load onboarding completion state from UserDefaults.
     func loadOnboardingState() {
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Self.onboardingKey)
+    }
+
+    /// Run `mdfind kMDItemCFBundleIdentifier == 'com.dicticus.macos'` once and publish the result.
+    /// Designed to be invoked from MenuBarView.onAppear, NOT from the 2s polling timer (D-07).
+    /// Excludes nothing — the view layer decides which copies are "stale" vs "canonical".
+    func checkMultipleInstalls() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/mdfind")
+        task.arguments = ["kMDItemCFBundleIdentifier == 'com.dicticus.macos'"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let output = String(data: data, encoding: .utf8) else {
+                multipleDicticusCopies = []
+                return
+            }
+            let paths = output
+                .split(separator: "\n")
+                .map(String.init)
+                .filter { !$0.isEmpty }
+                .filter { $0.hasSuffix("/Dicticus.app") }
+                .map { URL(fileURLWithPath: $0) }
+            multipleDicticusCopies = paths
+        } catch {
+            multipleDicticusCopies = []
+        }
     }
 }

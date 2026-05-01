@@ -1,13 +1,9 @@
 import SwiftUI
 import KeyboardShortcuts
 import Combine
+import os
 
-/// Dictation mode — determines which pipeline processes the transcription.
-/// Per D-12: Both registered in Phase 3. Per D-13: AI cleanup is a no-op stub.
-enum DictationMode: String, Sendable, CaseIterable {
-    case plain
-    case aiCleanup  // Wired to LLM pipeline in Phase 4
-}
+private let hotkeyLog = Logger(subsystem: "com.dicticus", category: "hotkey-manager")
 
 /// Push-to-talk state machine coordinating hotkey events, TranscriptionService, and TextInjector.
 ///
@@ -46,6 +42,12 @@ class HotkeyManager: ObservableObject {
     /// D-03: Suppress key repeat — ignore keyDown when already down.
     private var isKeyDown = false
 
+    /// Mode that started the currently-active recording. Used by `handleKeyUp`
+    /// to reject release events whose mode does not match — defends against
+    /// spurious release events from the modifier listener (see debug session
+    /// `ptt-stops-mid-hold`).
+    private var activeRecordingMode: DictationMode?
+
     /// Weak reference to TranscriptionService — set via setup().
     private weak var transcriptionService: TranscriptionService?
 
@@ -64,6 +66,15 @@ class HotkeyManager: ObservableObject {
     }
 
     private var cancellables = Set<AnyCancellable>()
+
+    /// True when KeyboardShortcuts AsyncStream consumption ends unexpectedly (rare TCC race or
+    /// hotkey conflict). MenuBarView observes this so the Repair banner appears even when AX is
+    /// technically granted (D-04 layer 2).
+    @Published var registrationFailed: Bool = false
+
+    /// Task handles for the two AsyncStream consumers, retained so reregisterAll() can cancel them.
+    private var plainDictationTask: Task<Void, Never>?
+    private var cleanupTask: Task<Void, Never>?
 
     /// TextInjector for clipboard-based text injection.
     /// Isolated to @MainActor via HotkeyManager's own isolation.
@@ -89,31 +100,36 @@ class HotkeyManager: ObservableObject {
 
         bindState()
 
-        // D-12: Register plain dictation hotkey with full push-to-talk.
-        // Task inherits @MainActor isolation from the enclosing @MainActor class.
-        Task { [weak self] in
+        // D-04 layer 2: liveness — failure of KeyboardShortcuts to start/keep an AsyncStream is silent
+        // in normal flow, so log + publish a recoverable flag.
+        registrationFailed = false
+
+        plainDictationTask?.cancel()
+        plainDictationTask = Task { [weak self] in
+            guard let self else { return }
+            hotkeyLog.info("KeyboardShortcuts AsyncStream started for plainDictation")
             for await event in KeyboardShortcuts.events(for: .plainDictation) {
-                guard let self else { return }
                 switch event {
-                case .keyDown:
-                    self.handleKeyDown(mode: .plain)
-                case .keyUp:
-                    self.handleKeyUp(mode: .plain)
+                case .keyDown: self.handleKeyDown(mode: .plain)
+                case .keyUp:   self.handleKeyUp(mode: .plain)
                 }
             }
+            hotkeyLog.error("KeyboardShortcuts AsyncStream for plainDictation ENDED — registration may have failed")
+            await MainActor.run { self.registrationFailed = true }
         }
 
-        // D-11: AI cleanup hotkey — full ASR + LLM cleanup + paste pipeline
-        Task { [weak self] in
+        cleanupTask?.cancel()
+        cleanupTask = Task { [weak self] in
+            guard let self else { return }
+            hotkeyLog.info("KeyboardShortcuts AsyncStream started for aiCleanup")
             for await event in KeyboardShortcuts.events(for: .aiCleanup) {
-                guard let self else { return }
                 switch event {
-                case .keyDown:
-                    self.handleKeyDown(mode: .aiCleanup)
-                case .keyUp:
-                    self.handleKeyUp(mode: .aiCleanup)
+                case .keyDown: self.handleKeyDown(mode: .aiCleanup)
+                case .keyUp:   self.handleKeyUp(mode: .aiCleanup)
                 }
             }
+            hotkeyLog.error("KeyboardShortcuts AsyncStream for aiCleanup ENDED — registration may have failed")
+            await MainActor.run { self.registrationFailed = true }
         }
 
         // Request notification permission on setup
@@ -136,6 +152,48 @@ class HotkeyManager: ObservableObject {
             self?.handleKeyUp(mode: mode)
         }
         listener.start()
+    }
+
+    /// Tear down + re-spawn KeyboardShortcuts AsyncStream consumers AND restart the
+    /// ModifierHotkeyListener. Cheap escape-hatch for the post-sleep / post-login race
+    /// where AX is granted but hotkeys silently failed to bind (D-06).
+    func reregisterAll() {
+        hotkeyLog.info("reregisterAll invoked — tearing down and re-binding hotkeys")
+
+        plainDictationTask?.cancel()
+        cleanupTask?.cancel()
+        plainDictationTask = nil
+        cleanupTask = nil
+
+        if let listener = modifierListener {
+            listener.stop()
+            listener.start()
+            hotkeyLog.info("ModifierHotkeyListener restarted")
+        }
+
+        registrationFailed = false
+
+        plainDictationTask = Task { [weak self] in
+            guard let self else { return }
+            for await event in KeyboardShortcuts.events(for: .plainDictation) {
+                switch event {
+                case .keyDown: self.handleKeyDown(mode: .plain)
+                case .keyUp:   self.handleKeyUp(mode: .plain)
+                }
+            }
+            await MainActor.run { self.registrationFailed = true }
+        }
+
+        cleanupTask = Task { [weak self] in
+            guard let self else { return }
+            for await event in KeyboardShortcuts.events(for: .aiCleanup) {
+                switch event {
+                case .keyDown: self.handleKeyDown(mode: .aiCleanup)
+                case .keyUp:   self.handleKeyUp(mode: .aiCleanup)
+                }
+            }
+            await MainActor.run { self.registrationFailed = true }
+        }
     }
 
     private func bindState() {
@@ -203,6 +261,7 @@ class HotkeyManager: ObservableObject {
         do {
             try service.startRecording()
             isRecording = true
+            activeRecordingMode = mode
         } catch {
             let notification = DicticusNotification.recordingFailed(error)
             lastPostedNotification = notification
@@ -218,15 +277,27 @@ class HotkeyManager: ObservableObject {
     /// Per D-16: Silence-only recordings silently discarded.
     func handleKeyUp(mode: DictationMode) {
         guard isKeyDown else { return }
+
+        // Reject release events whose mode does not match the currently-active recording.
+        // Defends against spurious modifier-listener releases (debug session ptt-stops-mid-hold)
+        // and against cross-talk between the modifier listener and KeyboardShortcuts paths.
+        // Placed BEFORE the isKeyDown reset so a real release immediately after isn't lost.
+        if let active = activeRecordingMode, active != mode {
+            hotkeyLog.info("handleKeyUp rejected — mode mismatch (active=\(String(describing: active), privacy: .public) received=\(String(describing: mode), privacy: .public))")
+            return
+        }
+
         isKeyDown = false
 
         guard let service = transcriptionService,
               service.state == .recording else {
             isRecording = false
+            activeRecordingMode = nil
             return
         }
 
         isRecording = false
+        activeRecordingMode = nil
 
         // Task inherits @MainActor isolation from the enclosing @MainActor class,
         // so self.textInjector access is safe without crossing isolation boundaries.
