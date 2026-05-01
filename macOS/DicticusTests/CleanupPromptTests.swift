@@ -20,10 +20,11 @@ final class CleanupPromptTests: XCTestCase {
 
     // MARK: - Language context
 
-    func testGermanLanguagePassed() {
-        let prompt = CleanupPrompt.build(text: "Das ist ein Test", language: "de")
-        XCTAssertTrue(prompt.contains("LANGUAGE: German"), "German language context must be included")
-    }
+    // Phase 20.08 D-05 / variant-g pivot: German inputs no longer use the
+    // INSTRUCTION/DICTIONARY/LANGUAGE/INPUT/OUTPUT framing — the entire user
+    // turn is replaced by variant (g15). The `LANGUAGE: German` marker is
+    // intentionally absent from German prompts; see R6 tests below for the
+    // new German-shape contract.
 
     func testEnglishLanguagePassed() {
         let prompt = CleanupPrompt.build(text: "This is a test", language: "en")
@@ -94,87 +95,116 @@ final class CleanupPromptTests: XCTestCase {
         XCTAssertTrue(prompt.hasSuffix("OUTPUT:"), "Prompt must end with 'OUTPUT:' to prime model response")
     }
 
-    // MARK: - Phase 20.06 F-20-UAT-01 — HELVETISMS preservation-first
+    // MARK: - Phase 20.08 R6 — variant (g15) contract tests
+    //
+    // Variant (g15) is the production German cleanup prompt per
+    // .planning/phases/20.08-llm-swiss-ification-suppression/20.08-VARIANT-G-RATIONALE.md
+    // (canonical brief) and the verbatim prompt block in
+    // 20.08-SPIKE-RESULTS.md "Wave B Update" section.
+    //
+    // The two-layer German conditional (§4 D3): the variant (g15) INSTRUCTION
+    // body, the 4-shot ORIGINAL/KORRIGIERT frame, and RULE 1
+    // (Standard-Hochdeutsch) fire on EVERY German input regardless of toggle
+    // state. The Swiss toggle gates ONLY the embedded orthography clause
+    // (`mit Schweizer Rechtschreibung (ss statt ß, Umlaute ä/ö/ü bleiben)`)
+    // inside the INSTRUCTION sentence.
+    //
+    // Supersedes: Phase 20.06 F-20-UAT-01 (HELVETISMS preservation-first
+    // block) and F-20-UAT-02 (STRICT currency anchor) — both removed from
+    // the German path by the variant (g15) verbatim contract. Currency
+    // preservation is now demonstrated implicitly by the third few-shot
+    // example (`1250 Franken 20`).
 
-    func testHelvetismsBlockIsPreservationFirst() {
-        let prompt = CleanupPrompt.build(text: "ich gehe auf die andere Seite", language: "de", useSwissGerman: true)
+    /// R6 positive: variant (g15) markers ship verbatim on Swiss + de.
+    func testHelvetismsBlockEmitsVariantG15Header() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: true
+        )
         XCTAssertTrue(
-            prompt.contains("Preserve the speaker's dialect register exactly."),
-            "HELVETISMS block must lead with the preservation-first sentence (F-20-UAT-01)"
+            prompt.contains("Standard-Hochdeutsch"),
+            "Variant (g15) RULE 1 directive 'Standard-Hochdeutsch' must appear in the prompt body."
+        )
+        XCTAssertTrue(
+            prompt.contains("ORIGINAL:"),
+            "Variant (g15) 4-shot frame requires the literal 'ORIGINAL:' marker."
+        )
+        XCTAssertTrue(
+            prompt.contains("KORRIGIERT:"),
+            "Variant (g15) 4-shot frame requires the literal 'KORRIGIERT:' marker."
+        )
+        XCTAssertTrue(
+            prompt.contains("KEINEN Schweizerdeutsch-Dialekt"),
+            "Variant (g15) anti-dialect directive must appear verbatim."
         )
     }
 
-    func testHelvetismsBlockAllowsOnlyOrthographyAndDecimalNormalizations() {
-        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
-        XCTAssertTrue(
-            prompt.contains("Only change ß→ss and decimal-comma→period."),
-            "HELVETISMS must restrict allowed normalizations to ß→ss and decimal-comma→period"
+    /// R6 two-layer gating: orthography clause appears ONLY when the Swiss
+    /// toggle is ON. The variant (g15) INSTRUCTION + 4-shot frame still fire
+    /// on Swiss-toggle-OFF German input (per VARIANT-G-RATIONALE §4 D3).
+    func testGermanDeOnlyDoesNotIncludeSwissOrthographyClause() {
+        let promptSwissOff = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: false
         )
-    }
-
-    func testHelvetismsBlockForbidsHighGermanToSwissGermanReplacement() {
-        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
         XCTAssertTrue(
-            prompt.contains("Do NOT replace High German words with Swiss German equivalents."),
-            "HELVETISMS must explicitly forbid HG→CH-G word replacement"
+            promptSwissOff.contains("Standard-Hochdeutsch"),
+            "Variant (g15) RULE 1 must fire on ALL German input regardless of Swiss toggle."
         )
-    }
-
-    func testHelvetismsBlockEnumeratesNegativeTraps() {
-        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
-        let traps = [
-            "auf→uf", "ausgeflogen→usgfloge", "gekostet→choschtet",
-            "einkaufen→iikaufe", "natürlich→natürli", "Dingen→Sache",
-            "gegessen→gässe", "später→speter", "beiden→beidne",
-            "Seite→Siite", "etwas→öppis", "Kleines→chliins",
-            "gekauft→chauft"
-        ]
-        for trap in traps {
-            XCTAssertTrue(
-                prompt.contains(trap),
-                "HELVETISMS NEGATIVE list must contain trap '\(trap)' (F-20-UAT-01)"
-            )
-        }
-    }
-
-    func testHelvetismsBlockOnlyEmittedWhenSwissAndGerman() {
-        let withoutSwiss = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: false)
         XCTAssertFalse(
-            withoutSwiss.contains("Preserve the speaker's dialect register"),
-            "HELVETISMS must NOT be emitted when Swiss toggle is OFF"
+            promptSwissOff.contains("ss statt ß"),
+            "Swiss orthography clause must NOT appear when useSwissGerman == false (D3 gating)."
         )
-        let englishWithSwiss = CleanupPrompt.build(text: "x", language: "en", useSwissGerman: true)
         XCTAssertFalse(
-            englishWithSwiss.contains("Preserve the speaker's dialect register"),
-            "HELVETISMS must NOT be emitted when language is not 'de' (existing gate preserved)"
+            promptSwissOff.contains("Umlaute ä/ö/ü bleiben"),
+            "Swiss umlaut-preservation clause must NOT appear when useSwissGerman == false."
         )
     }
 
-    func testHelvetismsBlockStillReferencesPositiveWordList() {
-        let prompt = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
-        // At least one canonical Helvetism from SwissHelvetisms.words must still appear
-        // so the LLM has a positive vocabulary anchor when the speaker uses Swiss words.
+    /// R6 two-layer gating (positive): orthography clause embedded inside
+    /// the INSTRUCTION sentence when Swiss toggle is ON.
+    func testGermanWithSwissIncludesOrthographyClause() {
+        let prompt = CleanupPrompt.build(
+            text: "irgendwas",
+            language: "de",
+            dictionaryContext: nil,
+            useSwissGerman: true
+        )
         XCTAssertTrue(
-            prompt.contains("Velo") || prompt.contains("Trottoir") || prompt.contains("Spital"),
-            "HELVETISMS must still surface at least one canonical Swiss word as a positive anchor"
+            prompt.contains("ss statt ß"),
+            "Swiss orthography clause must appear when useSwissGerman == true && language == 'de'."
         )
-    }
-
-    // MARK: - Phase 20.06 F-20-UAT-02 — STRICT speaker-explicit currency anchor
-
-    func testStrictBlockContainsSpeakerExplicitCurrencyAnchor() {
-        let prompt = CleanupPrompt.build(text: "Das hat 5 Franken gekostet", language: "de", useSwissGerman: true)
         XCTAssertTrue(
-            prompt.contains("Explicit currency words from the speaker are authoritative — never substitute Franken with Euro or vice versa."),
-            "STRICT block must contain the speaker-explicit currency anchor (F-20-UAT-02). Got prompt:\n\(prompt)"
+            prompt.contains("Umlaute ä/ö/ü bleiben"),
+            "Swiss umlaut-preservation clause (six-token g15 addition) must appear."
         )
     }
 
-    func testStrictBlockNotEmittedWithoutCurrency() {
-        let prompt = CleanupPrompt.build(text: "Heute ist ein schöner Tag", language: "de", useSwissGerman: true)
+    /// R6 regression guard: variant (g15) directives must not leak into
+    /// non-German prompts (English path keeps the existing
+    /// INSTRUCTION/DICTIONARY/LANGUAGE/INPUT/OUTPUT framing per A1).
+    func testHelvetismsDirectiveGatedOnGerman() {
+        let promptEnglish = CleanupPrompt.build(
+            text: "anything",
+            language: "en",
+            dictionaryContext: nil,
+            useSwissGerman: true
+        )
         XCTAssertFalse(
-            prompt.contains("Explicit currency words from the speaker are authoritative"),
-            "STRICT speaker-explicit anchor must only fire when input contains a currency token"
+            promptEnglish.contains("Standard-Hochdeutsch"),
+            "Variant (g15) directive must not appear in English prompts."
+        )
+        XCTAssertFalse(
+            promptEnglish.contains("KORRIGIERT:"),
+            "German few-shot frame must not appear in English prompts."
+        )
+        XCTAssertTrue(
+            promptEnglish.contains("INSTRUCTION:"),
+            "English path must retain the existing INSTRUCTION: framing."
         )
     }
 }
