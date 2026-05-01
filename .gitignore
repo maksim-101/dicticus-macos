@@ -8,6 +8,12 @@ macOS/build-verify/
 Dicticus.dmg
 *.dmg
 
+# GSD planning artifacts — research notes, plan docs, UAT transcripts (which
+# include actual user dictation samples). Local-only working files; not for
+# public distribution. Untracking ONLY hides these from future commits — see
+# git history for previously-published versions.
+.planning/
+
 # macOS Finder metadata
 .DS_Store
 **/.DS_Store
