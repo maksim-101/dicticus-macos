@@ -85,6 +85,10 @@ targets:
         product: Sparkle
       - package: GRDB
         product: GRDB
+    scheme:
+      testTargets:
+        - DicticusTests
+      gatherCoverageData: false
 
   DicticusTests:
     type: bundle.unit-test
