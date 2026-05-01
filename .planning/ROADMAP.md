@@ -164,13 +164,14 @@ Plans:
 
 **Cross-platform parity rule:** dialect gate + SwissDialectForms data + integration tests ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity). `CleanupPromptTests.swift` remains macOS-only by 20.06-01 precedent.
 
-**Plans:** 3/4 plans executed; Wave-B variant pivot 2026-04-29 (variant e → variant g15) — see `20.08-VARIANT-G-RATIONALE.md`
+**Plans:** 3/5 plans executed; Wave-B variant pivot 2026-04-29 (variant e → variant g15) — see `20.08-VARIANT-G-RATIONALE.md`; Plan 04 UAT FAILED 2026-05-01 → Plan 05 gap closure pending
 
 Plans:
 - [x] 20.08-01-PLAN.md — Wave 1: `Shared/Models/SwissDialectForms.swift` (curated 38-token list, homographs `de`/`sind`/`müesli` excluded, CC BY-SA 4.0 attribution) + iOS + macOS parity tests (R4, R5)
 - [x] 20.08-02-PLAN.md — Wave 2: `CleanupService.gateLLMDialect` + `tokenizeForDialectGate` + integration call at `TextProcessingService.swift` ~line 97 (BEFORE existing `gateLLMOutput`) + R1/R2/R3 unit tests + R7 stacking-safe integration test on both platforms (depends on 20.08-01)
 - [x] 20.08-03-PLAN.md — Wave 3 (CHECKPOINT): macOS Debug-only spike harness `CleanupSpikeView` — runs 5 fixtures × 4 prompt variants with seed 0xDEADBEEF; user picked variant (e), recorded in `20.08-SPIKE-RESULTS.md`. **SUPERSEDED:** post-checkpoint UAT exposed identity-preservation failures (lowercase nouns, `und Und`, `Würdigten` mishear scar) → Wave-B re-spike → variant (g15) ships instead. See `20.08-VARIANT-G-RATIONALE.md` §1.5 + §10.
 - [~] 20.08-04-PLAN.md — Wave 4 (CHECKPOINT): Tasks A+B SHIPPED on `0c6e883` (variant g15 prompt restructure under two-layer German conditional + R6 tests on macOS, all 14 tests green); Task C UAT 2026-05-01 FAILED on both macOS Release AND iOS Release with **R-G15-01 currency-digit truncation** (`102.50 Franken` → `12.50 Franken` cross-platform — prompt-driven, not sampler fluke). Primary anti-Swiss-ification contract HELD on both platforms (zero Swiss particles, zero ß, Standard High German). User verdict: FAIL → gap closure required. Full UAT verbatim outputs + finding analysis in `.planning/phases/20.08-llm-swiss-ification-suppression/20.08-04-UAT-RESULTS.md`. Run `/gsd-plan-phase 20.08 --gaps` to plan the corrective pass.
+- [ ] 20.08-05-PLAN.md — Wave 5 (gap closure): R-G15-01 currency-digit truncation fix on variant g15 + R6 regression-guard test + R9 UAT replay (depends on 20.08-04)
 
 ---
 
