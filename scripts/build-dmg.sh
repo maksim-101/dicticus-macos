@@ -31,14 +31,18 @@ cd "$PROJECT_DIR"
 export DEVELOPER_TEAM_ID
 xcodegen generate
 
-echo "=== Step 2: Build Release .app (Signed) ==="
-# We build with the Developer ID Application identity
+echo "=== Step 2: Build Release .app (Unsigned) ==="
+# Build unsigned. Step 3 does the real Developer ID signing with --deep --force.
+# This avoids xcodebuild's provisioning-profile requirement triggered by the
+# com.apple.security.application-groups entitlement under manual signing,
+# and keeps SPM resource bundles (KeyboardShortcuts, GRDB) from trying to
+# sign with a Developer ID identity that doesn't apply to them.
 xcodebuild -scheme Dicticus \
     -configuration Release \
     -derivedDataPath build \
-    CODE_SIGN_IDENTITY="Developer ID Application" \
-    CODE_SIGN_STYLE=Manual \
-    DEVELOPMENT_TEAM="$DEVELOPER_TEAM_ID" \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
     build
 
 APP_DIR="build/Build/Products/Release"
