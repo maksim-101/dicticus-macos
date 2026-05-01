@@ -3,43 +3,45 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Keyboard Extension & Polish
 status: executing
-stopped_at: Phase 20.08 Plan 04 UAT FAILED — gap-closure required
-last_updated: "2026-05-01T07:15:00.000Z"
-last_activity: 2026-05-01 -- Phase 20.08 Plan 04 Tasks A+B shipped (variant g15 prompt restructure, R6 tests green); Task C UAT FAILED on both platforms (cross-platform 102.50→12.50 currency truncation); gap-closure plan required
+stopped_at: Phase 20.08 SHIPPED — Plan 05 gap closure ACCEPTED on macOS Release UAT iter 3
+last_updated: "2026-05-01T12:30:00.000Z"
+last_activity: 2026-05-01 -- Phase 20.08 Plan 05 gap closure shipped across 3 macOS UAT iterations (drop priming-trap directive, add naja filler + 6th past-tense exemplar, reorder so currency-preservation exemplar is recency-anchor). User-accepted with sentence-stitching note. R-G15-01 closed.
 progress:
   total_phases: 9
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 35
-  completed_plans: 31
-  percent: 89
+  completed_plans: 33
+  percent: 94
 ---
 
 # Project State: Dicticus
 
 **Last Updated:** 2026-05-01
-**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 SHIPPED; Phase 20.08 Plan 04 code shipped, UAT FAILED, gap-closure required)
+**Milestone:** v2.1 Keyboard Extension & Polish (IN PROGRESS — Phase 20 + 20.06 + 20.08 SHIPPED)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Press a key, speak, release — accurate text appears at your cursor instantly, fully private, no cloud dependency.
-**Current focus:** Phase 20.08 — llm-swiss-ification-suppression — gap closure on R-G15-01 (currency-digit truncation)
+**Current focus:** Phase 20.08 SHIPPED — next: DESIGN.md → Phase 19.6 (iOS UX) or Phase 20.07 (rules-only ASR-mishearing recovery).
 
 ## Current Position
 
-Phase: 20.08 (llm-swiss-ification-suppression) — EXECUTING; 3/4 plans shipped, Plan 04 code shipped on `0c6e883` but UAT FAILED → gap closure required before phase ships
-Plan: 4 of 4 (Tasks A+B SHIPPED; Task C FAILED — see `20.08-04-UAT-RESULTS.md`)
-Plans: 20.08-01, 02, 03 shipped; 20.08-04 Tasks A+B shipped (variant (g15) prompt restructure + R6 tests on macOS, all green); Task C UAT 2026-05-01 reproduced **R-G15-01 currency-digit truncation** cross-platform (`102.50 Franken` → `12.50 Franken` on macOS Release AND iOS Release). Primary anti-Swiss-ification contract HELD on both platforms (zero Swiss particles, zero ß, Standard High German). User verdict: FAIL.
-Wave-B sibling work shipped: sampler reorder (`78738a4`), SwissNumberFormatter Bridge 1.5 (`17005f3`), apostrophe-strike (`435004b`), spike pipeline mirror + anglicism differentiation (`8daf91a`)
-UAT verdict 2026-05-01: macOS+iOS Release builds — anti-Swiss-ification PASS, currency preservation FAIL. Phase 20.06 STRICT speaker-explicit currency anchor was removed from German path by the variant (g15) verbatim contract; that removal is implicated in the regression.
-Builds verified: macOS Debug + Release green (CleanupPromptTests 14/14 pass). iOS Debug + Release green (xcodegen + xcodebuild + Xcode device deployment to iPhone 17 Pro Max).
-Fn hotkey combo (push-to-talk on macOS) confirmed functional during UAT.
+Phase: 20.08 (llm-swiss-ification-suppression) — SHIPPED 2026-05-01; 5/5 plans shipped (Plan 05 gap closure ACCEPTED on macOS UAT iter 3).
+Plan: 5 of 5 — Plan 05 ACCEPTED with sentence-stitching note (see `20.08-05-UAT-RESULTS.md`).
+Plans: 20.08-01, 02, 03 shipped; 20.08-04 Tasks A+B shipped (variant g15 prompt restructure); 20.08-05 gap closure shipped across 3 macOS UAT iterations:
+  - **iter 1** (`1e08943`): dropped §3 priming-trap directive, kept 5th currency exemplar — closed R-G15-01, surfaced 3 follow-ons (tense, mishear, naja filler).
+  - **iter 2**: added `naja` to FillerWordRemover.germanFillers + 6th past-tense ORIGINAL/KORRIGIERT exemplar — closed naja + tense, REGRESSED R-G15-01 (verb-rewrite stole the recency-anchor slot from currency exemplar).
+  - **iter 3** (current branch HEAD): reordered so currency-preservation exemplar is again last, tense exemplar one slot earlier — added R6 order-lock test `testVariantG15CurrencyExemplarIsLastExemplar`. macOS UAT ACCEPTED.
+Wave-B sibling work shipped: sampler reorder (`78738a4`), SwissNumberFormatter Bridge 1.5 (`17005f3`), apostrophe-strike (`435004b`), spike pipeline mirror + anglicism differentiation (`8daf91a`).
+UAT verdict 2026-05-01 final: macOS Release ACCEPTED. R-G15-01 closed (`102.50 Franken` digit-exact). Sentence-stitching residue (Gemma occasionally merges adjacent ASR clauses with comma) below user acceptance bar — carried forward as known limitation. iOS verification deferred to next iOS UAT cycle (shares `Shared/Models/CleanupPrompt.swift`).
+Builds verified: macOS Release green (CleanupPromptTests 21/21 pass). Fn hotkey combo (push-to-talk on macOS) confirmed functional during UAT.
 
-Next: run `/gsd-plan-phase 20.08 --gaps` to plan the corrective pass. Gap plan must address R-G15-01 (currency-digit truncation) as hard blocker — either restore Phase 20.06 STRICT currency anchor inside the variant (g15) user turn, or add a 5th `ORIGINAL/KORRIGIERT` example demonstrating digit-preservation on 3-digit decimal currency. R-G15-02 (iOS language-detection bleed) is real but appears upstream of the prompt — flag in gap plan but likely separate phase.
+Next: DESIGN.md → Phase 19.6 (iOS UX) per ROADMAP, or Phase 20.07 (rules-only ASR-mishearing recovery).
 
-Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-04-UAT-RESULTS.md (UAT verdict + findings) + 20.08-04-SUMMARY.md (Plan 04 disposition) + 20.08-VARIANT-G-RATIONALE.md (canonical brief)
-Last activity: 2026-05-01 -- Plan 04 Tasks A+B shipped (`0c6e883`), Task C UAT FAILED on both platforms, gap-closure triggered; UAT-RESULTS + SUMMARY artifacts written
+Resume file: .planning/phases/20.08-llm-swiss-ification-suppression/20.08-05-UAT-RESULTS.md (final UAT iteration log + acceptance) + 20.08-VARIANT-G-RATIONALE.md (canonical brief).
+Last activity: 2026-05-01 -- Phase 20.08 Plan 05 gap closure shipped across 3 UAT iterations; macOS Release ACCEPTED; STATE + ROADMAP updated.
 
 Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (v2.0 phases)
 Progress (v2.1): [▓▓▓▓▓▓▓▓▓▓] 100% code-complete pending physical-device UAT
