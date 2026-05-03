@@ -94,10 +94,10 @@ class ModifierHotkeyListener: ObservableObject, @unchecked Sendable {
     /// on press events.
     private var pendingReleaseTask: Task<Void, Never>?
 
-    /// Debounce window for spurious-flag-drop suppression. 60 ms is well below the ~150 ms
-    /// human-perception threshold for push-to-talk release-to-action, so real releases
-    /// remain imperceptibly latency-free.
-    private static let releaseDebounceMillis: UInt64 = 60
+    /// Debounce window for spurious-flag-drop suppression. 100 ms provides a safer margin for
+    /// transient drops during long holds while remaining below the human-perception threshold
+    /// for push-to-talk release-to-action (~150 ms).
+    private static let releaseDebounceMillis: UInt64 = 100
 
     // MARK: - Lifecycle
 

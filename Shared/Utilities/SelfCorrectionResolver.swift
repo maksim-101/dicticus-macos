@@ -25,8 +25,8 @@ import Foundation
 ///
 /// Connector lists (case-insensitive):
 ///   de: `ich meine`, `besser gesagt`, `genauer gesagt`,
-///       `oder vielmehr`, `oder besser`
-///   en: `I mean`, `I meant`, `or rather`, `or better`, `scratch that`
+///       `oder vielmehr`, `oder besser`, `nein`, `ne`
+///   en: `I mean`, `I meant`, `or rather`, `or better`, `scratch that`, `no`, `actually`
 ///
 /// Drop-count algorithm (derived from the union of the positive fixtures
 /// and the cap-test in `SelfCorrectionResolverTests.testGermanBackwardWindowCappedAtThree`):
@@ -201,6 +201,8 @@ public enum SelfCorrectionResolver {
         "genauer gesagt",
         "oder vielmehr",
         "oder besser",
+        "nein",
+        "ne",
     ]
 
     private static let englishConnectors: [String] = [
@@ -209,6 +211,8 @@ public enum SelfCorrectionResolver {
         "or rather",
         "or better",
         "scratch that",
+        "no",
+        "actually",
     ]
 
     private static let germanAbortPronouns: Set<String> = [

@@ -67,7 +67,8 @@ class DictionaryService: ObservableObject {
             "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM", 
             "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code", 
             ".cloud": ".claude", "Cloud Code": "Claude Code", "1m": "I'm", "1 m": "I'm",
-            "I m": "I'm", "one m": "I'm", "One m": "I'm"
+            "I m": "I'm", "one m": "I'm", "One m": "I'm",
+            "Selguard": "Cellguard", "selguard": "Cellguard", "Mac Vesper": "MacWhisper"
         ]
 
         

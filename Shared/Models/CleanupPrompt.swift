@@ -6,6 +6,10 @@ import NaturalLanguage
 // deterministic Swift rules pass (RulesCleanupService, plan 20-03). The LLM is
 // now reined in to grammar / punctuation / capitalization fixes only, with the
 // Levenshtein gate (CleanupService.gateLLMOutput) as a structural fail-safe.
+//
+// 2026-05-03: Prompt enhanced to explicitly handle speech repairs (self-corrections)
+// that deterministic rules might miss (e.g., missing commas) and to use context
+// to fix technical term mishearings (e.g., "Selguard" -> "Cellguard").
 
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 struct CleanupPrompt {
@@ -14,6 +18,8 @@ struct CleanupPrompt {
 
     static let defaultInstruction = """
     Lightly edit the following transcribed text. Fix obvious grammar, punctuation, and capitalization. \
+    Resolve speech repairs and self-corrections (e.g., "50 no 60" -> "60"). \
+    Use context to fix misheard technical terms or brand names. \
     Do not paraphrase, summarize, or add information. \
     Apply the dictionary replacements if any. Output ONLY the polished text. \
     If the input is already correct, output it unchanged.
@@ -132,6 +138,8 @@ struct CleanupPrompt {
         var prompt = "<start_of_turn>user\n"
         prompt += "Bereinige die folgende deutsche Sprachaufnahme. "
         prompt += "Schreibe Standard-Hochdeutsch\(orthographyClause). "
+        prompt += "Korrigiere Versprecher und Selbstreparaturen (z.B. \"50 nein 60\" -> \"60\"). "
+        prompt += "Nutze den Kontext, um falsch verstandene Fachbegriffe zu korrigieren. "
         prompt += "Verwende KEINEN Schweizerdeutsch-Dialekt — schreibe \"Woche\" nicht \"Wuche\", \"Zürich\" nicht \"Züri\", \"ich gehe\" nicht \"i gang\". "
         prompt += "Etablierte englische Fachbegriffe bleiben Englisch (Deadline, Meeting, Workaround, E-Mail, Team, Product Owner, Release). "
         prompt += "Untypische englische Adjektive oder Verben in deutschen Sätzen ins Deutsche übertragen — \"realistic\" → \"realistisch\", \"awesome\" → \"toll\", \"appreciate\" → \"schätzen\". "
