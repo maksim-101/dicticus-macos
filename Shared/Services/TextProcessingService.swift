@@ -63,13 +63,17 @@ class TextProcessingService: ObservableObject {
 
         // Step 2c (Phase 20 D-02): rules-first deterministic cleanup.
         // Filler removal, self-correction (comma-prefixed connectors only),
-        // currency-fold. Runs on BOTH plain and AI-cleanup paths so the
-        // rules pass is the new primary cleanup layer regardless of mode.
-        processedText = rulesCleanupService.clean(processedText, language: language)
+        // currency-fold.
+        //
+        // 2026-05-03 fix: Only apply rules-cleanup in AI mode. Plain dictation
+        // should remain raw (except for ITN/Dictionary) per user feedback.
+        if mode == .aiCleanup {
+            processedText = rulesCleanupService.clean(processedText, language: language)
+        }
+        
         // Snapshot for the Step 3a Levenshtein gate. Capturing here means
-        // the gate's reference baseline is the rules-cleaned text — not the
-        // raw ASR. This is the contract that makes the gate a fail-safe
-        // for LLM hallucination over the rules-cleaned ground truth.
+        // the gate's reference baseline is the rules-cleaned text (in AI mode)
+        // or the ITN-processed text (in Plain mode).
         let rulesCleanedText = processedText
 
         // Step 3: AI Cleanup
