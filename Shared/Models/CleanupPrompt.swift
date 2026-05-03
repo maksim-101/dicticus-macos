@@ -20,9 +20,9 @@ struct CleanupPrompt {
     Lightly edit the following transcribed text. Fix obvious grammar, punctuation, and capitalization. \
     Resolve speech repairs and self-corrections (e.g., "50 no 60" -> "60"). \
     Use context to fix misheard technical terms or brand names. \
-    Do not paraphrase, summarize, or add information. \
-    Apply the dictionary replacements if any. Output ONLY the polished text. \
-    If the input is already correct, output it unchanged.
+    CRITICAL: Do not paraphrase or omit conversational context (like "this looks good"). \
+    Preserve all non-error words exactly. Apply the dictionary replacements if any. \
+    Output ONLY the polished text. If the input is already correct, output it unchanged.
     """
 
     static func userInstruction() -> String {
@@ -152,8 +152,9 @@ struct CleanupPrompt {
         var prompt = "<start_of_turn>user\n"
         prompt += "Bereinige die folgende deutsche Sprachaufnahme. "
         prompt += "Schreibe Standard-Hochdeutsch\(orthographyClause). "
-        prompt += "Korrigiere Versprecher, Selbstreparaturen und Wiederholungen. "
+        prompt += "Korrigiere Versprecher und Selbstreparaturen. "
         prompt += "Nutze den Kontext und das Glossar, um falsch verstandene Fachbegriffe oder Namen zu korrigieren. "
+        prompt += "WICHTIG: Nicht paraphrasieren. Behalte den Gesprächskontext (z.B. Einleitungen wie \"Das sieht gut aus\") bei. "
         prompt += "Verwende KEINEN Schweizerdeutsch-Dialekt — schreibe \"Woche\" nicht \"Wuche\", \"Zürich\" nicht \"Züri\", \"ich gehe\" nicht \"i gang\". "
         prompt += "Etablierte englische Fachbegriffe bleiben Englisch (Deadline, Meeting, Workaround, E-Mail, Team, Product Owner, Release). "
         prompt += "Untypische englische Adjektive oder Verben in deutschen Sätzen ins Deutsche übertragen — \"realistic\" → \"realistisch\", \"awesome\" → \"toll\", \"appreciate\" → \"schätzen\". "
