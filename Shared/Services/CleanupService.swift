@@ -240,7 +240,10 @@ class CleanupService: ObservableObject, CleanupProvider {
                         context: unsafeContext,
                         sampler: unsafeSampler,
                         maxTokens: maxTokens,
-                        stopSequences: ["Original:", "ORIGINAL:"]
+                        stopSequences: [
+                            "In:", "Original:", "ORIGINAL:",
+                            "Please provide", "Based on", "Glossary:", "Examples:"
+                        ]
                     )
                 }
 

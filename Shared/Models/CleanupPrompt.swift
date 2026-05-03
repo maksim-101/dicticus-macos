@@ -3,13 +3,14 @@ import NaturalLanguage
 
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 /// 
-/// 2026-05-03 REFACTOR (Variant J): Pure Example Completion.
-/// Removes instructions entirely to avoid triggering 'Assistant' persona.
-/// The model learns the rules (preservation + mapping) purely from few-shot patterns.
+/// 2026-05-03 REFACTOR (Variant K): Minimalist Structured Completion.
+/// Removes ALL headers (Task, Glossary, Examples) to completely suppress the 
+/// model's 'Assistant' personality and meta-comments. Uses a minimalist 
+/// 'Term: / In: / Out:' structure that anchors the model as a pure transformer.
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Professional transcription polishing. (Examples-based)"
+    static let defaultInstruction = "Professional transcription polishing. (Minimalist)"
 
     static func build(
         text: String,
@@ -23,58 +24,47 @@ struct CleanupPrompt {
         }()
 
         let sanitizedText = sanitizeControlTokens(text)
-        
-        var prompt = """
-Task: Correct transcription errors.
+        var prompt = ""
 
-Glossary:
-
-"""
+        // Step 1: Flat Glossary (No header)
         if let dict = dictionaryContext, !dict.isEmpty {
             for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
                 if original == replacement {
-                    prompt += "- \(replacement)\n"
+                    prompt += "Term: \(replacement)\n"
                 } else {
-                    prompt += "- \(original) -> \(replacement)\n"
+                    prompt += "Term: \(original) -> \(replacement)\n"
                 }
             }
+            prompt += "\n"
         }
-        prompt += "\n"
 
+        // Step 2: Structured Examples (Minimal labels)
         if language == "de" {
-            let orthography = swissEnabled ? " (Rule: Standard-Hochdeutsch mit ss statt ß)" : " (Rule: Standard-Hochdeutsch)"
-            prompt += """
-Examples\(orthography):
-
-Original: das sieht gut aus jetzt bitte mach gest housekeeping.
-Corrected: Das sieht gut aus, jetzt bitte mach GSD housekeeping.
-
-Original: ich arbeite mit dectic tools auf truenest.
-Corrected: Ich arbeite mit Dicticus auf TrueNAS.
-
-Original: mein erstes meeting wohl am dienstag um 9 uhr sei ach ein moment das war montag um 8 uhr.
-Corrected: Mein erstes Meeting wohl am Montag um 8 Uhr sei.
-
-Original: \(sanitizedText)
-Corrected:
-"""
+            let orthography = swissEnabled ? " (ss statt ß)" : ""
+            prompt += "Rule: Standard-Hochdeutsch\(orthography)\n\n"
+            
+            prompt += "In: das sieht gut aus jetzt bitte mach gest housekeeping.\n"
+            prompt += "Out: Das sieht gut aus, jetzt bitte mach GSD housekeeping.\n\n"
+            
+            prompt += "In: ich arbeite mit dectic tools auf truenest.\n"
+            prompt += "Out: Ich arbeite mit Dicticus auf TrueNAS.\n\n"
+            
+            prompt += "In: mein erstes meeting wohl am dienstag um 9 uhr sei ach ein moment das war montag um 8 uhr.\n"
+            prompt += "Out: Mein erstes Meeting wohl am Montag um 8 Uhr sei.\n\n"
         } else {
-            prompt += """
-Examples:
-
-Original: this looks good now please do gest the housekeeping.
-Corrected: This looks good now, please do GSD housekeeping.
-
-Original: i agree with your plan though you can set it up yourself in dr chi on truenorth.
-Corrected: I agree with your plan, though you can set it up yourself in Dockge on TrueNAS.
-
-Original: meeting at nine wait actually it is at eight.
-Corrected: Meeting at eight.
-
-Original: \(sanitizedText)
-Corrected:
-"""
+            prompt += "In: this looks good now please do gest the housekeeping.\n"
+            prompt += "Out: This looks good now, please do GSD housekeeping.\n\n"
+            
+            prompt += "In: i agree with your plan though you can set it up yourself in dr chi on truenorth.\n"
+            prompt += "Out: I agree with your plan, though you can set it up yourself in Dockge on TrueNAS.\n\n"
+            
+            prompt += "In: meeting at nine wait actually it is at eight.\n"
+            prompt += "Out: Meeting at eight.\n\n"
         }
+
+        // Step 3: Input for Completion
+        prompt += "In: \(sanitizedText)\n"
+        prompt += "Out:"
 
         return prompt
     }
