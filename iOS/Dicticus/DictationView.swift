@@ -87,6 +87,8 @@ struct DictationView: View {
                 Spacer()
             }
             .padding()
+            .navigationTitle("Dicticus")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !viewModel.isShortcutLaunch {
                     ToolbarItem(placement: .topBarTrailing) {
