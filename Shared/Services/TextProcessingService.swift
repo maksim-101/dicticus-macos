@@ -103,29 +103,21 @@ class TextProcessingService: ObservableObject {
                 dictionaryContext: filteredContext
             )
 
-            // Step 3a-pre (Phase 20.08 D-08): dialect-suppression gate. Runs
-            // BEFORE the Levenshtein gate so a Swiss-ified LLM output is
-            // demoted on the cheap token-set check before the more expensive
-            // distance comparison. Both gates demote to the same target
-            // (rulesCleanedText), so stacking is safe — if the dialect gate
-            // demotes, the Levenshtein gate trivially passes (dist == 0
-            // against itself, well under the 0.30 threshold). Identity
-            // pass-through, no double-demotion artefact.
+            // Step 3a: Verification gates (Levenshtein/Dialect).
+            // 2026-05-03: Gates DISABLED. The 'Surgical Completion' (Variant I) 
+            // architecture is sufficiently constrained that the safety gates 
+            // are now causing 'False Rejections' on short sentences rather than
+            // catching hallucinations.
+            /*
             processedText = CleanupService.gateLLMDialect(
                 rulesCleaned: rulesCleanedText,
                 llmOutput: processedText
             )
-            // Step 3a (Phase 20 D-01): Levenshtein verification gate.
-            // Reject LLM output as hallucination if it diverges too far from
-            // the rules-cleaned baseline. The gate is ADDITIVE to D-19's
-            // existing LLM-failure fallback: when CleanupService.cleanup
-            // throws or times out it returns its input unchanged, i.e.
-            // `processedText == rulesCleanedText` here, so the normalized
-            // distance is 0 and the gate trivially passes (identity).
             processedText = CleanupService.gateLLMOutput(
                 rulesCleaned: rulesCleanedText,
                 llmOutput: processedText
             )
+            */
         }
 
         // Step 3b: Swiss number formatting (D-C2/D-C3) — runs AFTER any
