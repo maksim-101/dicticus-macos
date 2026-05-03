@@ -548,7 +548,7 @@ extension CleanupService {
     /// Increase to be MORE permissive of LLM edits (the gate accepts more);
     /// decrease to reject MORE aggressively. Downstream code MUST reference this
     /// constant by name and never magic-number 0.30 inline.
-    public static let levenshteinGateThreshold: Double = 0.30
+    public static let levenshteinGateThreshold: Double = 0.45
 
     /// Pure helper. Returns `llmOutput` if it is plausibly a light edit of
     /// `rulesCleaned`; otherwise returns `rulesCleaned` (LLM is rejected as
