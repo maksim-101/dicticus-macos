@@ -75,9 +75,22 @@ class TextProcessingService: ObservableObject {
         // Step 3: AI Cleanup
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
             let lowerText = processedText.lowercased()
+            
+            // Phase 20.08 D-21: Adaptive dictionary context.
+            // 1. Include all exact mishearing matches (original -> replacement).
+            // 2. Include all "Preferred Terms" (where original == replacement) as 
+            //    context even if they don't appear in the raw text, allowing the 
+            //    LLM to perform phonetic mapping (e.g., "Diktikus" -> "Dicticus").
             let filteredContext = dictionaryService.dictionary.reduce(into: [String: String]()) { result, pair in
-                if lowerText.contains(pair.key.lowercased()) {
-                    result[pair.key] = pair.value.replacement
+                let original = pair.key
+                let replacement = pair.value.replacement
+                
+                if original == replacement {
+                    // It's a preferred term; always include to help LLM phonetics
+                    result[original] = replacement
+                } else if lowerText.contains(original.lowercased()) {
+                    // It's a specific mishearing match
+                    result[original] = replacement
                 }
             }
 

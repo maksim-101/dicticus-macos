@@ -84,7 +84,11 @@ struct CleanupPrompt {
         // the third few-shot example (`1250 Franken 20`) demonstrates currency
         // preservation via positive exemplar.
         if language == "de" {
-            return buildGermanVariantG15(text: text, swissOrthography: swissEnabled)
+            return buildGermanVariantG15(
+                text: text,
+                swissOrthography: swissEnabled,
+                dictionaryContext: dictionaryContext
+            )
         }
 
         // Non-German path (English / unknown): existing
@@ -96,10 +100,16 @@ struct CleanupPrompt {
         prompt += "INSTRUCTION: \(instruction)\n"
 
         if let dict = dictionaryContext, !dict.isEmpty {
-            prompt += "DICTIONARY:\n"
+            prompt += "DICTIONARY / PROJECT GLOSSARY:\n"
+            // Sort to ensure deterministic output
             for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
-                prompt += "- \(original) -> \(replacement)\n"
+                if original == replacement {
+                    prompt += "- Known Term: \(replacement)\n"
+                } else {
+                    prompt += "- \(original) -> \(replacement)\n"
+                }
             }
+            prompt += "Use these terms to correct phonetic mishearings in the input.\n"
         }
 
         if let lang = language {
@@ -129,7 +139,11 @@ struct CleanupPrompt {
     /// D3). All 5 ORIGINAL/KORRIGIERT exemplars, RULE 1 (Standard-Hochdeutsch),
     /// the anti-dialect directive, the anglicism two-tier rule, and the new
     /// digit-preservation directive fire unconditionally on every German input.
-    private static func buildGermanVariantG15(text: String, swissOrthography: Bool) -> String {
+    private static func buildGermanVariantG15(
+        text: String,
+        swissOrthography: Bool,
+        dictionaryContext: [String: String]? = nil
+    ) -> String {
         let orthographyClause = swissOrthography
             ? " mit Schweizer Rechtschreibung (ss statt ß, Umlaute ä/ö/ü bleiben)"
             : ""
@@ -138,21 +152,25 @@ struct CleanupPrompt {
         var prompt = "<start_of_turn>user\n"
         prompt += "Bereinige die folgende deutsche Sprachaufnahme. "
         prompt += "Schreibe Standard-Hochdeutsch\(orthographyClause). "
-        prompt += "Korrigiere Versprecher und Selbstreparaturen (z.B. \"50 nein 60\" -> \"60\"). "
-        prompt += "Nutze den Kontext, um falsch verstandene Fachbegriffe zu korrigieren. "
+        prompt += "Korrigiere Versprecher, Selbstreparaturen und Wiederholungen. "
+        prompt += "Nutze den Kontext und das Glossar, um falsch verstandene Fachbegriffe oder Namen zu korrigieren. "
         prompt += "Verwende KEINEN Schweizerdeutsch-Dialekt — schreibe \"Woche\" nicht \"Wuche\", \"Zürich\" nicht \"Züri\", \"ich gehe\" nicht \"i gang\". "
         prompt += "Etablierte englische Fachbegriffe bleiben Englisch (Deadline, Meeting, Workaround, E-Mail, Team, Product Owner, Release). "
         prompt += "Untypische englische Adjektive oder Verben in deutschen Sätzen ins Deutsche übertragen — \"realistic\" → \"realistisch\", \"awesome\" → \"toll\", \"appreciate\" → \"schätzen\". "
-        // Phase 20.08 Plan 05 (R-G15-01 fix): the digit-preservation behaviour is
-        // taught via the 5th positive ORIGINAL/KORRIGIERT exemplar below — not via
-        // a negative-instruction directive. VARIANT-G-RATIONALE §3 documents the
-        // priming trap that bit Draft 1: negative-example lists become "things on
-        // the table" for Gemma 4 E2B. The 80-cell harness sweep
-        // (/tmp/dicticus-harness, 4 prompt variants × 10 seeds × 2 input forms)
-        // showed the directive contributed zero measurable signal vs the exemplar
-        // alone, while the negative phrasing pattern matched the priming-trap
-        // shape called out in §3 — so the directive was dropped before UAT.
-        prompt += "Gib genau eine bereinigte Version aus, sonst nichts.\n"
+
+        if let dict = dictionaryContext, !dict.isEmpty {
+            prompt += "\n\nFACHBEGRIFFE / GLOSSAR:\n"
+            for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
+                if original == replacement {
+                    prompt += "- \(replacement)\n"
+                } else {
+                    prompt += "- \(original) -> \(replacement)\n"
+                }
+            }
+            prompt += "Verwende diese Begriffe, um phonetisch ähnliche Fehler im Text zu korrigieren.\n"
+        }
+
+        prompt += "\nGib genau eine bereinigte Version aus, sonst nichts.\n"
         prompt += "\n"
         prompt += "ORIGINAL: ich habe heute mit dem product owner gesprochen über die deadline und er meinte das ist nicht realistic.\n"
         prompt += "KORRIGIERT: Ich habe heute mit dem Product Owner über die Deadline gesprochen, und er meinte, das ist nicht realistisch.\n"
