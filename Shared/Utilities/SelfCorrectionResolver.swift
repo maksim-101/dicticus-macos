@@ -122,18 +122,18 @@ public enum SelfCorrectionResolver {
 
             // Determine drop count.
             let backwardCount = backwardTokens.count
-            let lastThreeIndex = max(0, backwardCount - 3)
-            let lastThree = Array(backwardTokens[lastThreeIndex..<backwardCount])
+            let lastSixIndex = max(0, backwardCount - 6)
+            let lastSix = Array(backwardTokens[lastSixIndex..<backwardCount])
             // 1) Try alignment-by-first-repair-token in the last 3.
             //    Compare with case-insensitive strict-equality (no punctuation
             //    folding on the backward side because backward tokens rarely
             //    end in sentence punctuation; the repair-side strip is enough).
             var dropCount: Int? = nil
-            for (offset, token) in lastThree.enumerated() {
+            for (offset, token) in lastSix.enumerated() {
                 if token.lowercasedTrimmingPunctuation() == firstRepairLower {
                     // offset is 0-based from the start of `lastThree`;
                     // distance from end = lastThree.count - offset.
-                    dropCount = lastThree.count - offset
+                    dropCount = lastSix.count - offset
                     break  // first (left-most in the last-3 window) wins
                 }
             }
@@ -150,7 +150,7 @@ public enum SelfCorrectionResolver {
                 }
             }
 
-            let actualDrop = min(dropCount ?? 1, min(3, backwardCount))
+            let actualDrop = min(dropCount ?? 1, min(6, backwardCount))
             guard actualDrop > 0 else { continue }
 
             // Compute the character range to drop on the BACKWARD side.
@@ -195,7 +195,7 @@ public enum SelfCorrectionResolver {
 
     // MARK: - Connector + abort lists
 
-    private static let germanConnectors: [String] = [
+        private static let germanConnectors: [String] = [
         "ich meine",
         "besser gesagt",
         "genauer gesagt",
@@ -206,11 +206,16 @@ public enum SelfCorrectionResolver {
         "eigentlich",
         "doch",
         "das war",
+        "ah nein",
+        "ach nein",
+        "moment mal",
+        "ach moment",
+        "ein moment",
+        "ach ein moment",
+        "wart mal",
         "wart",
         "warte",
         "oder",
-        "ah nein",
-        "ach nein",
     ]
 
     private static let englishConnectors: [String] = [

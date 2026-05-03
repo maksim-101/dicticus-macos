@@ -80,12 +80,7 @@ class TextProcessingService: ObservableObject {
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
             let lowerText = processedText.lowercased()
             
-            // Phase 20.08 D-21: Adaptive dictionary context.
-            // 1. Include all exact mishearing matches (original -> replacement) found in text.
-            // 2. Include all "Target Terms" (the replacements) as Known Terms in the 
-            //    glossary, even if their specific mishearing isn't in the raw text. 
-            //    This allows the LLM to perform adaptive phonetic mapping (e.g., 
-            //    "Dr. Chi" -> "Dockge" or "TrueNorth" -> "TrueNAS").
+                        // Phase 20.08 D-21: Adaptive dictionary context.
             let filteredContext = dictionaryService.dictionary.reduce(into: [String: String]()) { result, pair in
                 let original = pair.key
                 let replacement = pair.value.replacement
