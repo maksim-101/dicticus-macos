@@ -239,7 +239,8 @@ class CleanupService: ObservableObject, CleanupProvider {
                         model: unsafeModel,
                         context: unsafeContext,
                         sampler: unsafeSampler,
-                        maxTokens: maxTokens
+                        maxTokens: maxTokens,
+                        stopSequences: ["Original:", "ORIGINAL:"]
                     )
                 }
 
@@ -311,7 +312,8 @@ class CleanupService: ObservableObject, CleanupProvider {
         model: OpaquePointer,
         context: OpaquePointer,
         sampler: UnsafeMutablePointer<llama_sampler>,
-        maxTokens: Int32
+        maxTokens: Int32,
+        stopSequences: [String] = []
     ) -> String {
         // Step 1: Clear KV cache between calls (Pitfall 5)
         // llama_kv_cache_clear was removed; use llama_memory_clear instead.
@@ -363,6 +365,19 @@ class CleanupService: ObservableObject, CleanupProvider {
             if llama_vocab_is_eog(vocab, newToken) { break }
 
             outputTokens.append(newToken)
+            
+            // Check for stop sequences in the current output
+            if !stopSequences.isEmpty {
+                let currentText = outputTokens.map { tokenToPiece(token: $0, vocab: vocab) }.joined()
+                var shouldStop = false
+                for stop in stopSequences {
+                    if currentText.contains(stop) {
+                        shouldStop = true
+                        break
+                    }
+                }
+                if shouldStop { break }
+            }
 
             // Prepare next batch with single token (reuse allocated batch)
             nextBatch.n_tokens = 1
@@ -377,7 +392,16 @@ class CleanupService: ObservableObject, CleanupProvider {
         }
 
         // Step 6: Detokenize output
-        return outputTokens.map { tokenToPiece(token: $0, vocab: vocab) }.joined()
+        var finalResult = outputTokens.map { tokenToPiece(token: $0, vocab: vocab) }.joined()
+        
+        // Final cleanup of stop sequences
+        for stop in stopSequences {
+            if let range = finalResult.range(of: stop) {
+                finalResult = String(finalResult[..<range.lowerBound])
+            }
+        }
+        
+        return finalResult
     }
 
     // MARK: - Tokenization helpers
@@ -447,17 +471,9 @@ class CleanupService: ObservableObject, CleanupProvider {
         }
         result = result.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Step 0.5: Strip leaked Gemma chat-template fragments. Phase 19.5 UAT
-        // surfaced the model occasionally emitting `</start_of_turn>` (an XML-
-        // shaped hallucination of the real `<end_of_turn>` EOG token) and
-        // related close-tag variants as plain text — these slip past
-        // `llama_vocab_is_eog` because they are not the actual special token
-        // and end up in the user's clipboard. Match the four canonical
-        // open/close shapes plus a trailing role tag (`model`/`user`) and the
-        // `<bos>`/`<eos>` markers. Case-insensitive in case the model
-        // capitalizes oddly.
+        // Step 0.5: Strip leaked Gemma chat-template fragments and 'response' markers.
         if let chatTemplateRegex = try? NSRegularExpression(
-            pattern: #"</?(?:start_of_turn|end_of_turn)>(?:\s*(?:model|user))?|<bos>|<eos>|<\|endoftext\|>"#,
+            pattern: #"</?(?:start_of_turn|end_of_turn)>(?:\s*(?:model|user))?|<bos>|<eos>|<\|endoftext\|>|_?response>|<response>|OUTPUT:|KORRIGIERT:"#,
             options: [.caseInsensitive]
         ) {
             let r = NSRange(result.startIndex..<result.endIndex, in: result)
@@ -472,9 +488,7 @@ class CleanupService: ObservableObject, CleanupProvider {
             result = result.replacingOccurrences(of: "  ", with: " ")
         }
         
-        // We strip the space before an apostrophe only when it is preceded
-        // and followed by a contraction suffix (e.g., "don ' t" -> "don't", "here ' s" -> "here's").
-        // We handle both " 's" and " ' s" variants.
+        // Fix contractions artifact (tokenizer artifacts like "don ' t")
         let contractionRegex = try? NSRegularExpression(pattern: "([a-zA-Z]) ' ?([stdmveSTDMLVR])\\b", options: [])
         let range = NSRange(result.startIndex..<result.endIndex, in: result)
         result = contractionRegex?.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "$1'$2") ?? result
@@ -484,61 +498,7 @@ class CleanupService: ObservableObject, CleanupProvider {
             result = result.replacingOccurrences(of: punct, with: String(punct.last!))
         }
 
-        // Step 2: Strip known preamble patterns (case-insensitive prefix match)
-        let preambles = [
-            "Here is the corrected text:",
-            "Here is the corrected text",
-            "Here's the corrected text:",
-            "Here's the corrected text",
-            "Here is the polished text:",
-            "Here is the polished text",
-            "Here's the polished text:",
-            "Here's the polished text",
-            "Here's a polished version of the text:",
-            "Here's a polished version:",
-            "Sorry, here's a polished version of the text:",
-            "Sorry, here's a polished version:",
-            "Sorry, here is the polished text:",
-            "Corrected text:",
-            "Polished text:",
-            "Sure!",
-            "Sure,",
-            "Sure.",
-            "Hier ist der korrigierte Text:",
-            "Hier ist der korrigierte Text",
-            "Korrigierter Text:",
-        ]
-
-        let lowered = result.lowercased()
-        for preamble in preambles {
-            if lowered.hasPrefix(preamble.lowercased()) {
-                result = String(result.dropFirst(preamble.count))
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                break
-            }
-        }
-
-        // Step 3: Strip "Please provide/share..." refusal or "Output:" prefix
-        let loweredAfterPreamble = result.lowercased()
-        if loweredAfterPreamble.hasPrefix("please provide") || loweredAfterPreamble.hasPrefix("please share") {
-            if let dotRange = result.range(of: ".\n", options: .literal) {
-                result = String(result[dotRange.upperBound...])
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-            } else if let dotRange = result.range(of: ". ", options: .literal),
-                      result.distance(from: result.startIndex, to: dotRange.lowerBound) < 80 {
-                result = String(result[result.index(after: dotRange.lowerBound)...])
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-            } else {
-                result = ""
-            }
-        }
-
-        if result.lowercased().hasPrefix("output:") {
-            result = String(result.dropFirst("output:".count))
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-
-        // Step 4: Strip double quotation marks and non-standard quotes (CLEAN-01)
+        // Step 2: Strip surrounding double quotation marks and non-standard quotes (CLEAN-01)
         let doubleQuotes = CharacterSet(charactersIn: "\"“”„«»")
         result = result.components(separatedBy: doubleQuotes).joined()
 
