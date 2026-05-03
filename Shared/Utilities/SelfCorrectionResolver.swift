@@ -205,6 +205,8 @@ public enum SelfCorrectionResolver {
         "ne",
         "eigentlich",
         "doch",
+        "das war",
+        "oder",
     ]
 
     private static let englishConnectors: [String] = [
