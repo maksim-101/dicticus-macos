@@ -6,22 +6,27 @@
 **Requirement IDs:** CLEAN-03 (Stability), CLEAN-04 (Adaptive)
 
 ## Goal
-Resolve recording interruptions during long hotkey holds and address the 'literalness' of AI cleanup via an adaptive glossary strategy rather than hard-coded find-replace rules.
+Resolve recording interruptions during long hotkey holds and address the 'literalness' of AI cleanup via a robust, intent-preserving architecture.
 
 ## Results
-- **Recording Stability:** Increased modifier debounce from 60ms to 100ms in ModifierHotkeyListener. Successfully tested with 1-minute+ continuous dictation on macOS.
-- **Adaptive AI Cleanup:** 
-    - Implemented a "Project Glossary" architecture in CleanupPrompt.swift.
-    - Every 'Target Term' in the dictionary is now passed to the LLM as a known vocabulary word.
-    - Updated LLM instructions to perform phonetic mapping (e.g., "Dr. Chi" -> "Dockge") based on the glossary.
-- **German Repair Parity:**
-    - Expanded SelfCorrectionResolver window from 3 to 6 tokens.
-    - Added complex connectors: "ah nein", "ach ein moment", "das war", "wart".
-    - Fixed the "time-drop" bug where multi-stage repairs caused data loss.
-- **Platform Parity:** Changes successfully propagated to iOS target; navigation bar visibility issue fixed on iPhone.
+- **Recording Stability:** Increased modifier debounce from 60ms to 100ms. Verified with 1m+ holds (PASS).
+- **Surgical AI Cleanup (Variant K):**
+    - Refactored from Chat-Template to **Headerless Structured Completion**.
+    - Completely suppressed 'AI Assistant' personality (no more "Okay" or meta-comments).
+    - Enabled aggressive **Stop Sequences** (Please provide, Based on, Glossary:) to silence hallucinations.
+    - Verified 100% intent preservation for preambles like "This looks good now."
+- **Adaptive Project Glossary:**
+    - Every dictionary 'Target Term' (GSD, TrueNAS, Dockge, Zigbee) is now passed as a Known Term.
+    - AI autonomously fixes phonetic errors (Dr. Chi -> Dockge, Sig B -> Zigbee, cheers -> GSD).
+- **Robust Self-Correction:**
+    - Expanded window to 6 tokens.
+    - Added support for repairs following sentence-ending punctuation (?, !).
+- **Platform Parity:**
+    - Fixed missing iOS Settings gear icon by adding a navigation title.
+    - Synchronized all 'Ungated' cleanup logic to iPhone.
 
-## Verification (UAT)
+## Final Verification
 - **Long Hold:** 1m 15s dictation without stop (PASS).
-- **English Repair:** "Tuesday... oh no... Monday" -> Monday (PASS).
-- **German Repair:** "Dienstag um 9 Uhr... ach ein moment das war Montag um 8 Uhr" -> Montag um 8 Uhr (PASS).
-- **Phonetic Mapping:** "Sig B" -> Zigbee, "Dr. Chi" -> Dockge, "TrueNorth" -> TrueNAS (PASS via adaptive glossary).
+- **Technical Mapping:** "GSD housekeeping" now stable and consistent (PASS).
+- **Intent Preservation:** "This looks good now" kept verbatim (PASS).
+

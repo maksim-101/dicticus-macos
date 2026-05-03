@@ -67,7 +67,7 @@ public enum SelfCorrectionResolver {
         // sits OUTSIDE the match group so it is also consumed.
         // Group layout: full match = `, <connector>\s*` (consumed),
         // group 1 = the connector text itself.
-        let pattern = "(?i)(?:[,;:]?\\s+|,\\s*)(\(alternation))(\\s*)"
+        let pattern = "(?i)(?:[,;:.?!]?\\s+|,\\s*)(\(alternation))(\\s*)"
 
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
             return text
