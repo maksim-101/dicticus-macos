@@ -104,7 +104,7 @@ struct CleanupPrompt {
             // Sort to ensure deterministic output
             for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
                 if original == replacement {
-                    prompt += "- Known Term: \(replacement)\n"
+                    prompt += "- \(replacement)\n"
                 } else {
                     prompt += "- \(original) -> \(replacement)\n"
                 }

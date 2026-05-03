@@ -77,20 +77,24 @@ class TextProcessingService: ObservableObject {
             let lowerText = processedText.lowercased()
             
             // Phase 20.08 D-21: Adaptive dictionary context.
-            // 1. Include all exact mishearing matches (original -> replacement).
-            // 2. Include all "Preferred Terms" (where original == replacement) as 
-            //    context even if they don't appear in the raw text, allowing the 
-            //    LLM to perform phonetic mapping (e.g., "Diktikus" -> "Dicticus").
+            // 1. Include all exact mishearing matches (original -> replacement) found in text.
+            // 2. Include all "Target Terms" (the replacements) as Known Terms in the 
+            //    glossary, even if their specific mishearing isn't in the raw text. 
+            //    This allows the LLM to perform adaptive phonetic mapping (e.g., 
+            //    "Dr. Chi" -> "Dockge" or "TrueNorth" -> "TrueNAS").
             let filteredContext = dictionaryService.dictionary.reduce(into: [String: String]()) { result, pair in
                 let original = pair.key
                 let replacement = pair.value.replacement
                 
-                if original == replacement {
-                    // It's a preferred term; always include to help LLM phonetics
+                if lowerText.contains(original.lowercased()) {
+                    // It's a specific mishearing match found in text
                     result[original] = replacement
-                } else if lowerText.contains(original.lowercased()) {
-                    // It's a specific mishearing match
-                    result[original] = replacement
+                }
+                
+                // Always include the target term itself as a "Known Term" 
+                // to enable the LLM's adaptive phonetic matching.
+                if result[replacement] == nil {
+                    result[replacement] = replacement
                 }
             }
 
