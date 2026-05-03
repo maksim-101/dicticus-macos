@@ -55,6 +55,9 @@ struct CleanupPrompt {
             prompt += "In: this looks good now please do gest the housekeeping.\n"
             prompt += "Out: This looks good now, please do GSD housekeeping.\n\n"
             
+            prompt += "In: let's see whether w and if so you can continue with gest housekeeping.\n"
+            prompt += "Out: Let's see whether this is good, and if so, you can continue with GSD housekeeping.\n\n"
+            
             prompt += "In: i agree with your plan though you can set it up yourself in dr chi on truenorth.\n"
             prompt += "Out: I agree with your plan, though you can set it up yourself in Dockge on TrueNAS.\n\n"
             
