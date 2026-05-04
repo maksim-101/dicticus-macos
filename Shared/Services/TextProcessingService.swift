@@ -115,21 +115,35 @@ class TextProcessingService: ObservableObject {
                 dictionaryContext: filteredContext
             )
 
-            // Step 3a: Verification gates (Levenshtein/Dialect).
-            // 2026-05-03: Gates DISABLED. The 'Surgical Completion' (Variant I) 
-            // architecture is sufficiently constrained that the safety gates 
-            // are now causing 'False Rejections' on short sentences rather than
-            // catching hallucinations.
-            /*
-            processedText = CleanupService.gateLLMDialect(
-                rulesCleaned: rulesCleanedText,
-                llmOutput: processedText
-            )
-            processedText = CleanupService.gateLLMOutput(
-                rulesCleaned: rulesCleanedText,
-                llmOutput: processedText
-            )
-            */
+            // Step 3a: Verification gates (Dialect / Levenshtein).
+            //
+            // 2026-05-04 RE-ENABLED. The V3 prompt (CleanupPrompt 2026-05-04
+            // refactor) is content-preserving — fixtures show normalized
+            // edit-distance well under threshold for typical inputs. With
+            // V3 in place, the gates resume their role as a backstop
+            // against rare model regressions (paraphrase, hallucination,
+            // unsolicited Swiss dialect).
+            //
+            // Short-input bypass: for inputs ≤ 3 words the normalized
+            // distance metric is lossy (a single token edit pushes ratios
+            // past 0.45). The original 2026-05-03 disable was driven by
+            // false rejections on short utterances; we side-step that here
+            // by skipping the gate for very short inputs while keeping it
+            // active where it matters (multi-sentence dictations where
+            // hallucination has room to grow).
+            let baselineWordCount = rulesCleanedText
+                .split(whereSeparator: { $0.isWhitespace })
+                .count
+            if baselineWordCount > 3 {
+                processedText = CleanupService.gateLLMDialect(
+                    rulesCleaned: rulesCleanedText,
+                    llmOutput: processedText
+                )
+                processedText = CleanupService.gateLLMOutput(
+                    rulesCleaned: rulesCleanedText,
+                    llmOutput: processedText
+                )
+            }
         }
 
         // Step 3b: Swiss number formatting (D-C2/D-C3) — runs AFTER any
