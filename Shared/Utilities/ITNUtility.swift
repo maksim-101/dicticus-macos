@@ -5,11 +5,126 @@ struct ITNUtility {
 
     /// Apply ITN to the given text based on the detected language.
     static func applyITN(to text: String, language: String) -> String {
+        let normalized: String
         if language == "de" {
-            return applyGermanITN(to: text)
+            normalized = applyGermanITN(to: text)
         } else {
-            return applyEnglishITN(to: text)
+            normalized = applyEnglishITN(to: text)
         }
+        return applyRangeHomophoneFix(to: normalized, language: language)
+    }
+
+    /// Range homophone post-pass.
+    ///
+    /// Catches the "X to Y" → "X two Y" / "X 0 Y" → digit-merged ASR
+    /// failure mode reported in v2.2 UAT (e.g. "Claude Code should
+    /// verify phases 102, four." for intended "phases 1 to 4"). The
+    /// range marker "to" is acoustically near-identical to "two" /
+    /// "oh"; downstream ITN/ASR can collapse the trio into a single
+    /// large number plus a stranded final digit/word.
+    ///
+    /// Detection requires a range-implying noun head (phases, chapters,
+    /// steps, items, sections, parts, levels, stages — DE: Phasen,
+    /// Kapitel, Schritte, Abschnitte, Teile) so the rewrite never fires
+    /// on legitimate sequences (lists of phone numbers, ID arrays, etc.).
+    ///
+    /// Two patterns are rewritten:
+    ///   1. `<noun> N M K` (three 1-digit numbers, space-separated)
+    ///      → `<noun> N to K` (first-to-last; the middle digit is the
+    ///      range marker "to" misheard as a digit).
+    ///   2. `<noun> N0M(,)? <K>` where N0M is a 3-digit number whose
+    ///      middle digit is 0 (the "to" → "oh" path) and the following
+    ///      token is a digit or small number-word
+    ///      → `<noun> N to K` (first digit of N0M, dropping the M, paired
+    ///      with the trailing token).
+    ///
+    /// Conservative by design: when the pattern doesn't match the
+    /// noun-head guard, the input passes through untouched. Idempotent.
+    static func applyRangeHomophoneFix(to text: String, language: String) -> String {
+        let isGerman = language.prefix(2).lowercased() == "de"
+        let nouns: [String]
+        let connector: String
+        if isGerman {
+            nouns = ["phasen", "kapitel", "schritte", "abschnitte", "teile", "stufen"]
+            connector = "bis"
+        } else {
+            nouns = ["phases", "chapters", "steps", "items", "sections", "parts", "levels", "stages"]
+            connector = "to"
+        }
+        let nounAlt = nouns.joined(separator: "|")
+
+        var result = text
+
+        // Pattern 1: <noun> N M K  (three 1-digit numbers, space-separated)
+        //   "phases 1 2 4" → "phases 1 to 4"
+        let p1 = "(?i)\\b(\(nounAlt))\\s+(\\d)\\s+\\d\\s+(\\d)\\b"
+        result = rewriteRange(result, pattern: p1, headIdx: 1, firstIdx: 2, lastIdx: 3, lastIsWord: false, connector: connector)
+
+        // Pattern 2: <noun> N0M  ,? <small number or word>
+        //   "phases 102, four" → "phases 1 to 4"
+        //   "phases 102 four"  → "phases 1 to 4"
+        //   "phases 102 4"     → "phases 1 to 4"
+        let numberWord = "(\\d|two|three|four|five|six|seven|eight|nine|zwei|drei|vier|fünf|sechs|sieben|acht|neun)"
+        let p2 = "(?i)\\b(\(nounAlt))\\s+(\\d)0\\d\\s*,?\\s+\(numberWord)\\b"
+        result = rewriteRange(result, pattern: p2, headIdx: 1, firstIdx: 2, lastIdx: 3, lastIsWord: true, connector: connector)
+
+        return result
+    }
+
+    /// Apply a regex rewrite that maps the matched span to
+    /// `<head> <first> <connector> <last>`. When `lastIsWord` is true,
+    /// the `lastIdx` capture is converted via `numberWordToDigit`;
+    /// otherwise it is treated as a literal digit.
+    private static func rewriteRange(
+        _ text: String,
+        pattern: String,
+        headIdx: Int,
+        firstIdx: Int,
+        lastIdx: Int,
+        lastIsWord: Bool,
+        connector: String
+    ) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return text
+        }
+        let nsText = text as NSString
+        let fullRange = NSRange(location: 0, length: nsText.length)
+        let matches = regex.matches(in: text, options: [], range: fullRange)
+        guard !matches.isEmpty else { return text }
+
+        var result = text
+        for match in matches.reversed() {
+            guard
+                let matchRange = Range(match.range, in: result),
+                let head = Range(match.range(at: headIdx), in: result),
+                let first = Range(match.range(at: firstIdx), in: result),
+                let last = Range(match.range(at: lastIdx), in: result)
+            else { continue }
+            let headText = String(result[head])
+            let firstDigit = String(result[first])
+            let lastToken = String(result[last])
+            let lastDigit = lastIsWord
+                ? (numberWordToDigit(lastToken) ?? lastToken)
+                : lastToken
+            result.replaceSubrange(matchRange, with: "\(headText) \(firstDigit) \(connector) \(lastDigit)")
+        }
+        return result
+    }
+
+    /// Convert a small number word (en/de) to its digit form. Returns
+    /// nil for unrecognized inputs and for words outside the 2..9 range
+    /// so the caller can keep the original token.
+    private static func numberWordToDigit(_ word: String) -> String? {
+        let lower = word.lowercased()
+        // Pure digit passes through.
+        if Int(lower) != nil { return lower }
+        let map: [String: String] = [
+            "two": "2", "three": "3", "four": "4", "five": "5",
+            "six": "6", "seven": "7", "eight": "8", "nine": "9",
+            "zwei": "2", "drei": "3", "vier": "4", "fünf": "5",
+            "sechs": "6", "sieben": "7", "acht": "8", "neun": "9",
+        ]
+        return map[lower]
     }
 
     /// D-16 / D-17: Deterministic Swiss German orthography transform.
