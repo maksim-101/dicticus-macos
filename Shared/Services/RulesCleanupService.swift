@@ -34,10 +34,18 @@ public final class RulesCleanupService {
     ///   - language: BCP-47-ish code; first 2 chars used for filler /
     ///     self-correction language gating. Currency-fold is language-
     ///     agnostic by design (the tokens themselves disambiguate).
+    ///   - skipSelfCorrection: when true, the SelfCorrectionResolver step
+    ///     is bypassed. Set by `TextProcessingService` in AI-cleanup mode
+    ///     so the V3 LLM prompt can decide for itself whether a
+    ///     self-correction is a genuine repair or part of the user's
+    ///     intended phrasing — the resolver's deterministic comma-prefixed
+    ///     drop conflicts with V3's "preserve self-corrections" rule.
     /// - Returns: cleaned text.
-    public func clean(_ text: String, language: String) -> String {
+    public func clean(_ text: String, language: String, skipSelfCorrection: Bool = false) -> String {
         var result = FillerWordRemover.strip(text, language: language)
-        result = SelfCorrectionResolver.resolve(result, language: language)
+        if !skipSelfCorrection {
+            result = SelfCorrectionResolver.resolve(result, language: language)
+        }
         // Currency-fold is gated on `de` (Swiss/German speakers say
         // "Franken Rappen" / "Euro Cent"). The en-mode contract is that
         // German-flavored input passes through untouched — see
