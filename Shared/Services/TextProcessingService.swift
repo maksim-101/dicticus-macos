@@ -69,12 +69,12 @@ class TextProcessingService: ObservableObject {
         // should remain raw (except for ITN/Dictionary) per user feedback.
         //
         // 2026-05-04 fix: In AI mode, skip the SelfCorrectionResolver step.
-        // The V3 prompt instructs the LLM to PRESERVE self-corrections
-        // ("no/wait/actually/nein/moment/eigentlich") as substantive
-        // content. Running the deterministic resolver before the LLM
-        // would drop the reparandum tokens and feed the LLM an already-
-        // collapsed phrase, defeating the V3 contract. Filler removal and
-        // currency-fold still run.
+        // The V5 prompt (CleanupPrompt 2026-05-05) preserves self-corrections
+        // verbatim with comma punctuation. Running the deterministic resolver
+        // before the LLM would drop the reparandum tokens and feed the LLM
+        // an already-collapsed phrase that V5 would then output literally —
+        // defeating the prompt contract. Filler removal and currency-fold
+        // still run.
         if mode == .aiCleanup {
             processedText = rulesCleanupService.clean(
                 processedText,

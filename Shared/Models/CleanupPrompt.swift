@@ -3,36 +3,47 @@ import NaturalLanguage
 
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 ///
-/// 2026-05-05 REFACTOR (Variant V4): Self-Correction Resolution.
-/// Iterates on V3 (2026-05-04). V3's "preserve self-corrections" rule
-/// was too conservative — users dictating "9 Uhr, ach ich meine 8 Uhr"
-/// expect cleanup to RESOLVE the repair (drop "9 Uhr", keep "8 Uhr"),
-/// not preserve the corrected-twice phrase verbatim.
+/// 2026-05-05 REFACTOR (Variant V5): Strict Verbatim.
+/// Iterates on V4 (also 2026-05-05). V4's "drop original phrase before
+/// connector self-correction" instruction was empirically catastrophic on
+/// long-form dictation — the model over-generalized "drop preamble before
+/// connector" and ate legitimate filler-y intros ("I would say, and...",
+/// "And so in between..."), plus collapsed multi-corrections to last-only.
 ///
-/// V4 flips that rule: connector-introduced self-corrections are
-/// RESOLVED. Structural negations ("nicht X, sondern Y") are explicitly
-/// called out as preservation cases since they share surface markers
-/// with self-corrections but are rhetorical patterns, not repairs.
+/// Harness evidence (.planning/debug/harness/results/v4_vs_v5_v6_v7_keyset.tsv,
+/// 2026-05-05 with the production Gemma 4 E2B GGUF, seed=42):
+///   F11 long-form: V4 lev=11 (drops "And so", paraphrases prefix);
+///                  V5 lev=0  (perfect preservation).
+///   F36 filler-prefix: V4 drops "I would say, and..." entirely;
+///                      V5 lev=1 (preserves all content, "30"→"thirty").
+///   F38 short self-correction: V4 collapses "Wednesday, no actually
+///                              Monday" to just "Monday"; V5 preserves
+///                              with comma punctuation.
+///   F43 "and so in between": V4 strips "and so"; V5 preserves.
+///   F16/F27/F28 multi-correction: V4 collapses to last-only;
+///                                 V5 preserves all options.
 ///
-/// V4 structure:
-///   1. Imperative task header — fix surface, remove filler, RESOLVE
-///      self-corrections, preserve structural negations.
+/// V5 trades the auto-resolve feature ("9 Uhr, ach ich meine 8 Uhr" →
+/// "8 Uhr") for content safety. Self-corrections are now preserved
+/// VERBATIM with comma flanking. Tradeoff is acceptable because:
+///   • Auto-resolve was a niche win that broke far more common cases.
+///   • Output stays ASR-faithful — no hallucination risk.
+///   • User can manually edit if a literal repair-string output is
+///     undesirable; they cannot recover content the model deleted.
+///
+/// V5 structure:
+///   1. Strict imperative header — only capitalization, punctuation,
+///      known-term fixes, and pure-filler removal allowed. Self-
+///      corrections and all other tokens preserved verbatim.
 ///   2. Known terms (when dictionary context provided).
 ///   3. Language banner (DE only; Swiss-orthography note if enabled).
-///   4. Few-shots per language — dictionary fix, disfluency removal,
-///      self-correction resolution, structural-negation preservation.
+///   4. Two safe few-shots per language — one dictionary/grammar fix,
+///      one self-correction-PRESERVED example to anchor the rule.
 ///   5. Final "In: <text>\nOut:" anchor for completion.
-///
-/// Risk note: V0 also collapsed self-corrections, but V0 lacked an
-/// explicit instruction header and over-extended into paraphrasing
-/// arbitrary content. V4 retains the strict task header + the "never
-/// add words / never paraphrase / never answer questions" rails to
-/// keep the resolution scope tight to comma/period-prefixed connector
-/// patterns only.
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Light cleanup of dictated speech (V3)."
+    static let defaultInstruction = "Minimal cleanup of dictated speech (V5 strict-verbatim)."
 
     static func build(
         text: String,
@@ -48,17 +59,14 @@ struct CleanupPrompt {
         let sanitizedText = sanitizeControlTokens(text)
         var prompt = ""
 
-        // Step 1: Imperative task header.
-        prompt += "Task: Light cleanup of dictated speech. "
-        prompt += "Fix capitalization, punctuation, and obvious mishearings of known terms. "
-        prompt += "Remove pure filler ('uh', 'um', 'ähm', 'you know', 'like'). "
-        prompt += "When the speaker corrects themselves mid-sentence with "
-        prompt += "'no', 'wait', 'actually', 'I mean', 'nein', 'moment', 'eigentlich', 'ach ich meine', "
-        prompt += "drop the original phrase and keep only the corrected version "
-        prompt += "(e.g. '9 Uhr, ach ich meine 8 Uhr' → '8 Uhr'). "
-        prompt += "Preserve all OTHER substantive content, including structural negations "
-        prompt += "like 'nicht X, sondern Y' or 'not X but Y' — those are not self-corrections. "
-        prompt += "Never add words not in the input. Never paraphrase. Never answer questions.\n\n"
+        // Step 1: Strict-verbatim imperative header.
+        prompt += "Task: Minimal cleanup of dictated speech. "
+        prompt += "Only fix capitalization, sentence-final punctuation, and obvious mishearings of the known terms below. "
+        prompt += "Remove only pure filler: 'uh', 'um', 'ähm'. "
+        prompt += "Keep EVERY other word the speaker said, including all self-corrections "
+        prompt += "('no', 'wait', 'actually', 'I mean', 'nein', 'eigentlich', 'moment', 'ach ich meine') verbatim. "
+        prompt += "Never delete substantive content. Never add words not in the input. "
+        prompt += "Never paraphrase. Never answer questions.\n\n"
 
         // Step 2: Known terms anchor (adaptive context filtered upstream).
         if let dict = dictionaryContext, !dict.isEmpty {
@@ -73,7 +81,7 @@ struct CleanupPrompt {
             prompt += "\n"
         }
 
-        // Step 3 + 4: Language banner + safe few-shots.
+        // Step 3 + 4: Language banner + safe few-shots (dictionary + preserved self-correction).
         if language == "de" {
             let orthography = swissEnabled ? " (Schweizer Orthographie: ss statt ß.)" : ""
             prompt += "Sprache: Standard-Hochdeutsch.\(orthography)\n\n"
@@ -81,26 +89,14 @@ struct CleanupPrompt {
             prompt += "In: das sieht gut aus jetzt bitte mach gest housekeeping.\n"
             prompt += "Out: Das sieht gut aus, jetzt bitte mach GSD housekeeping.\n\n"
 
-            prompt += "In: ähm ich denke wir sollten ähm die neue version testen.\n"
-            prompt += "Out: Ich denke, wir sollten die neue Version testen.\n\n"
-
-            prompt += "In: ich denke das meeting ist am dienstag, nein eigentlich am montag.\n"
-            prompt += "Out: Ich denke, das Meeting ist am Montag.\n\n"
-
-            prompt += "In: das war nicht dienstag sondern montag um 9 uhr ach ich meine 8 uhr.\n"
-            prompt += "Out: Das war nicht Dienstag, sondern Montag um 8 Uhr.\n\n"
+            prompt += "In: ähm ich denke das meeting ist am dienstag, nein eigentlich am montag.\n"
+            prompt += "Out: Ich denke, das Meeting ist am Dienstag, nein eigentlich am Montag.\n\n"
         } else {
             prompt += "In: this looks good now please do gest the housekeeping.\n"
             prompt += "Out: This looks good now, please do GSD housekeeping.\n\n"
 
-            prompt += "In: uh i think we should um you know maybe try the new approach.\n"
-            prompt += "Out: I think we should maybe try the new approach.\n\n"
-
-            prompt += "In: meeting at nine wait actually it is at eight.\n"
-            prompt += "Out: Meeting at eight.\n\n"
-
-            prompt += "In: the demo is on tuesday no actually wednesday at three pm.\n"
-            prompt += "Out: The demo is on Wednesday at 3 PM.\n\n"
+            prompt += "In: uh i think the meeting is at nine wait actually it is at eight.\n"
+            prompt += "Out: I think the meeting is at nine, wait, actually it is at eight.\n\n"
         }
 
         // Step 5: Input anchor for completion.
