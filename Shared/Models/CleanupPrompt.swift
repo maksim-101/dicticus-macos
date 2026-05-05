@@ -3,26 +3,32 @@ import NaturalLanguage
 
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 ///
-/// 2026-05-04 REFACTOR (Variant V3): Instruction-Led + Disfluency Removal.
-/// Empirically validated in `.planning/debug/harness/run.py` against 35
-/// fixtures and 10 random seeds (byte-identical). Replaces the prior
-/// few-shot-only "Variant K" structure, which taught the model to drop
-/// self-corrections, expand single-letter ASR errors into full phrases,
-/// and collapse "X wait actually Y" into just "Y".
+/// 2026-05-05 REFACTOR (Variant V4): Self-Correction Resolution.
+/// Iterates on V3 (2026-05-04). V3's "preserve self-corrections" rule
+/// was too conservative — users dictating "9 Uhr, ach ich meine 8 Uhr"
+/// expect cleanup to RESOLVE the repair (drop "9 Uhr", keep "8 Uhr"),
+/// not preserve the corrected-twice phrase verbatim.
 ///
-/// V3 structure:
-///   1. Imperative task header — explicit preserve/remove rules.
+/// V4 flips that rule: connector-introduced self-corrections are
+/// RESOLVED. Structural negations ("nicht X, sondern Y") are explicitly
+/// called out as preservation cases since they share surface markers
+/// with self-corrections but are rhetorical patterns, not repairs.
+///
+/// V4 structure:
+///   1. Imperative task header — fix surface, remove filler, RESOLVE
+///      self-corrections, preserve structural negations.
 ///   2. Known terms (when dictionary context provided).
 ///   3. Language banner (DE only; Swiss-orthography note if enabled).
-///   4. Two safe few-shots per language — dictionary fix + disfluency
-///      removal. Plus one self-correction preservation example to anchor
-///      the rule against the model's training prior to "summarize".
+///   4. Few-shots per language — dictionary fix, disfluency removal,
+///      self-correction resolution, structural-negation preservation.
 ///   5. Final "In: <text>\nOut:" anchor for completion.
 ///
-/// Critical: NO few-shot here may demonstrate dropping content,
-/// expansion of fragments, or collapsing self-corrections. Those
-/// patterns leak into outputs even when the instruction header forbids
-/// them.
+/// Risk note: V0 also collapsed self-corrections, but V0 lacked an
+/// explicit instruction header and over-extended into paraphrasing
+/// arbitrary content. V4 retains the strict task header + the "never
+/// add words / never paraphrase / never answer questions" rails to
+/// keep the resolution scope tight to comma/period-prefixed connector
+/// patterns only.
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
@@ -46,8 +52,12 @@ struct CleanupPrompt {
         prompt += "Task: Light cleanup of dictated speech. "
         prompt += "Fix capitalization, punctuation, and obvious mishearings of known terms. "
         prompt += "Remove pure filler ('uh', 'um', 'ähm', 'you know', 'like'). "
-        prompt += "Preserve all substantive content, including self-corrections "
-        prompt += "introduced by 'no', 'wait', 'actually', 'I mean', 'nein', 'moment', 'eigentlich'. "
+        prompt += "When the speaker corrects themselves mid-sentence with "
+        prompt += "'no', 'wait', 'actually', 'I mean', 'nein', 'moment', 'eigentlich', 'ach ich meine', "
+        prompt += "drop the original phrase and keep only the corrected version "
+        prompt += "(e.g. '9 Uhr, ach ich meine 8 Uhr' → '8 Uhr'). "
+        prompt += "Preserve all OTHER substantive content, including structural negations "
+        prompt += "like 'nicht X, sondern Y' or 'not X but Y' — those are not self-corrections. "
         prompt += "Never add words not in the input. Never paraphrase. Never answer questions.\n\n"
 
         // Step 2: Known terms anchor (adaptive context filtered upstream).
@@ -75,7 +85,10 @@ struct CleanupPrompt {
             prompt += "Out: Ich denke, wir sollten die neue Version testen.\n\n"
 
             prompt += "In: ich denke das meeting ist am dienstag, nein eigentlich am montag.\n"
-            prompt += "Out: Ich denke, das Meeting ist am Dienstag, nein eigentlich am Montag.\n\n"
+            prompt += "Out: Ich denke, das Meeting ist am Montag.\n\n"
+
+            prompt += "In: das war nicht dienstag sondern montag um 9 uhr ach ich meine 8 uhr.\n"
+            prompt += "Out: Das war nicht Dienstag, sondern Montag um 8 Uhr.\n\n"
         } else {
             prompt += "In: this looks good now please do gest the housekeeping.\n"
             prompt += "Out: This looks good now, please do GSD housekeeping.\n\n"
@@ -84,7 +97,10 @@ struct CleanupPrompt {
             prompt += "Out: I think we should maybe try the new approach.\n\n"
 
             prompt += "In: meeting at nine wait actually it is at eight.\n"
-            prompt += "Out: Meeting at nine, wait, actually it is at eight.\n\n"
+            prompt += "Out: Meeting at eight.\n\n"
+
+            prompt += "In: the demo is on tuesday no actually wednesday at three pm.\n"
+            prompt += "Out: The demo is on Wednesday at 3 PM.\n\n"
         }
 
         // Step 5: Input anchor for completion.
