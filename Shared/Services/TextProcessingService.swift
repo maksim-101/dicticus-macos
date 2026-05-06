@@ -91,21 +91,33 @@ class TextProcessingService: ObservableObject {
         // Step 3: AI Cleanup
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
             let lowerText = processedText.lowercased()
-            
-                        // Phase 20.08 D-21: Adaptive dictionary context.
+
+            // 2026-05-06 fix: Targeted-only dictionary context.
+            //
+            // Was: Phase 20.08 D-21 "adaptive phonetic matching" — every
+            // dictionary REPLACEMENT target was included unconditionally as a
+            // Known Term on every cleanup call. Intent: let Gemma recover
+            // phonetic variants not explicitly listed (e.g. "Phasern" → ?).
+            //
+            // Cost: ~70 brand-name targets shipped on every prompt as a
+            // substitution menu. Empirically (harness V5 vs V5T, 2026-05-06,
+            // F46-F47), this caused the model to substitute *unfamiliar*
+            // input tokens with plausibly-shaped menu entries —
+            // "lm cleanup" → "AI Cleanup", "GSD" → "AI Cleanup", etc. —
+            // exactly the over-eager substitution the user reported.
+            //
+            // Now: only surface a known term when its literal mishearing
+            // KEY appears in the input. The dictionary still pre-passes
+            // (Step 1) and deterministically replaces variants there;
+            // the LLM gets a clean input plus a *targeted* hint only when
+            // an explicit dictionary key matched. With the buffet gone the
+            // model relies on context, which empirically recovers common
+            // tech acronyms (LLM/API/etc.) better than the menu did.
             let filteredContext = dictionaryService.dictionary.reduce(into: [String: String]()) { result, pair in
                 let original = pair.key
                 let replacement = pair.value.replacement
-                
                 if lowerText.contains(original.lowercased()) {
-                    // It's a specific mishearing match found in text
                     result[original] = replacement
-                }
-                
-                // Always include the target term itself as a "Known Term" 
-                // to enable the LLM's adaptive phonetic matching.
-                if result[replacement] == nil {
-                    result[replacement] = replacement
                 }
             }
 
