@@ -68,18 +68,24 @@ class TextProcessingService: ObservableObject {
         // 2026-05-03 fix: Only apply rules-cleanup in AI mode. Plain dictation
         // should remain raw (except for ITN/Dictionary) per user feedback.
         //
-        // 2026-05-04 fix: In AI mode, skip the SelfCorrectionResolver step.
-        // The V5 prompt (CleanupPrompt 2026-05-05) preserves self-corrections
-        // verbatim with comma punctuation. Running the deterministic resolver
-        // before the LLM would drop the reparandum tokens and feed the LLM
-        // an already-collapsed phrase that V5 would then output literally —
-        // defeating the prompt contract. Filler removal and currency-fold
-        // still run.
+        // 2026-05-06 fix: In AI mode, RUN the SelfCorrectionResolver again.
+        //
+        // The 2026-05-04 disable was based on the (incorrect) assumption that
+        // pre-collapsing self-corrections would "defeat the V5 prompt
+        // contract." In practice the inverse holds: V5 is strict-verbatim, so
+        // the LLM is a passthrough — pre-collapsing here means the LLM gets
+        // a clean phrase to capitalize/punctuate, no paraphrase risk. This
+        // restores the auto-resolve behavior ("8 o'clock, no actually 7" →
+        // "7 o'clock") without inheriting V4's over-generalization (V4
+        // collapsed "I would say, and..." and "and so in between..." because
+        // the model itself was tasked with the resolution; the rules
+        // resolver is much narrower — comma-anchored connector + 3-token
+        // backward window cap + abort-on-pronoun).
         if mode == .aiCleanup {
             processedText = rulesCleanupService.clean(
                 processedText,
                 language: language,
-                skipSelfCorrection: true
+                skipSelfCorrection: false
             )
         }
         
