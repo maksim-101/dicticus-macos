@@ -15,8 +15,13 @@ import Foundation
 ///   2. **Backward window cap = 3 tokens.** Never delete more than the
 ///      most recent 3 backward tokens.
 ///   3. **Abort path** when there is no clear repair candidate:
-///         a) The connector itself is followed by a comma
-///            (`", ich meine, …"` — clausal continuation).
+///         a) The connector itself is followed by a comma — but ONLY
+///            when the connector is parenthetical-eligible (`I mean`,
+///            `ich meine`, `besser gesagt`, etc.). For pure correction
+///            markers (`no`, `nein`, `actually`, `eigentlich`, ...)
+///            the post-connector comma is just punctuation flanking the
+///            interjection ("..., No, it's at..."); we advance past it
+///            and continue with the repair.
 ///         b) The first repair token is a relative / object pronoun
 ///            that signals a clausal continuation rather than a
 ///            substitute noun (`I mean what …`, `ich meine es …`).
@@ -78,24 +83,58 @@ public enum SelfCorrectionResolver {
         let matches = regex.matches(in: text, options: [], range: fullRange)
         guard !matches.isEmpty else { return text }
 
+        let pureCorrection = pureCorrectionConnectors
+
         // Process matches in REVERSE so range arithmetic stays stable.
         var result = text
         for match in matches.reversed() {
             guard let matchRange = Range(match.range, in: result) else { continue }
 
+            // Pull the connector text out of capture group 1 so we can
+            // distinguish parenthetical-eligible vs. pure-correction
+            // connectors when handling abort 3a / advancing past a
+            // post-connector comma.
+            let connectorRange = match.range(at: 1)
+            let connectorText: String = {
+                guard let r = Range(connectorRange, in: result) else { return "" }
+                return String(result[r]).lowercased()
+            }()
+            let isPureCorrection = pureCorrection.contains(connectorText)
+
             // What sits AFTER the match? We need the first repair token
             // and any trailing context, AND we need to detect the abort
             // signal of an immediately-following comma.
-            let afterStart = matchRange.upperBound
-            if afterStart >= result.endIndex { continue }
-            let after = String(result[afterStart...])
+            let afterMatchStart = matchRange.upperBound
+            if afterMatchStart >= result.endIndex { continue }
+
+            // For pure-correction connectors ("no", "nein", "actually",
+            // "eigentlich", ...) a literal "," immediately after the
+            // connector is just punctuation flanking the interjection.
+            // Advance past that comma and any trailing whitespace so the
+            // repair-side scan starts at the real first repair token.
+            // For parenthetical-eligible connectors we leave the cursor
+            // alone — the comma is the abort signal handled below.
+            var effectiveStart = afterMatchStart
+            if isPureCorrection,
+               effectiveStart < result.endIndex,
+               result[effectiveStart] == ","
+            {
+                effectiveStart = result.index(after: effectiveStart)
+                while effectiveStart < result.endIndex,
+                      result[effectiveStart].isWhitespace
+                {
+                    effectiveStart = result.index(after: effectiveStart)
+                }
+            }
+            if effectiveStart >= result.endIndex { continue }
+
+            let after = String(result[effectiveStart...])
 
             // Abort 3a: the connector is followed by a comma → clausal
             // continuation (e.g. ", ich meine, mit der ganzen Familie").
-            // We have to look past any trailing whitespace the match might
-            // not have eaten, but the match's `(\s*)` group already
-            // gobbles trailing whitespace, so the literal next char tells.
-            if let firstChar = after.first, firstChar == "," {
+            // Only fires for parenthetical-eligible connectors. Pure
+            // correction markers already advanced past the comma above.
+            if !isPureCorrection, let firstChar = after.first, firstChar == "," {
                 continue
             }
 
@@ -164,10 +203,11 @@ public enum SelfCorrectionResolver {
             guard let realDropStart = dropStart else { continue }
 
             // The replacement: remove tokens from realDropStart through
-            // the END of the match (i.e. through the consumed connector +
-            // trailing whitespace). Then leave the original tail (`after`)
+            // the effective repair start (i.e. through the consumed
+            // connector + trailing whitespace + any pure-correction
+            // ", " advance). Then leave the original tail (`after`)
             // intact starting at its first repair token.
-            let trailing = result[matchRange.upperBound..<result.endIndex]
+            let trailing = result[effectiveStart..<result.endIndex]
             // Strip trailing whitespace before the dropped span
             // (so we don't leave a stray double-space).
             var prefix = String(result[result.startIndex..<realDropStart])
@@ -228,6 +268,28 @@ public enum SelfCorrectionResolver {
         "actually",
         "wait",
         "hold on",
+    ]
+
+    /// Connectors whose post-connector comma is *just punctuation*
+    /// flanking the interjection ("..., No, it's at five 30 PM")
+    /// rather than a clausal-continuation signal. For these we
+    /// advance past the comma+whitespace and keep collapsing instead
+    /// of aborting via guard 3a.
+    ///
+    /// Pure-correction connectors are a strict subset of the union
+    /// of `germanConnectors` + `englishConnectors`. Anything NOT in
+    /// this set (e.g. `I mean`, `ich meine`, `besser gesagt`) keeps
+    /// the original abort-on-comma behavior so canonical false-
+    /// positives like "..., ich meine, mit der ganzen Familie." stay
+    /// untouched.
+    private static let pureCorrectionConnectors: Set<String> = [
+        // English
+        "no", "actually", "wait", "hold on", "scratch that",
+        // German
+        "nein", "ne", "eigentlich", "doch", "das war",
+        "ah nein", "ach nein",
+        "moment mal", "ach moment", "ein moment", "ach ein moment",
+        "wart mal", "wart", "warte",
     ]
 
     private static let germanAbortPronouns: Set<String> = [

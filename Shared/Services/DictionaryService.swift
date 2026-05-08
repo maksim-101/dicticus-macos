@@ -36,8 +36,38 @@ class DictionaryService: ObservableObject {
             migrateOldFormat()
         }
 
+        // Drop entries we previously shipped as defaults but have since
+        // retired as harmful. Runs once per launch on the persisted set —
+        // cheap, idempotent, and required for users who already have the
+        // bad keys cached in UserDefaults.
+        purgeRetiredDefaults()
+
         // Always merge defaults — adds new entries on updates, preserves existing user entries
         prepopulateWithDefaults()
+    }
+
+    /// Keys we previously shipped in `prepopulateWithDefaults()` but
+    /// have since identified as net-harmful (false-positive matches
+    /// against legitimate dictation). Removed on every launch from the
+    /// persisted dictionary so existing installs converge to the new
+    /// behavior without requiring a manual reset.
+    ///
+    /// 2026-05-06: dropped the "I'm" cluster — `"one m"` matched
+    /// inside "one meeting" when ASR introduced any punctuation/space
+    /// between tokens, producing "I'm meeting" hallucinations.
+    private func purgeRetiredDefaults() {
+        let retired: [String] = [
+            "1m", "1 m", "I m", "one m", "One m",
+        ]
+        var changed = false
+        for key in retired {
+            if dictionary.removeValue(forKey: key) != nil {
+                changed = true
+            }
+        }
+        if changed {
+            save()
+        }
     }
 
     private func migrateOldFormat() {
@@ -66,8 +96,12 @@ class DictionaryService: ObservableObject {
             "docg": "Dockge", "true NAS": "TrueNAS", "tail scale": "Tailscale", 
             "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM", 
             "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code", 
-            ".cloud": ".claude", "Cloud Code": "Claude Code", "1m": "I'm", "1 m": "I'm",
-            "I m": "I'm", "one m": "I'm", "One m": "I'm",
+            ".cloud": ".claude", "Cloud Code": "Claude Code",
+            // 2026-05-06: removed brittle "1m"/"1 m"/"I m"/"one m"/"One m" → "I'm"
+            // mappings. They false-fired on legitimate phrases like "one meeting"
+            // ("one m" matched on "one meeting" when ASR injected punctuation
+            // between tokens) and Gemma already capitalizes "i" → "I" without
+            // dictionary forcing. See purgeRetiredDefaults() for in-place cleanup.
             "Selguard": "Cellguard", "selguard": "Cellguard", "Mac Vesper": "MacWhisper", "Kai-Agenten": "KI-Agenten", "Ki-Argenten": "KI-Agenten", "KI-Agenten": "KI-Agenten", "AI-Agenten": "AI-Agenten", "Dektik-Tools": "Dicticus", "Sigby": "Zigbee", "Sig B": "Zigbee", "sig b": "Zigbee", "Sigbee": "Zigbee", "sigbee": "Zigbee", "Zigbee": "Zigbee", "AI Cleanup": "AI Cleanup", "AI-Cleanup": "AI Cleanup",
             "GSD": "GSD", "gest": "GSD", "GST": "GSD", "cheers": "GSD", "G.S.D.": "GSD", "gsd": "GSD"
         ]

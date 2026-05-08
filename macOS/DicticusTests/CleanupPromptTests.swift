@@ -75,12 +75,13 @@ final class CleanupPromptTests: XCTestCase {
         XCTAssertFalse(prompt.contains("Rewrite the following"), "Default instruction must not appear")
     }
 
-    func testEmptyCustomInstructionFallsBackToDefault() {
-        UserDefaults.standard.set("   ", forKey: CleanupPrompt.customInstructionKey)
-        let instruction = CleanupPrompt.userInstruction()
-        XCTAssertEqual(instruction, CleanupPrompt.defaultInstruction,
-                        "Whitespace-only custom instruction must fall back to default")
-    }
+    // testEmptyCustomInstructionFallsBackToDefault: removed.
+    // The V5 prompt rewrite collapsed the userInstruction() helper into
+    // build() — there is no longer a public fallback API to test.
+    // V5 also no longer wires custom instruction into the prompt body
+    // (it's a strict-verbatim contract); remaining assertions in this
+    // file that target the pre-V5 prompt shape are flagged for
+    // separate cleanup, but the build must pass first.
 
     // MARK: - User text placement
 
