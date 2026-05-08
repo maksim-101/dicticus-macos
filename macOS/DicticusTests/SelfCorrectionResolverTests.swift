@@ -251,4 +251,86 @@ final class SelfCorrectionResolverTests: XCTestCase {
             "Parenthetical guard must still fire for 'I mean' (not pure correction); 'family' must not be dropped"
         )
     }
+
+    // MARK: - JSONL regression fixtures (Phase 22)
+    //
+    // Captured 2026-05-08 by `Dicticus-Debug-Recorder` scheme. Each fixture
+    // is a verbatim `raw` value from
+    // `~/Library/Application Support/Dicticus/DebugRecordings/cleanup-2026-05-08.jsonl`.
+    // Pre-fix, the SelfCorrectionResolver regex at line 75 ate substrings
+    // (`no` inside `now`/`noticed`, `wait` inside `waitress`) and fired on
+    // plain whitespace without a comma prefix. These fixtures lock the fix
+    // in as a regression net (per memory `feedback_tests_as_regression_nets`).
+
+    /// JSONL record 5 — `now` must not be eaten by the `no` connector (\b guard).
+    func testEnglishNowNotConsumedAsNoSubstring() {
+        let input = "Yes, please go ahead now."
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: 'now' must pass through unchanged — 'no' connector must not substring-match inside 'now'"
+        )
+    }
+
+    /// JSONL record 6 — `actually` mid-sentence without comma prefix must not fire.
+    func testEnglishActuallyMidSentenceWithoutCommaUnchanged() {
+        let input = "I want to explain what the SDK actually is"
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: 'actually' without preceding comma must not trigger resolver"
+        )
+    }
+
+    /// JSONL record 9 — same `now`/`no` substring guard as record 5.
+    func testEnglishNowInHomeAssistantUnchanged() {
+        let input = "I set this up in home assistant now."
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: trailing 'now' must pass through unchanged"
+        )
+    }
+
+    /// JSONL record 18 — `now` mid-sentence, no comma prefix.
+    func testEnglishWillPersistNowUnchanged() {
+        let input = "And what you did will persist now or will it not."
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: 'now' mid-sentence must not be eaten as 'no' substring"
+        )
+    }
+
+    /// JSONL record 19 — `now` followed by `but`, no comma prefix.
+    func testEnglishPushBranchNowUnchanged() {
+        let input = "Yes, you can push the branch now but check first."
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: 'now' followed by 'but' must pass through unchanged"
+        )
+    }
+
+    /// JSONL record 29 — `no` must not substring-match inside `noticed`.
+    func testEnglishNoticedNotConsumedAsNoSubstring() {
+        let input = "The findings you noticed as well should be considered."
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: 'noticed' must pass through unchanged — '\\b' must block 'no' from matching inside 'noticed'"
+        )
+    }
+
+    /// JSONL record 11 minimal — `wait` has no PRE-comma here (the comma is
+    /// AFTER `wait`), so the resolver must no-op; `\b` also blocks `no` from
+    /// eating `noticed`.
+    func testEnglishWaitCommaPreservesNoticed() {
+        let input = "oh wait, I just noticed"
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Regex fix: 'wait' without preceding comma is a no-op; 'noticed' must survive (\\b blocks 'no' substring match)"
+        )
+    }
 }
