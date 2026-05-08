@@ -55,6 +55,17 @@ class CleanupService: ObservableObject, CleanupProvider {
     /// llama_sampler is a fully-defined struct in llama.h → UnsafeMutablePointer<llama_sampler> in Swift.
     private nonisolated(unsafe) var sampler: UnsafeMutablePointer<llama_sampler>?
 
+    #if DEBUG_RECORDER
+    /// Filename of the loaded GGUF model — captured during loadModel for the
+    /// debug recorder. Lives only in DEBUG_RECORDER builds.
+    private nonisolated(unsafe) var loadedModelName: String = "unknown"
+
+    /// Trace from the most recent cleanup() invocation. TextProcessingService
+    /// reads this immediately after awaiting cleanup() to assemble the JSONL
+    /// record. Single-writer/single-reader — no lock needed.
+    public nonisolated(unsafe) var lastDebugTrace: CleanupServiceTrace?
+    #endif
+
     // MARK: - Configuration
 
     /// Maximum output tokens for cleanup. Dictation cleanup output is always
@@ -135,6 +146,10 @@ class CleanupService: ObservableObject, CleanupProvider {
             throw CleanupError.contextCreationFailed
         }
         self.context = ctx
+
+        #if DEBUG_RECORDER
+        self.loadedModelName = (modelPath as NSString).lastPathComponent
+        #endif
 
         // Sampler chain: conservative settings for text cleanup (AICLEAN-02).
         // Phase 20.08: chain order matches llama-server's conventional order
@@ -224,6 +239,12 @@ class CleanupService: ObservableObject, CleanupProvider {
         // Capture timeout locally for Sendable safety inside the task group closure.
         let timeout = self.inferenceTimeoutSeconds
 
+        #if DEBUG_RECORDER
+        let llmStart = Date()
+        // Reset before each call so a thrown/timed-out path leaves no stale trace.
+        self.lastDebugTrace = nil
+        #endif
+
         do {
             let result = try await withThrowingTaskGroup(of: String.self) { group in
                 group.addTask {
@@ -255,6 +276,20 @@ class CleanupService: ObservableObject, CleanupProvider {
                 group.cancelAll()
                 return firstResult
             }
+
+            #if DEBUG_RECORDER
+            let llmMs = Date().timeIntervalSince(llmStart) * 1000.0
+            self.lastDebugTrace = CleanupServiceTrace(
+                prompt: prompt,
+                llmRaw: result,
+                llmMs: llmMs,
+                modelName: self.loadedModelName,
+                samplerTemp: 0.1,
+                samplerTopK: 40,
+                samplerTopP: 0.9,
+                samplerMaxTokens: Int(self.maxOutputTokens)
+            )
+            #endif
 
             // Post-process: strip any preamble the model might add (Pitfall 4)
             log.info("LLM raw (\(result.count, privacy: .public) chars): \(result.prefix(500), privacy: .public)")

@@ -46,11 +46,29 @@ class TextProcessingService: ObservableObject {
     /// Process the transcribed text based on the mode and language.
     func process(text: String, language: String, mode: DictationMode, confidence: Double = 1.0) async -> String {
         let rawText = text
+
+        #if DEBUG_RECORDER
+        let dbgRawStart = Date()
+        let dbgRawText = text
+        #endif
+
         // Step 1: Dictionary replacements
         var processedText = dictionaryService.apply(to: text)
 
+        #if DEBUG_RECORDER
+        let dbgPostDict = processedText
+        let dbgPostDictMs = Date().timeIntervalSince(dbgRawStart) * 1000.0
+        let dbgItnStart = Date()
+        #endif
+
         // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
+
+        #if DEBUG_RECORDER
+        let dbgPostItn = processedText
+        let dbgPostItnMs = Date().timeIntervalSince(dbgItnStart) * 1000.0
+        let dbgSwissStart = Date()
+        #endif
 
         // Step 2b: Swiss German ß → ss (D-16) — runs on both plain AND AI-cleanup
         // paths whenever the useSwissGerman toggle is ON. Intentionally applies
@@ -60,6 +78,12 @@ class TextProcessingService: ObservableObject {
         if swissDefaults.bool(forKey: "useSwissGerman") {
             processedText = ITNUtility.applySwissITN(to: processedText)
         }
+
+        #if DEBUG_RECORDER
+        let dbgPostSwiss = processedText
+        let dbgPostSwissMs = Date().timeIntervalSince(dbgSwissStart) * 1000.0
+        let dbgRulesStart = Date()
+        #endif
 
         // Step 2c (Phase 20 D-02): rules-first deterministic cleanup.
         // Filler removal, self-correction (comma-prefixed connectors only),
@@ -94,6 +118,13 @@ class TextProcessingService: ObservableObject {
         // or the ITN-processed text (in Plain mode).
         let rulesCleanedText = processedText
 
+        #if DEBUG_RECORDER
+        let dbgPostRules = processedText
+        let dbgPostRulesMs = Date().timeIntervalSince(dbgRulesStart) * 1000.0
+        var dbgGateEntry: DebugCleanupRecord.GateEntry? = nil
+        var dbgDictKeys: [String] = []
+        #endif
+
         // Step 3: AI Cleanup
         if mode == .aiCleanup, let cleanupService = cleanupService, cleanupService.isLoaded {
             let lowerText = processedText.lowercased()
@@ -127,11 +158,20 @@ class TextProcessingService: ObservableObject {
                 }
             }
 
+            #if DEBUG_RECORDER
+            dbgDictKeys = Array(filteredContext.keys).sorted()
+            #endif
+
             processedText = await cleanupService.cleanup(
                 text: processedText,
                 language: language,
                 dictionaryContext: filteredContext
             )
+
+            #if DEBUG_RECORDER
+            let dbgPreGate = processedText
+            let dbgGateStart = Date()
+            #endif
 
             // Step 3a: Verification gates (Dialect / Levenshtein).
             //
@@ -162,7 +202,22 @@ class TextProcessingService: ObservableObject {
                     llmOutput: processedText
                 )
             }
+
+            #if DEBUG_RECORDER
+            let dbgGateMs = Date().timeIntervalSince(dbgGateStart) * 1000.0
+            let verdict: String = (processedText == dbgPreGate) ? "passed" : "rejected"
+            dbgGateEntry = DebugCleanupRecord.GateEntry(
+                text: processedText,
+                verdict: verdict,
+                edit_distance: nil,
+                ms: dbgGateMs
+            )
+            #endif
         }
+
+        #if DEBUG_RECORDER
+        let dbgSwissNumStart = Date()
+        #endif
 
         // Step 3b: Swiss number formatting (D-C2/D-C3) — runs AFTER any
         // LLM cleanup so Gemma's German-decimal output (e.g. "2,5 Kilo",
@@ -178,6 +233,11 @@ class TextProcessingService: ObservableObject {
             processedText = SwissNumberFormatter.format(processedText)
         }
 
+        #if DEBUG_RECORDER
+        let dbgPostSwissNumMs = Date().timeIntervalSince(dbgSwissNumStart) * 1000.0
+        let dbgPostSwissNum = processedText
+        #endif
+
         // Step 4: Save to History (UX-02)
         let entry = TranscriptionEntry(
             text: processedText,
@@ -187,6 +247,72 @@ class TextProcessingService: ObservableObject {
             confidence: confidence
         )
         historyService.save(entry)
+
+        #if DEBUG_RECORDER
+        // Capture trace from CleanupService (populated in cleanup() under
+        // DEBUG_RECORDER). May be nil if mode != .aiCleanup, the model
+        // wasn't loaded, or cleanup() threw before recording.
+        let cleanupTrace: CleanupServiceTrace?
+        if let cs = cleanupService as? CleanupService {
+            cleanupTrace = cs.lastDebugTrace
+        } else {
+            cleanupTrace = nil
+        }
+
+        let llmPromptEntry: DebugCleanupRecord.LLMPromptEntry?
+        let llmRawEntry: DebugCleanupRecord.LLMRawEntry?
+        if let t = cleanupTrace {
+            llmPromptEntry = DebugCleanupRecord.LLMPromptEntry(
+                text: t.prompt,
+                tokens_est: max(1, t.prompt.count / 4)
+            )
+            llmRawEntry = DebugCleanupRecord.LLMRawEntry(text: t.llmRaw, ms: t.llmMs)
+        } else {
+            llmPromptEntry = nil
+            llmRawEntry = nil
+        }
+
+        let degenerateCollapse: Bool = {
+            guard let raw = llmRawEntry else { return false }
+            return raw.text.count < 5 && dbgRawText.count > 30
+        }()
+        let veryShort: Bool = processedText.count < 5 && dbgRawText.count > 30
+
+        let record = DebugCleanupRecord(
+            ts: DebugRecorder.iso8601Timestamp(),
+            session_id: UUID().uuidString,
+            lang: language,
+            mode: mode.rawValue,
+            model: DebugCleanupRecord.ModelInfo(
+                name: cleanupTrace?.modelName ?? "n/a",
+                sha256_prefix: nil
+            ),
+            sampler: DebugCleanupRecord.SamplerInfo(
+                temp: cleanupTrace?.samplerTemp ?? 0.1,
+                top_k: cleanupTrace?.samplerTopK ?? 40,
+                top_p: cleanupTrace?.samplerTopP ?? 0.9,
+                max_tokens: cleanupTrace?.samplerMaxTokens ?? 512,
+                seed: nil
+            ),
+            steps: DebugCleanupRecord.Steps(
+                raw: .init(text: dbgRawText, ms: 0),
+                post_dict: .init(text: dbgPostDict, ms: dbgPostDictMs),
+                post_itn: .init(text: dbgPostItn, ms: dbgPostItnMs),
+                post_swiss: .init(text: dbgPostSwiss, ms: dbgPostSwissMs),
+                post_rules: .init(text: dbgPostRules, ms: dbgPostRulesMs),
+                llm_prompt: llmPromptEntry,
+                llm_raw: llmRawEntry,
+                post_gate: dbgGateEntry,
+                post_swiss_num: .init(text: dbgPostSwissNum, ms: dbgPostSwissNumMs)
+            ),
+            dictionary_context_keys: dbgDictKeys,
+            anomaly: DebugCleanupRecord.Anomaly(
+                degenerate_collapse: degenerateCollapse,
+                very_short_output: veryShort
+            )
+        )
+        await DebugRecorder.shared.record(record)
+        #endif
 
         return processedText
     }

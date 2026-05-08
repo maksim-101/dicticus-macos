@@ -28,3 +28,10 @@ Dicticus.dmg
 # in the same commit that adds this rule.
 .remember/logs/
 .remember/tmp/
+
+# DebugRecorder output — local-only JSONL cleanup traces produced by the
+# Dicticus-Debug-Recorder scheme. Recorder code is compiled out of the public
+# Release build (no DEBUG_RECORDER flag); the on-disk path lives under
+# ~/Library/Application Support, but this guards against a project-relative
+# override.
+DebugRecordings/

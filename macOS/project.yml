@@ -8,6 +8,15 @@ options:
   createIntermediateGroups: true
   defaultConfig: Debug
 
+# Debug-Recorder is a dev-only configuration that inherits Debug and turns on
+# the DEBUG_RECORDER compilation condition. Used by the `Dicticus-Debug-Recorder`
+# scheme below; the public `Dicticus` scheme (Release) never sees the flag, so
+# the GitHub-released DMG contains zero recorder symbols.
+configs:
+  Debug: debug
+  Release: release
+  Debug-Recorder: debug
+
 packages:
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio.git
@@ -72,6 +81,9 @@ targets:
         DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         OTHER_LDFLAGS: "-framework llama"
+      configs:
+        Debug-Recorder:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG DEBUG_RECORDER"
     dependencies:
       - package: FluidAudio
         product: FluidAudio
@@ -101,6 +113,9 @@ targets:
         SWIFT_VERSION: "6.0"
         MACOSX_DEPLOYMENT_TARGET: "15.0"
         GENERATE_INFOPLIST_FILE: YES
+      configs:
+        Debug-Recorder:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG DEBUG_RECORDER"
     dependencies:
       - target: Dicticus
       - package: KeyboardShortcuts
@@ -109,3 +124,26 @@ targets:
         product: LlamaSwift
       - package: GRDB
         product: GRDB
+
+# Top-level schemes — the per-target `scheme:` shorthand on Dicticus generates
+# the default `Dicticus` scheme (Debug→Run, Release→Archive) used by
+# scripts/build-dmg.sh. This adds a parallel scheme that runs the
+# Debug-Recorder configuration so a developer can enable on-disk cleanup
+# tracing locally without touching anything the public release path uses.
+schemes:
+  Dicticus-Debug-Recorder:
+    build:
+      targets:
+        Dicticus: all
+    run:
+      config: Debug-Recorder
+    test:
+      config: Debug-Recorder
+      targets:
+        - DicticusTests
+    profile:
+      config: Debug-Recorder
+    analyze:
+      config: Debug-Recorder
+    archive:
+      config: Debug-Recorder
