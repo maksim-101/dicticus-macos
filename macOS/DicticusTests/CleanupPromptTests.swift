@@ -356,4 +356,23 @@ final class CleanupPromptTests: XCTestCase {
             "Currency-preservation exemplar must appear AFTER the tense exemplar (anchor-position contract — see iteration-3 reorder)."
         )
     }
+
+    // MARK: - Phase 22 regression: 8a79e6b few-shot must be absent
+
+    /// Commit 8a79e6b (2026-05-03) added a "W → this is good" few-shot to
+    /// the English branch of CleanupPrompt.swift as a cosmetic workaround
+    /// for the SelfCorrectionResolver substring-match bug. The V5 rewrite
+    /// (e1d3eef, 2026-05-05) replaced build() entirely, removing those
+    /// lines. This test guards against silent reintroduction.
+    func testWFewShotFromCommit8a79e6bIsAbsent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertFalse(
+            prompt.contains("let's see whether"),
+            "8a79e6b few-shot must be absent from V5 prompt (was removed by e1d3eef V5 rewrite). Got prompt: \(prompt)"
+        )
+        XCTAssertFalse(
+            prompt.contains("whether this is good"),
+            "8a79e6b residue text must not appear in any prompt variant. Got prompt: \(prompt)"
+        )
+    }
 }
