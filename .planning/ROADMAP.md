@@ -38,6 +38,7 @@
 | 21. Adaptive Cleanup & Stability | v2.2 | — | Shipped 2026-05-03 | Debounce fix, Surgical Completion, 6-token repair window — UAT ACCEPTED |
 | 22. Resolver Regression Hotfix | v2.2 | 2/2 | Shipped 2026-05-08 | Plan 22-01: regex L75 comma-prefix + word-boundary fix; 7 JSONL fixtures locked in cross-platform; macOS resolver suite 25/25 green. Plan 22-02: pre-flight grep + 1 XCTAssertFalse test in macOS CleanupPromptTests confirming the 8a79e6b cosmetic LLM few-shot is absent (verification-by-test, no production source touched). macOS targeted test green (1/1 in 0.001s). |
 | 23. Decimal Words & Digit Grouping | v2.2 | 0/? | Backlog | ITN doesn't fold spoken decimal markers (`Punkt`/`Komma`/`point`) and English ITN concatenates comma-separated digit words (`three, five` → `35`). Discovered alongside Phase 22 evidence; deferred so resolver fix ships first |
+| 24. AI Cleanup Quality v2 | v2.2 | 0/? | Blocked on capture window (until 2026-05-12) | Self-correction handling + speech disfluency removal + structured eval refresh. Triggered by Phase 22 UAT G-01 (Gemma 4 E2B passed `"persist now or will is not or will it not"` through verbatim instead of dropping the abandoned fragment). Capture window 2026-05-09 → 2026-05-12 via Dicticus-Debug-Recorder build at /Applications/Dicticus.app, then `/gsd-plan-phase 24` |
 
 ---
 
@@ -214,6 +215,23 @@ Plans:
 **Plans:** TBD — opens after Phase 22 is in production.
 
 ---
+
+### Phase 24: AI Cleanup Quality v2
+**Goal:** Improve AI Cleanup (Gemma 4 E2B) quality across three axes that current prompt under-serves: (1) self-correction handling — drop abandoned/restated phrases mid-sentence; (2) speech disfluency removal — fillers, false starts, stuttered word-restarts; (3) structured eval refresh — labelled JSONL corpus + baseline + variant-comparison tooling so future prompt changes are measured, not assumed.
+
+**Trigger:** Phase 22 UAT 2026-05-09 finding G-01. Input `"And what you did will persist now or will is not or will it not?"` was passed through verbatim by AI Cleanup; expected `"...persist now or will it not?"`. Documented in `.planning/phases/22-resolver-regression-hotfix/22-HUMAN-UAT.md` Gaps section and auto-memory `project_ai_cleanup_self_correction_gap`.
+
+**Status:** Blocked on capture window (2026-05-09 → 2026-05-12). Dicticus-Debug-Recorder build installed at `/Applications/Dicticus.app` 2026-05-09 (Developer ID re-signed, TeamIdentifier `VTWHBCCP36`). After window closes, run `/gsd-plan-phase 24` against the captured JSONL corpus.
+
+**Plans:** TBD — opens after capture window + corpus catalog.
+
+**Cross-platform:** Per `feedback_cleanup_cross_platform_parity`, all plans ship on macOS AND iOS together.
+
+**Context file:** `.planning/phases/24-ai-cleanup-quality-v2/24-CONTEXT.md`
+
+---
+
+*Last updated: 2026-05-09 — Phase 22 production UAT 2/3 PASSED + 1 deferred (iOS sim runtime). Phase 24 (AI Cleanup Quality v2) scaffolded as blocked on data capture (window 2026-05-09 → 2026-05-12).*
 
 *Last updated: 2026-05-08 — Phase 22 Plan 01 SHIPPED (regex hotfix + 7 JSONL regression fixtures, macOS + iOS parity).*
 

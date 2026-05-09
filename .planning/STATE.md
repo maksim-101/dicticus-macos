@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Adaptive Cleanup & Stability Post-v2.1
 status: in_progress
-last_updated: "2026-05-08T20:20:00.000Z"
+last_updated: "2026-05-09T07:00:00.000Z"
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 8
   total_plans: 38
   completed_plans: 38
@@ -14,8 +14,8 @@ progress:
 
 # Project State: Dicticus
 
-**Last Updated:** 2026-05-08
-**Milestone:** v2.2 Adaptive Cleanup & Stability — Phase 22 SHIPPED (both plans complete)
+**Last Updated:** 2026-05-09
+**Milestone:** v2.2 Adaptive Cleanup & Stability — Phase 22 SHIPPED + production UAT 2/3 PASSED (2026-05-09); Phase 24 (AI Cleanup Quality v2) scaffolded as blocked on capture window
 **Next milestone:** v2.3 (TBD — likely iCloud Sync + TestFlight)
 
 ## Current Position
@@ -47,8 +47,9 @@ so Phase 22 ships clean.
 
 - ... (Phases 12-20.08 preserved in history)
 - 21 — Adaptive Cleanup & Stability — SHIPPED 2026-05-03 (Debounce fix, Surgical Completion, 6-token repair window)
-- 22 — Resolver Regression Hotfix — SHIPPED 2026-05-08 (2/2 plans: Plan 01 — regex L75 fix + 7 JSONL fixtures cross-platform; Plan 02 — CleanupPrompt 8a79e6b few-shot regression net)
+- 22 — Resolver Regression Hotfix — SHIPPED 2026-05-08; production UAT 2026-05-09 PASSED 2/3 (live dictation 7/7 fixtures verbatim in both modes; WR-01 scope-narrowing accepted; iOS xcodebuild gate deferred — iOS 26.4 sim runtime missing)
 - 23 — Decimal Words & Digit Grouping — BACKLOG (ITN regression class)
+- 24 — AI Cleanup Quality v2 — BLOCKED on capture window (2026-05-09 → 2026-05-12). Triggered by Phase 22 UAT G-01 (self-correction not dropped). Dicticus-Debug-Recorder build at `/Applications/Dicticus.app` accumulating JSONL. Run `/gsd-plan-phase 24` after window closes. Context: `.planning/phases/24-ai-cleanup-quality-v2/24-CONTEXT.md`
 
 **UAT verdict 2026-05-03 (Phase 21):** AI cleanup quality and system stability ACCEPTED. GSD
 and Technical terms mapped correctly. Intent and preambles preserved verbatim. The "T"/"W"
@@ -57,10 +58,16 @@ not a Phase 21 regression.
 
 ## Next Action
 
-Phase 22 is fully shipped. Recommend `/gsd-verify-work` then a phase-22 PR push (or fold into the
-existing `feature/debug-recording-and-cleanup` PR) before starting Phase 23 (DecimalWordsAndDigitGrouping).
-The branch `feature/debug-recording-and-cleanup` now carries Phase 21 cleanup, the Phase 22 resolver
-regex fix (Plan 01), and the Phase 22 CleanupPrompt regression net (Plan 02).
+Phase 22 is fully shipped AND production-UAT'd (2026-05-09, 2/3 passed, 1 deferred for env reason).
+The branch `feature/debug-recording-and-cleanup` now carries Phase 21 cleanup, Phase 22 (both plans
++ UAT artifact), and the Phase 24 scaffolding. Branch should be pushed (currently 42+ commits ahead
+of origin/main, well past the "stop and push" threshold from CLAUDE.md).
+
+**Phase 24 capture window in progress until 2026-05-12.** Dicticus-Debug-Recorder build is installed
+at `/Applications/Dicticus.app` (Developer ID re-signed, TeamIdentifier `VTWHBCCP36`). User dictates
+normally; cleanup pipeline I/O is logged to `~/Library/Application Support/Dicticus/DebugRecordings/cleanup-YYYY-MM-DD.jsonl`.
+After 2026-05-12: restore Release build (sitting at `macOS/build/Build/Products/Release/Dicticus.app`,
+already Developer ID re-signed) and run `/gsd-plan-phase 24` against the captured corpus.
 
 Plans:
 - [x] `22-01-PLAN.md` — SHIPPED 2026-05-08 (commits ba2b01b, 7fce68b, d4af189). macOS suite 25/25
