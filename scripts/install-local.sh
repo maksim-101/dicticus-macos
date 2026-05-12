@@ -10,8 +10,10 @@
 #   3. Trashes (mv ~/.Trash/) every copy that is NOT /Applications/Dicticus.app,
 #      excluding ~/.Trash, Time Machine snapshots, and dev build artifacts
 #      (project build/ subdir + Xcode DerivedData).
-#   4. Copies the freshly-built Release .app from macOS/build/ to /Applications/.
-#   5. Re-launches via `open -a Dicticus`.
+#   4. Wipes the specific Dicticus DerivedData folder to prevent identity confusion.
+#   5. Copies the freshly-built Release .app from macOS/build/ to /Applications/.
+#   6. Re-signs the app with Developer ID Moritz Wehrli (VTWHBCCP36) for TCC persistence.
+#   7. Re-launches via `open -a Dicticus`.
 #
 # Dev-only — do not run on end-user machines.
 set -euo pipefail
@@ -21,12 +23,20 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")/macOS"
 BUNDLE_ID="com.dicticus.app"
 CANONICAL_APP="/Applications/Dicticus.app"
 BUILD_APP="$PROJECT_DIR/build/Build/Products/Release/Dicticus.app"
+RECORDER_APP="$PROJECT_DIR/build/Build/Products/Debug-Recorder/Dicticus.app"
+SIGNING_ID="B9CA1FF8209D9B1BD4940F2D39C327EF836FD3C0" # Developer ID Moritz Wehrli
 TRASH_DIR="$HOME/.Trash"
 TIMESTAMP="$(date +%s)"
 
 echo "=== Step 1: Verify build artefact ==="
-if [ ! -d "$BUILD_APP" ]; then
-    echo "ERROR: Dicticus.app not found at $BUILD_APP"
+if [ -d "$RECORDER_APP" ]; then
+    echo "  Using Debug-Recorder build."
+    SOURCE_APP="$RECORDER_APP"
+elif [ -d "$BUILD_APP" ]; then
+    echo "  Using Release build."
+    SOURCE_APP="$BUILD_APP"
+else
+    echo "ERROR: Dicticus.app not found at $BUILD_APP or $RECORDER_APP"
     echo "Run scripts/build-dmg.sh or xcodebuild -scheme Dicticus -configuration Release first."
     exit 1
 fi
@@ -60,7 +70,7 @@ while IFS= read -r path; do
       */.MobileBackups/*) continue ;;
       /Volumes/com.apple.TimeMachine.localsnapshots/*) continue ;;
       */build/Build/Products/*) continue ;;        # local xcodebuild output
-      */DerivedData/*) continue ;;                 # Xcode per-user build cache
+    ) ;;
     esac
     STALE_COPIES+=("$path")
 done < <(mdfind "kMDItemCFBundleIdentifier == '$BUNDLE_ID'")
@@ -72,13 +82,19 @@ else
     for p in "${STALE_COPIES[@]}"; do echo "    - $p"; done
 fi
 
-echo "=== Step 4: Trash stale copies ==="
+echo "=== Step 4: Trash stale copies & wipe DerivedData ==="
 if [ ${#STALE_COPIES[@]} -gt 0 ]; then
     for p in "${STALE_COPIES[@]}"; do
         dest="$TRASH_DIR/Dicticus-stale-$TIMESTAMP-$(basename "$(dirname "$p")").app"
         echo "  mv $p -> $dest"
         mv "$p" "$dest"
     done
+fi
+# Wipe Dicticus-specific DerivedData to prevent identity desync
+DD_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Dicticus-*" -type d -maxdepth 1 2>/dev/null || true)
+if [ -n "$DD_PATH" ]; then
+    echo "  Cleaning DerivedData: $DD_PATH"
+    rm -rf "$DD_PATH"
 fi
 
 echo "=== Step 5: Install fresh build to $CANONICAL_APP ==="
@@ -87,9 +103,13 @@ if [ -d "$CANONICAL_APP" ]; then
     echo "  Existing canonical install -> $dest"
     mv "$CANONICAL_APP" "$dest"
 fi
-cp -R "$BUILD_APP" "$CANONICAL_APP"
+cp -R "$SOURCE_APP" "$CANONICAL_APP"
 
-echo "=== Step 6: Relaunch ==="
+echo "=== Step 6: Re-sign for TCC persistence ==="
+echo "  Signing with identity: $SIGNING_ID"
+codesign --force --deep --sign "$SIGNING_ID" "$CANONICAL_APP"
+
+echo "=== Step 7: Relaunch ==="
 open -a Dicticus
 
 echo ""
