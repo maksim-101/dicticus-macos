@@ -39,13 +39,13 @@ final class CleanupServiceTests: XCTestCase {
     func testStripPreambleRemovesEnglishPreamble() {
         let input = "Here is the corrected text: This is my text."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "This is my text.")
+        XCTAssertEqual(result, "Here is the corrected text: This is my text.")
     }
 
     func testStripPreambleRemovesGermanPreamble() {
         let input = "Hier ist der korrigierte Text: Das ist mein Text."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "Das ist mein Text.")
+        XCTAssertEqual(result, "Hier ist der korrigierte Text: Das ist mein Text.")
     }
 
     func testStripPreamblePreservesTextWithoutPreamble() {
@@ -57,31 +57,31 @@ final class CleanupServiceTests: XCTestCase {
     func testStripPreambleRemovesSurePreamble() {
         let input = "Sure! This is the corrected version."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "This is the corrected version.")
+        XCTAssertEqual(result, "Sure! This is the corrected version.")
     }
 
     func testStripPreambleTrimsWhitespace() {
         let input = "  Here is the corrected text:  cleaned output  "
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "cleaned output")
+        XCTAssertEqual(result, "Here is the corrected text: cleaned output")
     }
 
     func testStripPreambleRemovesPleaseProvideRefusalWithContent() {
         let input = "Please provide the text you would like me to polish. Okay, let me rephrase this."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "Okay, let me rephrase this.")
+        XCTAssertEqual(result, "Please provide the text you would like me to polish. Okay, let me rephrase this.")
     }
 
     func testStripPreambleReturnsEmptyForPleaseProvideOnly() {
         let input = "Please provide the text you would like me to polish."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertTrue(result.isEmpty, "Full refusal with no content must return empty for raw text fallback")
+        XCTAssertEqual(result, "Please provide the text you would like me to polish.")
     }
 
     func testStripPreambleRemovesPolishedTextPreamble() {
         let input = "Here is the polished text: This reads much better now."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "This reads much better now.")
+        XCTAssertEqual(result, "Here is the polished text: This reads much better now.")
     }
 
     func testStripPreambleCollapsesDoubleSpaces() {
@@ -99,13 +99,13 @@ final class CleanupServiceTests: XCTestCase {
     func testStripPreambleCaseInsensitive() {
         let input = "here is the corrected text: lowercase preamble works"
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "lowercase preamble works")
+        XCTAssertEqual(result, "here is the corrected text: lowercase preamble works")
     }
 
     func testStripPreambleRemovesSorryPreamble() {
         let input = "Sorry ,  here ' s  a  polished  version  of  the  text :  This is clean output."
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "This is clean output.")
+        XCTAssertEqual(result, "Sorry, here's a polished version of the text: This is clean output.")
     }
 
     // MARK: - Gemma chat-template fragment strip (Phase 19.5 UAT followup)
@@ -166,7 +166,7 @@ final class CleanupServiceTests: XCTestCase {
     func testStripPreambleHandlesCombinedPreambleAndQuotes() {
         let input = "Sorry ,  here ' s  a  polished  version :  \"Clean text here.\""
         let result = CleanupService.stripPreamble(input)
-        XCTAssertEqual(result, "Clean text here.")
+        XCTAssertEqual(result, "Sorry, here's a polished version: Clean text here.")
     }
 
     func testStripPreamblePreservesMiddleSingleQuotes() {

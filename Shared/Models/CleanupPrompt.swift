@@ -43,7 +43,7 @@ import NaturalLanguage
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Minimal cleanup of dictated speech (V5 strict-verbatim)."
+    static let defaultInstruction = "Minimal cleanup of dictated speech (V15 smart-verbatim)."
 
     static func build(
         text: String,
@@ -59,14 +59,17 @@ struct CleanupPrompt {
         let sanitizedText = sanitizeControlTokens(text)
         var prompt = ""
 
-        // Step 1: Strict-verbatim imperative header.
-        prompt += "Task: Minimal cleanup of dictated speech. "
-        prompt += "Only fix capitalization, sentence-final punctuation, and obvious mishearings of the known terms below. "
-        prompt += "Remove only pure filler: 'uh', 'um', 'ähm'. "
-        prompt += "Keep EVERY other word the speaker said, including all self-corrections "
-        prompt += "('no', 'wait', 'actually', 'I mean', 'nein', 'eigentlich', 'moment', 'ach ich meine') verbatim. "
-        prompt += "Never delete substantive content. Never add words not in the input. "
-        prompt += "Never paraphrase. Never answer questions.\n\n"
+        // Step 1: Smart-verbatim imperative header.
+        prompt += "Task: Clean up the dictation below. Output ONLY the cleaned text.\n\n"
+        prompt += "Rules:\n"
+        prompt += "1. Fix capitalization and sentence punctuation.\n"
+        prompt += "2. Fix obvious mishearings using the Known Terms list.\n"
+        prompt += "3. Remove pure filler (uh, um, ähm, you know, like).\n"
+        prompt += "4. Remove 'stalled' speech: immediate stutters (e.g., 'the the') and fragmented starts that are immediately corrected.\n"
+        prompt += "5. PRESERVE substantive self-corrections verbatim (e.g., 'no', 'actually', 'wait', 'I mean').\n"
+        prompt += "   Example: 'Meeting at nine, no actually eight' must stay 'Meeting at nine, no actually eight'.\n"
+        prompt += "6. NEVER paraphrase, summarize, or add new words.\n"
+        prompt += "7. NEVER answer dictated questions.\n\n"
 
         // Step 2: Known terms anchor (adaptive context filtered upstream).
         if let dict = dictionaryContext, !dict.isEmpty {
@@ -81,22 +84,28 @@ struct CleanupPrompt {
             prompt += "\n"
         }
 
-        // Step 3 + 4: Language banner + safe few-shots (dictionary + preserved self-correction).
+        // Step 3 + 4: Language banner + safe few-shots.
         if language == "de" {
             let orthography = swissEnabled ? " (Schweizer Orthographie: ss statt ß.)" : ""
             prompt += "Sprache: Standard-Hochdeutsch.\(orthography)\n\n"
 
-            prompt += "In: das sieht gut aus jetzt bitte mach gest housekeeping.\n"
-            prompt += "Out: Das sieht gut aus, jetzt bitte mach GSD housekeeping.\n\n"
+            prompt += "In: das das ist gut\n"
+            prompt += "Out: Das ist gut.\n\n"
 
-            prompt += "In: ähm ich denke das meeting ist am dienstag, nein eigentlich am montag.\n"
-            prompt += "Out: Ich denke, das Meeting ist am Dienstag, nein eigentlich am Montag.\n\n"
+            prompt += "In: wir haben gestern oder wir hatten am montag besprochen dass wir das machen\n"
+            prompt += "Out: Wir hatten am Montag besprochen, dass wir das machen.\n\n"
+
+            prompt += "In: meeting um neun nein eigentlich um acht\n"
+            prompt += "Out: Meeting um neun, nein eigentlich um acht.\n\n"
         } else {
-            prompt += "In: this looks good now please do gest the housekeeping.\n"
-            prompt += "Out: This looks good now, please do GSD housekeeping.\n\n"
+            prompt += "In: start start cleanly\n"
+            prompt += "Out: Start cleanly.\n\n"
 
-            prompt += "In: uh i think the meeting is at nine wait actually it is at eight.\n"
-            prompt += "Out: I think the meeting is at nine, wait, actually it is at eight.\n\n"
+            prompt += "In: persist now or will is not or will it not\n"
+            prompt += "Out: Persist now or will it not?\n\n"
+
+            prompt += "In: meeting at nine no actually eight\n"
+            prompt += "Out: Meeting at nine, no actually eight.\n\n"
         }
 
         // Step 5: Input anchor for completion.

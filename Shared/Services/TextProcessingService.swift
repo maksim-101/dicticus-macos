@@ -45,6 +45,12 @@ class TextProcessingService: ObservableObject {
 
     /// Process the transcribed text based on the mode and language.
     func process(text: String, language: String, mode: DictationMode, confidence: Double = 1.0) async -> String {
+        #if DEBUG_RECORDER
+        if let cs = cleanupService as? CleanupService {
+            cs.lastDebugTrace = nil
+        }
+        #endif
+
         let rawText = text
 
         #if DEBUG_RECORDER

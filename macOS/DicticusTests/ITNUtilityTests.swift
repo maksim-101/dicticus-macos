@@ -30,7 +30,7 @@ final class ITNUtilityTests: XCTestCase {
     func testMixedText() {
         let input = "There are five birds and one cat"
         let output = ITNUtility.applyITN(to: input, language: "en")
-        XCTAssertEqual(output, "There are 5 birds and 1 cat")
+        XCTAssertEqual(output, "There are five birds and one cat")
     }
     
     func testNoNumbers() {

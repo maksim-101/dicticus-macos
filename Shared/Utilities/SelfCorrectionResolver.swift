@@ -156,6 +156,16 @@ public enum SelfCorrectionResolver {
             // Tokenize the backward span (text BEFORE the leading comma
             // of the match — i.e. before `result[matchRange]`).
             let beforeText = String(result[result.startIndex..<matchRange.lowerBound])
+            
+            // Abort 3c: Idiom Guard. Certain phrases end in a comma but are
+            // not reparandum starts (e.g. "By the way, I meant...").
+            let lowerBefore = beforeText.lowercased().trimmingCharacters(in: .whitespaces)
+            if lowerBefore.hasSuffix("by the way") || 
+               lowerBefore.hasSuffix("wie gesagt") ||
+               lowerBefore.hasSuffix("im gegenteil") {
+                continue
+            }
+            
             let backwardTokens = tokenize(beforeText)
             guard !backwardTokens.isEmpty else { continue }
 
@@ -163,17 +173,17 @@ public enum SelfCorrectionResolver {
             let backwardCount = backwardTokens.count
             let lastSixIndex = max(0, backwardCount - 6)
             let lastSix = Array(backwardTokens[lastSixIndex..<backwardCount])
-            // 1) Try alignment-by-first-repair-token in the last 3.
+            // 1) Try alignment-by-first-repair-token in the last 6.
             //    Compare with case-insensitive strict-equality (no punctuation
             //    folding on the backward side because backward tokens rarely
             //    end in sentence punctuation; the repair-side strip is enough).
             var dropCount: Int? = nil
             for (offset, token) in lastSix.enumerated() {
                 if token.lowercasedTrimmingPunctuation() == firstRepairLower {
-                    // offset is 0-based from the start of `lastThree`;
-                    // distance from end = lastThree.count - offset.
+                    // offset is 0-based from the start of `lastSix`;
+                    // distance from end = lastSix.count - offset.
                     dropCount = lastSix.count - offset
-                    break  // first (left-most in the last-3 window) wins
+                    break  // first (left-most in the last-6 window) wins
                 }
             }
 

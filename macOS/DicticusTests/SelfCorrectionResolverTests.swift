@@ -333,4 +333,29 @@ final class SelfCorrectionResolverTests: XCTestCase {
             "Regex fix: 'wait' without preceding comma is a no-op; 'noticed' must survive (\\b blocks 'no' substring match)"
         )
     }
+
+    // MARK: - Phase 24 regressions
+
+    /// "by the way, I meant one million" — alignment fails, so 'I meant'
+    /// must not fall back to guessing a drop count.
+    func testByTheWayIMeantIsPreserved() {
+        let input = "And by the way, I meant one million."
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "en"),
+            input,
+            "Ambiguous connector 'I meant' must not guess a drop when alignment fails."
+        )
+    }
+
+    /// Ensure that 'I mean' still works when alignment IS found.
+    func testEnglishIMeanValidAlignment() {
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(
+                "The first meeting, I mean the second meeting.",
+                language: "en"
+            ),
+            "the second meeting.",
+            "Valid alignment must still work for ambiguous connectors."
+        )
+    }
 }

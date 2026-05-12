@@ -40,6 +40,7 @@ final class PermissionManagerTests: XCTestCase {
         let manager = PermissionManager()
         manager.microphoneStatus = .granted
         manager.accessibilityStatus = .granted
+        manager.inputMonitoringStatus = .granted
         XCTAssertTrue(manager.allGranted)
     }
 
