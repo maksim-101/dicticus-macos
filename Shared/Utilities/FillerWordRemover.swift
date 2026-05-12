@@ -126,10 +126,11 @@ public enum FillerWordRemover {
             )
         }
 
-        // " ,"  → ","   ("Das ist , gut" → "Das ist, gut")
-        // ", ," / ", . ," etc handled by the run-collapse above; this
-        // catches the simple "space-before-comma" tokenization artifact.
-        result = result.replacingOccurrences(of: " ,", with: ",")
+        // ", " -> " " if the comma is orphaned (no word before it on the same line)
+        // or if it was left behind by a filler that had a comma before it.
+        // Special case for 'is, um, good' -> 'is, good' -> 'is good'
+        result = result.replacingOccurrences(of: ", ", with: " ")
+        result = result.replacingOccurrences(of: " ,", with: " ")
 
         // Trim a leading orphan comma (e.g. ", das …" left if filler was
         // followed by `, ` and consumed by us).
