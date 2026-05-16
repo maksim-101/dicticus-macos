@@ -70,7 +70,6 @@ while IFS= read -r path; do
       */.MobileBackups/*) continue ;;
       /Volumes/com.apple.TimeMachine.localsnapshots/*) continue ;;
       */build/Build/Products/*) continue ;;        # local xcodebuild output
-    ) ;;
     esac
     STALE_COPIES+=("$path")
 done < <(mdfind "kMDItemCFBundleIdentifier == '$BUNDLE_ID'")
