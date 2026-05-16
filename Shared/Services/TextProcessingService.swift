@@ -19,6 +19,21 @@ import Foundation
 ///
 /// Cross-platform parity (CLAUDE.md memory `feedback_cleanup_cross_platform_parity`):
 /// every change ships on macOS and iOS together via `Shared/`.
+///
+/// Phase 25-02 (2026-05-16) — plain-mode logging parity:
+/// The `#if DEBUG_RECORDER` write block at the bottom of `process(...)` is
+/// scope-level (NOT inside the `if mode == .aiCleanup` branch), so it
+/// emits one JSONL record per call regardless of mode. For plain-mode
+/// records, `steps.llm_prompt`, `steps.llm_raw`, `steps.post_gate` are
+/// all nil (no LLM ran), `dictionary_context_keys` is `[]` (plain mode
+/// never builds the targeted context), and `steps.post_rules` equals
+/// `steps.post_swiss` (plain mode skips the rules-cleanup branch at
+/// L114-120). Mode discrimination happens via the top-level `mode`
+/// field, which carries `DictationMode.plain.rawValue == "plain"` or
+/// `aiCleanup`. Same daily file (`cleanup-YYYY-MM-DD.jsonl`), same 14-day
+/// retention — plain and aiCleanup records interleave in one stream.
+/// Enables Phase 25-04's capture-window v2 to do plain-vs-AI A/B from
+/// production data without a second log path.
 @MainActor
 class TextProcessingService: ObservableObject {
 
@@ -255,6 +270,17 @@ class TextProcessingService: ObservableObject {
         historyService.save(entry)
 
         #if DEBUG_RECORDER
+        // Phase 25-02: this record-assembly block runs for BOTH `mode == .plain`
+        // AND `mode == .aiCleanup`. For plain-mode records: `cleanupTrace` is
+        // nil (LLM never ran), so `llm_prompt`/`llm_raw` resolve to nil; the
+        // `dbgGateEntry` variable stays at its outer-scope default of `nil`
+        // (the AI branch above is the only thing that overwrites it), so
+        // `post_gate` is nil too. `dbgDictKeys` stays `[]` (only the AI
+        // branch populates it from the targeted dictionary context). The
+        // resulting record carries `mode: "plain"` and the three LLM-section
+        // keys are absent/null when JSON-encoded — exactly the schema Plan
+        // 25-04's capture-window v2 expects for plain-vs-AI A/B.
+        //
         // Capture trace from CleanupService (populated in cleanup() under
         // DEBUG_RECORDER). May be nil if mode != .aiCleanup, the model
         // wasn't loaded, or cleanup() threw before recording.
