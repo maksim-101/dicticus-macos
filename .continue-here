@@ -1,51 +1,61 @@
-2026-05-16 — Phase 25 Wave 1 COMPLETE. Wave 2 ready to launch after context-clear.
+2026-05-16 — Phase 25 in LIVE-CAPTURE mode. Resume after dictating for a few days.
 
-## Where we are
+## TL;DR
 
-- Phase 25 (AI Cleanup Quality v3 — Brand & Acronym Recognition) Wave 1 done.
-- Plans 25-01 (hypothesis matrix) and 25-02 (plain-mode logging) SHIPPED.
-- 25-03 RE-PLANNED 2026-05-16 with hybrid structure (dictionary expansion + trimmed prompt). See `.planning/phases/25-ai-cleanup-quality-v3-brand-acronym-recognition/25-03-v16-prompt-and-dictionary-feeder-PLAN.md`.
-- 25-04 (capture window + UAT) ready for Wave 3 once 25-03 ships.
+V16-COMPOSITE prompt + Lever 1 dictionary expansion shipped directly to the running app, bypassing the planned harness-verify / tests / formal-UAT path. User is testing live. Resume = "analyze the JSONL".
 
-## What the matrix says (read this before doing anything)
+## What's running RIGHT NOW
 
-`.planning/debug/harness/results/v16_matrix.md` is authoritative. Read the addendum (§1b/§2.8/§2.9/§4/§5) — it supersedes the original §1–§7. The headline finding:
+- App: `/Applications/Dicticus.app`, Debug-Recorder build, Developer ID signed (VTWHBCCP36)
+- Code state: commit `0fc3198` (feat 25-03 ship) + `b17ed32` (install script fix). Both LOCAL ONLY — 13 commits ahead of origin (push deferred).
+- Logging: every dictation cycle writes one JSONL record to `~/Library/Application Support/Dicticus/DebugRecordings/cleanup-2026-05-DD.jsonl`. Plain AND AI mode both logged. AI-mode records carry full LLM prompt + raw output + post-gate alongside the raw ASR.
 
-- H9 (rules-only + expanded dictionary) achieves aggregate 72 with ZERO LLM calls — second-best of 9 variants.
-- The dictionary layer does ~90% of brand-fixing. The LLM only earns its keep on `num`, `acro`, `phase_face`.
-- Plan 25-03 is now a HYBRID (dictionary + smaller prompt), not the all-prompt approach the original recommendation suggested.
+## Wave 2 launch checklist for resume session
 
-Supporting memories:
-- `project_dictionary_dominates_brand_fixing` — the H8/H9 findings.
-- `project_v15_capture_findings` — original V15 failure scoreboard (brand framing partially superseded).
-- `feedback_cleanup_cross_platform_parity` — all AI-cleanup changes ship macOS + iOS together.
-- `feedback_tests_as_regression_nets` — every new test fixture cites a V15 timestamp.
-
-## Wave 2 launch checklist (do these in order)
-
-1. **Push the branch** — 10 commits ahead of origin (Wave 1 + matrix work). Per CLAUDE.md push cadence rule "Phase / GSD step complete → push the branch", this is overdue. Confirm with user first.
-2. **xcodebuild verification of 25-02** — deferred from Wave 1 due to parallel-build cache contention. Clean build:
+1. **Locate accumulated logs**:
    ```bash
-   cd macOS && xcodebuild test -project Dicticus.xcodeproj -scheme Dicticus -destination 'platform=macOS' -only-testing:DicticusTests/TextProcessingServiceTests
+   ls -la ~/Library/Application\ Support/Dicticus/DebugRecordings/cleanup-2026-05-*.jsonl
    ```
-   Mirror on iOS. If either fails, the 25-02 tests are broken and should be fixed before Wave 2.
-3. **Sanity-check the revised 25-03 plan** — file grew from 393 → 631 lines (no truncation), but was written via Write not Edit (Edit was unavailable to the subagent). One known issue: Task 3 Step C's Python CLI invocation uses flags that don't exist on `run_v16_matrix.py`:
-   - `--variant V17` should be `--variants V17`
-   - `--fixture-file` should be `--fixtures`
-   - `--append-tsv` doesn't exist (script overwrites; either add the flag or post-process to append, mirroring how `run_h8_h9.py` did it)
-4. **Launch Wave 2**: `/gsd-execute-phase 25 --wave 2`. Wave 2 has only one plan (25-03) with 5 tasks. Task 3 (V17 harness verification) is a HARD GATE — if any of the 4 gates fail, Task 2's Swift commits are blocked.
+   Expect one file per day the user dictated. The 16th already has ~110+ records from this session's mixed test/dictation.
 
-## Wave 3 (separate session)
+2. **Verify V16-COMPOSITE is in the recent records** (sanity check the live build wasn't replaced):
+   ```bash
+   tail -1 ~/Library/Application\ Support/Dicticus/DebugRecordings/cleanup-2026-05-*.jsonl | python3 -c "import json,sys; r=json.loads(sys.stdin.read()); p=(r.get('steps',{}).get('llm_prompt') or {}).get('text','') or ''; print('V16-COMPOSITE:', 'Domain topic words' in p and 'Spelled-out two-digit' in p)"
+   ```
 
-25-04 is a 3-day user-driven capture window. Don't try to do it in the same session as Wave 2. After Wave 2 ships:
-- Install Debug-Recorder build with V16-COMPOSITE + expanded dictionary + plain-mode logging.
-- Dictate ~30 utterances/day for 3 days covering all CONTEXT.md `<specifics>` failure classes plus plain-mode A/B samples.
-- Produce V15→V16 quantitative diff, then human UAT verdict.
+3. **Run the analysis** (the actual Wave 2 work):
+   - Per-category lev deltas vs V15 baselines (categories: brand, anchor, num, acro, acro_enum, phase_face, ctrl, regress)
+   - Dictionary-vs-LLM attribution: how often does `steps.post_dict.text != steps.raw.text` (= dict fired)? How often does `steps.post_gate.text != steps.post_rules.text` (= LLM contributed)?
+   - Regression check against the 13 fixtures in `.planning/debug/harness/fixtures/phase25_brands.tsv`
+   - Cross-check against memories: `project_v15_capture_findings`, `project_dictionary_dominates_brand_fixing`
 
-## What NOT to do
+4. **Conclude Phase 25**:
+   - If clean: write `25-03-SUMMARY.md` + `25-04-SUMMARY.md` (live-capture replaced the planned 25-04 format), mark Phase 25 SHIPPED in STATE.md
+   - If regressions: open `25-03b` with targeted fixes. Don't roll back the whole change — H3 (phase/face) and dictionary entries are independent of H4 (number integrity)
 
-- Don't re-run the matrix unless 25-03 Task 3 explicitly demands it (Task 3 IS the V17 verification — that's the only legitimate matrix rerun).
-- Don't add to `Shared/Services/TextProcessingService.swift` for the matcher-broadening fix from the original 25-03 — that lever was REMOVED. Dictionary expansion replaces it.
-- Don't ship H1 (always-on canonical brand injection). It caused Dokploy → Docker regression. The plan correctly skips it.
-- Don't add H5 acro_enum few-shot in V17 first pass. Only add as V17b if V17 acro_enum > 0.
-- Don't push to main. Stay on `feature/debug-recording-and-cleanup`.
+5. **Push the branch** (~13+ commits ahead — overdue per CLAUDE.md push cadence).
+
+## What was skipped (deliberately) — re-add only if live-capture surfaces issues
+
+- 25-03 Task 3 (V17 harness verification) — skipped per user direction
+- 25-03 Task 4 (regression-net tests in CleanupPromptTests / SelfCorrectionResolverTests) — skipped; only add if a specific regression worth pinning emerges
+- 25-03 Task 5 (formal UAT checkpoint) — superseded by live-capture analysis
+
+## Rollback (if live-capture finds catastrophe)
+
+```bash
+git revert 0fc3198  # rolls back the V16-COMPOSITE + dict expansion
+# Then rebuild + reinstall:
+cd macOS && xcodebuild -project Dicticus.xcodeproj -scheme Dicticus-Debug-Recorder -configuration Debug-Recorder -derivedDataPath build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build
+cd .. && ./scripts/install-local.sh
+```
+
+## Signing identity (in case it's missing again)
+
+If `security find-identity -v -p codesigning` shows 0 identities, restore the p12 from 1Password — see memory `feedback_developer_id_signing_recovery` for the exact recovery commands. Vault TrueNAS, item `sqn2j6zeygtpewb2v66expqxva`, file `Certificates.p12`. Expected hash after import: `B9CA1FF8209D9B1BD4940F2D39C327EF836FD3C0`.
+
+## What NOT to do on resume
+
+- Don't re-run the matrix unless live-capture finds a specific regression to investigate
+- Don't add tests speculatively (per memory `feedback_tests_as_regression_nets` — tests pin specific regressions, not coverage)
+- Don't try to "finish" Tasks 3/4/5 unless they're actually needed — the live-capture path is the new Wave 2 and should be evaluated on its own merits
