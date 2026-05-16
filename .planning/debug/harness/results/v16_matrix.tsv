@@ -1,0 +1,334 @@
+variant	fixture_id	category	input	expected	output	lev_to_expected	lev_to_input	hypothesis_id	elapsed_s
+V15	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	baseline	0.74
+V15	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	baseline	0.14
+V15	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini C Oli to summarize this.	2	3	baseline	0.19
+V15	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	baseline	0.18
+V15	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	baseline	0.19
+V15	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	baseline	0.17
+V15	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Dokploy.	0	5	baseline	0.15
+V15	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	baseline	0.16
+V15	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	baseline	0.21
+V15	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	baseline	0.17
+V15	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	baseline	0.17
+V15	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use opus for this prompt.	0	0	baseline	0.16
+V15	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	baseline	0.15
+V15	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	baseline	0.17
+V15	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	baseline	0.22
+V15	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	baseline	0.20
+V15	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	baseline	0.24
+V15	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	baseline	0.17
+V15	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy. Dokku redeployed without errors.	1	6	baseline	0.21
+V15	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is phase forty one about?	9	0	baseline	0.17
+V15	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	I'm in forty one.	9	0	baseline	0.14
+V15	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	baseline	0.16
+V15	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty-five.	11	1	baseline	0.16
+V15	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these HDD failures yesterday.	0	2	baseline	0.13
+V15	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	baseline	0.16
+V15	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The SABNC D UI needs a redesign.	1	4	baseline	0.16
+V15	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	baseline	0.22
+V15	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	A B C D	42	42	baseline	0.11
+V15	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	baseline	0.18
+V15	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces, I should change models.	4	1	baseline	0.21
+V15	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	baseline	0.46
+V15	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	baseline	0.16
+V15	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	baseline	0.18
+V15	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	baseline	0.18
+V15	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	baseline	0.26
+V15	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	baseline	0.21
+V15	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is fitting well in the shoulders.	0	3	baseline	0.16
+V16A	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	H1	0.25
+V16A	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H1	0.17
+V16A	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini Claude to summarize this.	4	8	H1	0.22
+V16A	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H1	0.22
+V16A	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H1	0.23
+V16A	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H1	0.21
+V16A	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Docker.	5	10	H1	0.16
+V16A	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H1	0.18
+V16A	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H1	0.25
+V16A	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H1	0.21
+V16A	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H1	0.19
+V16A	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use Opus for this prompt.	0	0	H1	0.17
+V16A	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H1	0.18
+V16A	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H1	0.23
+V16A	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H1	0.23
+V16A	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H1	0.23
+V16A	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H1	0.26
+V16A	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H1	0.21
+V16A	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy. Dokku redeployed without errors.	1	6	H1	0.23
+V16A	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is Phase forty one about?	9	0	H1	0.22
+V16A	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.		10	17	H1	0.07
+V16A	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H1	0.17
+V16A	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty-five.	11	1	H1	0.19
+V16A	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these HDD failures yesterday.	0	2	H1	0.15
+V16A	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	H1	0.17
+V16A	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The SABNC D UI needs a redesign.	1	4	H1	0.16
+V16A	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H1	0.21
+V16A	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	0	0	H1	0.19
+V16A	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	H1	0.18
+V16A	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces, I should change models.	4	1	H1	0.23
+V16A	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H1	0.23
+V16A	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H1	0.20
+V16A	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H1	0.22
+V16A	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H1	0.22
+V16A	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H1	0.29
+V16A	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	H1	0.33
+V16A	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is fitting well in the shoulders.	0	3	H1	0.16
+V16B	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	H2	0.34
+V16B	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H2	0.16
+V16B	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini Claude to summarize this.	4	8	H2	0.22
+V16B	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H2	0.22
+V16B	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H2	0.23
+V16B	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H2	0.21
+V16B	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Docker.	5	10	H2	0.16
+V16B	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H2	0.18
+V16B	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H2	0.26
+V16B	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H2	0.19
+V16B	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H2	0.21
+V16B	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use Opus for this prompt.	0	0	H2	0.16
+V16B	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H2	0.17
+V16B	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H2	0.21
+V16B	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H2	0.23
+V16B	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H2	0.23
+V16B	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H2	0.26
+V16B	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H2	0.21
+V16B	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy. Dokku redeployed without errors.	1	6	H2	0.23
+V16B	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is Phase forty one about?	9	0	H2	0.19
+V16B	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.		10	17	H2	0.07
+V16B	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H2	0.17
+V16B	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty-five.	11	1	H2	0.16
+V16B	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these HDD failures yesterday.	0	2	H2	0.13
+V16B	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	H2	0.17
+V16B	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The SABNC D UI needs a redesign.	1	4	H2	0.16
+V16B	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H2	0.21
+V16B	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	0	0	H2	0.19
+V16B	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	H2	0.18
+V16B	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces, I should change models.	4	1	H2	0.21
+V16B	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H2	0.25
+V16B	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H2	0.20
+V16B	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H2	0.22
+V16B	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H2	0.23
+V16B	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H2	0.28
+V16B	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	H2	0.24
+V16B	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is fitting well in the shoulders.	0	3	H2	0.16
+V16C	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	H3	0.21
+V16C	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H3	0.14
+V16C	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini C Oli to summarize this.	2	3	H3	0.22
+V16C	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H3	0.21
+V16C	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H3	0.22
+V16C	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H3	0.20
+V16C	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Dokploy.	0	5	H3	0.17
+V16C	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H3	0.18
+V16C	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H3	0.25
+V16C	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H3	0.18
+V16C	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H3	0.19
+V16C	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use Opus for this prompt.	0	0	H3	0.16
+V16C	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H3	0.17
+V16C	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H3	0.20
+V16C	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H3	0.23
+V16C	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H3	0.22
+V16C	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H3	0.26
+V16C	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H3	0.20
+V16C	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy. Dokku redeployed without errors.	1	6	H3	0.21
+V16C	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is phase forty one about?	9	0	H3	0.20
+V16C	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	I'm in forty one.	9	0	H3	0.16
+V16C	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H3	0.17
+V16C	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty-five.	11	1	H3	0.18
+V16C	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these H D D failures yesterday.	2	0	H3	0.17
+V16C	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	H3	0.18
+V16C	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The SABNCD UI needs a redesign.	0	5	H3	0.18
+V16C	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H3	0.23
+V16C	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	A B C D	42	42	H3	0.13
+V16C	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this phase first before we ship.	0	3	H3	0.20
+V16C	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD phases, I should change models.	1	4	H3	0.24
+V16C	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H3	0.26
+V16C	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H3	0.19
+V16C	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H3	0.22
+V16C	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H3	0.21
+V16C	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H3	0.28
+V16C	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	H3	0.23
+V16C	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is fitting well in the shoulders.	0	3	H3	0.16
+V16D	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini about this.	9	11	H4	0.25
+V16D	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H4	0.14
+V16D	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini C Oli to summarize this.	2	3	H4	0.21
+V16D	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H4	0.20
+V16D	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H4	0.21
+V16D	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H4	0.19
+V16D	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Dokploy.	0	5	H4	0.15
+V16D	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H4	0.16
+V16D	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H4	0.24
+V16D	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H4	0.19
+V16D	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H4	0.19
+V16D	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use opus for this prompt.	0	0	H4	0.19
+V16D	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H4	0.15
+V16D	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H4	0.20
+V16D	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H4	0.22
+V16D	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H4	0.21
+V16D	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H4	0.24
+V16D	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H4	0.19
+V16D	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy. Dokku redeployed without errors.	1	6	H4	0.22
+V16D	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is phase 41 about?	0	9	H4	0.21
+V16D	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	I'm in 41.	0	9	H4	0.15
+V16D	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H4	0.15
+V16D	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port 25.	0	11	H4	0.16
+V16D	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these HDD failures yesterday.	0	2	H4	0.13
+V16D	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	H4	0.16
+V16D	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The SABNC D UI needs a redesign.	1	4	H4	0.16
+V16D	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H4	0.22
+V16D	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	A B C D	42	42	H4	0.16
+V16D	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	H4	0.19
+V16D	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces, I should change models.	4	1	H4	0.23
+V16D	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H4	0.26
+V16D	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H4	0.19
+V16D	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H4	0.21
+V16D	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H4	0.21
+V16D	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H4	0.28
+V16D	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	H4	0.25
+V16D	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is fitting well in the shoulders.	0	3	H4	0.16
+V16E	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	H5	0.26
+V16E	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H5	0.14
+V16E	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini C Oli to summarize this.	2	3	H5	0.21
+V16E	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H5	0.20
+V16E	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H5	0.21
+V16E	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H5	0.19
+V16E	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Dokploy.	0	5	H5	0.15
+V16E	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H5	0.16
+V16E	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H5	0.23
+V16E	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H5	0.19
+V16E	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H5	0.19
+V16E	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use opus for this prompt.	0	0	H5	0.18
+V16E	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H5	0.15
+V16E	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H5	0.19
+V16E	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H5	0.21
+V16E	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H5	0.22
+V16E	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H5	0.24
+V16E	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H5	0.19
+V16E	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	0	5	H5	0.21
+V16E	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is phase forty one about?	9	0	H5	0.19
+V16E	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	I'm in forty one.	9	0	H5	0.14
+V16E	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H5	0.15
+V16E	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty-five.	11	1	H5	0.16
+V16E	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these HDD failures yesterday.	0	2	H5	0.13
+V16E	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	H5	0.16
+V16E	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	SABNCD UI needs a redesign.	4	9	H5	0.16
+V16E	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H5	0.21
+V16E	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	0	0	H5	0.19
+V16E	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	H5	0.18
+V16E	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces, I should change models.	4	1	H5	0.25
+V16E	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H5	0.26
+V16E	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H5	0.19
+V16E	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H5	0.21
+V16E	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H5	0.23
+V16E	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H5	0.30
+V16E	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	H5	0.24
+V16E	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is fitting well in the shoulders.	0	3	H5	0.16
+V16F	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	H7	0.35
+V16F	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H7	0.17
+V16F	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini Claude to summarize this.	4	8	H7	0.30
+V16F	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H7	0.29
+V16F	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H7	0.29
+V16F	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H7	0.27
+V16F	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Dokku.	4	9	H7	0.18
+V16F	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H7	0.18
+V16F	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H7	0.31
+V16F	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H7	0.24
+V16F	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H7	0.24
+V16F	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use Opus for this prompt.	0	0	H7	0.21
+V16F	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H7	0.18
+V16F	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H7	0.28
+V16F	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H7	0.23
+V16F	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H7	0.30
+V16F	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H7	0.25
+V16F	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H7	0.26
+V16F	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy. Dokku redeployed without errors.	1	6	H7	0.23
+V16F	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is Phase 41 about?	0	9	H7	0.25
+V16F	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	41.	7	16	H7	0.12
+V16F	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H7	0.17
+V16F	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port 25.	0	11	H7	0.16
+V16F	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these HDD failures yesterday.	0	2	H7	0.13
+V16F	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The TV series Dune Prophecy was good.	0	1	H7	0.16
+V16F	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The SABNC D UI needs a redesign.	1	4	H7	0.16
+V16F	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H7	0.21
+V16F	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	A B C D.	41	41	H7	0.12
+V16F	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this phase first before we ship.	0	3	H7	0.18
+V16F	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces, I should change models.	4	1	H7	0.27
+V16F	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H7	0.28
+V16F	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H7	0.25
+V16F	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H7	0.29
+V16F	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H7	0.29
+V16F	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H7	0.34
+V16F	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to Opus 4.7 for routing.	0	16	H7	0.30
+V16F	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.		44	44	H7	0.07
+H8	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Chemini headless about this.	2	0	H8	0.00
+H8	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Chemini headless again to compare.	2	0	H8	0.00
+H8	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Cheminai C Oli to summarize this.	5	0	H8	0.00
+H8	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The MPM supply chain attack was huge.	1	0	H8	0.00
+H8	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure engine eggs as a reverse proxy.	7	0	H8	0.00
+H8	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Doghand should manage that stack.	5	0	H8	0.00
+H8	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Doghand to Dokploy.	5	0	H8	0.00
+H8	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Doghand pulled the image and redeployed.	5	0	H8	0.00
+H8	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	DogChee gives me a nicer UI than Portainer.	3	0	H8	0.00
+H8	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H8	0.00
+H8	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H8	0.00
+H8	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use opus for this prompt.	0	0	H8	0.00
+H8	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H8	0.00
+H8	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Chemini just refused the request.	2	0	H8	0.00
+H8	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Chemini refused the request.	2	0	H8	0.00
+H8	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart engine eggs after the config change.	7	0	H8	0.00
+H8	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart engine eggs after the config change.	7	0	H8	0.00
+H8	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Doghand redeployed without errors.	5	0	H8	0.00
+H8	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy, Doghand redeployed without errors.	5	0	H8	0.00
+H8	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is phase forty one about?	9	0	H8	0.00
+H8	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	I'm in forty one.	9	0	H8	0.00
+H8	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H8	0.00
+H8	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty five.	11	0	H8	0.00
+H8	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these H D D failures yesterday.	2	0	H8	0.00
+H8	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The T V series Dune Prophecy was good.	1	0	H8	0.00
+H8	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The S A B N C D UI needs a redesign.	5	0	H8	0.00
+H8	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H8	0.00
+H8	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	0	0	H8	0.00
+H8	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	H8	0.00
+H8	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces I should change models.	3	0	H8	0.00
+H8	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H8	0.00
+H8	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H8	0.00
+H8	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H8	0.00
+H8	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H8	0.00
+H8	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Jemini CLI is the same thing.	1	0	H8	0.00
+H8	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to opus four point seven for routing.	16	0	H8	0.00
+H8	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is feeding well in the shoulders.	3	0	H8	0.00
+H9	P25-brand-01-cheminiheadless-20260515T1502	brand	Let me ask Chemini headless about this.	Let me ask Gemini headless about this.	Let me ask Gemini headless about this.	0	2	H9	0.00
+H9	P25-brand-02-cheminiheadless-20260515T1506	brand	Run Chemini headless again to compare.	Run Gemini headless again to compare.	Run Gemini headless again to compare.	0	2	H9	0.00
+H9	P25-brand-03-cheminaicoli-20260516T0417	brand	I want Cheminai C Oli to summarize this.	I want Gemini CLI to summarize this.	I want Gemini C Oli to summarize this.	2	3	H9	0.00
+H9	P25-brand-04-mpmsupply-20260515T0503	brand	The MPM supply chain attack was huge.	The NPM supply chain attack was huge.	The NPM supply chain attack was huge.	0	1	H9	0.00
+H9	P25-brand-05-engineeggs-20260515T0504	brand	Configure engine eggs as a reverse proxy.	Configure NGINX as a reverse proxy.	Configure NGINX as a reverse proxy.	0	7	H9	0.00
+H9	P25-brand-06-doghand-20260515T1659	brand	Doghand should manage that stack.	Dokku should manage that stack.	Dokku should manage that stack.	0	5	H9	0.00
+H9	P25-brand-07-doghand-20260515T1700	brand	I prefer Doghand to Dokploy.	I prefer Dokku to Dokploy.	I prefer Dokku to Dokploy.	0	5	H9	0.00
+H9	P25-brand-08-doghand-20260515T1705	brand	Doghand pulled the image and redeployed.	Dokku pulled the image and redeployed.	Dokku pulled the image and redeployed.	0	5	H9	0.00
+H9	P25-brand-09-dogchee-20260515T1659	brand	DogChee gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	Dockge gives me a nicer UI than Portainer.	0	3	H9	0.00
+H9	P25-brand-10-claude-isolated	brand	I asked clot about the diff.	I asked Claude about the diff.	I asked Claude about the diff.	0	4	H9	0.00
+H9	P25-brand-11-vercel-isolated	brand	Deploy to versal tonight.	Deploy to Vercel tonight.	Deploy to Vercel tonight.	0	2	H9	0.00
+H9	P25-brand-12-opus-isolated	brand	Use opus for this prompt.	Use Opus for this prompt.	Use opus for this prompt.	0	0	H9	0.00
+H9	P25-brand-13-sonnet-isolated	brand	Sonnet is enough for the routing.	Sonnet is enough for the routing.	Sonnet is enough for the routing.	0	0	H9	0.00
+H9	P25-anchor-01-gemini-isolated	anchor	Chemini just refused the request.	Gemini just refused the request.	Gemini just refused the request.	0	2	H9	0.00
+H9	P25-anchor-02-gemini-anchored	anchor	I'm using the Gemini CLI now and Chemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	I'm using the Gemini CLI now and Gemini refused the request.	0	2	H9	0.00
+H9	P25-anchor-03-nginx-isolated	anchor	Restart engine eggs after the config change.	Restart NGINX after the config change.	Restart NGINX after the config change.	0	7	H9	0.00
+H9	P25-anchor-04-nginx-anchored	anchor	The NGINX container is unhealthy, restart engine eggs after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	The NGINX container is unhealthy, restart NGINX after the config change.	0	7	H9	0.00
+H9	P25-anchor-05-dokku-isolated	anchor	Doghand redeployed without errors.	Dokku redeployed without errors.	Dokku redeployed without errors.	0	5	H9	0.00
+H9	P25-anchor-06-dokku-anchored	anchor	Tell Dokku to redeploy, Doghand redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	Tell Dokku to redeploy, Dokku redeployed without errors.	0	5	H9	0.00
+H9	P25-num-01-fortyone-20260514T1440	num	What is phase forty one about?	What is phase 41 about?	What is phase forty one about?	9	0	H9	0.00
+H9	P25-num-02-fortyone-20260514T1440	num	I'm in forty one.	I'm in 41.	I'm in forty one.	9	0	H9	0.00
+H9	P25-num-03-twothree-20260516T0417	num	Those two to three streams keep crashing.	Those 2 to 3 streams keep crashing.	Those two to three streams keep crashing.	8	0	H9	0.00
+H9	P25-num-04-twentyfive	num	The deploy is on port twenty five.	The deploy is on port 25.	The deploy is on port twenty five.	11	0	H9	0.00
+H9	P25-acro-01-hdd-20260513T1756	acro	Considering these H D D failures yesterday.	Considering these HDD failures yesterday.	Considering these H D D failures yesterday.	2	0	H9	0.00
+H9	P25-acro-02-tv-20260514T1930	acro	The T V series Dune Prophecy was good.	The TV series Dune Prophecy was good.	The T V series Dune Prophecy was good.	1	0	H9	0.00
+H9	P25-acro-03-sabncdui-20260514T1632	acro	The S A B N C D UI needs a redesign.	The SABNCD UI needs a redesign.	The S A B N C D UI needs a redesign.	5	0	H9	0.00
+H9	P25-acro-enum-01	acro_enum	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	Pick one of the options A, B, C, or D.	0	0	H9	0.00
+H9	P25-acro-enum-02	acro_enum	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	Use letters A B C D as separators in the heading.	0	0	H9	0.00
+H9	P25-phase-face-01-20260514T0421	phase_face	Let's discuss this face first before we ship.	Let's discuss this phase first before we ship.	Let's discuss this face first before we ship.	3	0	H9	0.00
+H9	P25-phase-face-02-20260515T1528	phase_face	Between GSD faces I should change models.	Between GSD phases I should change models.	Between GSD faces I should change models.	3	0	H9	0.00
+H9	P25-ctrl-face-01	ctrl	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	Look me in the face and tell me you wrote those tests.	0	0	H9	0.00
+H9	P25-regress-01-gst-gsd	regress	Run GST housekeeping now.	Run GSD housekeeping now.	Run GSD housekeeping now.	0	1	H9	0.00
+H9	P25-regress-02-cloud-claude	regress	Open cloud code and check the diff.	Open Claude Code and check the diff.	Open Claude Code and check the diff.	0	2	H9	0.00
+H9	P25-regress-03-true-nas	regress	Move the volume to true NAS tonight.	Move the volume to TrueNAS tonight.	Move the volume to TrueNAS tonight.	0	1	H9	0.00
+H9	P25-regress-04-jemini-anchored	regress	I'm using Gemini CLI today and Jemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	I'm using Gemini CLI today and Gemini CLI is the same thing.	0	1	H9	0.00
+H9	P25-regress-05-opus-fourpoint-seven	regress	I switched to opus four point seven for routing.	I switched to Opus 4.7 for routing.	I switched to opus four point seven for routing.	16	0	H9	0.00
+H9	P25-regress-06-feeding-fitting	regress	The jacket is feeding well in the shoulders.	The jacket is fitting well in the shoulders.	The jacket is feeding well in the shoulders.	3	0	H9	0.00
