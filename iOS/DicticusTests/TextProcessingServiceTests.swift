@@ -129,4 +129,84 @@ final class TextProcessingServiceTests: XCTestCase {
         XCTAssertFalse(outputTokens.contains("siite"),
             "Phase 20.08 R7: dialect gate must demote — output must not contain Swiss form 'siite' as a word token")
     }
+
+    // MARK: - Phase 25-02: plain-mode DEBUG_RECORDER write-path parity
+
+    #if DEBUG_RECORDER
+    /// Phase 25-02 (iOS parity): plain-mode dictation cycles emit a JSONL
+    /// record in the same daily file as aiCleanup cycles, distinguishable
+    /// by the `mode` field. LLM-section keys (`llm_prompt`, `llm_raw`,
+    /// `post_gate`) are nil/absent. Also verifies that aiCleanup records
+    /// continue to emit with the `aiCleanup` mode tag.
+    ///
+    /// NOTE: this test appends to the app's REAL DebugRecordings file under
+    /// the iOS simulator's Application Support sandbox — it is only
+    /// compiled when the `DEBUG_RECORDER` flag is set. Each run uses a
+    /// unique probe substring so reruns do not produce false positives.
+    ///
+    /// Cross-platform parity (feedback_cleanup_cross_platform_parity):
+    /// mirrors macOS/DicticusTests/TextProcessingServiceTests.swift.
+    func testPlainModeWritesDebugRecord() async throws {
+        let svc = TextProcessingService(cleanupService: nil)
+        let probe = "phase25-02-plain-probe-\(UUID().uuidString.prefix(8))"
+
+        _ = await svc.process(text: probe, language: "en", mode: .plain, confidence: 1.0)
+
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        let dir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Dicticus/DebugRecordings", isDirectory: true)
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        let fileURL = dir.appendingPathComponent("cleanup-\(f.string(from: Date())).jsonl")
+
+        let lines = try String(contentsOf: fileURL, encoding: .utf8)
+            .split(separator: "\n")
+            .map(String.init)
+        let match = lines.first { $0.contains(probe) }
+        let plainLine = try XCTUnwrap(match,
+            "expected plain-mode record containing '\(probe)' in \(fileURL.path)")
+        XCTAssertTrue(plainLine.contains("\"mode\":\"plain\""),
+            "Phase 25-02: plain-mode record must carry mode=plain — got: \(plainLine)")
+        XCTAssertTrue(plainLine.contains("\"llm_prompt\":null") || !plainLine.contains("llm_prompt"),
+            "Phase 25-02: llm_prompt must be null/absent in plain-mode record")
+        XCTAssertTrue(plainLine.contains("\"llm_raw\":null") || !plainLine.contains("llm_raw"),
+            "Phase 25-02: llm_raw must be null/absent in plain-mode record")
+        XCTAssertTrue(plainLine.contains("\"post_gate\":null") || !plainLine.contains("post_gate"),
+            "Phase 25-02: post_gate must be null/absent in plain-mode record")
+    }
+
+    /// Phase 25-02 (iOS parity): no-regression invariant — aiCleanup
+    /// records continue to emit with `mode == "aiCleanup"`. Mirrors the
+    /// macOS test of the same name.
+    func testAICleanupModeWritesDebugRecordWithModeAICleanup() async throws {
+        let mock = MockCleanupProvider()
+        mock.returnValue = "Polished output for phase25-02-ai-probe"
+        let svc = TextProcessingService(cleanupService: mock)
+        let probe = "phase25-02-ai-probe-\(UUID().uuidString.prefix(8))"
+
+        _ = await svc.process(text: probe, language: "en", mode: .aiCleanup, confidence: 1.0)
+
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        let dir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Dicticus/DebugRecordings", isDirectory: true)
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        let fileURL = dir.appendingPathComponent("cleanup-\(f.string(from: Date())).jsonl")
+
+        let lines = try String(contentsOf: fileURL, encoding: .utf8)
+            .split(separator: "\n")
+            .map(String.init)
+        let match = lines.first { $0.contains(probe) }
+        let aiLine = try XCTUnwrap(match,
+            "expected aiCleanup-mode record containing '\(probe)' in \(fileURL.path)")
+        XCTAssertTrue(aiLine.contains("\"mode\":\"aiCleanup\""),
+            "Phase 25-02 no-regression: aiCleanup record must carry mode=aiCleanup — got: \(aiLine)")
+    }
+    #endif
 }
