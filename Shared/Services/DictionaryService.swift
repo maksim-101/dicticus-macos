@@ -103,7 +103,19 @@ class DictionaryService: ObservableObject {
             // between tokens) and Gemma already capitalizes "i" → "I" without
             // dictionary forcing. See purgeRetiredDefaults() for in-place cleanup.
             "Selguard": "Cellguard", "selguard": "Cellguard", "Mac Vesper": "MacWhisper", "Kai-Agenten": "KI-Agenten", "Ki-Argenten": "KI-Agenten", "KI-Agenten": "KI-Agenten", "AI-Agenten": "AI-Agenten", "Dektik-Tools": "Dicticus", "Sigby": "Zigbee", "Sig B": "Zigbee", "sig b": "Zigbee", "Sigbee": "Zigbee", "sigbee": "Zigbee", "Zigbee": "Zigbee", "AI Cleanup": "AI Cleanup", "AI-Cleanup": "AI Cleanup",
-            "GSD": "GSD", "gest": "GSD", "GST": "GSD", "cheers": "GSD", "G.S.D.": "GSD", "gsd": "GSD"
+            "GSD": "GSD", "gest": "GSD", "GST": "GSD", "cheers": "GSD", "G.S.D.": "GSD", "gsd": "GSD",
+            // Phase 25-03 Lever 1 (matrix.md §5, 2026-05-16): brand/anchor
+            // mishearings from V15 capture-window. H9 (rules+dict) collapses
+            // brand 35→2 and anchor 28→0 without any LLM cost. Each entry
+            // cites the V15 fixture timestamp it closes.
+            "Chemini": "Gemini", "Cheminai": "Gemini", "chemini": "Gemini", "cheminai": "Gemini",
+            "Jemini": "Gemini",
+            "MPM": "NPM",
+            "engine eggs": "NGINX",
+            "Doghand": "Dokku", "Dog Hand": "Dokku", "doghand": "Dokku", "dog hand": "Dokku",
+            "DogChee": "Dockge", "Dog Chee": "Dockge", "dogchee": "Dockge", "dog chee": "Dockge",
+            "C Oli": "CLI", "c oli": "CLI",
+            "true Nas": "TrueNAS",
         ]
 
         

@@ -43,7 +43,7 @@ import NaturalLanguage
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Minimal cleanup of dictated speech (V15 smart-verbatim)."
+    static let defaultInstruction = "Minimal cleanup of dictated speech (V16-COMPOSITE smart-verbatim, H3+H4)."
 
     static func build(
         text: String,
@@ -60,6 +60,12 @@ struct CleanupPrompt {
         var prompt = ""
 
         // Step 1: Smart-verbatim imperative header.
+        // Phase 25-03 V16-COMPOSITE (2026-05-16): adds H3 (Domain topic words
+        // hint line — phase/face homophone) and H4 (Rule 8 number-word
+        // integrity — fixes the "forty one → 4001" digit-concat bug). H1
+        // intentionally skipped (caused Dokploy → Docker regression in the
+        // V16F bundle); H5 skipped (acro_enum already 0 in plain mode per
+        // matrix.md §1b — V15's collapse was self-inflicted).
         prompt += "Task: Clean up the dictation below. Output ONLY the cleaned text.\n\n"
         prompt += "Rules:\n"
         prompt += "1. Fix capitalization and sentence punctuation.\n"
@@ -69,7 +75,9 @@ struct CleanupPrompt {
         prompt += "5. PRESERVE substantive self-corrections verbatim (e.g., 'no', 'actually', 'wait', 'I mean').\n"
         prompt += "   Example: 'Meeting at nine, no actually eight' must stay 'Meeting at nine, no actually eight'.\n"
         prompt += "6. NEVER paraphrase, summarize, or add new words.\n"
-        prompt += "7. NEVER answer dictated questions.\n\n"
+        prompt += "7. NEVER answer dictated questions.\n"
+        prompt += "8. Spelled-out two-digit numbers ('twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety' optionally followed by 'one'..'nine') MUST render as two-digit numerals (e.g. 'forty one' -> 41), NEVER concatenated four-digit forms like 4001.\n\n"
+        prompt += "Domain topic words: phase, plan, workflow, framework, dictation, cleanup, prompt.\n\n"
 
         // Step 2: Known terms anchor (adaptive context filtered upstream).
         if let dict = dictionaryContext, !dict.isEmpty {
@@ -106,6 +114,16 @@ struct CleanupPrompt {
 
             prompt += "In: meeting at nine no actually eight\n"
             prompt += "Out: Meeting at nine, no actually eight.\n\n"
+
+            // Phase 25-03 V16-COMPOSITE: H3 phase/face homophone + H4 number-word integrity.
+            prompt += "In: discuss this face first\n"
+            prompt += "Out: Discuss this phase first.\n\n"
+
+            prompt += "In: meeting at forty one Penn\n"
+            prompt += "Out: Meeting at 41 Penn.\n\n"
+
+            prompt += "In: it lasted two to three minutes\n"
+            prompt += "Out: It lasted 2 to 3 minutes.\n\n"
         }
 
         // Step 5: Input anchor for completion.
