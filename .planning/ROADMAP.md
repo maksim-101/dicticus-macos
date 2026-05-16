@@ -229,10 +229,27 @@ Plans:
 
 **Context file:** `.planning/phases/24-ai-cleanup-quality-v2/24-CONTEXT.md`
 
+### Phase 25: AI Cleanup Quality v3 — Brand & Acronym Recognition
+
+**Goal:** Reduce isolated-brand mishearing failure rate (target: ≤ 30% of V15 baseline on the captured brand corpus), eliminate the `forty one → 4001` digit-concatenation class entirely, collapse acronym-letter-spacing without regressing list-of-letters enumeration, fix the `phase ↔ face` homophone class, enable plain-mode JSONL for production A/B comparison.
+**Requirements**: N/A (quality phase — measured against capture-window scoreboard, not requirement IDs)
+**Depends on:** Phase 24
+**Plans:** 2/4 plans executed
+
+Plans:
+- [x] 25-01-hypothesis-matrix-PLAN.md — Offline hypothesis matrix in `.planning/debug/harness/` (Wave 1, no app code). Tests H1–H7 against prod GGUF at seed=42, produces `results/v16_matrix.md` naming the winning V16 variant.
+- [x] 25-02-plain-mode-logging-PLAN.md — Plain-mode DebugRecorder logging in `Shared/Services/TextProcessingService.swift` (Wave 1, ships in parallel with 25-01). macOS + iOS parity. Enables plain-vs-AI A/B from production capture.
+- [ ] 25-03-v16-prompt-and-dictionary-feeder-PLAN.md — V16 prompt + always-on canonical-term injector (Wave 2, depends on 25-01). macOS + iOS parity. Phase 24 regression-net (27 SelfCorrectionResolverTests + 10 CleanupPromptTests) preserved; new Phase 25 fixtures cite real CONTEXT.md timestamps.
+- [ ] 25-04-capture-window-and-uat-PLAN.md — 3-day V16 capture + V15→V16 diff + human UAT verdict (Wave 3, depends on 25-02 AND 25-03). Closes Phase 25 with ACCEPTED / CONDITIONAL ACCEPT / REJECTED.
+
+**Wave structure:** {25-01, 25-02} → {25-03} → {25-04}. Plans 25-01 and 25-02 are file-disjoint (harness vs. Swift); 25-03 consumes 25-01's matrix; 25-04 consumes both 25-02 (logging) and 25-03 (V16 code).
+
+**Cross-platform:** Per `feedback_cleanup_cross_platform_parity` memory, 25-02 and 25-03 each ship macOS + iOS in the same plan. 25-01 is harness-only.
+
+**Context file:** `.planning/phases/25-ai-cleanup-quality-v3-brand-acronym-recognition/25-CONTEXT.md`
+
 ---
 
+*Last updated: 2026-05-16 — Phase 25 planned. Four-plan structure locked per CONTEXT.md user mandate (hypothesis-first methodology).*
+
 *Last updated: 2026-05-09 — Phase 22 production UAT 2/3 PASSED + 1 deferred (iOS sim runtime). Phase 24 (AI Cleanup Quality v2) scaffolded as blocked on data capture (window 2026-05-09 → 2026-05-12).*
-
-*Last updated: 2026-05-08 — Phase 22 Plan 01 SHIPPED (regex hotfix + 7 JSONL regression fixtures, macOS + iOS parity).*
-
-*Last updated: 2026-05-01 — Phase 20.08 SHIPPED. Plan 05 gap closure landed across 3 UAT iterations on macOS Release: (i1) dropped §3 priming-trap directive, kept 5th currency exemplar (closed R-G15-01 first time, surfaced 3 follow-ons); (i2) added `naja` to FillerWordRemover.germanFillers + 6th past-tense ORIGINAL/KORRIGIERT exemplar (closed naja + tense, REGRESSED R-G15-01 because the verb-rewrite stole the recency-anchor slot from the currency exemplar); (i3) reordered so currency-preservation exemplar is again last, tense exemplar one slot earlier — added R6 order-lock test (`testVariantG15CurrencyExemplarIsLastExemplar`). Final macOS UAT ACCEPTED with sentence-stitching note (Gemma occasionally merges adjacent ASR clauses with comma instead of period — below user acceptance bar). R-G15-02 (iOS language-detection bleed) remains upstream of the prompt and is carried forward as a separate phase. iOS verification deferred to next iOS UAT cycle (shares `Shared/Models/CleanupPrompt.swift` so the prompt change reaches both platforms). Full iteration log in `20.08-05-UAT-RESULTS.md`.*

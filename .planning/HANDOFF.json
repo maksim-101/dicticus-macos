@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-16T07:03:42.066Z",
+  "phase": "25",
+  "phase_name": "ai-cleanup-quality-v3-brand-acronym-recognition",
+  "phase_dir": ".planning/phases/25-ai-cleanup-quality-v3-brand-acronym-recognition",
+  "plan": 3,
+  "task": 1,
+  "total_tasks": 5,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "25-01", "name": "Hypothesis matrix (V15 vs V16A-F prompt variants)", "status": "done", "commit": "2c97738"},
+    {"id": "25-01-followup", "name": "H8/H9 rules-only baselines added to matrix per user-mandated rerun", "status": "done", "commit": "4b93acc"},
+    {"id": "25-02", "name": "Plain-mode DebugRecorder logging (discovery-driven pivot — was already live; added docs + parity tests)", "status": "done", "commit": "f7a6c8f"}
+  ],
+  "remaining_tasks": [
+    {"id": "25-03-T1", "name": "Dictionary expansion in Shared/Services/DictionaryService.swift (~16 entries from matrix.md §5 Lever 1)", "status": "not_started"},
+    {"id": "25-03-T2", "name": "V16-COMPOSITE prompt in Shared/Models/CleanupPrompt.swift (H3+H4 only, skip H1, conditional H5)", "status": "not_started"},
+    {"id": "25-03-T3", "name": "V17 harness verification — 4-gate decision tree; BLOCKS Task 2 Swift commit on FAIL", "status": "not_started"},
+    {"id": "25-03-T4", "name": "Regression-net tests in CleanupPromptTests + SelfCorrectionResolverTests (macOS + iOS)", "status": "not_started"},
+    {"id": "25-03-T5", "name": "Human UAT checkpoint (Debug-Recorder build, smoke-test CONTEXT.md <specifics> failure cases)", "status": "not_started"},
+    {"id": "25-04", "name": "3-day capture window v2 + V15→V16 quantitative diff + human UAT verdict (separate session, multi-day)", "status": "not_started"}
+  ],
+  "blockers": [
+    {
+      "description": "xcodebuild verification of 25-02 plain-mode tests deferred — parallel-build llama-cpp xcframework cache contention in worktree mode",
+      "type": "technical",
+      "workaround": "Run a clean xcodebuild test on macOS + iOS as the first action in Wave 2, before launching the 25-03 executor"
+    },
+    {
+      "description": "Plan 25-03 Task 3 Step C shows a Python CLI invocation with flags that don't exist on run_v16_matrix.py",
+      "type": "technical",
+      "workaround": "Real flags are --variants (plural), --fixtures, --out (no --append-tsv). Either add the missing flags or wrap in a small append-aware script mirroring run_h8_h9.py"
+    },
+    {
+      "description": "10 commits ahead of origin/feature/debug-recording-and-cleanup. Per CLAUDE.md push cadence rule, push at Phase/GSD-step boundaries — Wave 1 done is a push checkpoint",
+      "type": "human_action",
+      "workaround": "Push the branch at the start of the next session before Wave 2 work"
+    }
+  ],
+  "human_actions_pending": [
+    {"action": "Confirm/run git push origin feature/debug-recording-and-cleanup at session start", "context": "10 commits ahead, Wave 1 completion is the natural push boundary", "blocking": false},
+    {"action": "Wave 3 (plan 25-04) requires a 3-day live dictation capture — must be a separate multi-day session, not Wave 2", "context": "Capture window v2 needs V16 + dictionary expansion in production for at least 3 days to gather A/B data", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Plan 25-03 task order flipped: dictionary expansion is now Task 1, prompt is Task 2", "rationale": "H8/H9 matrix evidence (commit 4b93acc) showed dictionary does ~90% of brand-fixing work. H9 aggregate 72 beats V15+LLM (90) with zero LLM calls. Original §7 V16-COMPOSITE recommendation superseded by §5 hybrid.", "phase": "25"},
+    {"decision": "Skip H1 (always-on canonical brand injection) in V16-COMPOSITE", "rationale": "H1 caused Dokploy → Docker brand-specificity regression in the matrix; dictionary expansion (Lever 1) supersedes its purpose without the regression risk", "phase": "25"},
+    {"decision": "Conditional H5 (acro_enum anti-regression few-shot) — adopt only if V17 verification shows acro_enum > 0", "rationale": "Matrix showed acro_enum 42→0 swing was V15's self-inflicted wound; plain mode (H8/H9) is already at 0. May not be needed in V16-COMPOSITE", "phase": "25"},
+    {"decision": "Plan 25-03 Task 3 (V17 verification) is a HARD GATE on Task 2", "rationale": "V16F bundle catastrophe (lev 44 on feeding→fitting) proved composite prompts can regress unpredictably. Verify before Swift code ships.", "phase": "25"},
+    {"decision": "Plain-mode JSONL logging was already live in production code (TextProcessingService.swift:224 #if DEBUG_RECORDER is at OUTER scope, not gated by aiCleanup) — discovered during 25-02 execution", "rationale": "The original 218/218 aiCleanup ratio was a usage artifact (user only dictated in AI mode), not code suppression. Plan 25-02 pivoted from 'add a write path' to 'document the contract + lock with parity tests'.", "phase": "25"},
+    {"decision": "DEBUG_RECORDER schema not changed (Steps.llm_prompt/llm_raw/post_gate are already Optional at DebugRecorder.swift:74-76)", "rationale": "Pre-flight verified during 25-02 plan-check; plain-mode records simply omit those keys", "phase": "25"}
+  ],
+  "uncommitted_files": [
+    ".planning/ROADMAP.md",
+    ".planning/STATE.md",
+    ".continue-here",
+    "macOS/Dicticus.xcodeproj/project.xcworkspace/xcuserdata/mowehr.xcuserdatad/UserInterfaceState.xcuserstate",
+    "iOS/build/ (untracked build artifacts)"
+  ],
+  "next_action": "(1) /gsd-resume-work to reload context. (2) Confirm git push of the 10 ahead commits. (3) xcodebuild test of 25-02 plain-mode tests (macOS + iOS) — was deferred from Wave 1. (4) Read .planning/debug/harness/results/v16_matrix.md addendum (§1b/§2.8/§2.9/§4/§5) — this is the authoritative evidence behind the revised 25-03 plan. (5) Spot-check the revised 25-03 plan file (was Write-reconstructed not Edit-patched; grew 393→631 lines so no truncation but worth eyes). (6) /gsd-execute-phase 25 --wave 2.",
+  "context_notes": "Wave 1 produced two big revelations that reshaped Phase 25: (a) plain-mode logging was already live, just unused (b) dictionary substitution does ~90% of brand-fixing work, not the LLM. The revised plan 25-03 ships dictionary expansion FIRST (highest ROI, deterministic), then a smaller prompt change (H3+H4 only), with a hard V17 verification gate before Swift code commits. Don't ship H1 — it regresses brand specificity. The matrix.md addendum is the source of truth for any 25-03 implementation question. Memories project_dictionary_dominates_brand_fixing and project_v15_capture_findings carry the analytical context."
+}

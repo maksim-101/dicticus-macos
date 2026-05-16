@@ -1,0 +1,51 @@
+2026-05-16 — Phase 25 Wave 1 COMPLETE. Wave 2 ready to launch after context-clear.
+
+## Where we are
+
+- Phase 25 (AI Cleanup Quality v3 — Brand & Acronym Recognition) Wave 1 done.
+- Plans 25-01 (hypothesis matrix) and 25-02 (plain-mode logging) SHIPPED.
+- 25-03 RE-PLANNED 2026-05-16 with hybrid structure (dictionary expansion + trimmed prompt). See `.planning/phases/25-ai-cleanup-quality-v3-brand-acronym-recognition/25-03-v16-prompt-and-dictionary-feeder-PLAN.md`.
+- 25-04 (capture window + UAT) ready for Wave 3 once 25-03 ships.
+
+## What the matrix says (read this before doing anything)
+
+`.planning/debug/harness/results/v16_matrix.md` is authoritative. Read the addendum (§1b/§2.8/§2.9/§4/§5) — it supersedes the original §1–§7. The headline finding:
+
+- H9 (rules-only + expanded dictionary) achieves aggregate 72 with ZERO LLM calls — second-best of 9 variants.
+- The dictionary layer does ~90% of brand-fixing. The LLM only earns its keep on `num`, `acro`, `phase_face`.
+- Plan 25-03 is now a HYBRID (dictionary + smaller prompt), not the all-prompt approach the original recommendation suggested.
+
+Supporting memories:
+- `project_dictionary_dominates_brand_fixing` — the H8/H9 findings.
+- `project_v15_capture_findings` — original V15 failure scoreboard (brand framing partially superseded).
+- `feedback_cleanup_cross_platform_parity` — all AI-cleanup changes ship macOS + iOS together.
+- `feedback_tests_as_regression_nets` — every new test fixture cites a V15 timestamp.
+
+## Wave 2 launch checklist (do these in order)
+
+1. **Push the branch** — 10 commits ahead of origin (Wave 1 + matrix work). Per CLAUDE.md push cadence rule "Phase / GSD step complete → push the branch", this is overdue. Confirm with user first.
+2. **xcodebuild verification of 25-02** — deferred from Wave 1 due to parallel-build cache contention. Clean build:
+   ```bash
+   cd macOS && xcodebuild test -project Dicticus.xcodeproj -scheme Dicticus -destination 'platform=macOS' -only-testing:DicticusTests/TextProcessingServiceTests
+   ```
+   Mirror on iOS. If either fails, the 25-02 tests are broken and should be fixed before Wave 2.
+3. **Sanity-check the revised 25-03 plan** — file grew from 393 → 631 lines (no truncation), but was written via Write not Edit (Edit was unavailable to the subagent). One known issue: Task 3 Step C's Python CLI invocation uses flags that don't exist on `run_v16_matrix.py`:
+   - `--variant V17` should be `--variants V17`
+   - `--fixture-file` should be `--fixtures`
+   - `--append-tsv` doesn't exist (script overwrites; either add the flag or post-process to append, mirroring how `run_h8_h9.py` did it)
+4. **Launch Wave 2**: `/gsd-execute-phase 25 --wave 2`. Wave 2 has only one plan (25-03) with 5 tasks. Task 3 (V17 harness verification) is a HARD GATE — if any of the 4 gates fail, Task 2's Swift commits are blocked.
+
+## Wave 3 (separate session)
+
+25-04 is a 3-day user-driven capture window. Don't try to do it in the same session as Wave 2. After Wave 2 ships:
+- Install Debug-Recorder build with V16-COMPOSITE + expanded dictionary + plain-mode logging.
+- Dictate ~30 utterances/day for 3 days covering all CONTEXT.md `<specifics>` failure classes plus plain-mode A/B samples.
+- Produce V15→V16 quantitative diff, then human UAT verdict.
+
+## What NOT to do
+
+- Don't re-run the matrix unless 25-03 Task 3 explicitly demands it (Task 3 IS the V17 verification — that's the only legitimate matrix rerun).
+- Don't add to `Shared/Services/TextProcessingService.swift` for the matcher-broadening fix from the original 25-03 — that lever was REMOVED. Dictionary expansion replaces it.
+- Don't ship H1 (always-on canonical brand injection). It caused Dokploy → Docker regression. The plan correctly skips it.
+- Don't add H5 acro_enum few-shot in V17 first pass. Only add as V17b if V17 acro_enum > 0.
+- Don't push to main. Stay on `feature/debug-recording-and-cleanup`.
