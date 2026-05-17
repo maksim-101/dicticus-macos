@@ -170,5 +170,87 @@ final class TextProcessingServiceTests: XCTestCase {
         XCTAssertTrue(aiLine.contains("\"mode\":\"aiCleanup\""),
             "Phase 25-02 no-regression: aiCleanup record must carry mode=aiCleanup — got: \(aiLine)")
     }
+
+    // MARK: - Phase 25.1-01: telemetry parity (lang_used + emission_counter)
+    //
+    // Closes the 25-04 SUMMARY's two telemetry gaps:
+    //   Gap 1 (lang_used null in 100% of records) — was a schema-name mismatch;
+    //          this test asserts the new alias is populated whenever `lang` is.
+    //   Gap 2 (plain-mode emission near-zero, ambiguous cause) — this test asserts
+    //          two sequential invocations produce records with counter delta == 1,
+    //          which means future capture windows can prove dual-emission fires by
+    //          checking counter monotonicity across all records in a file.
+    //
+    // Pattern follows Phase 25-02 (UUID probe + today's-JSONL scan).
+
+    func testPhase251_LangUsedMirrorsLang() async throws {
+        let probe = "phase251-lang-probe-\(UUID().uuidString.prefix(8))"
+        let svc = TextProcessingService(cleanupService: nil)
+
+        _ = await svc.process(text: probe, language: "de", mode: .plain, confidence: 1.0)
+
+        try await Task.sleep(nanoseconds: 150_000_000)  // 150ms — DebugRecorder actor flush
+
+        let dir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Dicticus/DebugRecordings", isDirectory: true)
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        let fileURL = dir.appendingPathComponent("cleanup-\(f.string(from: Date())).jsonl")
+
+        let lines = try String(contentsOf: fileURL, encoding: .utf8)
+            .split(separator: "\n")
+            .map(String.init)
+        let match = lines.first { $0.contains(probe) }
+        let line = try XCTUnwrap(match, "Probe record missing from today's JSONL at \(fileURL.path)")
+        guard let data = line.data(using: .utf8),
+              let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+            return XCTFail("Failed to parse probe JSONL line as JSON")
+        }
+        XCTAssertEqual(obj["lang"] as? String, "de",
+            "Phase 25.1-01: lang field must equal the language passed to process()")
+        XCTAssertEqual(obj["lang_used"] as? String, "de",
+            "Phase 25.1-01: lang_used must mirror lang (closes 25-04 §Gap 1)")
+    }
+
+    func testPhase251_EmissionCounterMonotonicAcrossModes() async throws {
+        let probeA = "phase251-emit-plain-\(UUID().uuidString.prefix(8))"
+        let probeB = "phase251-emit-ai-\(UUID().uuidString.prefix(8))"
+        let mock = MockCleanupProvider()
+        mock.returnValue = "ai output \(probeB)"
+        let svc = TextProcessingService(cleanupService: mock)
+
+        _ = await svc.process(text: probeA, language: "en", mode: .plain, confidence: 1.0)
+        _ = await svc.process(text: probeB, language: "en", mode: .aiCleanup, confidence: 1.0)
+
+        try await Task.sleep(nanoseconds: 200_000_000)  // 200ms — both actor flushes
+
+        let dir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Dicticus/DebugRecordings", isDirectory: true)
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        let fileURL = dir.appendingPathComponent("cleanup-\(f.string(from: Date())).jsonl")
+
+        let lines = try String(contentsOf: fileURL, encoding: .utf8)
+            .split(separator: "\n")
+            .map(String.init)
+        let lineA = lines.first { $0.contains(probeA) }
+        let lineB = lines.first { $0.contains(probeB) }
+        let a = try XCTUnwrap(lineA, "Plain-mode probe record missing from JSONL")
+        let b = try XCTUnwrap(lineB, "AI-mode probe record missing from JSONL")
+        guard let dataA = a.data(using: .utf8), let dataB = b.data(using: .utf8),
+              let oa = (try? JSONSerialization.jsonObject(with: dataA)) as? [String: Any],
+              let ob = (try? JSONSerialization.jsonObject(with: dataB)) as? [String: Any] else {
+            return XCTFail("Failed to parse probe JSONL lines as JSON")
+        }
+        guard let ca = oa["emission_counter"] as? Int, let cb = ob["emission_counter"] as? Int else {
+            return XCTFail("emission_counter missing or wrong type in one or both records (closes 25-04 §Gap 2)")
+        }
+        XCTAssertEqual(cb - ca, 1,
+            "Phase 25.1-01: two sequential process() invocations must produce emission_counter delta == 1 (closes 25-04 §Gap 2)")
+    }
     #endif
 }
