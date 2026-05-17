@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Adaptive Cleanup & Stability Post-v2.1
 status: in_progress
-last_updated: "2026-05-16T04:51:17.488Z"
+last_updated: "2026-05-17T15:49:53.705Z"
 progress:
-  total_phases: 13
-  completed_phases: 9
+  total_phases: 14
+  completed_phases: 10
   total_plans: 41
-  completed_plans: 38
-  percent: 93
+  completed_plans: 42
+  percent: 71
 ---
 
 # Project State: Dicticus
@@ -24,17 +24,20 @@ Phase: 25 (ai-cleanup-quality-v3-brand-acronym-recognition) — PAUSED in LIVE-C
 Plan: 3 of 4 shipped to live-test (25-01 matrix, 25-02 logging, 25-03 V16-COMPOSITE + dict). 25-04 capture window is what's running now.
 
 **Wave 1 outcome (2026-05-16):**
+
 - 25-01 SHIPPED: V16 matrix run (259 inferences, seed=42, 53s wall-clock).
 - 25-02 SHIPPED with discovery-driven pivot: plain-mode JSONL emission was already live (TextProcessingService.swift:224 OUTER-scope #if DEBUG_RECORDER block). Plan pivoted to "document + lock with parity tests".
 - 25-01 H8/H9 follow-up (commit 4b93acc): rules-only matrix showed dictionary does ~90% of brand fixing. H9 (rules+expanded dict) aggregate 72, second-best of 9 variants, brand 35→2 and anchor 28→0 with zero LLM cost. Memory: `project_dictionary_dominates_brand_fixing`.
 
 **Wave 2 pivot (2026-05-16):**
+
 - Original plan: 5 tasks (dict expand → V16-COMPOSITE prompt → V17 harness verify → regression tests → formal UAT).
 - User direction: skip harness-verify / tests / formal-UAT. Ship V16-COMPOSITE + dict expansion directly to the running Debug-Recorder app and validate via live capture. Quote: "implement the changes or new prompts directly into the app and we keep the debugging log running and I just test it live".
 - Shipped commits: `0fc3198` (V16-COMPOSITE + Lever 1 dictionary, both files in Shared/), `b17ed32` (pre-existing install-local.sh syntax bug fix).
 - Installed: `/Applications/Dicticus.app`, Debug-Recorder configuration, Developer ID signed (VTWHBCCP36). Verified V16-COMPOSITE prompt live in cleanup-2026-05-16.jsonl at 16:54:03Z.
 
 **Live-capture pause (resume in a few days):**
+
 - Branch: feature/debug-recording-and-cleanup, 13 commits ahead of origin (push deferred by user).
 - Log location: `~/Library/Application Support/Dicticus/DebugRecordings/cleanup-2026-05-DD.jsonl` (one per day). Both plain-mode and AI-mode records interleave; AI-mode records carry full LLM prompt/raw/post-gate alongside the raw ASR.
 - Resume = analyze accumulated logs, decide ship-vs-iterate, write 25-03 + 25-04 SUMMARYs.
@@ -74,6 +77,7 @@ at start of cycle).
 
 - 2026-05-16: Phase 25 added — AI Cleanup Quality v3 (Brand & Acronym Recognition). Scoped from V15 capture-window analysis (see `project_v15_capture_findings` memory). Four-plan structure proposed: 25-01 offline hypothesis matrix in harness, 25-02 plain-mode logging, 25-03 V16 prompt + dictionary feeder, 25-04 capture window v2 + UAT.
 - 2026-05-16 (session pause): Phase 25 Wave 2 deviated from the planned 5-task gating path. V16-COMPOSITE + Lever 1 dictionary shipped directly to /Applications via Debug-Recorder build per user direction. V17 harness verification (T3), regression tests (T4), and formal UAT (T5) skipped; live capture is now the validation path. 25-04 "capture window v2" is what's executing during the multi-day pause.
+- Phase 25.1 inserted after Phase 25: Paper-driven remediation: telemetry parity (lang_used null fix + dual-emission verification), XML output tags, dictionary expansion (own brands), language-isolated prompts, Reparandum/Interregnum/Repair few-shots. Source: research paper + Phase 25-03 defect classes A-E. (URGENT)
 
 ## Next Action
 
