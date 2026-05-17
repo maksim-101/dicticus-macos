@@ -116,6 +116,20 @@ class DictionaryService: ObservableObject {
             "DogChee": "Dockge", "Dog Chee": "Dockge", "dogchee": "Dockge", "dog chee": "Dockge",
             "C Oli": "CLI", "c oli": "CLI",
             "true Nas": "TrueNAS",
+            // Phase 25.1-03 — paper §2.2 lexical priming. Closes 25-03 Class B defects
+            // (own-brand mishearings the LLM correctly leaves alone per §4.2 lexical
+            // fidelity). Each entry cites the JSONL timestamp it closes.
+            "Chema 4 2EB": "Gemma 4 E2B",                 // 2026-05-17 06:02:10
+            "chema 4 2eb": "Gemma 4 E2B",
+            "Chema": "Gemma",                              // partial fallback for "Chema 7B" / "Chema 12B" variants
+            "chema": "Gemma",
+            "Dicticos": "Dicticus",                        // 25-03 Class B exemplar (Dicticus own-brand)
+            "dicticos": "Dicticus",
+            "Olama": "Ollama",                             // 25-03 Class B exemplar
+            "olama": "Ollama",
+            "Tailskill": "Tailscale",                      // 2026-05-17 05:30:23 (existing `tail scale` entry doesn't catch this — single-token mishearing)
+            "tailskill": "Tailscale",
+            "hopath": "homeopath",                         // 25-03 Class B exemplar (medical-context dictation)
         ]
 
         
