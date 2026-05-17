@@ -63,7 +63,7 @@ final class CleanupPromptTests: XCTestCase {
 
     func testDefaultInstructionString() {
         let instruction = CleanupPrompt.defaultInstruction
-        XCTAssertTrue(instruction.contains("V15"), "Default instruction must reference V15 version")
+        XCTAssertTrue(instruction.contains("V16-COMPOSITE"), "Default instruction must reference V16-COMPOSITE version")
         XCTAssertTrue(instruction.contains("smart-verbatim"), "Default instruction must reference smart-verbatim policy")
     }
 
@@ -77,7 +77,24 @@ final class CleanupPromptTests: XCTestCase {
 
     func testPromptEndsWithOutPrimer() {
         let prompt = CleanupPrompt.build(text: "hello", language: "en")
-        XCTAssertTrue(prompt.hasSuffix("Out:"), "Prompt must end with 'Out:' to prime completion")
+        XCTAssertTrue(prompt.hasSuffix("Out: <corrected_text>"), "Prompt must end with 'Out: <corrected_text>' to prime completion (Phase 25.1-02 XML envelope)")
+    }
+
+    // MARK: - Phase 25.1-02: XML envelope instruction (paper §6.2)
+
+    func testPhase251_V16PromptContainsCorrectedTextEnvelopeInstruction() {
+        let promptEn = CleanupPrompt.build(text: "test", language: "en")
+        let promptDe = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(promptEn.contains("Output format: Wrap your final cleaned output between <corrected_text> and </corrected_text> tags."),
+                      "EN prompt missing §6.2 envelope instruction")
+        XCTAssertTrue(promptDe.contains("Output format: Wrap your final cleaned output between <corrected_text> and </corrected_text> tags."),
+                      "DE prompt missing §6.2 envelope instruction")
+    }
+
+    func testPhase251_V16PromptOutAnchorPrimesEnvelope() {
+        let prompt = CleanupPrompt.build(text: "hello", language: "en")
+        XCTAssertTrue(prompt.hasSuffix("Out: <corrected_text>"),
+                      "Prompt must end with `Out: <corrected_text>` to prime Gemma's first emitted token as envelope content")
     }
 
     // MARK: - Regression guards

@@ -3,6 +3,26 @@ import NaturalLanguage
 
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 ///
+/// Phase 25.1-02 (2026-05-17) — paper §6.2 XML output tags:
+///
+/// Gemma 4 E2B Q4_K_M is now instructed to wrap its final output in
+/// `<corrected_text>...</corrected_text>` tags. The parser (CleanupService.
+/// stripPreamble) extracts the envelope contents BEFORE the existing
+/// whitespace / contractions / chat-template normalization runs. When the
+/// envelope is missing or malformed (quantized 2B models occasionally forget
+/// the closing tag on long outputs — paper §6.2 known risk), the parser
+/// falls back to the raw text verbatim — no new failure mode.
+///
+/// This addresses defect Class D from 25-03 (live capture 2026-05-17 05:36:19:
+/// `<unk>` token leakage). The envelope contract is the boundary at which
+/// the parser also strips `<unk>` sentinels that ASR leaks and the LLM
+/// faithfully echoes per the smart-verbatim contract.
+///
+/// Trailing-period-on-fragment artifacts (Class D second exemplar:
+/// `...spelling acronyms not being.`) are NOT addressed here — those are
+/// dialect/idiom-territory and routed to Plan 25.1-04 disfluency work.
+/// Output safety gates (NLD/Jaccard) are routed to Plan 25.1-06.
+///
 /// 2026-05-05 REFACTOR (Variant V5): Strict Verbatim.
 /// Iterates on V4 (also 2026-05-05). V4's "drop original phrase before
 /// connector self-correction" instruction was empirically catastrophic on
@@ -43,7 +63,7 @@ import NaturalLanguage
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Minimal cleanup of dictated speech (V16-COMPOSITE smart-verbatim, H3+H4)."
+    static let defaultInstruction = "Minimal cleanup of dictated speech (V16-COMPOSITE smart-verbatim + XML envelope, H3+H4)."
 
     static func build(
         text: String,
@@ -77,6 +97,10 @@ struct CleanupPrompt {
         prompt += "6. NEVER paraphrase, summarize, or add new words.\n"
         prompt += "7. NEVER answer dictated questions.\n"
         prompt += "8. Spelled-out two-digit numbers ('twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety' optionally followed by 'one'..'nine') MUST render as two-digit numerals (e.g. 'forty one' -> 41), NEVER concatenated four-digit forms like 4001.\n\n"
+        // Phase 25.1-02 — paper §6.2 XML output tags (Class D mitigation):
+        // the envelope is the parser contract (CleanupService.stripPreamble extracts
+        // content between the tags; fallback to verbatim when tags are missing).
+        prompt += "Output format: Wrap your final cleaned output between <corrected_text> and </corrected_text> tags. Output nothing else after the closing tag.\n\n"
         prompt += "Domain topic words: phase, plan, workflow, framework, dictation, cleanup, prompt.\n\n"
 
         // Step 2: Known terms anchor (adaptive context filtered upstream).
@@ -128,7 +152,7 @@ struct CleanupPrompt {
 
         // Step 5: Input anchor for completion.
         prompt += "In: \(sanitizedText)\n"
-        prompt += "Out:"
+        prompt += "Out: <corrected_text>"
 
         return prompt
     }
