@@ -12,7 +12,16 @@ Dicticus.dmg
 # include actual user dictation samples). Local-only working files; not for
 # public distribution. Untracking ONLY hides these from future commits — see
 # git history for previously-published versions.
-.planning/
+.planning/*
+# Exceptions: GSD state files must be tracked so worktree merges don't drop
+# them. Without these, the executor force-adds them with `git add -f` and
+# merges break with confusing "deleted in target" diffs (see Wave 2 recovery
+# note on 2026-05-17, fixed by cherry-pick + manual sync commits).
+# Must use `.planning/*` (not `.planning/`) above — git can't re-include
+# files via `!` if their parent directory is excluded.
+!.planning/ROADMAP.md
+!.planning/STATE.md
+!.planning/MILESTONES.md
 
 # macOS Finder metadata
 .DS_Store
