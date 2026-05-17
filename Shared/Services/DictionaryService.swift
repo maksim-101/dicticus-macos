@@ -178,21 +178,21 @@ class DictionaryService: ObservableObject {
     func apply(to text: String) -> String {
         var result = text
         let sortedKeys = dictionary.keys.sorted { $0.count > $1.count }
-        
+
         for original in sortedKeys {
             guard let metadata = dictionary[original] else { continue }
-            
+
             // \b only works between \w (alphanumeric) and \W (non-alphanumeric).
             // It fails for "Swiss \" because " matches \W.
             // We use lookarounds to simulate word boundaries for any string.
             let escaped = NSRegularExpression.escapedPattern(for: original)
-            
+
             // Pattern: Ensure match is not preceded or followed by an alphanumeric character
             // unless the original string itself starts/ends with one.
             let pattern = "(?<![a-zA-Z0-9])\(escaped)(?![a-zA-Z0-9])"
-            
+
             let options: NSRegularExpression.Options = isCaseSensitive ? [] : [.caseInsensitive]
-            
+
             do {
                 let regex = try NSRegularExpression(pattern: pattern, options: options)
                 let range = NSRange(result.startIndex..<result.endIndex, in: result)
@@ -201,7 +201,68 @@ class DictionaryService: ObservableObject {
                 result = result.replacingOccurrences(of: original, with: metadata.replacement, options: isCaseSensitive ? [] : [.caseInsensitive])
             }
         }
-        
+
+        // Phase 25.1-03: fuzzy second pass after exact-match completes.
+        result = applyFuzzyPass(result)
         return result
+    }
+
+    /// Phase 25.1-03 — paper §2.2 fuzzy-match second pass.
+    ///
+    /// Runs after the exact-match lookaround regex pass in `apply(to:)`. For each
+    /// token of length ≥ 6 in `text`, checks dictionary keys of length ≥ 6
+    /// (single-token only) where `abs(token.count - key.count) <= 2`. If
+    /// `LevenshteinDistance.distance(token.lowercased(), key.lowercased()) <= 2`,
+    /// the token is replaced with the dictionary value.
+    ///
+    /// Length-prefilter ≥ 6 is mandatory: distance-2 matches against short tokens
+    /// (e.g. `the`/`she`) catastrophically false-positive. Multi-word keys are
+    /// skipped — the exact-match regex pass handles those.
+    ///
+    /// Closes 25-03 substring-matching failures (Tailskill ↔ Tailscale was missed
+    /// by the exact-match path because the keys are distinct single tokens). Per
+    /// CONTEXT.md Parakeet implication §4: this is the ONLY pre-LLM brand-
+    /// recognition lever (Parakeet TDT v3 has no `initial_prompt` equivalent).
+    private func applyFuzzyPass(_ text: String) -> String {
+        let candidateKeys = dictionary.keys
+            .filter { $0.count >= 6 && !$0.contains(" ") }
+        if candidateKeys.isEmpty { return text }
+
+        // Walk character by character, collecting word tokens and preserving
+        // all non-word characters (punctuation, whitespace) in their original
+        // positions. Split on whitespace; preserve trailing punctuation per token.
+        var result = ""
+        var current = ""
+        let isWordChar: (Character) -> Bool = { $0.isLetter || $0.isNumber }
+        for ch in text {
+            if isWordChar(ch) {
+                current.append(ch)
+            } else {
+                if !current.isEmpty {
+                    result.append(fuzzyReplaceToken(current, candidates: candidateKeys))
+                    current = ""
+                }
+                result.append(ch)
+            }
+        }
+        if !current.isEmpty {
+            result.append(fuzzyReplaceToken(current, candidates: candidateKeys))
+        }
+        return result
+    }
+
+    private func fuzzyReplaceToken(_ token: String, candidates: [String]) -> String {
+        guard token.count >= 6 else { return token }
+        let lowered = token.lowercased()
+        for key in candidates {
+            guard abs(token.count - key.count) <= 2 else { continue }
+            let keyLowered = key.lowercased()
+            // Skip identity — already handled by exact-match pass.
+            if lowered == keyLowered { return token }
+            if LevenshteinDistance.distance(lowered, keyLowered) <= 2 {
+                return dictionary[key]?.replacement ?? token
+            }
+        }
+        return token
     }
 }
