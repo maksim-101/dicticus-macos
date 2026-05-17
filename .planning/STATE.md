@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Adaptive Cleanup & Stability Post-v2.1
 status: in_progress
-last_updated: "2026-05-17T15:49:53.705Z"
+last_updated: "2026-05-17T18:30:00.000Z"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -79,9 +79,20 @@ at start of cycle).
 - 2026-05-16 (session pause): Phase 25 Wave 2 deviated from the planned 5-task gating path. V16-COMPOSITE + Lever 1 dictionary shipped directly to /Applications via Debug-Recorder build per user direction. V17 harness verification (T3), regression tests (T4), and formal UAT (T5) skipped; live capture is now the validation path. 25-04 "capture window v2" is what's executing during the multi-day pause.
 - Phase 25.1 inserted after Phase 25: Paper-driven remediation: telemetry parity (lang_used null fix + dual-emission verification), XML output tags, dictionary expansion (own brands), language-isolated prompts, Reparandum/Interregnum/Repair few-shots. Source: research paper + Phase 25-03 defect classes A-E. (URGENT)
 
+## Phase 25.1 Progress
+
+- [x] `25.1-01-PLAN.md` — SHIPPED 2026-05-17. Telemetry parity (lang_used + emission_counter).
+- [x] `25.1-02-PLAN.md` — SHIPPED 2026-05-17. XML output tags (extractEnvelopeOrFallback + unk strip).
+- [x] `25.1-03-PLAN.md` — SHIPPED 2026-05-17. Dictionary expansion: 11 Class B entries + applyFuzzyPass (Levenshtein ≤ 2). Commits: 26c9540 (entries + tests), 894976a (fuzzy pass).
+- [ ] `25.1-04-PLAN.md` — PENDING. Disfluency few-shots (paper §3 Reparandum/Interregnum/Repair).
+- [ ] `25.1-05-PLAN.md` — PENDING. Language-isolated German prompt.
+- [ ] `25.1-06-PLAN.md` — PENDING. NLD/Jaccard deterministic gates.
+
+**Key decision (25.1-03):** Levenshtein ≤ 2 fuzzy second pass added to DictionaryService.apply(to:). Length-prefilter ≥ 6 prevents catastrophic false positives on short tokens. Per CONTEXT.md Parakeet §4: dictionary is the ONLY pre-LLM brand-recognition lever; fuzzy pass closes substring-matching failures deferred from 25-03 Lever 1.
+
 ## Next Action
 
-After multi-day pause, resume via /gsd-resume-work. The current capture window is Phase 25 Wave 2 + 25-04 collapsed into one live test against /Applications/Dicticus.app (Debug-Recorder build, V16-COMPOSITE + expanded dictionary) to gather production-like JSONL logs.
+Continue Phase 25.1 with Plan 04 (disfluency few-shots). Plan 04 requires hypothesis matrix in .planning/debug/harness/ before shipping to live-capture. After multi-day pause, resume via /gsd-resume-work. The current capture window is Phase 25 Wave 2 + 25-04 collapsed into one live test against /Applications/Dicticus.app (Debug-Recorder build, V16-COMPOSITE + expanded dictionary) to gather production-like JSONL logs.
 
 1. Locate accumulated logs: `ls ~/Library/Application\ Support/Dicticus/DebugRecordings/cleanup-2026-05-*.jsonl`
 2. Sanity-check V16-COMPOSITE still in the live prompt (one-liner in `.continue-here`).
