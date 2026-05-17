@@ -34,6 +34,16 @@ import Foundation
 /// retention — plain and aiCleanup records interleave in one stream.
 /// Enables Phase 25-04's capture-window v2 to do plain-vs-AI A/B from
 /// production data without a second log path.
+///
+/// Phase 25.1-01 (2026-05-17) — telemetry parity:
+/// The `DebugCleanupRecord` now carries `lang_used` (mirror of `lang`) and
+/// `emission_counter` (DebugRecorder-actor-monotonic per process). Both close
+/// the 25-04 telemetry gaps (`jq` for `lang_used` returned null because the
+/// field didn't exist; plain-mode emission near-zero couldn't be distinguished
+/// from "user dictates AI mode only" without a monotonic counter). No
+/// detection-layer change: TranscriptionService.detectLanguage (D-13) is
+/// still the sole source — Parakeet TDT v3 emits no language code per
+/// `macOS/Dicticus/Services/TranscriptionService.swift:395`.
 @MainActor
 class TextProcessingService: ObservableObject {
 
@@ -309,11 +319,13 @@ class TextProcessingService: ObservableObject {
             return raw.text.count < 5 && dbgRawText.count > 30
         }()
         let veryShort: Bool = processedText.count < 5 && dbgRawText.count > 30
+        let emissionCounter = await DebugRecorder.shared.nextEmissionCounter()
 
         let record = DebugCleanupRecord(
             ts: DebugRecorder.iso8601Timestamp(),
             session_id: UUID().uuidString,
             lang: language,
+            lang_used: language,    // Phase 25.1-01: alias of `lang` so jq queries against either field name produce correct results (closes 25-04 §Gap 1)
             mode: mode.rawValue,
             model: DebugCleanupRecord.ModelInfo(
                 name: cleanupTrace?.modelName ?? "n/a",
@@ -341,7 +353,8 @@ class TextProcessingService: ObservableObject {
             anomaly: DebugCleanupRecord.Anomaly(
                 degenerate_collapse: degenerateCollapse,
                 very_short_output: veryShort
-            )
+            ),
+            emission_counter: emissionCounter    // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
         )
         await DebugRecorder.shared.record(record)
         #endif

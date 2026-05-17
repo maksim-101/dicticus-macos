@@ -23,12 +23,14 @@ public struct DebugCleanupRecord: Codable, Sendable {
     public let ts: String
     public let session_id: String
     public let lang: String
+    public let lang_used: String            // Phase 25.1-01: alias of `lang` so jq queries against either field name produce correct results (closes 25-04 §Gap 1)
     public let mode: String
     public let model: ModelInfo
     public let sampler: SamplerInfo
     public let steps: Steps
     public let dictionary_context_keys: [String]
     public let anomaly: Anomaly
+    public let emission_counter: Int        // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
 
     public struct ModelInfo: Codable, Sendable {
         public let name: String
@@ -92,6 +94,7 @@ public actor DebugRecorder {
     private let directoryURL: URL
     private let retentionDays: Int = 14
     private var hasPurgedThisLaunch = false
+    private var emissionCounter: Int = 0
 
     private init() {
         let fm = FileManager.default
@@ -106,6 +109,11 @@ public actor DebugRecorder {
         self.directoryURL = appSupport
             .appendingPathComponent("Dicticus", isDirectory: true)
             .appendingPathComponent("DebugRecordings", isDirectory: true)
+    }
+
+    public func nextEmissionCounter() -> Int {
+        emissionCounter += 1
+        return emissionCounter
     }
 
     public func record(_ rec: DebugCleanupRecord) {
