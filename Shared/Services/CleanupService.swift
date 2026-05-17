@@ -494,9 +494,18 @@ class CleanupService: ObservableObject, CleanupProvider {
     /// Gemma 3 1B may prepend conversational text despite explicit "output ONLY"
     /// instructions. This strips known patterns and normalizes whitespace from
     /// token-by-token detokenization (leading spaces per token → double spaces).
+    ///
+    /// Phase 25.1-02: envelope extraction runs first (paper §6.2 Class D mitigation).
     static func stripPreamble(_ text: String) -> String {
+        // Phase 25.1-02 — paper §6.2 XML envelope extraction (Class D mitigation).
+        // When both <corrected_text> and </corrected_text> tags are present, extract
+        // contents and apply <unk> stripping. Falls back to the original input when
+        // either tag is missing (quantized models drop the closing tag on long outputs
+        // — paper §6.2 documented risk). Existing pipeline then normalizes `working`.
+        let working = extractEnvelopeOrFallback(text)
+
         // Step 0: Replace all Unicode whitespace variants with ASCII space.
-        var result = text.unicodeScalars.reduce(into: "") { str, scalar in
+        var result = working.unicodeScalars.reduce(into: "") { str, scalar in
             if scalar.value == 0 {
                 return
             } else if scalar.properties.isWhitespace && scalar != "\n" {
@@ -553,6 +562,27 @@ class CleanupService: ObservableObject, CleanupProvider {
         }
 
         return result
+    }
+
+    /// Phase 25.1-02 — extract `<corrected_text>...</corrected_text>` envelope
+    /// contents AND strip `<unk>` ASR-leak sentinels. Falls back to the input
+    /// verbatim when either tag is missing or the regex fails. Pure function.
+    private static func extractEnvelopeOrFallback(_ text: String) -> String {
+        let pattern = #"(?s)<corrected_text>(.*?)</corrected_text>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return text
+        }
+        let nsRange = NSRange(text.startIndex..<text.endIndex, in: text)
+        guard let match = regex.firstMatch(in: text, options: [], range: nsRange),
+              match.numberOfRanges >= 2,
+              let contentRange = Range(match.range(at: 1), in: text) else {
+            return text
+        }
+        var inner = String(text[contentRange])
+        // Class D mitigation: strip <unk> ASR sentinels (case-sensitive — only the
+        // lowercase ASR-emitted form, NOT any user-typed <UNK> or similar).
+        inner = inner.replacingOccurrences(of: "<unk>", with: "")
+        return inner
     }
 
     // MARK: - Resource deallocation

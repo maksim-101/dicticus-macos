@@ -235,6 +235,58 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(service.state, .idle, "State must return to idle after cleanup")
     }
 
+    // MARK: - Phase 25.1-02: XML envelope extraction (paper §6.2, Class D mitigation)
+    //
+    // Locks defect class D from 25-03-SUMMARY (2026-05-17 05:36:19 <unk>updating
+    // leakage) and the envelope contract Task 1 added to CleanupPrompt.
+
+    func testPhase251_StripPreambleExtractsCorrectedTextContent() {
+        let model = "<corrected_text>Hello, world.</corrected_text>"
+        XCTAssertEqual(CleanupService.stripPreamble(model), "Hello, world.")
+    }
+
+    func testPhase251_StripPreambleHandlesMultilineEnvelope() {
+        let model = "<corrected_text>Line one.\nLine two.</corrected_text>"
+        let out = CleanupService.stripPreamble(model)
+        XCTAssertTrue(out.contains("Line one."))
+        XCTAssertTrue(out.contains("Line two."))
+    }
+
+    func testPhase251_StripPreambleFallsBackWhenOpeningTagMissing() {
+        // Model forgot opening tag — fall back to original text, existing pipeline
+        // still normalizes whitespace.
+        let model = "Hello, world.</corrected_text>"
+        let out = CleanupService.stripPreamble(model)
+        // The closing tag is NOT removed by the fallback path — it passes
+        // through verbatim. This is the documented fallback behavior; Plan 06's
+        // NLD/Jaccard gate is the safety net that catches such residue.
+        XCTAssertTrue(out.contains("Hello, world."))
+    }
+
+    func testPhase251_StripPreambleFallsBackWhenClosingTagMissing() {
+        let model = "<corrected_text>Hello, world."
+        let out = CleanupService.stripPreamble(model)
+        XCTAssertTrue(out.contains("Hello, world."))
+    }
+
+    func testPhase251_StripPreambleRemovesUnkTokenInsideEnvelope() {
+        // Locks 25-03 Class D exemplar (2026-05-17 05:36:19):
+        //   raw ASR:  `If option One means that it's only <unk>updating to stable versions`
+        //   LLM out:  `If option one means that it's only <unk>updating to stable versions`
+        //   expected: `If option one means that it's only updating to stable versions`
+        let model = "<corrected_text>If option one means that it's only <unk>updating to stable versions</corrected_text>"
+        let out = CleanupService.stripPreamble(model)
+        XCTAssertFalse(out.contains("<unk>"), "Class D mitigation must strip <unk> ASR sentinels")
+        XCTAssertTrue(out.contains("only updating to stable versions"))
+    }
+
+    func testPhase251_StripPreambleIdempotent() {
+        let model = "<corrected_text>Hello, world.</corrected_text>"
+        let once = CleanupService.stripPreamble(model)
+        let twice = CleanupService.stripPreamble(once)
+        XCTAssertEqual(once, twice, "stripPreamble must be idempotent on post-envelope output")
+    }
+
     // MARK: - Phase 20.08 dialect-suppression gate (R1, R2, R3)
 
     /// R1: Gate must DEMOTE when LLM injects a Swiss dialect form that was
