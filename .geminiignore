@@ -1,0 +1,16 @@
+macOS/build/
+macOS/build-verify/
+.env
+.env.build
+Dicticus.dmg
+*.dmg
+.DS_Store
+**/.DS_Store
+.claude/
+.remember/logs/
+.remember/tmp/
+DebugRecordings/
+node_modules/
+.next/
+dist/
+.swiftpm/
