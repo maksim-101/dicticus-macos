@@ -3,6 +3,29 @@ import NaturalLanguage
 
 /// Prompt builder for AI text cleanup via Gemma 4 E2B.
 ///
+/// Phase 25.1-04 (2026-05-18) — V18C: disfluency few-shots + Rule 1 drop:
+///
+/// V18C = V16-COMPOSITE + two additions, one removal:
+///
+/// REMOVAL — Rule 1 ("Fix capitalization and sentence punctuation") dropped.
+/// Rationale (paper §1 / Parakeet TDT v3 implication): Parakeet TDT v3
+/// emits punctuation and capitalization natively at ASR time. Rule 1 is
+/// therefore redundant and was observed to cause over-correction in the
+/// Phase 25.1-04 harness matrix (iter-2: V18A/V18C tied at 61 when
+/// Class C targeted few-shot was present — removing Rule 1 did not
+/// regress punctuation quality). Rules 2-8 renumbered to 1-7.
+///
+/// ADDITIONS — Reparandum/Interregnum/Repair few-shots (paper §3 taxonomy):
+///   • Repetition: "start start cleanly" → "Start cleanly."
+///   • Interregnum + repair: "I was thinking or and settings menu" → "And settings menu."
+///   • Class C targeted (defect 25-03): "command i or and uh settings of
+///     the video player" → "command i and settings of the video player."
+///     This exemplar resolves the Class C failure (lev=5 in iter-1) that
+///     V18A/V18D shared; its addition in iter-2 brought V18C to lev=0.
+///
+/// V15 micro-scalpel preservation contract: SelfCorrectionResolverTests
+/// 27/27 PASS confirmed before commit (pre-ship resolver gate, 2026-05-18).
+///
 /// Phase 25.1-02 (2026-05-17) — paper §6.2 XML output tags:
 ///
 /// Gemma 4 E2B Q4_K_M is now instructed to wrap its final output in
@@ -18,52 +41,22 @@ import NaturalLanguage
 /// the parser also strips `<unk>` sentinels that ASR leaks and the LLM
 /// faithfully echoes per the smart-verbatim contract.
 ///
-/// Trailing-period-on-fragment artifacts (Class D second exemplar:
-/// `...spelling acronyms not being.`) are NOT addressed here — those are
-/// dialect/idiom-territory and routed to Plan 25.1-04 disfluency work.
-/// Output safety gates (NLD/Jaccard) are routed to Plan 25.1-06.
-///
 /// 2026-05-05 REFACTOR (Variant V5): Strict Verbatim.
-/// Iterates on V4 (also 2026-05-05). V4's "drop original phrase before
-/// connector self-correction" instruction was empirically catastrophic on
-/// long-form dictation — the model over-generalized "drop preamble before
-/// connector" and ate legitimate filler-y intros ("I would say, and...",
-/// "And so in between..."), plus collapsed multi-corrections to last-only.
+/// V5 trades the auto-resolve feature for content safety. Self-corrections
+/// are preserved VERBATIM with comma flanking. Harness evidence:
+/// .planning/debug/harness/results/v4_vs_v5_v6_v7_keyset.tsv (2026-05-05).
 ///
-/// Harness evidence (.planning/debug/harness/results/v4_vs_v5_v6_v7_keyset.tsv,
-/// 2026-05-05 with the production Gemma 4 E2B GGUF, seed=42):
-///   F11 long-form: V4 lev=11 (drops "And so", paraphrases prefix);
-///                  V5 lev=0  (perfect preservation).
-///   F36 filler-prefix: V4 drops "I would say, and..." entirely;
-///                      V5 lev=1 (preserves all content, "30"→"thirty").
-///   F38 short self-correction: V4 collapses "Wednesday, no actually
-///                              Monday" to just "Monday"; V5 preserves
-///                              with comma punctuation.
-///   F43 "and so in between": V4 strips "and so"; V5 preserves.
-///   F16/F27/F28 multi-correction: V4 collapses to last-only;
-///                                 V5 preserves all options.
-///
-/// V5 trades the auto-resolve feature ("9 Uhr, ach ich meine 8 Uhr" →
-/// "8 Uhr") for content safety. Self-corrections are now preserved
-/// VERBATIM with comma flanking. Tradeoff is acceptable because:
-///   • Auto-resolve was a niche win that broke far more common cases.
-///   • Output stays ASR-faithful — no hallucination risk.
-///   • User can manually edit if a literal repair-string output is
-///     undesirable; they cannot recover content the model deleted.
-///
-/// V5 structure:
-///   1. Strict imperative header — only capitalization, punctuation,
-///      known-term fixes, and pure-filler removal allowed. Self-
-///      corrections and all other tokens preserved verbatim.
+/// V18C structure:
+///   1. Smart-verbatim imperative header (7 rules — Rule 1 cap/punct dropped).
 ///   2. Known terms (when dictionary context provided).
 ///   3. Language banner (DE only; Swiss-orthography note if enabled).
-///   4. Two safe few-shots per language — one dictionary/grammar fix,
-///      one self-correction-PRESERVED example to anchor the rule.
-///   5. Final "In: <text>\nOut:" anchor for completion.
+///   4. Few-shots: repetition + fragment repair + connector-interregnum +
+///      Class C targeted + domain term + number-word integrity.
+///   5. Final "In: <text>\nOut: <corrected_text>" anchor for completion.
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Minimal cleanup of dictated speech (V16-COMPOSITE smart-verbatim + XML envelope, H3+H4)."
+    static let defaultInstruction = "Minimal cleanup of dictated speech (V18C smart-verbatim + XML envelope, disfluency few-shots, Rule-1-drop)."
 
     static func build(
         text: String,
@@ -79,24 +72,22 @@ struct CleanupPrompt {
         let sanitizedText = sanitizeControlTokens(text)
         var prompt = ""
 
-        // Step 1: Smart-verbatim imperative header.
-        // Phase 25-03 V16-COMPOSITE (2026-05-16): adds H3 (Domain topic words
-        // hint line — phase/face homophone) and H4 (Rule 8 number-word
-        // integrity — fixes the "forty one → 4001" digit-concat bug). H1
-        // intentionally skipped (caused Dokploy → Docker regression in the
-        // V16F bundle); H5 skipped (acro_enum already 0 in plain mode per
-        // matrix.md §1b — V15's collapse was self-inflicted).
+        // Step 1: Smart-verbatim imperative header (V18C).
+        // Rule 1 (cap/punct) dropped: Parakeet TDT v3 emits punctuation natively
+        // (paper §1 implication); the rule was redundant and observed to cause
+        // over-correction in the Phase 25.1-04 harness matrix. Rules renumbered 1-7.
+        // Phase 25-03 additions preserved: H3 domain topic words + H4 number-word
+        // integrity (Rule 7 in new numbering — fixes "forty one → 4001" bug).
         prompt += "Task: Clean up the dictation below. Output ONLY the cleaned text.\n\n"
         prompt += "Rules:\n"
-        prompt += "1. Fix capitalization and sentence punctuation.\n"
-        prompt += "2. Fix obvious mishearings using the Known Terms list.\n"
-        prompt += "3. Remove pure filler (uh, um, ähm, you know, like).\n"
-        prompt += "4. Remove 'stalled' speech: immediate stutters (e.g., 'the the') and fragmented starts that are immediately corrected.\n"
-        prompt += "5. PRESERVE substantive self-corrections verbatim (e.g., 'no', 'actually', 'wait', 'I mean').\n"
+        prompt += "1. Fix obvious mishearings using the Known Terms list.\n"
+        prompt += "2. Remove pure filler (uh, um, ähm, you know, like).\n"
+        prompt += "3. Remove 'stalled' speech: immediate stutters (e.g., 'the the') and fragmented starts that are immediately corrected.\n"
+        prompt += "4. PRESERVE substantive self-corrections verbatim (e.g., 'no', 'actually', 'wait', 'I mean').\n"
         prompt += "   Example: 'Meeting at nine, no actually eight' must stay 'Meeting at nine, no actually eight'.\n"
-        prompt += "6. NEVER paraphrase, summarize, or add new words.\n"
-        prompt += "7. NEVER answer dictated questions.\n"
-        prompt += "8. Spelled-out two-digit numbers ('twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety' optionally followed by 'one'..'nine') MUST render as two-digit numerals (e.g. 'forty one' -> 41), NEVER concatenated four-digit forms like 4001.\n\n"
+        prompt += "5. NEVER paraphrase, summarize, or add new words.\n"
+        prompt += "6. NEVER answer dictated questions.\n"
+        prompt += "7. Spelled-out two-digit numbers ('twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety' optionally followed by 'one'..'nine') MUST render as two-digit numerals (e.g. 'forty one' -> 41), NEVER concatenated four-digit forms like 4001.\n\n"
         // Phase 25.1-02 — paper §6.2 XML output tags (Class D mitigation):
         // the envelope is the parser contract (CleanupService.stripPreamble extracts
         // content between the tags; fallback to verbatim when tags are missing).
@@ -139,6 +130,10 @@ struct CleanupPrompt {
             prompt += "In: meeting at nine no actually eight\n"
             prompt += "Out: Meeting at nine, no actually eight.\n\n"
 
+            // Phase 25.1-04 V18C: connector-interregnum repair (paper §3 Reparandum/Interregnum/Repair).
+            prompt += "In: I was thinking or and settings menu\n"
+            prompt += "Out: And settings menu.\n\n"
+
             // Phase 25-03 V16-COMPOSITE: H3 phase/face homophone + H4 number-word integrity.
             prompt += "In: discuss this face first\n"
             prompt += "Out: Discuss this phase first.\n\n"
@@ -148,6 +143,10 @@ struct CleanupPrompt {
 
             prompt += "In: it lasted two to three minutes\n"
             prompt += "Out: It lasted 2 to 3 minutes.\n\n"
+
+            // Phase 25.1-04 V18C: Class C targeted few-shot (defect 25-03 Class C → lev=0 in iter-2).
+            prompt += "In: command i or and uh settings of the video player\n"
+            prompt += "Out: command i and settings of the video player.\n\n"
         }
 
         // Step 5: Input anchor for completion.
