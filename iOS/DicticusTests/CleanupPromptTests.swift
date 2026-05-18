@@ -63,7 +63,7 @@ final class CleanupPromptTests: XCTestCase {
 
     func testDefaultInstructionString() {
         let instruction = CleanupPrompt.defaultInstruction
-        XCTAssertTrue(instruction.contains("V16-COMPOSITE"), "Default instruction must reference V16-COMPOSITE version")
+        XCTAssertTrue(instruction.contains("V18C"), "Default instruction must reference V18C version (Phase 25.1-04 winner)")
         XCTAssertTrue(instruction.contains("smart-verbatim"), "Default instruction must reference smart-verbatim policy")
     }
 
@@ -78,6 +78,36 @@ final class CleanupPromptTests: XCTestCase {
     func testPromptEndsWithOutPrimer() {
         let prompt = CleanupPrompt.build(text: "hello", language: "en")
         XCTAssertTrue(prompt.hasSuffix("Out: <corrected_text>"), "Prompt must end with 'Out: <corrected_text>' to prime completion (Phase 25.1-02 XML envelope)")
+    }
+
+    // MARK: - Phase 25.1-04: V18C Rule 1 drop + disfluency few-shots
+
+    func testPhase251_V18C_DropsRule1_PunctuationStillCorrect() {
+        // Rule 1 ("Fix capitalization and sentence punctuation") is dropped in V18C.
+        // Parakeet TDT v3 emits punctuation natively (paper §1); the rule was redundant.
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertFalse(
+            prompt.contains("Fix capitalization and sentence punctuation"),
+            "V18C must NOT contain Rule 1 cap/punct directive — Parakeet emits punctuation natively"
+        )
+        // Punctuation is demonstrated via few-shots (e.g. "Start cleanly." with period).
+        XCTAssertTrue(
+            prompt.contains("Out: Start cleanly."),
+            "Punctuation correctness still demonstrated via few-shot output"
+        )
+    }
+
+    func testPhase251_V18C_ResolvesClassCDisfluency() {
+        // Class C targeted few-shot (defect 25-03): lev=5 in iter-1, lev=0 in iter-2.
+        let prompt = CleanupPrompt.build(text: "command i or and uh settings of the video player", language: "en")
+        XCTAssertTrue(
+            prompt.contains("In: command i or and uh settings of the video player"),
+            "Class C exemplar must be present as few-shot In: anchor"
+        )
+        XCTAssertTrue(
+            prompt.contains("Out: command i and settings of the video player."),
+            "Class C exemplar output must be present as few-shot Out: anchor"
+        )
     }
 
     // MARK: - Regression guards
