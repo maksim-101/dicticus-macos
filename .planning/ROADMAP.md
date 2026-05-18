@@ -259,12 +259,12 @@ Plans:
 **Goal:** Apply the "Enhancing Local Dictation AI Cleanup" research paper's recommendations to close the 5 defect classes (A–E) and 2 telemetry gaps surfaced by Phase 25's live-capture window. Foundation-first dependency order: telemetry parity → XML envelope → dictionary expansion → English disfluency few-shots → German language-isolated prompt → NLD/Jaccard safety-net gates. Plans 04 + 05 use mandatory pre-build hypothesis matrices (`.planning/debug/harness/`) before shipping; Plans 01/02/03/06 are deterministic regression-net work.
 **Requirements**: telemetry parity (paper §1.1), XML output tags (paper §6.2), dictionary expansion (paper §2.2), disfluency taxonomy (paper §3), language-isolated prompts (paper §5), NLD/Jaccard gates (paper §7)
 **Depends on:** Phase 25
-**Plans:** 3/6 plans executed
+**Plans:** 4/6 plans executed
 
 Plans:
 - [x] 25.1-01-PLAN.md — Telemetry parity: add `lang_used` + `emission_counter` to DebugCleanupRecord; close 25-04 telemetry gaps (paper §1.1) **SHIPPED**
 - [x] 25.1-02-PLAN.md — XML output tags: V16-COMPOSITE prompt instructs `<corrected_text>` envelope; CleanupService.stripPreamble extracts + falls back; Class D `<unk>` strip (paper §6.2) **SHIPPED**
 - [x] 25.1-03-PLAN.md — Dictionary expansion: 11 Class B entries + applyFuzzyPass (Levenshtein ≤ 2 for keys ≥ 6 chars); 255/255 macOS tests green (paper §2.2, Parakeet implication §4) **SHIPPED**
-- [ ] 25.1-04-PLAN.md — Disfluency few-shots: V18 hypothesis matrix (V18A/B/C/D) → V18-winner ships to V16-COMPOSITE; addresses Class C (paper §3 Reparandum/Interregnum/Repair)
+- [x] 25.1-04-PLAN.md — Disfluency few-shots: V18C winner via 2-iteration matrix (V18C drops Rule 1 per Parakeet §1 hypothesis + adds Class C targeted few-shot). 80/80 tests pass including resolver gate 27/27 (paper §3 Reparandum/Interregnum/Repair) **SHIPPED**
 - [ ] 25.1-05-PLAN.md — Language-isolated prompts: V19 hypothesis matrix (V19A/B/C ± Swiss) → V19-winner ships German branch; depends on 25.1-01 lang_used + 25.1-04 V18 (paper §5)
 - [ ] 25.1-06-PLAN.md — NLD/Jaccard deterministic gates: JaccardSimilarity utility + gateLLMNLDJaccard combined safety-net catching Class A factual hallucinations + Class E stylistic injection (paper §7)

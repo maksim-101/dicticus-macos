@@ -84,11 +84,13 @@ at start of cycle).
 - [x] `25.1-01-PLAN.md` — SHIPPED 2026-05-17. Telemetry parity (lang_used + emission_counter).
 - [x] `25.1-02-PLAN.md` — SHIPPED 2026-05-17. XML output tags (extractEnvelopeOrFallback + unk strip).
 - [x] `25.1-03-PLAN.md` — SHIPPED 2026-05-17. Dictionary expansion: 11 Class B entries + applyFuzzyPass (Levenshtein ≤ 2). Commits: 26c9540 (entries + tests), 894976a (fuzzy pass).
-- [ ] `25.1-04-PLAN.md` — PENDING. Disfluency few-shots (paper §3 Reparandum/Interregnum/Repair).
+- [x] `25.1-04-PLAN.md` — SHIPPED 2026-05-18. V18C: Rule 1 drop + Class C targeted few-shot. SelfCorrectionResolverTests 27/27 PASS. Commits: 0b3308d (CleanupPrompt), cae00d4 (tests).
 - [ ] `25.1-05-PLAN.md` — PENDING. Language-isolated German prompt.
 - [ ] `25.1-06-PLAN.md` — PENDING. NLD/Jaccard deterministic gates.
 
 **Key decision (25.1-03):** Levenshtein ≤ 2 fuzzy second pass added to DictionaryService.apply(to:). Length-prefilter ≥ 6 prevents catastrophic false positives on short tokens. Per CONTEXT.md Parakeet §4: dictionary is the ONLY pre-LLM brand-recognition lever; fuzzy pass closes substring-matching failures deferred from 25-03 Lever 1.
+
+**Key decision (25.1-04):** V18C selected (Rule-1-drop + Class C targeted few-shot). Parakeet TDT v3 emits punctuation natively (paper §1) — Rule 1 was redundant. V18D disqualified despite tying V18C at lev=61: idiom guard broke P25b-idiom-02 (empty output). V15 micro-scalpel contract maintained: SelfCorrectionResolverTests 27/27 PASS pre- and post-ship.
 
 ## Next Action
 
