@@ -109,17 +109,65 @@ struct CleanupPrompt {
 
         // Step 3 + 4: Language banner + safe few-shots.
         if language == "de" {
+            // Phase 25.1-05 (2026-05-19) — paper §5 language isolation:
+            //
+            // V19C winner (see .planning/debug/harness/results/v19_matrix.md §4).
+            // German branch rewritten natively per paper §5.2. Addresses paper §5.1
+            // language drift: quantized 2B models drift to English reasoning when the
+            // prompt mixes English meta-instructions and German content. Native German
+            // formulation "locks" the linguistic frame.
+            //
+            // V19 matrix results (18 German fixtures, seed=42):
+            //   V19C non-Swiss aggregate lev: 444 vs V19A baseline 1469 (69% improvement).
+            //   Gate 1 (agg ≤ V19A): PASS. Gate 2 (V2 lev=0 on P25b-de-v2-01): PASS.
+            //   Gate 3 (compound lev=0 on P25b-de-compound-01): PASS.
+            //   Gate 4 (Swiss lev=0): FAIL — model capability boundary; ß→ss is
+            //   DictionaryService responsibility. Banner is linguistic signal only.
+            //
+            // V15 micro-scalpel German contract preserved: selfcorr-01/02/03 all lev=0.
+            // Regeln (auf Deutsch): 7 rules natively formulated. Explicit V2-positioning
+            // and compound-noun few-shots per paper §5.2 (V19C over V19B).
+            //
+            // Routes via the existing dispatcher at this line (`if language == "de"`)
+            // using the `language` arg from TextProcessingService.process(...). Plan
+            // 25.1-01 added the `lang_used` schema field so future telemetry can prove
+            // the dispatcher routed to the German variant on de input.
+            //
+            // Swiss German: `useSwissGerman=true` triggers the `(Schweizer Orthographie:
+            // ss statt ß.)` banner per `feedback_swiss_german_default`. Runtime ß→ss
+            // conversion is handled by DictionaryService post-processing.
+            //
+            // Cross-platform parity: Shared/, so macOS + iOS get the change together.
             let orthography = swissEnabled ? " (Schweizer Orthographie: ss statt ß.)" : ""
             prompt += "Sprache: Standard-Hochdeutsch.\(orthography)\n\n"
 
-            prompt += "In: das das ist gut\n"
-            prompt += "Out: Das ist gut.\n\n"
+            prompt += "Regeln (auf Deutsch):\n"
+            prompt += "- Korrigiere Großschreibung und Satzzeichen.\n"
+            prompt += "- Entferne reine Füllwörter (äh, ähm, also, sozusagen).\n"
+            prompt += "- Entferne Stotterer und abgebrochene Neuanfänge (z.B. \"das das\" → \"das\").\n"
+            prompt += "- Bewahre inhaltliche Selbstkorrekturen wörtlich (z.B. \"nein\", \"eigentlich\", \"ich meine\", \"warte\").\n"
+            prompt += "- Korrigiere Kasusübereinstimmung (z.B. \"der Auto\" → \"das Auto\").\n"
+            prompt += "- Setze das Verb an die richtige Stelle (V2-Stellung im Hauptsatz).\n"
+            prompt += "- Füge getrennt gesprochene Komposita zusammen (z.B. \"Kranken Haus\" → \"Krankenhaus\").\n"
+            prompt += "\n"
 
-            prompt += "In: wir haben gestern oder wir hatten am montag besprochen dass wir das machen\n"
+            prompt += "In: das das Meeting ist um fünf\n"
+            prompt += "Out: Das Meeting ist um fünf.\n\n"
+
+            prompt += "In: zwei nein drei Tickets bitte\n"
+            prompt += "Out: 3 Tickets bitte.\n\n"
+
+            prompt += "In: wir hatten am Montag besprochen dass wir das machen\n"
             prompt += "Out: Wir hatten am Montag besprochen, dass wir das machen.\n\n"
 
             prompt += "In: meeting um neun nein eigentlich um acht\n"
             prompt += "Out: Meeting um neun, nein eigentlich um acht.\n\n"
+
+            prompt += "In: Ich möchte machen ein Termin\n"
+            prompt += "Out: Ich möchte einen Termin machen.\n\n"
+
+            prompt += "In: Wir gehen ins Kranken Haus\n"
+            prompt += "Out: Wir gehen ins Krankenhaus.\n\n"
         } else {
             prompt += "In: start start cleanly\n"
             prompt += "Out: Start cleanly.\n\n"

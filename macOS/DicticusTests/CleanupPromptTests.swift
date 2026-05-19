@@ -32,10 +32,11 @@ final class CleanupPromptTests: XCTestCase {
 
     func testGermanFewShotsPresent() {
         let prompt = CleanupPrompt.build(text: "test", language: "de")
-        
-        XCTAssertTrue(prompt.contains("In: das das ist gut"), "Must contain German stutter example")
-        XCTAssertTrue(prompt.contains("In: wir haben gestern oder wir hatten am montag"), "Must contain German fragment example")
-        XCTAssertTrue(prompt.contains("In: meeting um neun nein eigentlich um acht"), "Must contain German repair example")
+
+        // Phase 25.1-05: V19C German branch — updated few-shots (V15 stutter replaced by V19C native block).
+        XCTAssertTrue(prompt.contains("In: das das Meeting ist um fünf"), "Must contain German repetition-disfluency example (V19C)")
+        XCTAssertTrue(prompt.contains("In: wir hatten am Montag besprochen dass wir das machen"), "Must contain German fragment example (V19C)")
+        XCTAssertTrue(prompt.contains("In: meeting um neun nein eigentlich um acht"), "Must contain German self-correction example (V15 anchor preserved)")
     }
 
     // MARK: - Dictionary context
@@ -125,6 +126,71 @@ final class CleanupPromptTests: XCTestCase {
             prompt.contains("Out: command i and settings of the video player."),
             "Class C exemplar output must be present as few-shot Out: anchor"
         )
+    }
+
+    // MARK: - Phase 25.1-05: V19C German language isolation (paper §5)
+
+    func testPhase251_V19GermanBannerPresent() {
+        let p = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: false)
+        XCTAssertTrue(p.contains("Sprache: Standard-Hochdeutsch."),
+                      "V19C German banner must be present")
+        XCTAssertFalse(p.contains("Schweizer Orthographie"),
+                       "Swiss banner must be absent when useSwissGerman=false")
+    }
+
+    func testPhase251_V19SwissOrthographyBannerWhenEnabled() {
+        let p = CleanupPrompt.build(text: "x", language: "de", useSwissGerman: true)
+        XCTAssertTrue(p.contains("Schweizer Orthographie: ss statt ß."),
+                      "Swiss orthography banner must appear when useSwissGerman=true")
+    }
+
+    func testPhase251_V19GermanNativeRulesPresent() {
+        // V19C uses native German rules (paper §5.2 language isolation).
+        let p = CleanupPrompt.build(text: "x", language: "de")
+        XCTAssertTrue(p.contains("Regeln (auf Deutsch):"),
+                      "V19C must contain native German rules block")
+        XCTAssertTrue(p.contains("V2-Stellung im Hauptsatz"),
+                      "V19C must contain V2-positioning rule")
+        XCTAssertTrue(p.contains("Komposita"),
+                      "V19C must contain compound-noun rule")
+    }
+
+    func testPhase251_V19GermanV2PositioningFewShot() {
+        // V19C explicit V2-positioning few-shot (paper §5.2 exemplar, Gate 2 fixture).
+        let p = CleanupPrompt.build(text: "x", language: "de")
+        XCTAssertTrue(p.contains("In: Ich möchte machen ein Termin"),
+                      "V19C must contain V2 positioning few-shot input")
+        XCTAssertTrue(p.contains("Out: Ich möchte einen Termin machen."),
+                      "V19C must contain V2 positioning few-shot output")
+    }
+
+    func testPhase251_V19GermanCompoundNounFewShot() {
+        // V19C explicit compound-noun reconnection few-shot (paper §5.2, Gate 3 fixture).
+        let p = CleanupPrompt.build(text: "x", language: "de")
+        XCTAssertTrue(p.contains("In: Wir gehen ins Kranken Haus"),
+                      "V19C must contain compound-noun few-shot input")
+        XCTAssertTrue(p.contains("Out: Wir gehen ins Krankenhaus."),
+                      "V19C must contain compound-noun few-shot output")
+    }
+
+    func testPhase251_V19GermanSelfCorrectionPreserveFewShot() {
+        // V15 German micro-scalpel anchor must NOT be deleted by V19C (plan guardrail).
+        let p = CleanupPrompt.build(text: "x", language: "de")
+        XCTAssertTrue(p.contains("meeting um neun nein eigentlich um acht"),
+                      "V15 German micro-scalpel few-shot input must be preserved in V19C")
+        XCTAssertTrue(p.contains("Meeting um neun, nein eigentlich um acht."),
+                      "V15 German micro-scalpel few-shot output must be preserved in V19C")
+    }
+
+    func testPhase251_V19EnglishBranchUnchanged() {
+        // V19C only touches the de branch. English few-shots from V18C must still be present.
+        let p = CleanupPrompt.build(text: "x", language: "en")
+        XCTAssertTrue(p.contains("In: command i or and uh settings of the video player"),
+                      "V18C Class C English few-shot must be preserved by V19C (English branch unchanged)")
+        XCTAssertTrue(p.contains("In: start start cleanly"),
+                      "V18C English repetition few-shot must be preserved by V19C")
+        XCTAssertFalse(p.contains("Sprache: Standard-Hochdeutsch"),
+                       "German banner must NOT appear in English branch")
     }
 
     // MARK: - Regression guards
