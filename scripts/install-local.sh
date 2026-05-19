@@ -25,6 +25,7 @@ CANONICAL_APP="/Applications/Dicticus.app"
 BUILD_APP="$PROJECT_DIR/build/Build/Products/Release/Dicticus.app"
 RECORDER_APP="$PROJECT_DIR/build/Build/Products/Debug-Recorder/Dicticus.app"
 SIGNING_ID="B9CA1FF8209D9B1BD4940F2D39C327EF836FD3C0" # Developer ID Moritz Wehrli
+ENTITLEMENTS="$PROJECT_DIR/Dicticus/Dicticus.entitlements"
 TRASH_DIR="$HOME/.Trash"
 TIMESTAMP="$(date +%s)"
 
@@ -83,8 +84,14 @@ fi
 
 echo "=== Step 4: Trash stale copies & wipe DerivedData ==="
 if [ ${#STALE_COPIES[@]} -gt 0 ]; then
+    idx=0
     for p in "${STALE_COPIES[@]}"; do
-        dest="$TRASH_DIR/Dicticus-stale-$TIMESTAMP-$(basename "$(dirname "$p")").app"
+        idx=$((idx + 1))
+        # Include an index AND a hash of the path to guarantee unique trash filenames
+        # when multiple stale copies share the same config name (e.g. all "Debug" from
+        # different DerivedData folders).
+        path_hash=$(printf '%s' "$p" | shasum | cut -c1-8)
+        dest="$TRASH_DIR/Dicticus-stale-$TIMESTAMP-$(basename "$(dirname "$p")")-${idx}-${path_hash}.app"
         echo "  mv $p -> $dest"
         mv "$p" "$dest"
     done
@@ -106,7 +113,28 @@ cp -R "$SOURCE_APP" "$CANONICAL_APP"
 
 echo "=== Step 6: Re-sign for TCC persistence ==="
 echo "  Signing with identity: $SIGNING_ID"
-codesign --force --deep --sign "$SIGNING_ID" "$CANONICAL_APP"
+echo "  Hardened runtime + entitlements: $ENTITLEMENTS"
+# IMPORTANT: --options runtime and --entitlements are required for the Designated
+# Requirement to match what build-dmg.sh produces. Without them the entitlement
+# set differs across installs (mic, app-groups, library-validation, etc.), TCC
+# treats each install as a "different app" and re-prompts on every cycle.
+# --timestamp adds the secure timestamp required for future notarization.
+if [ ! -f "$ENTITLEMENTS" ]; then
+    echo "ERROR: entitlements file not found at $ENTITLEMENTS"
+    exit 1
+fi
+codesign --force --deep \
+    --sign "$SIGNING_ID" \
+    --options runtime \
+    --entitlements "$ENTITLEMENTS" \
+    --timestamp \
+    "$CANONICAL_APP"
+
+echo "  Verifying signature ..."
+codesign -vvv --deep --strict "$CANONICAL_APP" >/dev/null 2>&1 || {
+    echo "ERROR: post-sign verification failed"
+    exit 1
+}
 
 echo "=== Step 7: Relaunch ==="
 open -a Dicticus
