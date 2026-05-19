@@ -564,25 +564,47 @@ class CleanupService: ObservableObject, CleanupProvider {
         return result
     }
 
-    /// Phase 25.1-02 — extract `<corrected_text>...</corrected_text>` envelope
-    /// contents AND strip `<unk>` ASR-leak sentinels. Falls back to the input
-    /// verbatim when either tag is missing or the regex fails. Pure function.
+    /// Phase 25.1-02 — extract content from the `<corrected_text>...</corrected_text>`
+    /// envelope AND strip `<unk>` ASR-leak sentinels. Pure function.
+    ///
+    /// Handles four shapes of model output:
+    ///   1. Full envelope:  `<corrected_text>X</corrected_text>`  → `X`
+    ///   2. Opening only:   `<corrected_text>X`                    → `X`  (model truncated)
+    ///   3. Closing only:   `X</corrected_text>`                   → `X`
+    ///      (V18C/V19C pattern — opening tag pre-filled in the prompt as a
+    ///      completion anchor at `CleanupPrompt.swift:202`, so the model
+    ///      only emits content + closing tag)
+    ///   4. No envelope:    `X`                                    → `X`  (passthrough)
+    ///
+    /// `<unk>` ASR sentinels are stripped in all four cases.
+    ///
+    /// Note: case (3) was treated as a fallback in 25.1-02's original implementation
+    /// (closing tag passed through verbatim, deferred to Plan 06's NLD/Jaccard
+    /// safety net). Plan 25.1-04 (V18C, 2026-05-18) and Plan 25.1-05 (V19C) made
+    /// pre-fill the *normal* output shape, so this is now the dominant path —
+    /// stripping the closing tag is required, not optional.
     private static func extractEnvelopeOrFallback(_ text: String) -> String {
-        let pattern = #"(?s)<corrected_text>(.*?)</corrected_text>"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return text
+        let openTag = "<corrected_text>"
+        let closeTag = "</corrected_text>"
+        var inner: String
+
+        if let openRange = text.range(of: openTag) {
+            let contentStart = openRange.upperBound
+            if let closeRange = text.range(of: closeTag, range: contentStart..<text.endIndex) {
+                inner = String(text[contentStart..<closeRange.lowerBound])    // Case 1
+            } else {
+                inner = String(text[contentStart..<text.endIndex])             // Case 2
+            }
+        } else if let closeRange = text.range(of: closeTag) {
+            inner = String(text[text.startIndex..<closeRange.lowerBound])      // Case 3
+        } else {
+            inner = text                                                       // Case 4
         }
-        let nsRange = NSRange(text.startIndex..<text.endIndex, in: text)
-        guard let match = regex.firstMatch(in: text, options: [], range: nsRange),
-              match.numberOfRanges >= 2,
-              let contentRange = Range(match.range(at: 1), in: text) else {
-            return text
-        }
-        var inner = String(text[contentRange])
+
         // Class D mitigation: strip <unk> ASR sentinels (case-sensitive — only the
         // lowercase ASR-emitted form, NOT any user-typed <UNK> or similar).
         inner = inner.replacingOccurrences(of: "<unk>", with: "")
-        return inner
+        return inner.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     // MARK: - Resource deallocation

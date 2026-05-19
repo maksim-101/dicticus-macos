@@ -252,21 +252,46 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertTrue(out.contains("Line two."))
     }
 
-    func testPhase251_StripPreambleFallsBackWhenOpeningTagMissing() {
-        // Model forgot opening tag — fall back to original text, existing pipeline
-        // still normalizes whitespace.
+    func testPhase251_StripPreambleStripsClosingTagWhenOpeningPrefilled() {
+        // V18C (Plan 25.1-04) and V19C (Plan 25.1-05) pre-fill the opening
+        // `<corrected_text>` tag in the prompt as a completion anchor
+        // (see CleanupPrompt.swift:202). The model only emits content + the
+        // closing tag, so the extractor must treat closing-tag-only as the
+        // dominant pattern, not a fallback.
+        //
+        // 2026-05-19 live-UAT regression: closing tag was leaking to the user's
+        // cursor on every dictation cycle. Fix in CleanupService.swift handles
+        // case 3 explicitly.
         let model = "Hello, world.</corrected_text>"
         let out = CleanupService.stripPreamble(model)
-        // The closing tag is NOT removed by the fallback path — it passes
-        // through verbatim. This is the documented fallback behavior; Plan 06's
-        // NLD/Jaccard gate is the safety net that catches such residue.
-        XCTAssertTrue(out.contains("Hello, world."))
+        XCTAssertEqual(out, "Hello, world.",
+            "Closing tag must be stripped when opening was pre-filled in prompt (V18C+/V19C pattern)")
+        XCTAssertFalse(out.contains("</corrected_text>"),
+            "No envelope residue may leak to the final output")
     }
 
-    func testPhase251_StripPreambleFallsBackWhenClosingTagMissing() {
+    func testPhase251_StripPreambleHandlesOpeningTagOnly() {
+        // Model truncated before emitting closing tag — content runs to end.
         let model = "<corrected_text>Hello, world."
         let out = CleanupService.stripPreamble(model)
-        XCTAssertTrue(out.contains("Hello, world."))
+        XCTAssertEqual(out, "Hello, world.")
+        XCTAssertFalse(out.contains("<corrected_text>"))
+    }
+
+    func testPhase251_StripPreambleFallsBackWhenNoEnvelopeTags() {
+        // No tags at all — passthrough with whitespace normalization.
+        let model = "Hello, world."
+        let out = CleanupService.stripPreamble(model)
+        XCTAssertEqual(out, "Hello, world.")
+    }
+
+    func testPhase251_StripPreambleStripsUnkInClosingOnlyShape() {
+        // Closing-tag-only + <unk> sentinel must both be cleaned in one pass.
+        let model = "only <unk>updating to stable versions</corrected_text>"
+        let out = CleanupService.stripPreamble(model)
+        XCTAssertFalse(out.contains("<unk>"))
+        XCTAssertFalse(out.contains("</corrected_text>"))
+        XCTAssertTrue(out.contains("only updating to stable versions"))
     }
 
     func testPhase251_StripPreambleRemovesUnkTokenInsideEnvelope() {
