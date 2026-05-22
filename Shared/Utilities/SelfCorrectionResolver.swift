@@ -254,7 +254,6 @@ public enum SelfCorrectionResolver {
         "nein",
         "ne",
         "eigentlich",
-        "doch",
         "das war",
         "ah nein",
         "ach nein",
@@ -265,7 +264,6 @@ public enum SelfCorrectionResolver {
         "wart mal",
         "wart",
         "warte",
-        "oder",
     ]
 
     private static let englishConnectors: [String] = [
@@ -296,7 +294,7 @@ public enum SelfCorrectionResolver {
         // English
         "no", "actually", "wait", "hold on", "scratch that",
         // German
-        "nein", "ne", "eigentlich", "doch", "das war",
+        "nein", "ne", "eigentlich", "das war",
         "ah nein", "ach nein",
         "moment mal", "ach moment", "ein moment", "ach ein moment",
         "wart mal", "wart", "warte",
