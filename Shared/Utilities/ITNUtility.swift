@@ -11,7 +11,105 @@ struct ITNUtility {
         } else {
             normalized = applyEnglishITN(to: text)
         }
-        return applyRangeHomophoneFix(to: normalized, language: language)
+        let rangeFixed = applyRangeHomophoneFix(to: normalized, language: language)
+        return applyNumericStructuralWords(to: rangeFixed, language: language)
+    }
+
+    /// Numeric structural word post-pass (P3).
+    ///
+    /// Converts verbal connectors ("point", "dash", "Punkt", "Komma", "zero") to
+    /// their symbolic equivalents when they appear in numeric contexts — i.e. when
+    /// adjacent to digit tokens on both sides. Guards prevent false positives for
+    /// words like "the point is clear" where no adjacent digit exists (T-26-01).
+    ///
+    /// Transform order matters for "25 point 1 dash zero 6":
+    ///   1. zero-prefix: `\d+ dash zero \d` → `\d+-0\d`  (so "1-zero 6" → "1-06")
+    ///   2. point/Punkt:  `\d+ point \d` → `\d+.\d`
+    ///   3. Komma:        `\d+ Komma \d` → `\d+,\d`
+    ///   4. dash:         `\d+ dash \d`  → `\d+-\d`
+    ///
+    /// Single-digit English words ("one"…"nine") are resolved to their digit forms
+    /// when they appear as the right operand of a structural connector, enabling
+    /// "twenty five point one dash zero six" → "25.1-06" end-to-end.
+    static func applyNumericStructuralWords(to text: String, language: String) -> String {
+        var result = text
+
+        // Single-digit English words used as right operands in structural patterns.
+        let enDigitWords = "(?:zero|one|two|three|four|five|six|seven|eight|nine|\\d+)"
+        // Lookup for converting word to digit string.
+        let enWordMap: [String: String] = [
+            "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+            "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+        ]
+        func resolveEn(_ s: String) -> String { enWordMap[s.lowercased()] ?? s }
+
+        // Step 1: point/Punkt between digit and digit-or-word → decimal dot.
+        // Runs first so "25 point one" → "25.1" before any dash pass.
+        // English: (\d+) point (\d+|word)
+        result = replaceStructural(
+            result,
+            pattern: "(\\d+)\\s+(?i:point)\\s+(\(enDigitWords))"
+        ) { g in "\(g[1]).\(resolveEn(g[2]))" }
+
+        // German: (\d+) Punkt (\d+)
+        result = replaceStructural(
+            result,
+            pattern: "(\\d+)\\s+Punkt\\s+(\\d+)"
+        ) { g in "\(g[1]).\(g[2])" }
+
+        // Step 2: Komma between digits → German decimal comma
+        result = replaceStructural(
+            result,
+            pattern: "(\\d+)\\s+Komma\\s+(\\d+)"
+        ) { g in "\(g[1]),\(g[2])" }
+
+        // Step 3: zero-prefix after digit-dash context.
+        // "1 dash zero 6" → "1-06"; "25.1 dash zero six" → "25.1-06"
+        // Runs before plain dash so "dash zero X" is captured as a unit.
+        result = replaceStructural(
+            result,
+            pattern: "(\\d+)\\s+(?i:dash)\\s+(?i:zero)\\s+(\(enDigitWords))"
+        ) { g in "\(g[1])-0\(resolveEn(g[2]))" }
+
+        // Step 4: dash between digits → hyphen (remaining cases not handled by step 3)
+        result = replaceStructural(
+            result,
+            pattern: "(\\d+)\\s+(?i:dash)\\s+(\\d+)"
+        ) { g in "\(g[1])-\(g[2])" }
+
+        return result
+    }
+
+    /// Apply a regex pattern to `text`, replacing each match using the `replacement`
+    /// closure. The closure receives an array of captured group strings (index 0 =
+    /// full match, 1… = capture groups). Matches are processed in reverse order so
+    /// string indices remain valid across replacements.
+    private static func replaceStructural(
+        _ text: String,
+        pattern: String,
+        replacement: ([String]) -> String
+    ) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return text
+        }
+        var result = text
+        let nsText = result as NSString
+        let fullRange = NSRange(location: 0, length: nsText.length)
+        let matches = regex.matches(in: result, options: [], range: fullRange)
+        guard !matches.isEmpty else { return result }
+        for match in matches.reversed() {
+            guard let matchRange = Range(match.range, in: result) else { continue }
+            var groups: [String] = []
+            for i in 0..<match.numberOfRanges {
+                if let r = Range(match.range(at: i), in: result) {
+                    groups.append(String(result[r]))
+                } else {
+                    groups.append("")
+                }
+            }
+            result.replaceSubrange(matchRange, with: replacement(groups))
+        }
+        return result
     }
 
     /// Range homophone post-pass.
@@ -308,6 +406,12 @@ struct ITNUtility {
                     if units.contains(first) && tens.contains(second) {
                         continue
                     }
+                    // "zero X" where X is a single digit: "zero" serves as a structural
+                    // zero-prefix (e.g. "dash zero six" → "-06"). Don't let ITN merge
+                    // the pair — the structural word post-pass handles it.
+                    if first == "zero" && units.contains(second) {
+                        continue
+                    }
                 }
 
                 // Try multiple formats — NumberFormatter expects "twenty-three" (hyphenated)
@@ -324,7 +428,10 @@ struct ITNUtility {
                     subTextMixed = "\(prefix) \(lastTwo)"
                 }
 
-                let candidates = [subText.lowercased(), subTextAllHyphens.lowercased()] + (subTextMixed.map { [$0.lowercased()] } ?? [])
+                // Try hyphenated form first: NSNumberFormatter correctly parses "twenty-five"→25
+                // but parses "twenty five" (space) as 2005 (concatenating 20+05). By trying
+                // the hyphenated form first, the correct parse is found before the broken one.
+                let candidates = [subTextAllHyphens.lowercased(), subText.lowercased()] + (subTextMixed.map { [$0.lowercased()] } ?? [])
 
                 var parsed: NSNumber? = nil
                 for candidate in candidates {
