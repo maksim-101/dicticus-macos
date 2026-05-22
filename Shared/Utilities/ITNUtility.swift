@@ -23,9 +23,9 @@ struct ITNUtility {
     /// words like "the point is clear" where no adjacent digit exists (T-26-01).
     ///
     /// Transform order matters for "25 point 1 dash zero 6":
-    ///   1. zero-prefix: `\d+ dash zero \d` → `\d+-0\d`  (so "1-zero 6" → "1-06")
-    ///   2. point/Punkt:  `\d+ point \d` → `\d+.\d`
-    ///   3. Komma:        `\d+ Komma \d` → `\d+,\d`
+    ///   1. point/Punkt:  `\d+ point \d` → `\d+.\d`
+    ///   2. Komma:        `\d+ Komma \d` → `\d+,\d`  (German only)
+    ///   3. zero-prefix:  `\d+ dash zero \d` → `\d+-0\d`  (so "1-zero 6" → "1-06")
     ///   4. dash:         `\d+ dash \d`  → `\d+-\d`
     ///
     /// Single-digit English words ("one"…"nine") are resolved to their digit forms
@@ -52,16 +52,18 @@ struct ITNUtility {
         ) { g in "\(g[1]).\(resolveEn(g[2]))" }
 
         // German: (\d+) Punkt (\d+)
-        result = replaceStructural(
-            result,
-            pattern: "(\\d+)\\s+Punkt\\s+(\\d+)"
-        ) { g in "\(g[1]).\(g[2])" }
+        if language == "de" {
+            result = replaceStructural(
+                result,
+                pattern: "(\\d+)\\s+Punkt\\s+(\\d+)"
+            ) { g in "\(g[1]).\(g[2])" }
 
-        // Step 2: Komma between digits → German decimal comma
-        result = replaceStructural(
-            result,
-            pattern: "(\\d+)\\s+Komma\\s+(\\d+)"
-        ) { g in "\(g[1]),\(g[2])" }
+            // Step 2: Komma between digits → German decimal comma
+            result = replaceStructural(
+                result,
+                pattern: "(\\d+)\\s+Komma\\s+(\\d+)"
+            ) { g in "\(g[1]),\(g[2])" }
+        }
 
         // Step 3: zero-prefix after digit-dash context.
         // "1 dash zero 6" → "1-06"; "25.1 dash zero six" → "25.1-06"

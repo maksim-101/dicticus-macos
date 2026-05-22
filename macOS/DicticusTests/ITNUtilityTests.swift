@@ -77,7 +77,7 @@ final class ITNUtilityTests: XCTestCase {
     func testEnglishPointAndDashVersionString() {
         // UAT record 134: "twenty five point one dash zero six" → "25.1-06"
         let output = ITNUtility.applyITN(to: "twenty five point one dash zero six", language: "en")
-        XCTAssertTrue(output.contains("25.1-06"), "Expected '25.1-06' in '\(output)'")
+        XCTAssertEqual(output, "25.1-06")
     }
 
     func testGermanPunktBetweenDigits() {

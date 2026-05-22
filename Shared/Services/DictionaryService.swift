@@ -99,8 +99,6 @@ class DictionaryService: ObservableObject {
             "Swiss \"": "Swissquote", "Swiss quote": "Swissquote", "Swiss code": "Swissquote", 
             "this quote": "Swissquote", "This quote": "Swissquote", "dot cloud": ".claude",
             "Zyria": "ZüriA", "Acara": "Aqara", "engine X": "NGINX",
-            // Phase 26 P2: exact-match replaces retired Versal key (see purgeRetiredDefaults)
-            "vercel": "Vercel",
             "docg": "Dockge", "true NAS": "TrueNAS", "tail scale": "Tailscale", 
             "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM", 
             "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code", 
