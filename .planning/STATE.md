@@ -3,13 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Adaptive Cleanup & Stability Post-v2.1
 status: in_progress
-last_updated: "2026-05-19T00:00:00.000Z"
+stopped_at: "Phase 26 (Pipeline Quality Hardening) planned with 3 plans, all Wave 1 (parallel, file-disjoint). Ready for execution via `/gsd:execute-phase 26`."
+last_updated: "2026-05-22T14:53:16.479Z"
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 10
-  total_plans: 41
-  completed_plans: 43
-  percent: 73
+  total_plans: 50
+  completed_plans: 47
+  percent: 67
 ---
 
 # Project State: Dicticus
@@ -20,8 +21,8 @@ progress:
 
 ## Current Position
 
-Phase: 25 (ai-cleanup-quality-v3-brand-acronym-recognition) — PAUSED in LIVE-CAPTURE
-Plan: 3 of 4 shipped to live-test (25-01 matrix, 25-02 logging, 25-03 V16-COMPOSITE + dict). 25-04 capture window is what's running now.
+Phase: 26 (pipeline-quality-hardening) — EXECUTING
+Plan: 1 of 3
 
 **Wave 1 outcome (2026-05-16):**
 
@@ -111,6 +112,7 @@ When resumed, user provides one of:
 - **"rollback V19: <reason>"** → `git revert c8e7cc8` (Task 3 commit; harness artifacts at c8e090e + 62a46a6 stay since they're gitignored anyway).
 
 **Live verification anchors for the SUMMARY (already confirmed during session):**
+
 - German dictation routes correctly: `lang=="de"`, `lang_used=="de"` (Plan 01 telemetry working in production).
 - V19C German block live: `Regeln (auf Deutsch):` appears in `llm_prompt.text` of de records.
 - Envelope extractor fix (4578081) verified: `post_gate.text` has no `</corrected_text>` residue.
@@ -134,13 +136,15 @@ Plans:
 - [x] `25.1-02-PLAN.md` — SHIPPED 2026-05-17. XML output tags.
 - [x] `25.1-03-PLAN.md` — SHIPPED 2026-05-17. Dictionary expansion + Levenshtein ≤ 2 fuzzy pass.
 - [x] `25.1-04-PLAN.md` — SHIPPED 2026-05-18. V18C disfluency few-shots (Rule-1 drop + Class C targeted).
-- [ ] `25.1-05-PLAN.md` — NEXT. Language-isolated German prompt (V19 matrix).
-- [ ] `25.1-06-PLAN.md` — PENDING. NLD/Jaccard deterministic gates.
-- [ ] `23-PLAN.md` — PENDING. Decimal Words & Digit Grouping.
+- [x] `25.1-05-PLAN.md` — SHIPPED 2026-05-22. V19C UAT PASS — 90.2% clean rate, 39.3% improvement, 0% damage.
+- [~] `25.1-06-PLAN.md` — DEPRIORITIZED. NLD/Jaccard gate at 0.45 never triggered in 153 records; V19C has 0% damage rate. Gate is well-calibrated as-is.
+- [~] `23-PLAN.md` — ABSORBED → Phase 26 (ITN scope overlap).
+- [ ] `26-01-PLAN.md` — PLANNED 2026-05-22. P0 ITN candidate order fix + P3 numeric structural words.
+- [ ] `26-02-PLAN.md` — PLANNED 2026-05-22. P1 SelfCorrectionResolver doch/oder removal.
+- [ ] `26-03-PLAN.md` — PLANNED 2026-05-22. P2 Dictionary versus→Vercel false positive.
 
 ## Session Continuity
 
-Last session: 2026-05-19 (V19C ship + UAT setup)
-Stopped at: Plan 25.1-05 Task 4 — human-verify checkpoint open, user dictating against live Debug-Recorder build to validate V19C. Two hotfixes committed mid-session: f443e35 (install-local.sh DR preservation), 4578081 (envelope extractor case-3 closing-only). Build installed at /Applications/Dicticus.app, TCC grants preserved post-rebuild.
-Resume signal: user provides "V19 UAT pass" / "V19 re-matrix needed" / "rollback V19" — then dispatch continuation agent to write 25.1-05-SUMMARY.md and start Wave 5.
-Resume file: HANDOFF.json carries the Task 4 checkpoint payload (matrix gates, what user needs to verify, exact signals expected).
+Last session: 2026-05-22 (V19C UAT closed, Phase 26 planned)
+Stopped at: Phase 26 (Pipeline Quality Hardening) planned with 3 plans, all Wave 1 (parallel, file-disjoint). Ready for execution via `/gsd:execute-phase 26`.
+Key results: V19C UAT PASS (153 records, 90.2% clean, 0% damage). 4 issues found — all in pre-LLM pipeline components (ITN, SelfCorrectionResolver, Dictionary), not the V19C prompt itself. Plan 25.1-06 deprioritized; Phase 23 absorbed into Phase 26.

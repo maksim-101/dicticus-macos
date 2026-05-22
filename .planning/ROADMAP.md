@@ -39,7 +39,7 @@
 | 22. Resolver Regression Hotfix | v2.2 | 2/2 | Shipped 2026-05-08 | Plan 22-01: regex L75 comma-prefix + word-boundary fix; 7 JSONL fixtures locked in cross-platform; macOS resolver suite 25/25 green. Plan 22-02: pre-flight grep + 1 XCTAssertFalse test in macOS CleanupPromptTests confirming the 8a79e6b cosmetic LLM few-shot is absent (verification-by-test, no production source touched). macOS targeted test green (1/1 in 0.001s). |
 | 23. Decimal Words & Digit Grouping | v2.2 | 0/? | Absorbed → Phase 26 | ITN doesn't fold spoken decimal markers (`Punkt`/`Komma`/`point`) and English ITN concatenates comma-separated digit words (`three, five` → `35`). Scope absorbed into Phase 26 (Pipeline Quality Hardening) |
 | 24. AI Cleanup Quality v2 | v2.2 | 0/? | Blocked on capture window (until 2026-05-12) | Self-correction handling + speech disfluency removal + structured eval refresh. Triggered by Phase 22 UAT G-01 (Gemma 4 E2B passed `"persist now or will is not or will it not"` through verbatim instead of dropping the abandoned fragment). Capture window 2026-05-09 → 2026-05-12 via Dicticus-Debug-Recorder build at /Applications/Dicticus.app, then `/gsd-plan-phase 24` |
-| 26. Pipeline Quality Hardening | v2.2 | 0/3 | Planned | P0 ITN number concatenation, P1 SelfCorrectionResolver German clause drops, P2 dictionary false positive, P3 numeric structural words. Absorbs Phase 23 scope. Source: V19C live UAT (153 records) |
+| 26. Pipeline Quality Hardening | v2.2 | 3/3 | Complete   | 2026-05-22 |
 
 ---
 
@@ -279,12 +279,12 @@ Plans:
 **Depends on:** Phase 25.1
 **Source:** `v19c-corrected-analysis-may19-22.md`
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 26-01-PLAN.md — P0 ITN number concatenation fix + P3 numeric structural words (point/dash/zero/Punkt/Komma)
-- [ ] 26-02-PLAN.md — P1 SelfCorrectionResolver doch/oder false-positive removal
-- [ ] 26-03-PLAN.md — P2 Dictionary versus->Vercel false-positive retirement
+- [x] 26-01-PLAN.md — P0 ITN number concatenation fix + P3 numeric structural words (point/dash/zero/Punkt/Komma)
+- [x] 26-02-PLAN.md — P1 SelfCorrectionResolver doch/oder false-positive removal
+- [x] 26-03-PLAN.md — P2 Dictionary versus->Vercel false-positive retirement
 
 **Wave structure:** {26-01, 26-02, 26-03} — all Wave 1, file-disjoint (ITNUtility vs SelfCorrectionResolver vs DictionaryService).
 
