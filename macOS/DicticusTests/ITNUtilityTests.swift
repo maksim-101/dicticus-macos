@@ -74,6 +74,12 @@ final class ITNUtilityTests: XCTestCase {
         XCTAssertEqual(output, "25-06")
     }
 
+    func testEnglishHyphenBetweenDigits() {
+        // "10 hyphen 3" → "10-3"
+        let output = ITNUtility.applyITN(to: "10 hyphen 3", language: "en")
+        XCTAssertEqual(output, "10-3")
+    }
+
     func testEnglishPointAndDashVersionString() {
         // UAT record 134: "twenty five point one dash zero six" → "25.1-06"
         let output = ITNUtility.applyITN(to: "twenty five point one dash zero six", language: "en")

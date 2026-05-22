@@ -65,18 +65,18 @@ struct ITNUtility {
             ) { g in "\(g[1]),\(g[2])" }
         }
 
-        // Step 3: zero-prefix after digit-dash context.
+        // Step 3: zero-prefix after digit-dash/hyphen context.
         // "1 dash zero 6" → "1-06"; "25.1 dash zero six" → "25.1-06"
         // Runs before plain dash so "dash zero X" is captured as a unit.
         result = replaceStructural(
             result,
-            pattern: "(\\d+)\\s+(?i:dash)\\s+(?i:zero)\\s+(\(enDigitWords))"
+            pattern: "(\\d+)\\s+(?i:dash|hyphen)\\s+(?i:zero)\\s+(\(enDigitWords))"
         ) { g in "\(g[1])-0\(resolveEn(g[2]))" }
 
-        // Step 4: dash between digits → hyphen (remaining cases not handled by step 3)
+        // Step 4: dash/hyphen between digits → "-" (remaining cases not handled by step 3)
         result = replaceStructural(
             result,
-            pattern: "(\\d+)\\s+(?i:dash)\\s+(\\d+)"
+            pattern: "(\\d+)\\s+(?i:dash|hyphen)\\s+(\\d+)"
         ) { g in "\(g[1])-\(g[2])" }
 
         return result
