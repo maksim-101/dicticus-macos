@@ -209,3 +209,34 @@ final class DictionaryServiceFuzzyMatchTests: XCTestCase {
         XCTAssertLessThan(elapsedMs, 50.0, "apply(to:) on 2KB input must complete < 50ms (got \(elapsedMs)ms)")
     }
 }
+
+// MARK: - Phase 26 UAT regressions
+
+@MainActor
+final class DictionaryServicePhase26RegressionTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        let s = DictionaryService.shared
+        s.removeAll()
+        // Post-fix production state: "Versal" is retired; only "vercel" exact-match remains.
+        // distance("versus", "vercel") = 3 — outside the fuzzy threshold of <= 2.
+        s.setReplacement(for: "vercel", with: "Vercel")
+        s.isCaseSensitive = false
+    }
+
+    func testPhase26_VersusNotReplacedWithVercel() {
+        // Regression lock for Phase 26 P2: "versus" must not be fuzzy-replaced with "Vercel".
+        // Pre-fix: "Versal" key (distance 2 from "versus") triggered replacement.
+        // Post-fix: "Versal" retired; "vercel" key has distance 3 — outside threshold.
+        let input = "the approach of A versus B is clear"
+        let output = DictionaryService.shared.apply(to: input)
+        XCTAssertEqual(output, input, "\"versus\" must pass through unchanged; got: \(output)")
+    }
+
+    func testPhase26_VercelExactMatchWorks() {
+        // Verify the replacement entry: "vercel" (lowercase) correctly normalises to "Vercel".
+        let output = DictionaryService.shared.apply(to: "deploy to vercel")
+        XCTAssertEqual(output, "deploy to Vercel")
+    }
+}

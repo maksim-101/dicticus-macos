@@ -55,9 +55,15 @@ class DictionaryService: ObservableObject {
     /// 2026-05-06: dropped the "I'm" cluster — `"one m"` matched
     /// inside "one meeting" when ASR introduced any punctuation/space
     /// between tokens, producing "I'm meeting" hallucinations.
+    ///
+    /// 2026-05-22: dropped "Versal" — Levenshtein distance 2 from
+    /// "versus", causing every spoken "versus" to be replaced with
+    /// "Vercel". Replaced by exact-match "vercel" key (distance 3
+    /// from "versus", outside fuzzy threshold). Phase 26 P2.
     private func purgeRetiredDefaults() {
         let retired: [String] = [
             "1m", "1 m", "I m", "one m", "One m",
+            "Versal",
         ]
         var changed = false
         for key in retired {
@@ -92,7 +98,9 @@ class DictionaryService: ObservableObject {
             "cloud.md": "Claude.MD", "clot.md": "Claude.MD", "clod.md": "Claude.MD", 
             "Swiss \"": "Swissquote", "Swiss quote": "Swissquote", "Swiss code": "Swissquote", 
             "this quote": "Swissquote", "This quote": "Swissquote", "dot cloud": ".claude",
-            "Zyria": "ZüriA", "Versal": "Vercel", "Acara": "Aqara", "engine X": "NGINX", 
+            "Zyria": "ZüriA", "Acara": "Aqara", "engine X": "NGINX",
+            // Phase 26 P2: exact-match replaces retired Versal key (see purgeRetiredDefaults)
+            "vercel": "Vercel",
             "docg": "Dockge", "true NAS": "TrueNAS", "tail scale": "Tailscale", 
             "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM", 
             "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code", 
