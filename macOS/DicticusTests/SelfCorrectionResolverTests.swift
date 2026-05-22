@@ -358,4 +358,39 @@ final class SelfCorrectionResolverTests: XCTestCase {
             "Valid alignment must still work for ambiguous connectors."
         )
     }
+
+    // MARK: - Phase 26 UAT regressions — doch/oder false positives
+
+    /// UAT record 117: "eigentlich ganz gut, doch" — "doch" is a tag question /
+    /// discourse particle here, not a self-correction connector. Resolver must NOT fire.
+    func testGermanDochQualificationPreserved() {
+        let input = "gefällt mir eigentlich ganz gut, doch dieser eine Teilsatz"
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "de"),
+            input,
+            "Phase 26 UAT 117: ', doch' as tag question/confirmation must not trigger resolver"
+        )
+    }
+
+    /// UAT record 132: "ankurbelt, doch wenn" — subordinate clause introduced
+    /// by "doch wenn"; resolver must leave the clause intact.
+    func testGermanDochWennClausePreserved() {
+        let input = "das Ganze ankurbelt, doch wenn noch tun"
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "de"),
+            input,
+            "Phase 26 UAT 132: ', doch wenn' subordinate clause must not be dropped"
+        )
+    }
+
+    /// UAT record 102: "Stadt Zürich, oder wäre" — "oder" introduces a rhetorical
+    /// question / tag question, not a self-correction. Resolver must leave unchanged.
+    func testGermanOderTagQuestionPreserved() {
+        let input = "wir sind in dieser Stadt Zürich, oder wäre das auch schon einschränkend"
+        XCTAssertEqual(
+            SelfCorrectionResolver.resolve(input, language: "de"),
+            input,
+            "Phase 26 UAT 102: ', oder' as tag question must not trigger resolver"
+        )
+    }
 }
