@@ -209,3 +209,31 @@ final class DictionaryServiceFuzzyMatchTests: XCTestCase {
         XCTAssertLessThan(elapsedMs, 50.0, "apply(to:) on 2KB input must complete < 50ms (got \(elapsedMs)ms)")
     }
 }
+
+// MARK: - Phase 26 UAT regressions
+
+@MainActor
+final class DictionaryServicePhase26RegressionTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        let s = DictionaryService.shared
+        s.removeAll()
+        // Seed the pre-fix default state: "Versal" -> "Vercel" was the problematic entry.
+        // "versus" (6 chars) has Levenshtein distance 2 from "Versal" (6 chars),
+        // which is within the fuzzy threshold of <= 2, causing false positive replacement.
+        // This test demonstrates the regression — it MUST FAIL before the fix.
+        s.setReplacement(for: "Versal", with: "Vercel")
+        s.isCaseSensitive = false
+    }
+
+    func testPhase26_VersusNotReplacedWithVercel() {
+        // "versus" (6 chars) has Levenshtein distance 2 from "Versal" (6 chars),
+        // causing every spoken "versus" to become "Vercel" before this fix.
+        // After the fix: "Versal" is retired; only "vercel" (distance 3 from "versus")
+        // remains — outside the fuzzy threshold.
+        let input = "the approach of A versus B is clear"
+        let output = DictionaryService.shared.apply(to: input)
+        XCTAssertEqual(output, input, "\"versus\" must pass through unchanged; got: \(output)")
+    }
+}
