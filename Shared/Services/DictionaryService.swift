@@ -98,7 +98,7 @@ class DictionaryService: ObservableObject {
             "cloud.md": "Claude.MD", "clot.md": "Claude.MD", "clod.md": "Claude.MD", 
             "Swiss \"": "Swissquote", "Swiss quote": "Swissquote", "Swiss code": "Swissquote", 
             "this quote": "Swissquote", "This quote": "Swissquote", "dot cloud": ".claude",
-            "Zyria": "ZüriA", "Acara": "Aqara", "engine X": "NGINX",
+            "Zyria": "ZüriA", "Acara": "Aqara", "engine X": "NGINX", "X code": "Xcode", "x code": "Xcode",
             "docg": "Dockge", "true NAS": "TrueNAS", "tail scale": "Tailscale", 
             "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM", 
             "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code", 
