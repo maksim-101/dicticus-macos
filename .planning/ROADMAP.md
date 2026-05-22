@@ -37,8 +37,9 @@
 | 20.08. LLM Swiss-Ification Suppression | v2.1 | 5/5 | Shipped 2026-05-01 | Wave-A (Plans 01–03) shipped variant (e); Plan 04 pivoted to variant (g15) (see `20.08-VARIANT-G-RATIONALE.md`); Plan 05 gap closure (R-G15-01 currency-digit truncation) shipped via 3 UAT iterations: drop §3 priming-trap directive, add `naja` filler, add 6th tense exemplar, reorder so currency-preservation exemplar holds the recency-anchor slot. macOS Release UAT 2026-05-01 ACCEPTED with sentence-stitching note. See `20.08-05-UAT-RESULTS.md` |
 | 21. Adaptive Cleanup & Stability | v2.2 | — | Shipped 2026-05-03 | Debounce fix, Surgical Completion, 6-token repair window — UAT ACCEPTED |
 | 22. Resolver Regression Hotfix | v2.2 | 2/2 | Shipped 2026-05-08 | Plan 22-01: regex L75 comma-prefix + word-boundary fix; 7 JSONL fixtures locked in cross-platform; macOS resolver suite 25/25 green. Plan 22-02: pre-flight grep + 1 XCTAssertFalse test in macOS CleanupPromptTests confirming the 8a79e6b cosmetic LLM few-shot is absent (verification-by-test, no production source touched). macOS targeted test green (1/1 in 0.001s). |
-| 23. Decimal Words & Digit Grouping | v2.2 | 0/? | Backlog | ITN doesn't fold spoken decimal markers (`Punkt`/`Komma`/`point`) and English ITN concatenates comma-separated digit words (`three, five` → `35`). Discovered alongside Phase 22 evidence; deferred so resolver fix ships first |
+| 23. Decimal Words & Digit Grouping | v2.2 | 0/? | Absorbed → Phase 26 | ITN doesn't fold spoken decimal markers (`Punkt`/`Komma`/`point`) and English ITN concatenates comma-separated digit words (`three, five` → `35`). Scope absorbed into Phase 26 (Pipeline Quality Hardening) |
 | 24. AI Cleanup Quality v2 | v2.2 | 0/? | Blocked on capture window (until 2026-05-12) | Self-correction handling + speech disfluency removal + structured eval refresh. Triggered by Phase 22 UAT G-01 (Gemma 4 E2B passed `"persist now or will is not or will it not"` through verbatim instead of dropping the abandoned fragment). Capture window 2026-05-09 → 2026-05-12 via Dicticus-Debug-Recorder build at /Applications/Dicticus.app, then `/gsd-plan-phase 24` |
+| 26. Pipeline Quality Hardening | v2.2 | 0/3 | Planned | P0 ITN number concatenation, P1 SelfCorrectionResolver German clause drops, P2 dictionary false positive, P3 numeric structural words. Absorbs Phase 23 scope. Source: V19C live UAT (153 records) |
 
 ---
 
@@ -266,5 +267,25 @@ Plans:
 - [x] 25.1-02-PLAN.md — XML output tags: V16-COMPOSITE prompt instructs `<corrected_text>` envelope; CleanupService.stripPreamble extracts + falls back; Class D `<unk>` strip (paper §6.2) **SHIPPED**
 - [x] 25.1-03-PLAN.md — Dictionary expansion: 11 Class B entries + applyFuzzyPass (Levenshtein ≤ 2 for keys ≥ 6 chars); 255/255 macOS tests green (paper §2.2, Parakeet implication §4) **SHIPPED**
 - [x] 25.1-04-PLAN.md — Disfluency few-shots: V18C winner via 2-iteration matrix (V18C drops Rule 1 per Parakeet §1 hypothesis + adds Class C targeted few-shot). 80/80 tests pass including resolver gate 27/27 (paper §3 Reparandum/Interregnum/Repair) **SHIPPED**
-- [ ] 25.1-05-PLAN.md — Language-isolated prompts: V19 hypothesis matrix (V19A/B/C ± Swiss) → V19-winner ships German branch; depends on 25.1-01 lang_used + 25.1-04 V18 (paper §5)
-- [ ] 25.1-06-PLAN.md — NLD/Jaccard deterministic gates: JaccardSimilarity utility + gateLLMNLDJaccard combined safety-net catching Class A factual hallucinations + Class E stylistic injection (paper §7)
+- [x] 25.1-05-PLAN.md — Language-isolated prompts: V19C winner (native German rewrite + V2/compound few-shots). UAT pass: 90.2% clean rate, 39.3% improvement rate, 0% damage rate across 153 records. **SHIPPED 2026-05-22**
+- [ ] 25.1-06-PLAN.md — NLD/Jaccard deterministic gates: DEPRIORITIZED — gate at 0.45 threshold never triggered in 153 records; V19C has 0% damage rate. Gate is working well as-is. Remaining quality issues are in pre-LLM pipeline (→ Phase 26).
+
+---
+
+### Phase 26: Pipeline Quality Hardening
+
+**Goal:** Fix the 4 user-visible quality issues found in the V19C live UAT (153 records, May 19-22): P0 ITN number concatenation ("twenty five" → "2005"), P1 SelfCorrectionResolver drops German "doch"/"oder" clauses (3 content-drop records), P2 dictionary "versus"→"Vercel" false positive, P3 "point"/"dash"/"zero" not converted to symbols in numeric contexts. Absorbs Phase 23 (Decimal Words & Digit Grouping) scope.
+**Requirements**: None (bug fixes driven by live UAT evidence)
+**Depends on:** Phase 25.1
+**Source:** `v19c-corrected-analysis-may19-22.md`
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 26-01-PLAN.md — P0 ITN number concatenation fix + P3 numeric structural words (point/dash/zero/Punkt/Komma)
+- [ ] 26-02-PLAN.md — P1 SelfCorrectionResolver doch/oder false-positive removal
+- [ ] 26-03-PLAN.md — P2 Dictionary versus->Vercel false-positive retirement
+
+**Wave structure:** {26-01, 26-02, 26-03} — all Wave 1, file-disjoint (ITNUtility vs SelfCorrectionResolver vs DictionaryService).
+
+**Cross-platform:** All 3 plans modify Shared/ code + macOS tests + iOS tests (byte-identical copy). Per feedback_cleanup_cross_platform_parity.
