@@ -219,21 +219,24 @@ final class DictionaryServicePhase26RegressionTests: XCTestCase {
         super.setUp()
         let s = DictionaryService.shared
         s.removeAll()
-        // Seed the pre-fix default state: "Versal" -> "Vercel" was the problematic entry.
-        // "versus" (6 chars) has Levenshtein distance 2 from "Versal" (6 chars),
-        // which is within the fuzzy threshold of <= 2, causing false positive replacement.
-        // This test demonstrates the regression — it MUST FAIL before the fix.
-        s.setReplacement(for: "Versal", with: "Vercel")
+        // Post-fix production state: "Versal" is retired; only "vercel" exact-match remains.
+        // distance("versus", "vercel") = 3 — outside the fuzzy threshold of <= 2.
+        s.setReplacement(for: "vercel", with: "Vercel")
         s.isCaseSensitive = false
     }
 
     func testPhase26_VersusNotReplacedWithVercel() {
-        // "versus" (6 chars) has Levenshtein distance 2 from "Versal" (6 chars),
-        // causing every spoken "versus" to become "Vercel" before this fix.
-        // After the fix: "Versal" is retired; only "vercel" (distance 3 from "versus")
-        // remains — outside the fuzzy threshold.
+        // Regression lock for Phase 26 P2: "versus" must not be fuzzy-replaced with "Vercel".
+        // Pre-fix: "Versal" key (distance 2 from "versus") triggered replacement.
+        // Post-fix: "Versal" retired; "vercel" key has distance 3 — outside threshold.
         let input = "the approach of A versus B is clear"
         let output = DictionaryService.shared.apply(to: input)
         XCTAssertEqual(output, input, "\"versus\" must pass through unchanged; got: \(output)")
+    }
+
+    func testPhase26_VercelExactMatchWorks() {
+        // Verify the replacement entry: "vercel" (lowercase) correctly normalises to "Vercel".
+        let output = DictionaryService.shared.apply(to: "deploy to vercel")
+        XCTAssertEqual(output, "deploy to Vercel")
     }
 }
