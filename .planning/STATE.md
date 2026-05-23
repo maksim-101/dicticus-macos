@@ -139,12 +139,12 @@ Plans:
 - [x] `25.1-05-PLAN.md` — SHIPPED 2026-05-22. V19C UAT PASS — 90.2% clean rate, 39.3% improvement, 0% damage.
 - [~] `25.1-06-PLAN.md` — DEPRIORITIZED. NLD/Jaccard gate at 0.45 never triggered in 153 records; V19C has 0% damage rate. Gate is well-calibrated as-is.
 - [~] `23-PLAN.md` — ABSORBED → Phase 26 (ITN scope overlap).
-- [ ] `26-01-PLAN.md` — PLANNED 2026-05-22. P0 ITN candidate order fix + P3 numeric structural words.
-- [ ] `26-02-PLAN.md` — PLANNED 2026-05-22. P1 SelfCorrectionResolver doch/oder removal.
-- [ ] `26-03-PLAN.md` — PLANNED 2026-05-22. P2 Dictionary versus→Vercel false positive.
+- [x] `26-01-PLAN.md` — SHIPPED 2026-05-23. P0 ITN candidate order fix + P3 numeric structural words + hyphen support.
+- [x] `26-02-PLAN.md` — SHIPPED 2026-05-23. P1 SelfCorrectionResolver doch/oder removal.
+- [x] `26-03-PLAN.md` — SHIPPED 2026-05-23. P2 Dictionary versus→Vercel retired (replacement entry removed after code review caught fuzzy false-positive risk).
 
 ## Session Continuity
 
-Last session: 2026-05-22 (V19C UAT closed, Phase 26 planned)
-Stopped at: Phase 26 (Pipeline Quality Hardening) planned with 3 plans, all Wave 1 (parallel, file-disjoint). Ready for execution via `/gsd:execute-phase 26`.
-Key results: V19C UAT PASS (153 records, 90.2% clean, 0% damage). 4 issues found — all in pre-LLM pipeline components (ITN, SelfCorrectionResolver, Dictionary), not the V19C prompt itself. Plan 25.1-06 deprioritized; Phase 23 absorbed into Phase 26.
+Last session: 2026-05-23 (Phase 26 shipped, version display added, TCC fix)
+Stopped at: All Phase 26 plans shipped and verified (12/12 must-haves). Version display (AppBuildInfo) added to macOS + iOS. install-local.sh hardened with build-artifact cleanup (TCC fix) and git-hash injection. iOS project.yml team ID fixed. Debug-Recorder rebuild pending if user wants continued observation.
+Key results: Phase 26 complete. Milestone v2.2 done. Open backlog: P4 dict expansion (germinize→Gemini, crown shop→cron job), P5 LLM English term translation prevention. Branch pushed.
