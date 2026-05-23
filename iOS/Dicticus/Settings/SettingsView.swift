@@ -96,8 +96,19 @@ struct SettingsView: View {
                     Text("About")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Dicticus v2.0")
+                        Text(AppBuildInfo.displayVersion)
+                        if let date = AppBuildInfo.buildDate {
+                            Text("Built \(date)")
+                        }
                         Text("\u{00A9} 2026 Maksim-101")
+                    }
+                }
+
+                Section("Recent Changes") {
+                    ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
+                        Text(note)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

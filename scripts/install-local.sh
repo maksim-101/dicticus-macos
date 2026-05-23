@@ -111,6 +111,33 @@ if [ -d "$CANONICAL_APP" ]; then
 fi
 cp -R "$SOURCE_APP" "$CANONICAL_APP"
 
+echo "=== Step 5b: Inject build metadata ==="
+PLIST="$CANONICAL_APP/Contents/Info.plist"
+GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE=$(date +%Y-%m-%d)
+/usr/libexec/PlistBuddy -c "Add :GitCommit string $GIT_HASH" "$PLIST" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Set :GitCommit $GIT_HASH" "$PLIST"
+/usr/libexec/PlistBuddy -c "Add :BuildDate string $BUILD_DATE" "$PLIST" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Set :BuildDate $BUILD_DATE" "$PLIST"
+echo "  Git: $GIT_HASH, Date: $BUILD_DATE"
+
+echo "=== Step 5c: Remove build artifacts to prevent LaunchServices identity confusion ==="
+# xcodebuild runs RegisterWithLaunchServices during the build, registering the
+# unsigned build artifact. If both that copy and the signed /Applications copy
+# exist simultaneously, macOS TCC sees conflicting signing identities for the
+# same bundle ID and invalidates permissions on every restart.
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+for artifact in "$BUILD_APP" "$RECORDER_APP"; do
+    if [ -d "$artifact" ]; then
+        echo "  Unregistering: $artifact"
+        "$LSREGISTER" -u "$artifact" 2>/dev/null || true
+        echo "  Removing: $artifact"
+        rm -rf "$artifact"
+    fi
+done
+# Re-register ONLY the canonical signed copy
+"$LSREGISTER" -f "$CANONICAL_APP" 2>/dev/null || true
+
 echo "=== Step 6: Re-sign for TCC persistence ==="
 echo "  Signing with identity: $SIGNING_ID"
 echo "  Hardened runtime + entitlements: $ENTITLEMENTS"

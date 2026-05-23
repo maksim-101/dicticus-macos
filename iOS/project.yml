@@ -40,7 +40,7 @@ targets:
       INFOPLIST_FILE: Dicticus/Info.plist
       GENERATE_INFOPLIST_FILE: YES
       CODE_SIGN_ENTITLEMENTS: Dicticus/Dicticus.entitlements
-      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+      DEVELOPMENT_TEAM: VTWHBCCP36
       OTHER_LDFLAGS: "-framework llama"
       INFOPLIST_KEY_CFBundleURLTypes:
         - CFBundleURLName: com.dicticus.ios
@@ -69,7 +69,7 @@ targets:
       SKIP_INSTALL: YES
       PRODUCT_NAME: DicticusWidget
       SWIFT_VERSION: "6.0"
-      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+      DEVELOPMENT_TEAM: VTWHBCCP36
     info:
       path: DicticusWidget/Info.plist
       properties:
@@ -96,7 +96,7 @@ targets:
     settings:
       GENERATE_INFOPLIST_FILE: YES
       TEST_TARGET_NAME: Dicticus
-      DEVELOPMENT_TEAM: ${DEVELOPER_TEAM_ID}
+      DEVELOPMENT_TEAM: VTWHBCCP36
     dependencies:
       - target: Dicticus
 

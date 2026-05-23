@@ -138,6 +138,34 @@ struct SettingsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             .padding(.vertical, 4)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(AppBuildInfo.displayVersion)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let date = AppBuildInfo.buildDate {
+                    Text("Built \(date)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
+                            Text(note)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                } label: {
+                    Text("Recent Changes")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 4)
         }
     }
 

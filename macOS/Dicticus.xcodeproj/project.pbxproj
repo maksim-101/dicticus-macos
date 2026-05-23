@@ -27,6 +27,7 @@
 		224D944F8C69C4D182295A23 /* ITNUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CF6C951598DD95DF8012E2 /* ITNUtilityTests.swift */; };
 		22A84736FD3182B120F7D8DF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 383C33859A15C6735C57D628 /* FluidAudio */; };
 		2A0BC6A9E3318985B054375B /* PermissionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 698EE4AB3AE54E73F4342A3B /* PermissionRow.swift */; };
+		2C44EE562FD69A88C6BC9F94 /* AppBuildInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24660DFE48AE6E30C151D89 /* AppBuildInfo.swift */; };
 		2C83C0A729600C6BDD9B0284 /* ITNUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF52FB11E0C3E29DB9DD5308 /* ITNUtility.swift */; };
 		2CBB9E936439E4D8CA60F825 /* HotkeyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */; };
 		2CCDDDB512E51308F0A0D6D5 /* SystemSettingsURLs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9323B1AD9E85950CAD77E332 /* SystemSettingsURLs.swift */; };
@@ -148,6 +149,7 @@
 		A4711E5E2A1A90B0A7DC48F3 /* TranscriptionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionServiceTests.swift; sourceTree = "<group>"; };
 		ABA71A6F64C7DA9ED75C9FF1 /* SelfCorrectionResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfCorrectionResolverTests.swift; sourceTree = "<group>"; };
 		ACD25584A55773982F1CBD98 /* CleanupProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupProvider.swift; sourceTree = "<group>"; };
+		B24660DFE48AE6E30C151D89 /* AppBuildInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBuildInfo.swift; sourceTree = "<group>"; };
 		B6356DF22A67C2BF0B6EF82B /* WarmupRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupRow.swift; sourceTree = "<group>"; };
 		B7D3DD0825432F368F7647AB /* FillerWordRemover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FillerWordRemover.swift; sourceTree = "<group>"; };
 		B9ACE74779B554BB24700B58 /* ModifierHotkeyListenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModifierHotkeyListenerTests.swift; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 		68B00223D976B4A2710B950F /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B24660DFE48AE6E30C151D89 /* AppBuildInfo.swift */,
 				D667692C5EE7BB68CC659EE0 /* CleanupCopyMode.swift */,
 				693D14BCC901C8027CF247E4 /* CleanupPrompt.swift */,
 				9BA4FFDE53E7BC06A5A214D2 /* DictationMode.swift */,
@@ -523,6 +526,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0EE3A0B5F33F9185235BD932 /* AiCleanupInfoView.swift in Sources */,
+				2C44EE562FD69A88C6BC9F94 /* AppBuildInfo.swift in Sources */,
 				70DCDABAE3C47214349833EA /* CleanupCopyMode.swift in Sources */,
 				831A9C4AEA783A6D229A0D41 /* CleanupPrompt.swift in Sources */,
 				8AEBBFCCD69BB9A401CEFCB9 /* CleanupProvider.swift in Sources */,
