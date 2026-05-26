@@ -28,7 +28,10 @@ public struct DebugCleanupRecord: Codable, Sendable {
     public let model: ModelInfo
     public let sampler: SamplerInfo
     public let steps: Steps
+    /// LLM context targeting hints (input-side dictionary key matches). Narrowed in Phase 27: no longer overloaded with actually-applied replacements — see dictionary_replacements.
     public let dictionary_context_keys: [String]
+    public let dictionary_replacements: [DictionaryReplacementEntry]
+    public let dictionary_blocked: [DictionaryBlockedEntry]
     public let anomaly: Anomaly
     public let emission_counter: Int        // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
 
@@ -83,6 +86,32 @@ public struct DebugCleanupRecord: Codable, Sendable {
         public let degenerate_collapse: Bool
         public let very_short_output: Bool
     }
+
+    public struct DictionaryReplacementEntry: Codable, Sendable {
+        public let key: String
+        public let from: String
+        public let to: String
+
+        public init(key: String, from: String, to: String) {
+            self.key = key
+            self.from = from
+            self.to = to
+        }
+    }
+
+    public struct DictionaryBlockedEntry: Codable, Sendable {
+        public let key: String
+        public let from: String
+        public let to: String
+        public let ratio: Double
+
+        public init(key: String, from: String, to: String, ratio: Double) {
+            self.key = key
+            self.from = from
+            self.to = to
+            self.ratio = ratio
+        }
+    }
 }
 
 // MARK: - Recorder actor
@@ -95,6 +124,9 @@ public actor DebugRecorder {
     private let retentionDays: Int = 14
     private var hasPurgedThisLaunch = false
     private var emissionCounter: Int = 0
+
+    /// Test-only — last record handed to record(_:). Always nil in production builds (file is fully gated by #if DEBUG_RECORDER).
+    public private(set) var lastRecordForTests: DebugCleanupRecord?
 
     private init() {
         let fm = FileManager.default
@@ -117,6 +149,7 @@ public actor DebugRecorder {
     }
 
     public func record(_ rec: DebugCleanupRecord) {
+        lastRecordForTests = rec
         ensureDirectory()
         purgeIfNeeded()
 
