@@ -169,8 +169,28 @@ final class DictionaryServiceFuzzyMatchTests: XCTestCase {
         let out1 = DictionaryService.shared.apply(to: "open the Tailskil dashboard")
         XCTAssertEqual(out1, "open the Tailscale dashboard")
         // "Tailscele" (distance 2 from "Tailscale" key) — fuzzy catches it
+        // Verified under Phase 27 fuzzy guard at ratio cap 0.25 (D-03 open-decision Option 1).
         let out2 = DictionaryService.shared.apply(to: "open the Tailscele dashboard")
         XCTAssertEqual(out2, "open the Tailscale dashboard")
+    }
+
+    func testTailskillExactStillFires() {
+        // Phase 27 baseline preservation: exact-match key must continue to fire.
+        let out = DictionaryService.shared.apply(to: "check the Tailskill dashboard")
+        XCTAssertTrue(out.contains("Tailscale"), "Got: \(out)")
+    }
+
+    func testTailskilDistance1StillFires() {
+        // Phase 27 baseline preservation: distance-1 fuzzy ratio 0.111 < 0.25 — must fire.
+        let out = DictionaryService.shared.apply(to: "check the Tailskil dashboard")
+        XCTAssertTrue(out.contains("Tailscale"), "Got: \(out)")
+    }
+
+    func testTailsceleStillFiresAt025Cap() {
+        // Locks ratio-cap >= 0.25 contract per Phase 27 open-decision Option 1.
+        // Tailscele <-> Tailscale: distance 2, max-length 9, ratio 0.222 <= 0.25 — fires.
+        let out = DictionaryService.shared.apply(to: "open the Tailscele dashboard")
+        XCTAssertTrue(out.contains("Tailscale"), "Got: \(out)")
     }
 
     func testPhase251_FuzzyMatch_DoesNotFireOnShortTokens() {
@@ -238,5 +258,139 @@ final class DictionaryServicePhase26RegressionTests: XCTestCase {
         // Verify the replacement entry: "vercel" (lowercase) correctly normalises to "Vercel".
         let output = DictionaryService.shared.apply(to: "deploy to vercel")
         XCTAssertEqual(output, "deploy to Vercel")
+    }
+}
+
+// MARK: - Phase 27: Hallucination guard (DICT-SAFE-01, DICT-SAFE-02)
+//
+// Locks the K1 fuzzy-pass hallucinations from the 2026-05-23 to 26 live-capture
+// window: `remind -> Gemini` (JSONL 2026-05-25T08:22:24.564Z) and
+// `applies -> AppLite` (JSONL 2026-05-26T16:12:57.343Z). Seeds Gemini/AppLite as
+// dictionary keys to reproduce the K1 conditions; verifies the new allowlist +
+// ratio-cap guard prevents the mutation.
+
+@MainActor
+final class DictionaryServiceHallucinationGuardTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        let s = DictionaryService.shared
+        s.removeAll()
+        // Reproduce K1: seed Gemini and AppLite as keys so fuzzy candidates
+        // would otherwise hit them.
+        s.setReplacement(for: "Gemini", with: "Gemini")
+        s.setReplacement(for: "AppLite", with: "AppLite")
+        s.isCaseSensitive = false
+    }
+
+    func testRemindNotMutatedToGemini_2026_05_25T08_22_24() {
+        // JSONL 2026-05-25T08:22:24.564Z — `remind` (ratio 0.333) must NOT mutate to Gemini.
+        let input = "Cheesty faces should outta remind me to run this"
+        let output = DictionaryService.shared.apply(to: input)
+        XCTAssertTrue(output.contains("remind"), "remind must survive guard. Got: \(output)")
+        XCTAssertFalse(output.contains("Gemini"), "remind must not mutate to Gemini. Got: \(output)")
+    }
+
+    func testAppliesNotMutatedToAppLite_2026_05_26T16_12_57() {
+        // JSONL 2026-05-26T16:12:57.343Z — `applies` (ratio 0.286) must NOT mutate to AppLite.
+        let input = "the same problem applies"
+        let output = DictionaryService.shared.apply(to: input)
+        XCTAssertTrue(output.contains("applies"), "applies must survive guard. Got: \(output)")
+        XCTAssertFalse(output.contains("AppLite"), "applies must not mutate to AppLite. Got: \(output)")
+    }
+
+    func testAllowlistVetoCaseInsensitive() {
+        // D-04: allowlist consulted on lowercased token; uppercase input must still veto.
+        let output = DictionaryService.shared.apply(to: "REMIND")
+        XCTAssertEqual(output, "REMIND", "Uppercase REMIND must be untouched (allowlist veto on lowercase lookup).")
+    }
+
+    func testRatioCapBlocksDistance2OnLength7() {
+        // Seed a non-allowlisted brand key; verify distance-1 fires (ratio 0.143 <= 0.25)
+        // and distance-8 / length-8 does NOT fire (ratio 1.0 > 0.25).
+        let s = DictionaryService.shared
+        s.setReplacement(for: "BarBaz1", with: "BarBaz1")
+        let positive = s.apply(to: "I use barbaz0 daily")
+        XCTAssertTrue(positive.contains("BarBaz1"), "distance-1 ratio 0.143 should fire. Got: \(positive)")
+
+        s.setReplacement(for: "BarBazXY", with: "BarBazXY")
+        let negative = s.apply(to: "the abcdefgh word here")
+        XCTAssertFalse(negative.contains("BarBazXY"), "distance-8 ratio 1.0 must NOT fire. Got: \(negative)")
+    }
+
+    func testAllowlistLoadedFromBundle() {
+        // Verifies the bundled allowlist asset is loaded into commonWords at init.
+        // Uses the internal test-visibility surface added in Task 3.
+        let words = DictionaryService.shared.commonWordsForTests
+        XCTAssertTrue(words.contains("remind"), "allowlist must contain 'remind'")
+        XCTAssertTrue(words.contains("applies"), "allowlist must contain 'applies'")
+        XCTAssertTrue(words.contains("running"), "allowlist must contain 'running'")
+        XCTAssertTrue(words.contains("working"), "allowlist must contain 'working'")
+        XCTAssertTrue(words.contains("looking"), "allowlist must contain 'looking'")
+        XCTAssertGreaterThan(words.count, 1500, "allowlist union of EN+DE top-1000 must exceed 1500 entries")
+    }
+}
+
+// MARK: - Phase 27: applyWithTrace canonical implementation (OBS-DICT-01, D-08)
+//
+// Locks the `applyWithTrace(to:)` contract introduced in Phase 27: returns
+// (text, replacements, blocked) with the Replacement and BlockedMatch inner
+// types. `apply(to:)` becomes a thin wrapper over `applyWithTrace`.
+
+@MainActor
+final class DictionaryServiceApplyWithTraceTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        let s = DictionaryService.shared
+        s.removeAll()
+        s.isCaseSensitive = false
+    }
+
+    func testApplyWithTraceReturnsReplacements() {
+        let s = DictionaryService.shared
+        s.setReplacement(for: "Dicticos", with: "Dicticus")
+        let trace = s.applyWithTrace(to: "Dicticos is great")
+        XCTAssertEqual(trace.text, "Dicticus is great")
+        XCTAssertEqual(trace.replacements.count, 1)
+        XCTAssertEqual(trace.replacements[0].key, "Dicticos")
+        XCTAssertEqual(trace.replacements[0].from, "Dicticos")
+        XCTAssertEqual(trace.replacements[0].to, "Dicticus")
+        XCTAssertTrue(trace.blocked.isEmpty)
+    }
+
+    func testApplyWithTraceReturnsBlocked() {
+        let s = DictionaryService.shared
+        // Allowlist-vetoed path: `remind` is in allowlist; guard A fires before the
+        // candidate loop, so no BlockedMatch is emitted (per RESEARCH §2.2 guard order).
+        s.setReplacement(for: "Gemini", with: "Gemini")
+        let allowlistTrace = s.applyWithTrace(to: "remind me to test")
+        XCTAssertTrue(allowlistTrace.text.contains("remind"))
+        XCTAssertTrue(allowlistTrace.blocked.isEmpty, "Allowlist veto fires before candidate loop; no BlockedMatch.")
+
+        // Positive BlockedMatch path: non-allowlisted token, distance 2, ratio > 0.25.
+        // barbax5 <-> BarBaz7 (lowercased barbaz7): position 5 x->z sub, position 6 5->7 sub = 2 subs.
+        // ratio 2/7 ~= 0.286 > 0.25 cap; distance 2 <= 2 -> BlockedMatch emitted.
+        s.removeAll()
+        s.setReplacement(for: "BarBaz7", with: "BarBaz7")
+        let blockedTrace = s.applyWithTrace(to: "barbax5 is fine")
+        XCTAssertEqual(blockedTrace.text, "barbax5 is fine", "Token must not be mutated when blocked.")
+        XCTAssertGreaterThanOrEqual(blockedTrace.blocked.count, 1)
+        let blocked = blockedTrace.blocked[0]
+        XCTAssertEqual(blocked.key, "BarBaz7")
+        XCTAssertEqual(blocked.from, "barbax5")
+        XCTAssertEqual(blocked.to, "BarBaz7")
+        XCTAssertEqual(blocked.ratio, 2.0 / 7.0, accuracy: 0.001)
+    }
+
+    func testApplyAndApplyWithTraceProduceSameText() {
+        // D-08: apply(to:) is a thin wrapper over applyWithTrace(to:).text.
+        let s = DictionaryService.shared
+        s.setReplacement(for: "Dicticos", with: "Dicticus")
+        s.setReplacement(for: "Tailskill", with: "Tailscale")
+        let input = "Dicticos with Tailskil dashboard"
+        let a = s.apply(to: input)
+        let b = s.applyWithTrace(to: input).text
+        XCTAssertEqual(a, b, "apply and applyWithTrace.text must be identical.")
     }
 }
