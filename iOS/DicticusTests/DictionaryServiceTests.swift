@@ -410,9 +410,22 @@ final class DictionaryServiceK7AddsTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        // K7 entries are seeded by prepopulateWithDefaults() in the singleton init.
-        // Reset case-sensitivity flag to the default to avoid prior-test contamination.
-        DictionaryService.shared.isCaseSensitive = false
+        // K7 entries are seeded by prepopulateWithDefaults() in the singleton init,
+        // but sibling test classes call removeAll() in their setUp, wiping the
+        // singleton between runs. Re-seed explicitly per the pattern documented
+        // at L92-93 ("Tests use setReplacement to seed entries because
+        // prepopulateWithDefaults is private and setUp calls removeAll").
+        let s = DictionaryService.shared
+        s.removeAll()
+        s.isCaseSensitive = false
+        s.setReplacement(for: "clawed code", with: "Claude Code")
+        s.setReplacement(for: "Accara", with: "Aqara")
+        s.setReplacement(for: "accara", with: "Aqara")
+        s.setReplacement(for: "Andre Karpaty", with: "Andrej Karpathy")
+        s.setReplacement(for: "Swiss folio", with: "Swissfolio")
+        s.setReplacement(for: "swiss folio", with: "Swissfolio")
+        s.setReplacement(for: "germinize", with: "Gemini")
+        s.setReplacement(for: "crown shop", with: "cron job")
     }
 
     func testK7_ClawedCode_2026_05_23T05_24_32() {
