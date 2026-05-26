@@ -35,6 +35,66 @@ public struct DebugCleanupRecord: Codable, Sendable {
     public let anomaly: Anomaly
     public let emission_counter: Int        // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
 
+    // Phase 27 WR-02: custom decoder tolerates pre-Phase-27 JSONL where the
+    // dictionary_replacements / dictionary_blocked keys are absent. Both
+    // default to `[]` on missing-key, matching the encode-as-`[]` contract
+    // pinned by DebugCleanupRecordCodableTests.testDebugCleanupRecordCodableRoundTrip_DefaultEmpty.
+    // Synthesized encoder (Codable) is unchanged and continues to emit the
+    // fields explicitly — only decode is relaxed.
+    private enum CodingKeys: String, CodingKey {
+        case ts, session_id, lang, lang_used, mode, model, sampler, steps
+        case dictionary_context_keys, dictionary_replacements, dictionary_blocked
+        case anomaly, emission_counter
+    }
+
+    public init(
+        ts: String,
+        session_id: String,
+        lang: String,
+        lang_used: String,
+        mode: String,
+        model: ModelInfo,
+        sampler: SamplerInfo,
+        steps: Steps,
+        dictionary_context_keys: [String],
+        dictionary_replacements: [DictionaryReplacementEntry],
+        dictionary_blocked: [DictionaryBlockedEntry],
+        anomaly: Anomaly,
+        emission_counter: Int
+    ) {
+        self.ts = ts
+        self.session_id = session_id
+        self.lang = lang
+        self.lang_used = lang_used
+        self.mode = mode
+        self.model = model
+        self.sampler = sampler
+        self.steps = steps
+        self.dictionary_context_keys = dictionary_context_keys
+        self.dictionary_replacements = dictionary_replacements
+        self.dictionary_blocked = dictionary_blocked
+        self.anomaly = anomaly
+        self.emission_counter = emission_counter
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.ts = try c.decode(String.self, forKey: .ts)
+        self.session_id = try c.decode(String.self, forKey: .session_id)
+        self.lang = try c.decode(String.self, forKey: .lang)
+        self.lang_used = try c.decode(String.self, forKey: .lang_used)
+        self.mode = try c.decode(String.self, forKey: .mode)
+        self.model = try c.decode(ModelInfo.self, forKey: .model)
+        self.sampler = try c.decode(SamplerInfo.self, forKey: .sampler)
+        self.steps = try c.decode(Steps.self, forKey: .steps)
+        self.dictionary_context_keys = try c.decode([String].self, forKey: .dictionary_context_keys)
+        // Phase 27 WR-02: tolerate missing keys in pre-Phase-27 JSONL.
+        self.dictionary_replacements = try c.decodeIfPresent([DictionaryReplacementEntry].self, forKey: .dictionary_replacements) ?? []
+        self.dictionary_blocked = try c.decodeIfPresent([DictionaryBlockedEntry].self, forKey: .dictionary_blocked) ?? []
+        self.anomaly = try c.decode(Anomaly.self, forKey: .anomaly)
+        self.emission_counter = try c.decode(Int.self, forKey: .emission_counter)
+    }
+
     public struct ModelInfo: Codable, Sendable {
         public let name: String
         public let sha256_prefix: String?

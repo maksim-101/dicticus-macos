@@ -104,5 +104,46 @@ final class DebugCleanupRecordCodableTests: XCTestCase {
         XCTAssertEqual(roundtrip.dictionary_blocked[0].to, "Gemini")
         XCTAssertEqual(roundtrip.dictionary_blocked[0].ratio, 0.333, accuracy: 0.001)
     }
+
+    /// Phase 27 WR-02: pre-Phase-27 JSONL lines lack `dictionary_replacements` and
+    /// `dictionary_blocked` keys entirely. The decoder must tolerate their absence
+    /// and default both to `[]`, otherwise external replay tooling cannot read
+    /// historical capture files written before the schema extension landed.
+    func testDebugCleanupRecordDecode_PrePhase27_TolerantToMissingDictionaryFields() {
+        // Synthetic pre-Phase-27 JSONL: no dictionary_replacements / dictionary_blocked keys.
+        let json = """
+        {
+          "ts": "2026-05-20T12:00:00.000Z",
+          "session_id": "legacy-session",
+          "lang": "en",
+          "lang_used": "en",
+          "mode": "plain",
+          "model": { "name": "test", "sha256_prefix": null },
+          "sampler": { "temp": 0.1, "top_k": 1, "top_p": 1.0, "max_tokens": 1, "seed": null },
+          "steps": {
+            "raw": { "text": "", "ms": 0 },
+            "post_dict": { "text": "", "ms": 0 },
+            "post_itn": { "text": "", "ms": 0 },
+            "post_swiss": { "text": "", "ms": 0 },
+            "post_rules": { "text": "", "ms": 0 },
+            "llm_prompt": null,
+            "llm_raw": null,
+            "post_gate": null,
+            "post_swiss_num": { "text": "", "ms": 0 }
+          },
+          "dictionary_context_keys": [],
+          "anomaly": { "degenerate_collapse": false, "very_short_output": false },
+          "emission_counter": 0
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        let record = try! decoder.decode(DebugCleanupRecord.self, from: json)
+        XCTAssertTrue(record.dictionary_replacements.isEmpty,
+            "Phase 27 WR-02: missing dictionary_replacements must default to [] (not fail decode)")
+        XCTAssertTrue(record.dictionary_blocked.isEmpty,
+            "Phase 27 WR-02: missing dictionary_blocked must default to [] (not fail decode)")
+        XCTAssertEqual(record.ts, "2026-05-20T12:00:00.000Z")
+        XCTAssertEqual(record.session_id, "legacy-session")
+    }
 }
 #endif
