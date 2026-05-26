@@ -394,3 +394,88 @@ final class DictionaryServiceApplyWithTraceTests: XCTestCase {
         XCTAssertEqual(a, b, "apply and applyWithTrace.text must be identical.")
     }
 }
+
+// MARK: - Phase 27-03: K7 brand misses + carried-backlog defaults
+
+/// Phase 27 K7 (D-10, D-11): per-entry fixtures for the K7 brand-miss batch
+/// added to `prepopulateWithDefaults()`. Each test cites the JSONL timestamp
+/// from the 2026-05-23→26 live-capture window that motivated the entry, per
+/// PATTERNS.md "Timestamp-cited test names" L115/121.
+///
+/// RED-then-GREEN: this class is committed in Task 2a with assertions that
+/// fail until Task 2b lands the matching entries in `DictionaryService.swift`.
+/// After Task 2b, all 10 tests should be GREEN.
+@MainActor
+final class DictionaryServiceK7AddsTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        // K7 entries are seeded by prepopulateWithDefaults() in the singleton init.
+        // Reset case-sensitivity flag to the default to avoid prior-test contamination.
+        DictionaryService.shared.isCaseSensitive = false
+    }
+
+    func testK7_ClawedCode_2026_05_23T05_24_32() {
+        let out = DictionaryService.shared.apply(to: "I tried clawed code yesterday")
+        XCTAssertTrue(out.contains("Claude Code"))
+        XCTAssertFalse(out.contains("clawed code"))
+    }
+
+    func testK7_Accara_2026_05_24T17_50_00() {
+        let out = DictionaryService.shared.apply(to: "the Accara hub is plugged in")
+        XCTAssertTrue(out.contains("Aqara"))
+    }
+
+    func testK7_accara_lower() {
+        let out = DictionaryService.shared.apply(to: "the accara hub is plugged in")
+        XCTAssertTrue(out.contains("Aqara"))
+    }
+
+    func testK7_AndreKarpaty_2026_05_25T04_14_30() {
+        let out = DictionaryService.shared.apply(to: "Andre Karpaty has a new video")
+        XCTAssertTrue(out.contains("Andrej Karpathy"))
+    }
+
+    func testK7_SwissFolio() {
+        let out = DictionaryService.shared.apply(to: "open Swiss folio dashboard")
+        XCTAssertTrue(out.contains("Swissfolio"))
+    }
+
+    func testK7_swissFolio_lower() {
+        let out = DictionaryService.shared.apply(to: "open swiss folio dashboard")
+        XCTAssertTrue(out.contains("Swissfolio"))
+    }
+
+    func testCarriedBacklog_germinize() {
+        let out = DictionaryService.shared.apply(to: "let me try germinize for this task")
+        XCTAssertTrue(out.contains("Gemini"))
+        XCTAssertFalse(out.contains("germinize"))
+    }
+
+    func testCarriedBacklog_crownShop() {
+        let out = DictionaryService.shared.apply(to: "schedule a crown shop for nightly")
+        XCTAssertTrue(out.contains("cron job"))
+    }
+
+    func testK7_GerminateNotCorrupted() {
+        // RESEARCH §6.4 / Task 1 collision audit — germinate is a real English word.
+        // Under 27-01 guard (ratio cap 0.25, allowlist), germinate↔Gemini ratio 0.667 BLOCKED;
+        // germinate↔germinize ratio 0.222 — but germinize is a KEY, not a target.
+        // Test confirms germinate passes through unchanged.
+        let out = DictionaryService.shared.apply(to: "the seeds germinate quickly")
+        XCTAssertTrue(out.contains("germinate"))
+        XCTAssertFalse(out.contains("Gemini"))
+    }
+
+    func testK7_DoesNotOverrideUserCustomization() {
+        // Idempotent merge contract — D-12 + DictionaryService.swift idempotent loop.
+        // If the user has manually set `clawed code → SomethingElse`, prepopulate must NOT overwrite.
+        // Since prepopulate runs at singleton init (before tests), this test asserts the contract by
+        // manually setting a user replacement, then verifying it persists across an apply() call.
+        DictionaryService.shared.setReplacement(for: "clawed code", with: "Klawed Kode")
+        let out = DictionaryService.shared.apply(to: "trying clawed code now")
+        XCTAssertTrue(out.contains("Klawed Kode"))
+        // Reset for other tests
+        DictionaryService.shared.removeReplacement(for: "clawed code")
+    }
+}
