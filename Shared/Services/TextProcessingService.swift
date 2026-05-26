@@ -84,12 +84,18 @@ class TextProcessingService: ObservableObject {
         #endif
 
         // Step 1: Dictionary replacements
-        var processedText = dictionaryService.apply(to: text)
-
         #if DEBUG_RECORDER
+        var dbgReplacements: [DictionaryService.Replacement] = []
+        var dbgBlocked: [DictionaryService.BlockedMatch] = []
+        let dictTrace = dictionaryService.applyWithTrace(to: text)
+        var processedText = dictTrace.text
+        dbgReplacements = dictTrace.replacements
+        dbgBlocked = dictTrace.blocked
         let dbgPostDict = processedText
         let dbgPostDictMs = Date().timeIntervalSince(dbgRawStart) * 1000.0
         let dbgItnStart = Date()
+        #else
+        var processedText = dictionaryService.apply(to: text)
         #endif
 
         // Step 2: Rule-based ITN
@@ -350,6 +356,8 @@ class TextProcessingService: ObservableObject {
                 post_swiss_num: .init(text: dbgPostSwissNum, ms: dbgPostSwissNumMs)
             ),
             dictionary_context_keys: dbgDictKeys,
+            dictionary_replacements: dbgReplacements.map { DebugCleanupRecord.DictionaryReplacementEntry(key: $0.key, from: $0.from, to: $0.to) },
+            dictionary_blocked: dbgBlocked.map { DebugCleanupRecord.DictionaryBlockedEntry(key: $0.key, from: $0.from, to: $0.to, ratio: $0.ratio) },
             anomaly: DebugCleanupRecord.Anomaly(
                 degenerate_collapse: degenerateCollapse,
                 very_short_output: veryShort

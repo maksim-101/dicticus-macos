@@ -1,11 +1,24 @@
 import XCTest
 @testable import Dicticus
 
+/// TextProcessingService integration tests — cross-platform parity (macOS + iOS).
+///
+/// Coverage:
+///   - Pipeline order (dictionary → ITN) — testPipelineOrder, testGermanPipeline.
+///   - D-23 / CLEAN-01 cleanup wiring — testCleanupPath, testPlainModeSkipsCleanup.
+///   - D-13 blocks-until-cleaned — testBlocksUntilCleaned.
+///   - Provider !isLoaded short-circuit — testCleanupSkippedWhenProviderNotLoaded.
+///   - Phase 20.08 R7 dialect gate ordering — testDialectGateRunsBeforeLevenshteinAndDemotes.
+///   - Phase 25-02 plain-mode JSONL parity (#if DEBUG_RECORDER).
+///   - Phase 25.1-01 lang_used + emission_counter (#if DEBUG_RECORDER).
+///   - Phase 27-02 dictionary_replacements end-to-end (#if DEBUG_RECORDER).
+///
+/// Per feedback_cleanup_cross_platform_parity memory: this file is byte-
+/// identical to iOS/DicticusTests/TextProcessingServiceTests.swift.
 @MainActor
 final class TextProcessingServiceTests: XCTestCase {
 
-    /// Mirror of iOS MockCleanupProvider for cross-platform parity (Phase 20.08 R7).
-    /// Per feedback_cleanup_cross_platform_parity memory.
+    /// Minimal mock conforming to the existing `CleanupProvider` protocol.
     final class MockCleanupProvider: CleanupProvider {
         var isLoaded: Bool = true
         private(set) var callCount = 0
@@ -37,6 +50,8 @@ final class TextProcessingServiceTests: XCTestCase {
         service = TextProcessingService(dictionaryService: dictionaryService, cleanupService: nil)
     }
 
+    // MARK: - Pipeline order (dictionary → ITN)
+
     func testPipelineOrder() async {
         // 1. Set up dictionary: "bird" -> "one hundred"
         dictionaryService.setReplacement(for: "bird", with: "one hundred")
@@ -56,6 +71,78 @@ final class TextProcessingServiceTests: XCTestCase {
         let output = await service.process(text: input, language: "de", mode: .plain)
 
         XCTAssertEqual(output, "Ich habe einen 100")
+    }
+
+    // MARK: - D-23 / CLEAN-01: Cleanup path is wired
+
+    func testCleanupPath() async {
+        let mock = MockCleanupProvider()
+        mock.returnValue = "Hallo Welt, das ist ein Test."
+        let service = TextProcessingService(cleanupService: mock)
+
+        let output = await service.process(
+            text: "hallo welt das ist ein test",
+            language: "de",
+            mode: .aiCleanup
+        )
+
+        XCTAssertEqual(mock.callCount, 1, "Cleanup mock must be invoked once in .aiCleanup mode")
+        XCTAssertEqual(mock.lastLanguage, "de")
+        XCTAssertEqual(output, "Hallo Welt, das ist ein Test.")
+    }
+
+    // MARK: - Plain mode bypasses cleanup
+
+    func testPlainModeSkipsCleanup() async {
+        let mock = MockCleanupProvider()
+        let service = TextProcessingService(cleanupService: mock)
+
+        let output = await service.process(
+            text: "hallo welt",
+            language: "de",
+            mode: .plain
+        )
+
+        XCTAssertEqual(mock.callCount, 0, "Cleanup mock must NOT run in .plain mode")
+        // Dictionary + ITN passes still run, but with no cleanup the text survives
+        // in recognizable form.
+        XCTAssertTrue(output.contains("welt") || output.contains("Welt"),
+                      "Plain output should preserve the input text")
+    }
+
+    // MARK: - D-13: Blocks until cleaned (no raw-then-replace)
+
+    func testBlocksUntilCleaned() async {
+        let mock = MockCleanupProvider()
+        mock.artificialDelayMs = 250
+        mock.returnValue = "polished"
+        let service = TextProcessingService(cleanupService: mock)
+
+        let start = Date()
+        let output = await service.process(
+            text: "hello",
+            language: "en",
+            mode: .aiCleanup
+        )
+        let elapsed = Date().timeIntervalSince(start)
+
+        XCTAssertEqual(output, "polished",
+                       "process() must return the cleaned value, not the raw input")
+        XCTAssertGreaterThanOrEqual(elapsed, 0.2,
+                                    "process() must block until cleanup completes (D-13)")
+    }
+
+    // MARK: - Cleanup skipped when provider reports !isLoaded
+
+    func testCleanupSkippedWhenProviderNotLoaded() async {
+        let mock = MockCleanupProvider()
+        mock.isLoaded = false
+        let service = TextProcessingService(cleanupService: mock)
+
+        _ = await service.process(text: "hello", language: "en", mode: .aiCleanup)
+
+        XCTAssertEqual(mock.callCount, 0,
+                       "Cleanup must be skipped when provider.isLoaded == false")
     }
 
     // MARK: - Phase 20.08 R7: dialect gate stacks before Levenshtein
@@ -254,3 +341,50 @@ final class TextProcessingServiceTests: XCTestCase {
     }
     #endif
 }
+
+#if DEBUG_RECORDER
+/// Phase 27-02: end-to-end integration test proving that an exact-match
+/// dictionary replacement during a real pipeline run propagates into the
+/// emitted DebugCleanupRecord's `dictionary_replacements` field. Closes
+/// the OBS-DICT-01 wiring contract.
+///
+/// Asserts via DebugRecorder.shared.lastRecordForTests (test-only actor
+/// accessor populated from record(_:)) so the test does not depend on
+/// JSONL file I/O.
+///
+/// Cross-platform parity (feedback_cleanup_cross_platform_parity): byte-
+/// identical between macOS and iOS test targets.
+@MainActor
+final class TextProcessingServiceRecorderTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.removeObject(forKey: DictionaryService.dictionaryKey)
+        DictionaryService.shared.removeAll()
+    }
+
+    func testRecorderEmitsDictionaryReplacements() async {
+        // Seed a deterministic exact-match dictionary entry.
+        let dict = DictionaryService.shared
+        dict.removeAll()
+        dict.setReplacement(for: "Dicticos", with: "Dicticus")
+
+        // Run the pipeline (plain mode — no LLM needed).
+        let service = TextProcessingService(dictionaryService: dict, cleanupService: nil)
+        _ = await service.process(text: "Dicticos is great", language: "en", mode: .plain)
+
+        // Allow the DebugRecorder actor a tick to record(_:).
+        try? await Task.sleep(nanoseconds: 150_000_000)
+
+        let lastRecord = await DebugRecorder.shared.lastRecordForTests
+        XCTAssertNotNil(lastRecord, "Phase 27-02: DebugRecorder.lastRecordForTests must be populated after process()")
+        XCTAssertEqual(lastRecord?.dictionary_replacements.count, 1,
+            "Phase 27-02: exactly one Replacement expected for the seeded exact-match dictionary entry")
+        XCTAssertEqual(lastRecord?.dictionary_replacements[0].key, "Dicticos")
+        XCTAssertEqual(lastRecord?.dictionary_replacements[0].from, "Dicticos")
+        XCTAssertEqual(lastRecord?.dictionary_replacements[0].to, "Dicticus")
+        XCTAssertTrue(lastRecord?.dictionary_blocked.isEmpty ?? false,
+            "Phase 27-02: no BlockedMatch expected for a clean exact-match input")
+    }
+}
+#endif

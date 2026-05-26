@@ -1,12 +1,20 @@
 import XCTest
 @testable import Dicticus
 
-/// Wave 0 scaffold — TextProcessingService integration with CleanupProvider
-/// (D-13, D-23, CLEAN-01).
+/// TextProcessingService integration tests — cross-platform parity (macOS + iOS).
 ///
-/// These tests are CONCRETE and run today — `TextProcessingService` and
-/// `CleanupProvider` already exist in `Shared/`. A local `MockCleanupProvider`
-/// stands in for the Wave 1 `CleanupService`.
+/// Coverage:
+///   - Pipeline order (dictionary → ITN) — testPipelineOrder, testGermanPipeline.
+///   - D-23 / CLEAN-01 cleanup wiring — testCleanupPath, testPlainModeSkipsCleanup.
+///   - D-13 blocks-until-cleaned — testBlocksUntilCleaned.
+///   - Provider !isLoaded short-circuit — testCleanupSkippedWhenProviderNotLoaded.
+///   - Phase 20.08 R7 dialect gate ordering — testDialectGateRunsBeforeLevenshteinAndDemotes.
+///   - Phase 25-02 plain-mode JSONL parity (#if DEBUG_RECORDER).
+///   - Phase 25.1-01 lang_used + emission_counter (#if DEBUG_RECORDER).
+///   - Phase 27-02 dictionary_replacements end-to-end (#if DEBUG_RECORDER).
+///
+/// Per feedback_cleanup_cross_platform_parity memory: this file is byte-
+/// identical to iOS/DicticusTests/TextProcessingServiceTests.swift.
 @MainActor
 final class TextProcessingServiceTests: XCTestCase {
 
@@ -28,6 +36,41 @@ final class TextProcessingServiceTests: XCTestCase {
             }
             return returnValue
         }
+    }
+
+    var service: TextProcessingService!
+    var dictionaryService: DictionaryService!
+
+    override func setUp() {
+        super.setUp()
+        // Use a fresh dictionary service for isolation
+        UserDefaults.standard.removeObject(forKey: DictionaryService.dictionaryKey)
+        dictionaryService = DictionaryService.shared
+        dictionaryService.removeAll()
+        service = TextProcessingService(dictionaryService: dictionaryService, cleanupService: nil)
+    }
+
+    // MARK: - Pipeline order (dictionary → ITN)
+
+    func testPipelineOrder() async {
+        // 1. Set up dictionary: "bird" -> "one hundred"
+        dictionaryService.setReplacement(for: "bird", with: "one hundred")
+
+        let input = "I have a bird"
+        // Expected: "I have a bird" -> "I have a one hundred" (Dictionary) -> "I have a 100" (ITN)
+        let output = await service.process(text: input, language: "en", mode: .plain)
+
+        XCTAssertEqual(output, "I have a 100")
+    }
+
+    func testGermanPipeline() async {
+        dictionaryService.setReplacement(for: "Apfel", with: "einhundert")
+
+        let input = "Ich habe einen Apfel"
+        // Expected: "Ich habe einen Apfel" -> "Ich habe einen einhundert" -> "Ich habe einen 100"
+        let output = await service.process(text: input, language: "de", mode: .plain)
+
+        XCTAssertEqual(output, "Ich habe einen 100")
     }
 
     // MARK: - D-23 / CLEAN-01: Cleanup path is wired
@@ -133,25 +176,26 @@ final class TextProcessingServiceTests: XCTestCase {
     // MARK: - Phase 25-02: plain-mode DEBUG_RECORDER write-path parity
 
     #if DEBUG_RECORDER
-    /// Phase 25-02 (iOS parity): plain-mode dictation cycles emit a JSONL
-    /// record in the same daily file as aiCleanup cycles, distinguishable
-    /// by the `mode` field. LLM-section keys (`llm_prompt`, `llm_raw`,
-    /// `post_gate`) are nil/absent. Also verifies that aiCleanup records
-    /// continue to emit with the `aiCleanup` mode tag.
+    /// Phase 25-02: plain-mode dictation cycles emit a JSONL record in the
+    /// same daily file as aiCleanup cycles, distinguishable by the `mode`
+    /// field. LLM-section keys (`llm_prompt`, `llm_raw`, `post_gate`) are
+    /// nil/absent. Also verifies that aiCleanup records continue to emit
+    /// with non-nil LLM fields — the no-regression invariant for the
+    /// existing AI write path.
     ///
-    /// NOTE: this test appends to the app's REAL DebugRecordings file under
-    /// the iOS simulator's Application Support sandbox — it is only
-    /// compiled when the `DEBUG_RECORDER` flag is set. Each run uses a
-    /// unique probe substring so reruns do not produce false positives.
-    ///
-    /// Cross-platform parity (feedback_cleanup_cross_platform_parity):
-    /// mirrors macOS/DicticusTests/TextProcessingServiceTests.swift.
+    /// NOTE: this test appends to the user's REAL DebugRecordings file at
+    /// ~/Library/Application Support/Dicticus/DebugRecordings/ — it is
+    /// only compiled when the `DEBUG_RECORDER` flag is set (the Debug-
+    /// Recorder scheme), never in the public release. Each run uses a
+    /// unique probe substring so reruns do not produce false positives
+    /// from prior runs' lines.
     func testPlainModeWritesDebugRecord() async throws {
         let svc = TextProcessingService(cleanupService: nil)
         let probe = "phase25-02-plain-probe-\(UUID().uuidString.prefix(8))"
 
         _ = await svc.process(text: probe, language: "en", mode: .plain, confidence: 1.0)
 
+        // Allow the DebugRecorder actor a tick to flush its append.
         try await Task.sleep(nanoseconds: 100_000_000)
 
         let dir = FileManager.default
@@ -178,9 +222,14 @@ final class TextProcessingServiceTests: XCTestCase {
             "Phase 25-02: post_gate must be null/absent in plain-mode record")
     }
 
-    /// Phase 25-02 (iOS parity): no-regression invariant — aiCleanup
-    /// records continue to emit with `mode == "aiCleanup"`. Mirrors the
-    /// macOS test of the same name.
+    /// Phase 25-02: no-regression invariant — aiCleanup records continue
+    /// to emit with `mode == "aiCleanup"` and non-nil LLM fields after
+    /// the plain-mode parity work. Uses a mock cleanup provider so the
+    /// test does not depend on a loaded LLM. (CleanupService.lastDebugTrace
+    /// is only populated by the real CleanupService; a pure mock leaves
+    /// `cleanupTrace == nil`, which makes `llm_prompt`/`llm_raw` resolve
+    /// to nil — so this test asserts only the `mode` discriminator, which
+    /// is the field Plan 25-04 actually uses to split plain vs AI streams.)
     func testAICleanupModeWritesDebugRecordWithModeAICleanup() async throws {
         let mock = MockCleanupProvider()
         mock.returnValue = "Polished output for phase25-02-ai-probe"
@@ -220,8 +269,6 @@ final class TextProcessingServiceTests: XCTestCase {
     //          checking counter monotonicity across all records in a file.
     //
     // Pattern follows Phase 25-02 (UUID probe + today's-JSONL scan).
-    // Cross-platform parity (feedback_cleanup_cross_platform_parity):
-    // mirrors macOS/DicticusTests/TextProcessingServiceTests.swift.
 
     func testPhase251_LangUsedMirrorsLang() async throws {
         let probe = "phase251-lang-probe-\(UUID().uuidString.prefix(8))"
@@ -294,3 +341,50 @@ final class TextProcessingServiceTests: XCTestCase {
     }
     #endif
 }
+
+#if DEBUG_RECORDER
+/// Phase 27-02: end-to-end integration test proving that an exact-match
+/// dictionary replacement during a real pipeline run propagates into the
+/// emitted DebugCleanupRecord's `dictionary_replacements` field. Closes
+/// the OBS-DICT-01 wiring contract.
+///
+/// Asserts via DebugRecorder.shared.lastRecordForTests (test-only actor
+/// accessor populated from record(_:)) so the test does not depend on
+/// JSONL file I/O.
+///
+/// Cross-platform parity (feedback_cleanup_cross_platform_parity): byte-
+/// identical between macOS and iOS test targets.
+@MainActor
+final class TextProcessingServiceRecorderTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.removeObject(forKey: DictionaryService.dictionaryKey)
+        DictionaryService.shared.removeAll()
+    }
+
+    func testRecorderEmitsDictionaryReplacements() async {
+        // Seed a deterministic exact-match dictionary entry.
+        let dict = DictionaryService.shared
+        dict.removeAll()
+        dict.setReplacement(for: "Dicticos", with: "Dicticus")
+
+        // Run the pipeline (plain mode — no LLM needed).
+        let service = TextProcessingService(dictionaryService: dict, cleanupService: nil)
+        _ = await service.process(text: "Dicticos is great", language: "en", mode: .plain)
+
+        // Allow the DebugRecorder actor a tick to record(_:).
+        try? await Task.sleep(nanoseconds: 150_000_000)
+
+        let lastRecord = await DebugRecorder.shared.lastRecordForTests
+        XCTAssertNotNil(lastRecord, "Phase 27-02: DebugRecorder.lastRecordForTests must be populated after process()")
+        XCTAssertEqual(lastRecord?.dictionary_replacements.count, 1,
+            "Phase 27-02: exactly one Replacement expected for the seeded exact-match dictionary entry")
+        XCTAssertEqual(lastRecord?.dictionary_replacements[0].key, "Dicticos")
+        XCTAssertEqual(lastRecord?.dictionary_replacements[0].from, "Dicticos")
+        XCTAssertEqual(lastRecord?.dictionary_replacements[0].to, "Dicticus")
+        XCTAssertTrue(lastRecord?.dictionary_blocked.isEmpty ?? false,
+            "Phase 27-02: no BlockedMatch expected for a clean exact-match input")
+    }
+}
+#endif
