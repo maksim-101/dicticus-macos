@@ -47,6 +47,7 @@ targets:
       - path: ../Shared
     resources:
       - path: Dicticus/Assets.xcassets
+      - path: ../Shared/Resources
     info:
       path: Dicticus/Info.plist
       properties:

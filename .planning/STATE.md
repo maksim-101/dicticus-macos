@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.2
-milestone_name: Adaptive Cleanup & Stability Post-v2.1
-status: milestone_complete
-stopped_at: Milestone complete (Phase 26 was final phase)
-last_updated: 2026-05-22T15:36:45.070Z
+milestone: v2.3
+milestone_name: Live-Capture Quality Pass
+status: planning
+last_updated: "2026-05-26T17:08:08.235Z"
+last_activity: 2026-05-26
 progress:
-  total_phases: 15
-  completed_phases: 10
-  total_plans: 50
-  completed_plans: 60
-  percent: 67
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State: Dicticus
@@ -21,58 +21,10 @@ progress:
 
 ## Current Position
 
-Phase: 26
-Plan: Not started
-
-**Wave 1 outcome (2026-05-16):**
-
-- 25-01 SHIPPED: V16 matrix run (259 inferences, seed=42, 53s wall-clock).
-- 25-02 SHIPPED with discovery-driven pivot: plain-mode JSONL emission was already live (TextProcessingService.swift:224 OUTER-scope #if DEBUG_RECORDER block). Plan pivoted to "document + lock with parity tests".
-- 25-01 H8/H9 follow-up (commit 4b93acc): rules-only matrix showed dictionary does ~90% of brand fixing. H9 (rules+expanded dict) aggregate 72, second-best of 9 variants, brand 35→2 and anchor 28→0 with zero LLM cost. Memory: `project_dictionary_dominates_brand_fixing`.
-
-**Wave 2 pivot (2026-05-16):**
-
-- Original plan: 5 tasks (dict expand → V16-COMPOSITE prompt → V17 harness verify → regression tests → formal UAT).
-- User direction: skip harness-verify / tests / formal-UAT. Ship V16-COMPOSITE + dict expansion directly to the running Debug-Recorder app and validate via live capture. Quote: "implement the changes or new prompts directly into the app and we keep the debugging log running and I just test it live".
-- Shipped commits: `0fc3198` (V16-COMPOSITE + Lever 1 dictionary, both files in Shared/), `b17ed32` (pre-existing install-local.sh syntax bug fix).
-- Installed: `/Applications/Dicticus.app`, Debug-Recorder configuration, Developer ID signed (VTWHBCCP36). Verified V16-COMPOSITE prompt live in cleanup-2026-05-16.jsonl at 16:54:03Z.
-
-**Live-capture pause (resume in a few days):**
-
-- Branch: feature/debug-recording-and-cleanup, 13 commits ahead of origin (push deferred by user).
-- Log location: `~/Library/Application Support/Dicticus/DebugRecordings/cleanup-2026-05-DD.jsonl` (one per day). Both plain-mode and AI-mode records interleave; AI-mode records carry full LLM prompt/raw/post-gate alongside the raw ASR.
-- Resume = analyze accumulated logs, decide ship-vs-iterate, write 25-03 + 25-04 SUMMARYs.
-- See `.continue-here` for the detailed resume checklist and `.planning/HANDOFF.json` for structured task state.
-
-**Bonus this session (now memorized):**
-Developer ID signing identity (VTWHBCCP36) was missing from login keychain (cert present, private key gone post-wipe). Recovered from 1Password TrueNAS vault item `sqn2j6zeygtpewb2v66expqxva` (Certificates.p12). New memory `feedback_developer_id_signing_recovery` documents the recovery so future sessions don't fall back to ad-hoc signing and break TCC permissions.
-**Milestone v2.2:** Phase 22 SHIPPED 2026-05-08. Phase 24 (AI Cleanup Quality v2) SHIPPED 2026-05-12.
-Remediation for Phase 22 UAT Gap G-01 (self-correction not dropped) implemented via **V15 "Micro-Scalpel"** 
-prompt in `Shared/Models/CleanupPrompt.swift`. V15 moves to a "rules-first" instructions structure
-that explicitly permits dropping stutters and abandoned fragments while preserving substantive 
-repair-chains verbatim.
-
-Phase 24 is officially synchronized across macOS and iOS. Both platforms are 100% green.
-A persistent 'permissions not sticking' issue on macOS was identified and fixed through
-Developer ID signing and build artifact cleanup; this workflow is now mandated in `GEMINI.md`
-and automated in `install-local.sh`.
-
-Rules layer hardened via **Abort 3c: Idiom Guard** in `SelfCorrectionResolver.swift`. The guard
-prevents over-correction on idiomatic comma-terminated phrases identified in weekend logs 
-(e.g., "by the way", "wie gesagt"). Unit test suite `SelfCorrectionResolverTests` reports 27/27 green.
-`CleanupPromptTests` reports 10/10 green.
-
-DebugRecorder state bleed bug fixed in `TextProcessingService.swift` (clearing `lastDebugTrace`
-at start of cycle).
-
-**Phase inventory:**
-
-- ... (Phases 12-20.08 preserved in history)
-- 21 — Adaptive Cleanup & Stability — SHIPPED 2026-05-03
-- 22 — Resolver Regression Hotfix — SHIPPED 2026-05-08
-- 23 — Decimal Words & Digit Grouping — BACKLOG (ITN regression class)
-- 24 — AI Cleanup Quality v2 — SHIPPED 2026-05-12
-- 25 — AI Cleanup Quality v3 — Brand & Acronym Recognition — ADDED 2026-05-16 (planning pending)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-26 — Milestone v2.3 started
 
 ### Roadmap Evolution
 

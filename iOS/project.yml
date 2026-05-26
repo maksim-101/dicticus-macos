@@ -26,9 +26,11 @@ targets:
   Dicticus:
     type: application
     platform: iOS
-    sources: 
+    sources:
       - path: Dicticus
       - path: ../Shared
+    resources:
+      - path: ../Shared/Resources
     entitlements:
       path: Dicticus/Dicticus.entitlements
       properties:
