@@ -164,7 +164,13 @@ class DictionaryService: ObservableObject {
         }
     }
 
-    private func prepopulateWithDefaults() {
+    /// Phase 27 WR-04: lifted from `private` → internal so the WR-04
+    /// regression test can invoke the merge loop directly and assert
+    /// the D-12 invariant (existing user customizations are never
+    /// overwritten on re-merge). Not exposed publicly — `@testable
+    /// import Dicticus` provides access; production callers continue
+    /// to go through the singleton's private init only.
+    internal func prepopulateWithDefaults() {
         let defaults: [String: String] = [
             "true nest": "TrueNAS", "true Nest": "TrueNAS", "TrueNest": "TrueNAS",
             "truenest": "TrueNAS", "True Nest": "TrueNAS",

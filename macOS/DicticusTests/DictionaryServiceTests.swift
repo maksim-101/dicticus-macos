@@ -524,14 +524,41 @@ final class DictionaryServiceK7AddsTests: XCTestCase {
     }
 
     func testK7_DoesNotOverrideUserCustomization() {
-        // Idempotent merge contract — D-12 + DictionaryService.swift idempotent loop.
-        // If the user has manually set `clawed code → SomethingElse`, prepopulate must NOT overwrite.
-        // Since prepopulate runs at singleton init (before tests), this test asserts the contract by
-        // manually setting a user replacement, then verifying it persists across an apply() call.
-        DictionaryService.shared.setReplacement(for: "clawed code", with: "Klawed Kode")
-        let out = DictionaryService.shared.apply(to: "trying clawed code now")
-        XCTAssertTrue(out.contains("Klawed Kode"))
-        // Reset for other tests
-        DictionaryService.shared.removeReplacement(for: "clawed code")
+        // Phase 27 WR-04: this test exercises the actual merge loop in
+        // `prepopulateWithDefaults()` (DictionaryService.swift idempotent
+        // merge — `if dictionary[original] == nil`). The previous version of
+        // this test only asserted that `setReplacement` overwrites an
+        // existing entry — which is the entire point of `setReplacement`,
+        // not the D-12 invariant under test.
+        //
+        // Regression contract: if a developer ever removes the
+        // `if dictionary[original] == nil` guard from the merge loop, this
+        // test must FAIL. Without that guard, the second prepopulate call
+        // would overwrite the user's "Klawed Kode" back to "Claude Code".
+        let s = DictionaryService.shared
+        s.removeAll()
+        // 1. Simulate a user customization on a key that prepopulate also seeds.
+        s.setReplacement(for: "clawed code", with: "Klawed Kode")
+        XCTAssertEqual(s.dictionary["clawed code"]?.replacement, "Klawed Kode",
+            "Pre-condition: user customization present.")
+
+        // 2. Invoke the merge loop directly (lifted from `private` → internal
+        //    in DictionaryService for this test — see prepopulateWithDefaults
+        //    doc comment).
+        s.prepopulateWithDefaults()
+
+        // 3. The user's value must survive — D-12 idempotent merge.
+        XCTAssertEqual(s.dictionary["clawed code"]?.replacement, "Klawed Kode",
+            "WR-04: prepopulateWithDefaults must not overwrite user customizations (D-12 idempotent merge).")
+
+        // Sanity: prepopulate did populate other default keys (proving the
+        // loop ran, not that it short-circuited on a re-entry guard).
+        XCTAssertNotNil(s.dictionary["Dicticos"],
+            "Sanity: prepopulate must seed non-conflicting defaults on this run.")
+
+        // 4. apply() must use the user's value, not the default.
+        let out = s.apply(to: "trying clawed code now")
+        XCTAssertTrue(out.contains("Klawed Kode"),
+            "WR-04: apply() must emit the user's customization. Got: \(out)")
     }
 }
