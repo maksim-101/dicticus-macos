@@ -200,6 +200,17 @@ class DictionaryService: ObservableObject {
             "Tailskill": "Tailscale",                      // 2026-05-17 05:30:23 (existing `tail scale` entry doesn't catch this — single-token mishearing)
             "tailskill": "Tailscale",
             "hopath": "homeopath",                         // 25-03 Class B exemplar (medical-context dictation)
+            // Phase 27 K7: brand misses from log-analysis 2026-05-26 §K7.
+            // Each entry cites the live-capture JSONL timestamp it closes.
+            "clawed code": "Claude Code",                  // 2026-05-23T05:24:32.417Z
+            "Accara": "Aqara",                             // 2026-05-24T17:50:00.606Z (×2)
+            "accara": "Aqara",
+            "Andre Karpaty": "Andrej Karpathy",            // 2026-05-25T04:14:30.688Z
+            "Swiss folio": "Swissfolio",                   // log-analysis §K7
+            "swiss folio": "Swissfolio",
+            // Phase 27 carried backlog — exact-match only under the new fuzzy guard.
+            "germinize": "Gemini",                         // ratio 0.44 BLOCKS fuzzy; only exact-match fires
+            "crown shop": "cron job",
         ]
 
 
