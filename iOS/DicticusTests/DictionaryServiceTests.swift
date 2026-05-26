@@ -329,6 +329,49 @@ final class DictionaryServiceHallucinationGuardTests: XCTestCase {
         XCTAssertTrue(words.contains("looking"), "allowlist must contain 'looking'")
         XCTAssertGreaterThan(words.count, 1500, "allowlist union of EN+DE top-1000 must exceed 1500 entries")
     }
+
+    // MARK: - WR-03: Unicode NFC/NFD normalization symmetry on allowlist lookup.
+
+    /// Phase 27 WR-03: ASR pipelines occasionally emit decomposed (NFD) German
+    /// diacritics. The bundled allowlist .txt corpora ship precomposed (NFC)
+    /// forms. Without symmetric NFC normalization at load AND lookup, the
+    /// allowlist veto (Guard A) would silently miss on ä/ö/ü/ß tokens, allowing
+    /// the hallucination guard to be bypassed for exactly the inputs it
+    /// protects.
+    ///
+    /// This test feeds an NFD-encoded German token (`natürlich` with `u` + U+0308)
+    /// and asserts the allowlist veto fires the same as for the NFC form.
+    func testAllowlistVetoNormalizesUnicodeNFD() {
+        let s = DictionaryService.shared
+        // Pre-condition: NFC form must be in the loaded allowlist. If this
+        // fails the WR-03 fix isn't required for this token — the test
+        // chose the wrong word. natürlich is a high-frequency German word
+        // (German top-1000 corpus).
+        let nfc = "natürlich"
+        XCTAssertTrue(s.commonWordsForTests.contains(nfc),
+            "Pre-condition: allowlist must contain NFC `natürlich` (German top-1000)")
+
+        // NFD form: `natu` + combining diaeresis U+0308 + `rlich`.
+        let nfd = "natu\u{0308}rlich"
+        XCTAssertNotEqual(nfd.unicodeScalars.count, nfc.unicodeScalars.count,
+            "Sanity: NFD has more scalars than NFC (combining-mark form).")
+
+        // Seed a fuzzy candidate within distance 2 of the lowercased NFC form,
+        // length ≥ 6, no spaces — so the fuzzy pass would otherwise consider it.
+        // `natürbich` is distance 1 from `natürlich` (i→b at position 5).
+        // Without WR-03 normalization, the NFD token would NOT hit the
+        // allowlist veto and would be replaced.
+        s.setReplacement(for: "natürbich", with: "REPLACED_BRAND")
+
+        let output = s.apply(to: "das ist \(nfd) gut")
+        XCTAssertTrue(output.contains(nfd) || output.contains(nfc),
+            "WR-03: NFD `natürlich` must be allowlist-vetoed and survive unchanged. Got: \(output)")
+        XCTAssertFalse(output.contains("REPLACED_BRAND"),
+            "WR-03: allowlist veto must fire on NFD form. Got: \(output)")
+
+        // Clean up so other tests aren't affected.
+        s.removeReplacement(for: "natürbich")
+    }
 }
 
 // MARK: - Phase 27: applyWithTrace canonical implementation (OBS-DICT-01, D-08)

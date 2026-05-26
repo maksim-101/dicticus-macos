@@ -88,6 +88,16 @@ class DictionaryService: ObservableObject {
     /// single `Set<String>` (union of EN + DE top-N corpora). Returns an empty
     /// Set on any failure (RESEARCH §6.3 Assumption A2 defensive fallback) so
     /// init never crashes — the ratio cap (Guard B) still provides defense.
+    ///
+    /// Phase 27 WR-03: every entry is normalized to NFC
+    /// (`.precomposedStringWithCanonicalMapping`). Swift `String` hashing /
+    /// equality is byte-identical at the underlying storage level, so
+    /// graphemically-equal NFD vs NFC forms hash differently. ASR pipelines
+    /// occasionally emit decomposed German diacritics (`ü` = `u` + U+0308)
+    /// while the bundled `.txt` corpora ship precomposed forms (`ü` = U+00FC).
+    /// Without normalization the allowlist veto silently misses on exactly the
+    /// German tokens the guard is designed to protect. Lookup site must NFC
+    /// the token symmetrically — see fuzzyReplaceTokenWithTrace().
     private static func loadCommonWords() -> Set<String> {
         var words: Set<String> = []
         for resourceName in ["allowlist-en", "allowlist-de"] {
@@ -98,7 +108,9 @@ class DictionaryService: ObservableObject {
             do {
                 let content = try String(contentsOf: url, encoding: .utf8)
                 for line in content.split(separator: "\n", omittingEmptySubsequences: true) {
-                    let trimmed = line.trimmingCharacters(in: .whitespaces).lowercased()
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                        .lowercased()
+                        .precomposedStringWithCanonicalMapping
                     if !trimmed.isEmpty {
                         words.insert(trimmed)
                     }
@@ -373,7 +385,12 @@ class DictionaryService: ObservableObject {
     /// non-nil per call.
     private func fuzzyReplaceTokenWithTrace(_ token: String, candidates: [String]) -> (String, Replacement?, BlockedMatch?) {
         guard token.count >= 6 else { return (token, nil, nil) }
-        let lowered = token.lowercased()
+        // Phase 27 WR-03: NFC-normalize before allowlist lookup. The allowlist
+        // is loaded NFC (loadCommonWords), and ASR may emit NFD-decomposed
+        // German diacritics. Without symmetric normalization the Set<String>
+        // contains check would silently miss on ä/ö/ü/ß tokens — exactly the
+        // inputs Guard A is built to protect.
+        let lowered = token.lowercased().precomposedStringWithCanonicalMapping
 
         // Guard A (D-01a, D-04): allowlist veto. Common English/German words
         // never become fuzzy candidates regardless of distance.
