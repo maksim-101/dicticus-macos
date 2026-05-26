@@ -342,8 +342,16 @@ class DictionaryService: ObservableObject {
     /// (e.g. `the`/`she`) catastrophically false-positive. Multi-word keys are
     /// skipped — the exact-match regex pass handles those.
     private func applyFuzzyPassWithTrace(_ text: String) -> (text: String, replacements: [Replacement], blocked: [BlockedMatch]) {
+        // Phase 27 WR-01: sort candidates lexicographically to make
+        // fuzzy-match outcomes deterministic across launches. Dictionary key
+        // iteration order is unspecified in Swift, so a token with two distinct
+        // keys within distance ≤ 2 (one passing the ratio cap, one blocked)
+        // could otherwise produce different outputs across runs depending on
+        // which key the hash table happened to surface first. Lexicographic
+        // sort is the simplest stable order; no quality signal is encoded.
         let candidateKeys = dictionary.keys
             .filter { $0.count >= 6 && !$0.contains(" ") }
+            .sorted()
         if candidateKeys.isEmpty { return (text, [], []) }
 
         var replacements: [Replacement] = []
