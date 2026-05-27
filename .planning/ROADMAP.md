@@ -309,7 +309,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 27. Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds | 3/3 | Complete    | 2026-05-27 |
-| 28. V19D Prompt Iteration | 2/4 | In Progress|  |
+| 28. V19D Prompt Iteration | 3/4 | In Progress|  |
 
 ---
 
@@ -371,12 +371,12 @@ Plans:
 4. **Standalone-number policy is consistent.** A single, documented rule governs whether spoken `one`–`ten` in prose convert to digits or stay as words. The pipeline (rules + LLM) follows that rule across all 118 sample records; no per-utterance vibes-driven inconsistency.
 5. **Domain-topic-words line is justified or removed.** The static `Domain topic words: phase, plan, workflow, framework, dictation, cleanup, prompt` line in `CleanupPrompt.swift` is either (a) replaced with a context-aware mechanism, (b) generalized to a non-biasing form, or (c) removed entirely — with the decision recorded in the phase summary.
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [x] 28-01-PLAN.md — V19D prompt iteration (V19C→V19D Rule 5 extension + Rule 8 K4 policy + topic-words deletion + EN/DE K2/K5/K4 few-shots) + DebugCleanupRecord.prompt_version field (R3) + harness V19D templates (LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01)
 - [x] 28-02-PLAN.md — ITN single-digit identifier-adjacent promotion in `Shared/Utilities/ITNUtility.swift` (deterministic floor for K4 policy; R1-locked Pattern A regex; EN + DE morphology) (LLM-NUM-01)
-- [ ] 28-03-PLAN.md — Post-LLM contraction defense matrix (4 variants A/B/C/D) + harness runner `run_contraction_matrix.py` + 12-fixture set + winning variant ship in `CleanupService.swift` (LLM-CONTR-01)
+- [x] 28-03-PLAN.md — Post-LLM contraction defense matrix (4 variants A/B/C/D) + harness runner `run_contraction_matrix.py` + 12-fixture set + winning variant ship in `CleanupService.swift` (LLM-CONTR-01)
 - [ ] 28-04-PLAN.md — Integration verification: V19D harness re-run vs 118-record baseline + brand fixtures + DE Gates 1-3 + full macOS/iOS test suites + Phase 28 SUMMARY + ROADMAP/REQUIREMENTS/STATE updates
 
 **Wave structure:** {28-01, 28-02} (parallel — disjoint files) → {28-03} (depends on 28-01 — Variant A uses V19D prompt) → {28-04} (integration verification — depends on 28-01, 28-02, 28-03)
