@@ -92,11 +92,11 @@ Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: liv
 
 ### Prompt Quality (Phase 28)
 
-- [ ] **LLM-CLAUSE-01**: AI cleanup preserves substantive clauses verbatim — no silent deletions of meaningful phrases like `in the meantime`
-- [ ] **LLM-CONTR-01**: AI cleanup handles English contractions cleanly — no malformed outputs like `I't have`
-- [ ] **LLM-DEDUP-01**: AI cleanup collapses immediate word repetitions beyond `the the` (e.g. `for for`, `that that`, `unusual, unusual`)
-- [ ] **LLM-NUM-01**: Standalone digit-words in prose (`one`, `three`, etc.) follow a principled and consistent policy across the rules + LLM pipeline
-- [ ] **LLM-PROMPT-AUDIT-01**: Static `Domain topic words` line in the prompt is audited for bias and either justified, generalized, or removed
+- [x] **LLM-CLAUSE-01**: AI cleanup preserves substantive clauses verbatim — no silent deletions of meaningful phrases like `in the meantime`
+- [x] **LLM-CONTR-01**: AI cleanup handles English contractions cleanly — no malformed outputs like `I't have`
+- [x] **LLM-DEDUP-01**: AI cleanup collapses immediate word repetitions beyond `the the` (e.g. `for for`, `that that`, `unusual, unusual`)
+- [x] **LLM-NUM-01**: Standalone digit-words in prose (`one`, `three`, etc.) follow a principled and consistent policy across the rules + LLM pipeline
+- [x] **LLM-PROMPT-AUDIT-01**: Static `Domain topic words` line in the prompt is audited for bias and either justified, generalized, or removed
 
 ## Out of Scope
 
@@ -147,11 +147,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DICT-SAFE-02 | Phase 27 | Complete |
 | DICT-EXPAND-01 | Phase 27 | Complete |
 | OBS-DICT-01 | Phase 27 | Complete |
-| LLM-CLAUSE-01 | Phase 28 | Pending |
-| LLM-CONTR-01 | Phase 28 | Pending |
-| LLM-DEDUP-01 | Phase 28 | Pending |
-| LLM-NUM-01 | Phase 28 | Pending |
-| LLM-PROMPT-AUDIT-01 | Phase 28 | Pending |
+| LLM-CLAUSE-01 | Phase 28 | Complete |
+| LLM-CONTR-01 | Phase 28 | Complete |
+| LLM-DEDUP-01 | Phase 28 | Complete |
+| LLM-NUM-01 | Phase 28 | Complete |
+| LLM-PROMPT-AUDIT-01 | Phase 28 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 22 total
