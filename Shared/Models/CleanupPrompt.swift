@@ -183,7 +183,9 @@ struct CleanupPrompt {
             prompt += "- Setze das Verb an die richtige Stelle (V2-Stellung im Hauptsatz).\n"
             prompt += "- Füge getrennt gesprochene Komposita zusammen (z.B. \"Kranken Haus\" → \"Krankenhaus\").\n"
             // Phase 28 D-10 (W-01 DE parity): Regel 8 mirrors EN Rule 8 including digit-preservation clause.
-            prompt += "8. Einzelne Zahlwörter ('eins'..'zwölf'): im Prosa-Text ausschreiben. AUSNAHME: identifier-adjazent (nach einem großgeschriebenen Stamm wie 'E eins' -> E1 oder nach einem Versions-Wort wie 'Version zwei' -> Version 2) werden sie als Ziffern gesetzt. Satzanfang immer ausgeschrieben. Behalte bereits im Text vorhandene Ziffern und Zahlenformate bei — formuliere sie nicht in Wörter um.\n"
+            // Phase 28 WR-01: use bullet ('- ') prefix to match Regeln 1-7 — the prior '8.' numeric prefix
+            // created a heterogeneous list that may have caused the LLM to weight rule 8 differently.
+            prompt += "- Einzelne Zahlwörter ('eins'..'zwölf'): im Prosa-Text ausschreiben. AUSNAHME: identifier-adjazent (nach einem großgeschriebenen Stamm wie 'E eins' -> E1 oder nach einem Versions-Wort wie 'Version zwei' -> Version 2) werden sie als Ziffern gesetzt. Satzanfang immer ausgeschrieben. Behalte bereits im Text vorhandene Ziffern und Zahlenformate bei — formuliere sie nicht in Wörter um.\n"
             prompt += "\n"
 
             prompt += "In: das das Meeting ist um fünf\n"
