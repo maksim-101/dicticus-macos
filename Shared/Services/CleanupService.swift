@@ -320,6 +320,11 @@ class CleanupService: ObservableObject, CleanupProvider {
                 cleaned = ITNUtility.applySwissITN(to: cleaned)
             }
 
+            // Phase 28 Plan 03 — VARIANT-A-WINNER (per harness results/contraction_matrix_winner.md):
+            // No post-LLM contraction gate. The V19D K2-contraction few-shot (Plan 28-01) alone
+            // satisfied D-14 acceptance criteria. The harness runner remains in-tree
+            // (.planning/debug/harness/run_contraction_matrix.py) for future re-runs.
+
             return cleaned.isEmpty ? text : cleaned
 
         } catch {

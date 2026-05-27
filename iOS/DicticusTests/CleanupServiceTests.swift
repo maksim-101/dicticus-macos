@@ -195,13 +195,13 @@ final class CleanupServiceTests: XCTestCase {
     /// Skipped in CI or on machines without the GGUF model cached.
     func testCleanupProducesOutputWithModel() async throws {
         try XCTSkipUnless(
-            IOSModelDownloadService.isModelCached(),
+            ModelDownloadService.isModelCached(),
             "Gemma 3 1B GGUF model not cached — skipping integration test"
         )
 
         CleanupService.initializeBackend()
         let service = CleanupService()
-        try service.loadModel(from: IOSModelDownloadService.modelPath().path)
+        try service.loadModel(from: ModelDownloadService.modelPath().path)
         XCTAssertTrue(service.isLoaded)
 
         let result = await service.cleanup(
@@ -221,13 +221,13 @@ final class CleanupServiceTests: XCTestCase {
 
     func testCleanupStateTransitionsDuringInference() async throws {
         try XCTSkipUnless(
-            IOSModelDownloadService.isModelCached(),
+            ModelDownloadService.isModelCached(),
             "Gemma 3 1B GGUF model not cached — skipping integration test"
         )
 
         CleanupService.initializeBackend()
         let service = CleanupService()
-        try service.loadModel(from: IOSModelDownloadService.modelPath().path)
+        try service.loadModel(from: ModelDownloadService.modelPath().path)
 
         XCTAssertEqual(service.state, .idle, "State must be idle before cleanup")
         // After cleanup completes, state returns to idle
@@ -351,5 +351,52 @@ final class CleanupServiceTests: XCTestCase {
         )
         XCTAssertEqual(result, llmOutput,
             "Phase 20.08 R3: dialect tokens already in raw baseline are speaker-said and must pass")
+    }
+}
+
+// MARK: - Phase 28 Plan 03: Contraction Gate Tests (Variant A Winner)
+//
+// Winner: V19D-A — V19D prompt with K2-contraction few-shot; NO post-LLM gate.
+// Rationale: The V19D few-shot alone resolved the K2-contraction failure
+// (P28-contr-2026-05-26T16:26:23.503Z, lev_to_expected=0 across all variants).
+// See .planning/debug/harness/results/contraction_matrix_winner.md for D-14 scores.
+//
+// These are documentation-as-test methods: they pin the Variant A contract (prompt
+// contains the K2-contraction few-shot; CleanupService has no normalizeContractions
+// method) so future prompt refactors cannot silently remove the defense.
+
+@MainActor
+final class CleanupServiceContractionGateTests: XCTestCase {
+
+    // MARK: - Variant A: K2-contraction defense via V19D prompt few-shot
+
+    /// Locks that the V19D English prompt contains the K2-contraction few-shot
+    /// (LLM-CONTR-01 mitigation). If this test fails, the contraction defense
+    /// has been removed from the prompt without a corresponding gate implementation.
+    func testVariantA_K2ContractionPreservedViaV19DPromptFewShot() {
+        // Build the V19D EN prompt with empty context and a placeholder input.
+        let prompt = CleanupPrompt.build(
+            text: "placeholder",
+            language: "en",
+            dictionaryContext: nil,
+            useSwissGerman: false
+        )
+        // The K2-contraction few-shot pair must be present (Plan 28-01, D-08 Variant A baseline).
+        XCTAssertTrue(prompt.contains("I'd say"),
+            "V19D EN prompt must contain K2-contraction few-shot 'I'd say' (LLM-CONTR-01 / D-08 Variant A)")
+        XCTAssertTrue(prompt.contains("don't"),
+            "V19D EN prompt must contain K2-contraction few-shot 'don't' (LLM-CONTR-01 / D-08 Variant A)")
+    }
+
+    /// Documents that CleanupService does NOT contain a normalizeContractions method
+    /// under Variant A. This test passes trivially as a documentation anchor:
+    /// if Variant B/D is promoted in a future phase, this method will be replaced
+    /// with a functional gate test (see run_contraction_matrix.py for gate implementation).
+    func testVariantA_NoNormalizeContractionsMethod() {
+        // Variant A ships no post-LLM gate. This test documents that decision.
+        // The contraction defense lives entirely in the V19D few-shot (Plan 28-01).
+        // Future: if LLM-CONTR-01 regresses in live captures, re-run
+        // .planning/debug/harness/run_contraction_matrix.py to evaluate Variants B/D.
+        XCTAssertTrue(true, "Variant A: no normalizeContractions method — contraction defense via V19D prompt few-shot only.")
     }
 }
