@@ -327,6 +327,7 @@ class TextProcessingService: ObservableObject {
         let veryShort: Bool = processedText.count < 5 && dbgRawText.count > 30
         let emissionCounter = await DebugRecorder.shared.nextEmissionCounter()
 
+        // Phase 28 R3: prompt_version defaults to "v19d" (Plan 28-01 / DebugRecorder.swift schema).
         let record = DebugCleanupRecord(
             ts: DebugRecorder.iso8601Timestamp(),
             session_id: UUID().uuidString,

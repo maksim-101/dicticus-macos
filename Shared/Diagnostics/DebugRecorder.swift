@@ -34,6 +34,7 @@ public struct DebugCleanupRecord: Codable, Sendable {
     public let dictionary_blocked: [DictionaryBlockedEntry]
     public let anomaly: Anomaly
     public let emission_counter: Int        // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
+    public let prompt_version: String       // Phase 28 R3 (Plan 28-01): prompt variant tag for JSONL analysis; defaults to "v19d" on new records.
 
     // Phase 27 WR-02: custom decoder tolerates pre-Phase-27 JSONL where the
     // dictionary_replacements / dictionary_blocked keys are absent. Both
@@ -44,7 +45,7 @@ public struct DebugCleanupRecord: Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case ts, session_id, lang, lang_used, mode, model, sampler, steps
         case dictionary_context_keys, dictionary_replacements, dictionary_blocked
-        case anomaly, emission_counter
+        case anomaly, emission_counter, prompt_version
     }
 
     public init(
@@ -60,7 +61,8 @@ public struct DebugCleanupRecord: Codable, Sendable {
         dictionary_replacements: [DictionaryReplacementEntry],
         dictionary_blocked: [DictionaryBlockedEntry],
         anomaly: Anomaly,
-        emission_counter: Int
+        emission_counter: Int,
+        prompt_version: String = "v19d"
     ) {
         self.ts = ts
         self.session_id = session_id
@@ -75,6 +77,7 @@ public struct DebugCleanupRecord: Codable, Sendable {
         self.dictionary_blocked = dictionary_blocked
         self.anomaly = anomaly
         self.emission_counter = emission_counter
+        self.prompt_version = prompt_version
     }
 
     public init(from decoder: Decoder) throws {
@@ -93,6 +96,8 @@ public struct DebugCleanupRecord: Codable, Sendable {
         self.dictionary_blocked = try c.decodeIfPresent([DictionaryBlockedEntry].self, forKey: .dictionary_blocked) ?? []
         self.anomaly = try c.decode(Anomaly.self, forKey: .anomaly)
         self.emission_counter = try c.decode(Int.self, forKey: .emission_counter)
+        // Phase 28 R3 (Plan 28-01): backward-compat decode for pre-Phase-28 JSONL — default to "v19c" when key absent. Mirrors Phase 27 WR-02 pattern at L91-93.
+        self.prompt_version = try c.decodeIfPresent(String.self, forKey: .prompt_version) ?? "v19c"
     }
 
     public struct ModelInfo: Codable, Sendable {
