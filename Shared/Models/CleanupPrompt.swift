@@ -84,6 +84,12 @@ struct CleanupPrompt {
     static let customInstructionKey = "cleanupInstruction"
     static let defaultInstruction = "Minimal cleanup of dictated speech (V19D smart-verbatim + XML envelope, clause-preservation, contraction defense, K5 dedup generalization, K4 number policy, topic-words audit)."
 
+    /// Phase 28 WR-02: single source of truth for the prompt-variant tag
+    /// emitted into DebugCleanupRecord.prompt_version. When V19E/etc ships,
+    /// update this constant in lockstep with the prompt content above so
+    /// downstream JSONL analysis can correctly bucket records by prompt.
+    static let currentVersion = "v19d"
+
     static func build(
         text: String,
         language: String? = nil,

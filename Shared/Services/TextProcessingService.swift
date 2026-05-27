@@ -327,7 +327,10 @@ class TextProcessingService: ObservableObject {
         let veryShort: Bool = processedText.count < 5 && dbgRawText.count > 30
         let emissionCounter = await DebugRecorder.shared.nextEmissionCounter()
 
-        // Phase 28 R3: prompt_version defaults to "v19d" (Plan 28-01 / DebugRecorder.swift schema).
+        // Phase 28 R3 / WR-02: thread prompt_version explicitly from the
+        // CleanupPrompt.currentVersion single source of truth so any future
+        // version bump (V19E etc) carries through to JSONL without a silent
+        // init-default drift.
         let record = DebugCleanupRecord(
             ts: DebugRecorder.iso8601Timestamp(),
             session_id: UUID().uuidString,
@@ -363,7 +366,8 @@ class TextProcessingService: ObservableObject {
                 degenerate_collapse: degenerateCollapse,
                 very_short_output: veryShort
             ),
-            emission_counter: emissionCounter    // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
+            emission_counter: emissionCounter,   // Phase 25.1-01: monotonic per process — multi-day capture can prove dual-emission fired on every cycle (closes 25-04 §Gap 2)
+            prompt_version: CleanupPrompt.currentVersion   // Phase 28 WR-02: explicit pass from single source of truth
         )
         await DebugRecorder.shared.record(record)
         #endif
