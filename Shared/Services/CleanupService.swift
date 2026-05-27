@@ -662,7 +662,7 @@ extension CleanupService {
     ///   - rulesCleaned: deterministic Swift-side cleanup output (rules pass).
     ///   - llmOutput: post-stripPreamble LLM output.
     ///   - threshold: normalized-distance ceiling. Defaults to
-    ///     `levenshteinGateThreshold` (0.30) — pass an explicit value only for
+    ///     `levenshteinGateThreshold` (0.45) — pass an explicit value only for
     ///     calibration / testing.
     /// - Returns: `llmOutput` when normalizedDistance ≤ threshold, else
     ///   `rulesCleaned`.
