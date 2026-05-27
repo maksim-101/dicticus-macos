@@ -64,7 +64,7 @@ final class CleanupPromptTests: XCTestCase {
 
     func testDefaultInstructionString() {
         let instruction = CleanupPrompt.defaultInstruction
-        XCTAssertTrue(instruction.contains("V18C"), "Default instruction must reference V18C version (Phase 25.1-04 winner)")
+        XCTAssertTrue(instruction.contains("V19D"), "Default instruction must reference V19D version (Phase 28 winner)")
         XCTAssertTrue(instruction.contains("smart-verbatim"), "Default instruction must reference smart-verbatim policy")
     }
 
@@ -201,5 +201,96 @@ final class CleanupPromptTests: XCTestCase {
             prompt.contains("let's see whether"),
             "8a79e6b few-shot must be absent from V15 prompt."
         )
+    }
+
+    // MARK: - Phase 28: V19D prompt content tests
+
+    func testPhase28_V19D_DropsTopicWordsLine() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertFalse(prompt.contains("Domain topic words"), "V19D must NOT contain 'Domain topic words' line (LLM-PROMPT-AUDIT-01)")
+    }
+
+    func testPhase28_V19D_RulesIncludesK4NumberPolicy() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("8."), "V19D EN prompt must contain Rule 8 (K4 number policy)")
+        // Rule 8 body must reference identifier-adjacent policy
+        let hasIdentifierAdjacentRef = prompt.contains("identifier-adjacent") || prompt.contains("capitalized stem")
+        XCTAssertTrue(hasIdentifierAdjacentRef, "V19D Rule 8 must reference 'identifier-adjacent' or 'capitalized stem' (LLM-NUM-01)")
+    }
+
+    func testPhase28_V19D_Rule8PreservesExistingDigits() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("Preserve digits"), "V19D EN Rule 8 must contain 'Preserve digits' clause (W-01 dual-defense)")
+        XCTAssertTrue(prompt.contains("already present"), "V19D EN Rule 8 must contain 'already present' clause (W-01 dual-defense)")
+    }
+
+    func testPhase28_V19D_K2ClauseFewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("in the meantime"), "V19D EN prompt must contain 'in the meantime' K2-clause few-shot (LLM-CLAUSE-01)")
+        XCTAssertTrue(prompt.contains("as minimal as possible"), "V19D EN prompt must contain 'as minimal as possible' K2-clause few-shot (LLM-CLAUSE-01)")
+    }
+
+    func testPhase28_V19D_K2ContractionFewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("I'd say"), "V19D EN prompt must contain 'I'd say' contraction few-shot (LLM-CONTR-01)")
+        XCTAssertTrue(prompt.contains("don't"), "V19D EN prompt must contain 'don't' in K2-contraction few-shot (LLM-CONTR-01)")
+    }
+
+    func testPhase28_V19D_K5DedupFewShotsPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("that that"), "V19D EN prompt must contain 'that that' K5-dedup few-shot (LLM-DEDUP-01)")
+        XCTAssertTrue(prompt.contains("for for"), "V19D EN prompt must contain 'for for' K5-dedup few-shot (LLM-DEDUP-01)")
+    }
+
+    func testPhase28_V19D_K4IdentifierFewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("E1"), "V19D EN prompt must contain 'E1' in K4-identifier few-shot (LLM-NUM-01)")
+        XCTAssertTrue(prompt.contains("M3"), "V19D EN prompt must contain 'M3' in K4-identifier few-shot (LLM-NUM-01)")
+    }
+
+    func testPhase28_V19D_K4ProseFewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("I have three meetings today"), "V19D EN prompt must contain 'I have three meetings today' K4-prose few-shot (LLM-NUM-01)")
+    }
+
+    func testPhase28_V19D_TheTheRegressionPreserved() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("the the"), "V19D EN prompt must still contain 'the the' Rule 3 example (D-09 regression guard)")
+    }
+
+    func testPhase28_V19D_GermanK4FewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(prompt.contains("Version zwei"), "V19D DE prompt must contain 'Version zwei' K4-identifier few-shot (LLM-NUM-01 DE)")
+        XCTAssertTrue(prompt.lowercased().contains("version 2"), "V19D DE prompt must contain 'version 2' in K4-identifier few-shot output (LLM-NUM-01 DE)")
+    }
+
+    func testPhase28_V19D_GermanRegel8PreservesExistingDigits() {
+        let prompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(prompt.contains("Behalte"), "V19D DE Regel 8 must contain 'Behalte' (W-01 DE parity)")
+        XCTAssertTrue(prompt.contains("Ziffern"), "V19D DE Regel 8 must contain 'Ziffern' (W-01 DE parity)")
+    }
+
+    func testPhase28_V19D_GermanK2ClauseFewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(prompt.contains("in der Zwischenzeit"), "V19D DE prompt must contain 'in der Zwischenzeit' K2-clause few-shot (LLM-CLAUSE-01 DE)")
+    }
+
+    func testPhase28_V19D_GermanDedupFewShotPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "de")
+        // DE dedup few-shot: 'für für' (non-'das das' exemplar per D-09)
+        XCTAssertTrue(prompt.contains("für für"), "V19D DE prompt must contain 'für für' K5-dedup few-shot (LLM-DEDUP-01 DE)")
+    }
+
+    func testPhase28_V19D_DefaultInstructionUpdated() {
+        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("V19D"), "defaultInstruction must reference V19D (Phase 28 winner)")
+        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("smart-verbatim"), "defaultInstruction must reference smart-verbatim policy")
+    }
+
+    func testPhase28_V19D_ExistingAnchorsStillPresent() {
+        let enPrompt = CleanupPrompt.build(text: "test", language: "en")
+        let dePrompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(enPrompt.contains("meeting at forty one Penn"), "Phase 25 anchor 'meeting at forty one Penn' must survive V19D (regression guard)")
+        XCTAssertTrue(enPrompt.contains("command i"), "Class C anchor 'command i' must survive V19D (regression guard)")
+        XCTAssertTrue(dePrompt.contains("Regeln (auf Deutsch):"), "DE 'Regeln (auf Deutsch):' block must survive V19D (regression guard)")
     }
 }

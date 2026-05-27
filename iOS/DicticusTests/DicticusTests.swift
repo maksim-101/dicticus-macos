@@ -145,5 +145,109 @@ final class DebugCleanupRecordCodableTests: XCTestCase {
         XCTAssertEqual(record.ts, "2026-05-20T12:00:00.000Z")
         XCTAssertEqual(record.session_id, "legacy-session")
     }
+
+    // MARK: - Phase 28 R3: prompt_version round-trip tests
+
+    func testDebugCleanupRecordCodableRoundTrip_PromptVersionDefault_v19d() {
+        // Construct with default prompt_version; encode; decode; assert "v19d".
+        let record = DebugCleanupRecord(
+            ts: "2026-05-27T05:00:00.000Z",
+            session_id: "test-session",
+            lang: "en",
+            lang_used: "en",
+            mode: "cleanup",
+            model: DebugCleanupRecord.ModelInfo(name: "gemma-4-e2b", sha256_prefix: nil),
+            sampler: DebugCleanupRecord.SamplerInfo(temp: 0.1, top_k: 40, top_p: 0.9, max_tokens: 512, seed: nil),
+            steps: DebugCleanupRecord.Steps(
+                raw: DebugCleanupRecord.StepEntry(text: "hello", ms: 0),
+                post_dict: DebugCleanupRecord.StepEntry(text: "hello", ms: 1),
+                post_itn: DebugCleanupRecord.StepEntry(text: "hello", ms: 1),
+                post_swiss: DebugCleanupRecord.StepEntry(text: "hello", ms: 0),
+                post_rules: DebugCleanupRecord.StepEntry(text: "hello", ms: 0),
+                llm_prompt: nil,
+                llm_raw: nil,
+                post_gate: nil,
+                post_swiss_num: DebugCleanupRecord.StepEntry(text: "hello", ms: 0)
+            ),
+            dictionary_context_keys: [],
+            dictionary_replacements: [],
+            dictionary_blocked: [],
+            anomaly: DebugCleanupRecord.Anomaly(degenerate_collapse: false, very_short_output: false),
+            emission_counter: 1
+            // prompt_version uses default "v19d"
+        )
+        let data = try! JSONEncoder().encode(record)
+        let decoded = try! JSONDecoder().decode(DebugCleanupRecord.self, from: data)
+        XCTAssertEqual(decoded.prompt_version, "v19d", "Default prompt_version must round-trip as 'v19d' (Phase 28 R3)")
+    }
+
+    func testDebugCleanupRecordCodableRoundTrip_ExplicitPromptVersion_v19c() {
+        // Construct with explicit prompt_version "v19c"; encode; decode; assert "v19c".
+        let record = DebugCleanupRecord(
+            ts: "2026-05-27T05:00:00.000Z",
+            session_id: "test-session",
+            lang: "en",
+            lang_used: "en",
+            mode: "cleanup",
+            model: DebugCleanupRecord.ModelInfo(name: "gemma-4-e2b", sha256_prefix: nil),
+            sampler: DebugCleanupRecord.SamplerInfo(temp: 0.1, top_k: 40, top_p: 0.9, max_tokens: 512, seed: nil),
+            steps: DebugCleanupRecord.Steps(
+                raw: DebugCleanupRecord.StepEntry(text: "hello", ms: 0),
+                post_dict: DebugCleanupRecord.StepEntry(text: "hello", ms: 1),
+                post_itn: DebugCleanupRecord.StepEntry(text: "hello", ms: 1),
+                post_swiss: DebugCleanupRecord.StepEntry(text: "hello", ms: 0),
+                post_rules: DebugCleanupRecord.StepEntry(text: "hello", ms: 0),
+                llm_prompt: nil,
+                llm_raw: nil,
+                post_gate: nil,
+                post_swiss_num: DebugCleanupRecord.StepEntry(text: "hello", ms: 0)
+            ),
+            dictionary_context_keys: [],
+            dictionary_replacements: [],
+            dictionary_blocked: [],
+            anomaly: DebugCleanupRecord.Anomaly(degenerate_collapse: false, very_short_output: false),
+            emission_counter: 1,
+            prompt_version: "v19c"
+        )
+        let data = try! JSONEncoder().encode(record)
+        let decoded = try! JSONDecoder().decode(DebugCleanupRecord.self, from: data)
+        XCTAssertEqual(decoded.prompt_version, "v19c", "Explicit prompt_version 'v19c' must round-trip correctly (Phase 28 R3)")
+    }
+
+    func testDebugCleanupRecordDecode_TolerantToMissingPromptVersion() {
+        // Hand-craft a JSON dict matching pre-Phase-28 schema (no prompt_version key).
+        // Decode via JSONDecoder; assert decoded.prompt_version == "v19c" (decodeIfPresent default).
+        let json = """
+        {
+          "ts": "2026-05-25T04:00:00.000Z",
+          "session_id": "legacy-session",
+          "lang": "en",
+          "lang_used": "en",
+          "mode": "cleanup",
+          "model": { "name": "gemma-4-e2b", "sha256_prefix": null },
+          "sampler": { "temp": 0.1, "top_k": 40, "top_p": 0.9, "max_tokens": 512, "seed": null },
+          "steps": {
+            "raw": { "text": "test", "ms": 0 },
+            "post_dict": { "text": "test", "ms": 0 },
+            "post_itn": { "text": "test", "ms": 0 },
+            "post_swiss": { "text": "test", "ms": 0 },
+            "post_rules": { "text": "test", "ms": 0 },
+            "llm_prompt": null,
+            "llm_raw": null,
+            "post_gate": null,
+            "post_swiss_num": { "text": "test", "ms": 0 }
+          },
+          "dictionary_context_keys": [],
+          "dictionary_replacements": [],
+          "dictionary_blocked": [],
+          "anomaly": { "degenerate_collapse": false, "very_short_output": false },
+          "emission_counter": 1
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        let decoded = try! decoder.decode(DebugCleanupRecord.self, from: json)
+        XCTAssertEqual(decoded.prompt_version, "v19c",
+                       "Missing prompt_version key must decode as 'v19c' (Phase 28 R3 decodeIfPresent default, mirrors Phase 27 WR-02 pattern)")
+    }
 }
 #endif
