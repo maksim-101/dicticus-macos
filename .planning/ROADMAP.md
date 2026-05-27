@@ -289,3 +289,94 @@ Plans:
 **Wave structure:** {26-01, 26-02, 26-03} — all Wave 1, file-disjoint (ITNUtility vs SelfCorrectionResolver vs DictionaryService).
 
 **Cross-platform:** All 3 plans modify Shared/ code + macOS tests + iOS tests (byte-identical copy). Per feedback_cleanup_cross_platform_parity.
+
+---
+
+## Milestone v2.3 — Live-Capture Quality Pass
+
+**Started:** 2026-05-26
+**Goal:** Eliminate dictionary fuzzy-pass data corruption and ship V19D prompt iteration informed by 118-cycle, 4-day live-capture analysis (`.planning/debug/log-analysis-2026-05-26.md`).
+**Phases:** 2 (Phases 27, 28)
+**Total v2.3 requirements:** 9 (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01, LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01)
+
+### v2.3 Summary Checklist
+
+- [x] **Phase 27: Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds** — Block fuzzy-pass mutations of valid English words, enrich recorder schema with per-replacement attribution, batch-add observed brand misses. (completed 2026-05-27)
+- [ ] **Phase 28: V19D Prompt Iteration** — Clause preservation, contraction handling, generalized stutter dedup, principled standalone-number policy, audit static domain-topic-words bias.
+
+### v2.3 Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 27. Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds | 3/3 | Complete    | 2026-05-27 |
+| 28. V19D Prompt Iteration | 0/? | Not started | — |
+
+---
+
+### Phase 27: Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds
+
+**Goal:** Stop `DictionaryService` fuzzy-pass from mutating valid English/German words into brand names (the `remind→Gemini`, `applies→AppLite` data-corruption class), enrich the cleanup recorder's JSONL schema with per-replacement `{key, from, to}` attribution so future regressions are diagnosable in one log-pass, and batch-add the observed K7 brand misses from the live-capture analysis.
+
+**Depends on:** Phase 26 (Pipeline Quality Hardening — ITN + resolver + dictionary baseline).
+
+**Severity:** Data-corruption fix (urgent — `~0.5–2%` of cleanup outputs in live capture window carried a non-word that survived dict + LLM).
+
+**Requirements:** DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01
+
+**Primary files:**
+- `Shared/Services/DictionaryService.swift` — fuzzy-pass guard + K7 entry adds
+- `Shared/Diagnostics/DebugRecorder.swift` — DebugCleanupRecord schema extension
+- `Shared/Services/TextProcessingService.swift` — applyWithTrace wiring under #if DEBUG_RECORDER
+- `Shared/Resources/allowlist-{en,de}.txt` + `ALLOWLIST_LICENSE.md` — bundled allowlist (NEW)
+
+**Success Criteria** (what must be TRUE — observable from user/log perspective):
+
+1. **No fuzzy-pass mutation of valid English words.** A 7-day post-ship live-capture window shows zero records where `post_dict.text` mutated a real English/German word into a brand name. The `remind→Gemini` and `applies→AppLite` shapes from the 2026-05-23→26 window cannot recur — regression-net fixtures lock them in.
+2. **Recorder JSONL emits per-replacement attribution.** Every cleanup record with a dictionary mutation contains a `dictionary_replacements` array of `{key, from, to}` objects (replacing or supplementing the existing `dictionary_context_keys` field). A future log analysis can attribute every text change to a specific entry without re-running the pipeline.
+3. **K7 brand misses fire correctly in live capture.** Speaking `Aqara`, `Karpathy`, `Swissfolio`, `Gemini`, `cron job`, and known `Claude Code` variants produces correctly-cased brand names in the paste buffer without manual correction. Verified against next live-capture window.
+4. **Guard does not over-block.** Existing exact-match brand fixes (`cloud code→Claude Code`, `anti-gravity→Antigravity`, `Swiss Quote→Swissquote`, `true NAS→TrueNAS`, `gsd→GSD`) continue to fire — `~9.3%` dictionary-hit baseline from the 2026-05-23→26 window is preserved or improved, not regressed.
+
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 27-01-PLAN.md — Wave 1: Fuzzy-pass hallucination guard (DICT-SAFE-01, DICT-SAFE-02) — allowlist veto + ratio cap + bundled assets + applyWithTrace canonical implementation + Wave 0 test scaffolding (`DictionaryServiceHallucinationGuardTests`, `DictionaryServiceApplyWithTraceTests`, `Tailscele` assertion update). Includes open-decision flag on ratio threshold (0.20 vs 0.25 — default 0.25 per RESEARCH §6.1).
+- [x] 27-02-PLAN.md — Wave 2: Recorder schema enrichment (OBS-DICT-01) — extend `DebugCleanupRecord` with `dictionary_replacements` + `dictionary_blocked` non-optional `[]` arrays + nested Codable types; wire `applyWithTrace` through `TextProcessingService` under `#if DEBUG_RECORDER`; Codable round-trip + integration tests. Depends on 27-01 (types).
+- [x] 27-03-PLAN.md — Wave 3: K7 brand batch-adds (DICT-EXPAND-01) — 8 entries (`clawed code→Claude Code`, `Accara/accara→Aqara`, `Andre Karpaty→Andrej Karpathy`, `Swiss folio/swiss folio→Swissfolio`, `germinize→Gemini`, `crown shop→cron job`) in `prepopulateWithDefaults()` + `DictionaryServiceK7AddsTests` (10 tests including idempotency + `germinate` non-corruption). Depends on 27-01 (file-overlap on `DictionaryService.swift`).
+
+**Wave structure:** Serialized {27-01} → {27-02} → {27-03}. 27-02 and 27-03 both depend on 27-01 ship; researcher recommendation to serialize all three rather than parallelize 27-02/27-03 (RESEARCH §6 Open Q4) since 27-03 file-overlaps with 27-01 on `DictionaryService.swift` and forcing serialization avoids merge-boundary risk.
+
+**Cross-platform:** All changes land in `Shared/` (macOS + iOS parity per `feedback_cleanup_cross_platform_parity`). Test files byte-identical between `macOS/DicticusTests/` and `iOS/DicticusTests/` per D-15.
+
+---
+
+### Phase 28: V19D Prompt Iteration
+
+**Goal:** Iterate `CleanupPrompt.swift` from V19C → V19D to close the K2 (clause deletion / contraction mangling) and K5 (generalized stutter dedup) prompt-tunable failure classes identified in the live-capture analysis, settle a principled standalone-number policy (K4), and audit the static `Domain topic words` line for bias.
+
+**Depends on:** Phase 27. **Reason:** Phase 27's recorder enrichment (OBS-DICT-01) lets Phase 28 attribute any residual issues to prompt-vs-dict origin without re-running cycles. Land Phase 27 first so V19D UAT has the better telemetry.
+
+**Severity:** Quality polish (no anomaly flag fired in 118 records; this is tail-end refinement on an already 90.2%-clean V19C baseline).
+
+**Requirements:** LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01
+
+**Primary file:** `Shared/Models/CleanupPrompt.swift` (V19C → V19D)
+
+**Validation path:** Harness matrix re-run if Phase 25.1 / Phase 26 harness is still available in `.planning/debug/harness/`; otherwise live-capture verification after ship.
+
+**Success Criteria** (what must be TRUE — observable from user/log perspective):
+
+1. **Substantive clauses are preserved.** Re-running the 118-record live-capture set through V19D shows zero silent clause deletions for the K2 cases (`in the meantime`, `as minimal as possible`). Cleanup may add punctuation but does not drop meaningful prepositional phrases.
+2. **Contractions survive intact.** Inputs containing English contractions (`I'd say`, `don't have`, `it's`, `we're`) produce outputs where every contraction is preserved as a real English contraction — no non-word artifacts (`I't`, `don'`, `we'`) leak to the user's cursor.
+3. **Word-level repetitions collapse generally.** Immediate word repetitions beyond the existing `the the` case (`for for`, `that that`, `also also`, `unusual, unusual`) collapse in the output regardless of which token is repeated. Existing `the the` behavior is preserved.
+4. **Standalone-number policy is consistent.** A single, documented rule governs whether spoken `one`–`ten` in prose convert to digits or stay as words. The pipeline (rules + LLM) follows that rule across all 118 sample records; no per-utterance vibes-driven inconsistency.
+5. **Domain-topic-words line is justified or removed.** The static `Domain topic words: phase, plan, workflow, framework, dictation, cleanup, prompt` line in `CleanupPrompt.swift` is either (a) replaced with a context-aware mechanism, (b) generalized to a non-biasing form, or (c) removed entirely — with the decision recorded in the phase summary.
+
+**Plans:** TBD
+
+**Cross-platform:** `CleanupPrompt.swift` lives in `Shared/` (macOS + iOS parity per `feedback_cleanup_cross_platform_parity`).
+
+---
+
+*Last updated: 2026-05-26 — Phase 27 decomposed into 3 plans (27-01 fuzzy guard → 27-02 recorder schema → 27-03 K7 brand adds). Serialized waves due to `DictionaryService.swift` file-overlap.*
+
+*Last updated: 2026-05-26 — Milestone v2.3 roadmap created from `.planning/debug/log-analysis-2026-05-26.md` (118 records, 4 days, V19C baseline 90.2% clean).*

@@ -76,6 +76,28 @@ Deferred to future release. Tracked but not in current roadmap.
 
 - **QUICK-01**: User can dictate up to 20 seconds with text returned as Shortcut output for automation chains
 
+## v2.3 Requirements
+
+Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: live-capture-driven quality polish. No new features.
+
+### Dictionary Safety (Phase 27)
+
+- [x] **DICT-SAFE-01**: User's transcription is never corrupted by fuzzy-pass mutating a real English word into a brand name (e.g. `remind → Gemini`, `applies → AppLite` must not happen)
+- [x] **DICT-SAFE-02**: Fuzzy-pass replacements are bounded by a valid-word guard before Levenshtein swap is applied
+- [x] **DICT-EXPAND-01**: Dictionary covers observed live-capture brand misses (Aqara, Karpathy, Swissfolio, Gemini, cron job, Claude Code variants) so common dev/IoT terms transcribe correctly
+
+### Recorder Diagnosability (Phase 27)
+
+- [x] **OBS-DICT-01**: Debug recorder schema emits a per-replacement `{key, from, to}` array for every dictionary mutation, so future log analyses can attribute mutations without re-running
+
+### Prompt Quality (Phase 28)
+
+- [ ] **LLM-CLAUSE-01**: AI cleanup preserves substantive clauses verbatim — no silent deletions of meaningful phrases like `in the meantime`
+- [ ] **LLM-CONTR-01**: AI cleanup handles English contractions cleanly — no malformed outputs like `I't have`
+- [ ] **LLM-DEDUP-01**: AI cleanup collapses immediate word repetitions beyond `the the` (e.g. `for for`, `that that`, `unusual, unusual`)
+- [ ] **LLM-NUM-01**: Standalone digit-words in prose (`one`, `three`, etc.) follow a principled and consistent policy across the rules + LLM pipeline
+- [ ] **LLM-PROMPT-AUDIT-01**: Static `Domain topic words` line in the prompt is audited for bias and either justified, generalized, or removed
+
 ## Out of Scope
 
 Explicitly excluded. Documented to prevent scope creep.
@@ -121,13 +143,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | KEYB-02 | Phase 17 | Completed |
 | CLEAN-01 | Phase 19 | Completed |
 | CLEAN-02 | Phase 19 | Completed |
+| DICT-SAFE-01 | Phase 27 | Complete |
+| DICT-SAFE-02 | Phase 27 | Complete |
+| DICT-EXPAND-01 | Phase 27 | Complete |
+| OBS-DICT-01 | Phase 27 | Complete |
+| LLM-CLAUSE-01 | Phase 28 | Pending |
+| LLM-CONTR-01 | Phase 28 | Pending |
+| LLM-DEDUP-01 | Phase 28 | Pending |
+| LLM-NUM-01 | Phase 28 | Pending |
+| LLM-PROMPT-AUDIT-01 | Phase 28 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 22 total
 - v2.1 requirements (started): 4 total
-- Mapped to phases: 26
+- v2.3 requirements: 9 total
+- Mapped to phases: 35
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-22 — all v2.0 requirements met, Phase 17 planned*
+*Last updated: 2026-05-26 — v2.3 Live-Capture Quality Pass requirements added (9 reqs across Phases 27-28)*
