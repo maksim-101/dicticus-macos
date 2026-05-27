@@ -195,13 +195,13 @@ final class CleanupServiceTests: XCTestCase {
     /// Skipped in CI or on machines without the GGUF model cached.
     func testCleanupProducesOutputWithModel() async throws {
         try XCTSkipUnless(
-            ModelDownloadService.isModelCached(),
+            IOSModelDownloadService.isModelCached(),
             "Gemma 3 1B GGUF model not cached — skipping integration test"
         )
 
         CleanupService.initializeBackend()
         let service = CleanupService()
-        try service.loadModel(from: ModelDownloadService.modelPath().path)
+        try service.loadModel(from: IOSModelDownloadService.modelPath().path)
         XCTAssertTrue(service.isLoaded)
 
         let result = await service.cleanup(
@@ -221,13 +221,13 @@ final class CleanupServiceTests: XCTestCase {
 
     func testCleanupStateTransitionsDuringInference() async throws {
         try XCTSkipUnless(
-            ModelDownloadService.isModelCached(),
+            IOSModelDownloadService.isModelCached(),
             "Gemma 3 1B GGUF model not cached — skipping integration test"
         )
 
         CleanupService.initializeBackend()
         let service = CleanupService()
-        try service.loadModel(from: ModelDownloadService.modelPath().path)
+        try service.loadModel(from: IOSModelDownloadService.modelPath().path)
 
         XCTAssertEqual(service.state, .idle, "State must be idle before cleanup")
         // After cleanup completes, state returns to idle
