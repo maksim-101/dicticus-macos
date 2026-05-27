@@ -388,10 +388,14 @@ struct ITNUtility {
 
     /// Promotes single-digit number-words to digits when identifier-adjacent (EN).
     ///
-    /// Pattern A — capitalized stem prefix (R1 LOCKED regex):
-    ///   Stem shapes: [A-Z][a-z]? (E, M, Cb) | [A-Z]{2,5} (GSD, NRSNA) |
-    ///                [a-z][A-Z][a-zA-Z]{0,3} (iOS, iPad, eBook)
-    ///   Excludes 3+ char Title-Case prose words (Cat, One, The).
+    /// Pattern A — capitalized stem prefix (Phase 28 CR-01 fix):
+    ///   Stem shapes: [A-Z](?![a-z]) (E, M — 1-char ALLCAPS not followed by lowercase)
+    ///                | [A-Z]{2,5} (GSD, NRSNA)
+    ///                | [a-z][A-Z][a-zA-Z]{0,3} (iOS, iPad, eBook)
+    ///   Excludes ALL Title-Case prose words (No, At, Be, Go, Cat, One, The).
+    ///   The 1-char ALLCAPS branch uses a negative lookahead so common prose
+    ///   bigrams like "No one", "At one", "Go five" are NOT mangled to
+    ///   "No1", "At1", "Go5" (CR-01).
     ///
     /// Pattern B — version-class word prefix (case-insensitive, fixed alternation).
     static func applyEnglishSingleDigitIdentifier(to text: String) -> String {
@@ -404,8 +408,10 @@ struct ITNUtility {
         ]
         func resolve(_ s: String) -> String { wordMap[s.lowercased()] ?? s }
 
-        // Pattern A — R1-LOCKED stem regex.
-        let stemPattern = "(?:[A-Z][a-z]?|[A-Z]{2,5}|[a-z][A-Z][a-zA-Z]{0,3})"
+        // Pattern A — Phase 28 CR-01 fix: 1-char ALLCAPS guarded by negative
+        // lookahead so 2-char Title-Case prose stems (No, At, In, Be, Go, etc.)
+        // do NOT match and produce "No1 knows" / "At1 point" / "Go5 steps".
+        let stemPattern = "(?:[A-Z](?![a-z])|[A-Z]{2,5}|[a-z][A-Z][a-zA-Z]{0,3})"
         let patternA = "\\b(\(stemPattern))\\s+(\(digitWords))\\b"
         result = replaceStructural(result, pattern: patternA) { g in
             "\(g[1])\(resolve(g[2]))"
@@ -439,8 +445,10 @@ struct ITNUtility {
         let digitWords = "(?i:eins|ein|eine|einen|einer|einem|eines|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf)"
         func resolve(_ s: String) -> String { germanIdentifierUnits[s.lowercased()] ?? s }
 
-        // Pattern A — R1-LOCKED stem regex (extended for German diacritics).
-        let stemPattern = "(?:[A-Z][a-zäöüß]?|[A-Z]{2,5}|[a-zäöü][A-Z][a-zA-ZäöüÄÖÜß]{0,3})"
+        // Pattern A — Phase 28 CR-01 fix: 1-char ALLCAPS guarded by negative
+        // lookahead (extended for German diacritics) so 2-char Title-Case prose
+        // stems (Da, So, Wo, Er, Am, etc.) do NOT mangle bigrams like "Da eins".
+        let stemPattern = "(?:[A-Z](?![a-zäöüß])|[A-Z]{2,5}|[a-zäöü][A-Z][a-zA-ZäöüÄÖÜß]{0,3})"
         let patternA = "\\b(\(stemPattern))\\s+(\(digitWords))\\b"
         result = replaceStructural(result, pattern: patternA) { g in
             "\(g[1])\(resolve(g[2]))"

@@ -237,4 +237,48 @@ final class ITNUtilitySingleDigitTests: XCTestCase {
             "Drei Punkte sind wichtig"
         )
     }
+
+    // MARK: - Phase 28 CR-01 regression: 2-char Title-Case prose bigrams must not match Pattern A
+
+    func testEnglishProseBigram_No_one_preserved() {
+        // CR-01: "No one knows" must NOT become "No1 knows"
+        XCTAssertEqual(
+            ITNUtility.applyITN(to: "No one knows that.", language: "en"),
+            "No one knows that."
+        )
+    }
+
+    func testEnglishProseBigram_At_one_preserved() {
+        // CR-01: "At one point" must NOT become "At1 point"
+        XCTAssertEqual(
+            ITNUtility.applyITN(to: "At one point we agreed", language: "en"),
+            "At one point we agreed"
+        )
+    }
+
+    func testEnglishProseBigram_In_one_preserved() {
+        // CR-01: "In one hour" must NOT become "In1 hour"
+        XCTAssertEqual(
+            ITNUtility.applyITN(to: "In one hour we leave", language: "en"),
+            "In one hour we leave"
+        )
+    }
+
+    func testEnglishProseBigram_Go_five_preserved() {
+        // CR-01: "Go five steps" must NOT become "Go5 steps"
+        XCTAssertEqual(
+            ITNUtility.applyITN(to: "Go five steps forward", language: "en"),
+            "Go five steps forward"
+        )
+    }
+
+    func testGermanProseBigram_Im_eins_preserved() {
+        // CR-01 (DE parity): "Im Jahr eins" — the bigram "Im eins" would have
+        // matched the old [A-Z][a-zäöüß]? pattern and produced "Im1 Jahr" style
+        // mangling. Use a direct adjacency case to lock the regex behavior.
+        XCTAssertEqual(
+            ITNUtility.applyITN(to: "Im eins zwei drei Spiel", language: "de"),
+            "Im eins zwei drei Spiel"
+        )
+    }
 }
