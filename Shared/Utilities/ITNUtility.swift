@@ -12,7 +12,11 @@ struct ITNUtility {
             normalized = applyEnglishITN(to: text)
         }
         let rangeFixed = applyRangeHomophoneFix(to: normalized, language: language)
-        return applyNumericStructuralWords(to: rangeFixed, language: language)
+        // Phase 28 D-03 (Plan 28-02): single-digit identifier-adjacent promotion.
+        // Runs BEFORE applyNumericStructuralWords so "model three point one"
+        // chains: → "model 3 point one" → "model 3.1".
+        let singleDigit = applySingleDigitIdentifier(to: rangeFixed, language: language)
+        return applyNumericStructuralWords(to: singleDigit, language: language)
     }
 
     /// Numeric structural word post-pass (P3).
@@ -370,6 +374,87 @@ struct ITNUtility {
     ]
 
     // MARK: - English ITN
+
+    // MARK: - Phase 28 D-03: Single-digit identifier-adjacent promotion
+
+    /// Dispatches single-digit identifier promotion by language.
+    /// Called from `applyITN` between `applyRangeHomophoneFix` and `applyNumericStructuralWords`.
+    static func applySingleDigitIdentifier(to text: String, language: String) -> String {
+        if language == "de" {
+            return applyGermanSingleDigitIdentifier(to: text)
+        }
+        return applyEnglishSingleDigitIdentifier(to: text)
+    }
+
+    /// Promotes single-digit number-words to digits when identifier-adjacent (EN).
+    ///
+    /// Pattern A — capitalized stem prefix (R1 LOCKED regex):
+    ///   Stem shapes: [A-Z][a-z]? (E, M, Cb) | [A-Z]{2,5} (GSD, NRSNA) |
+    ///                [a-z][A-Z][a-zA-Z]{0,3} (iOS, iPad, eBook)
+    ///   Excludes 3+ char Title-Case prose words (Cat, One, The).
+    ///
+    /// Pattern B — version-class word prefix (case-insensitive, fixed alternation).
+    static func applyEnglishSingleDigitIdentifier(to text: String) -> String {
+        var result = text
+
+        let digitWords = "(?i:one|two|three|four|five|six|seven|eight|nine)"
+        let wordMap: [String: String] = [
+            "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+            "six": "6", "seven": "7", "eight": "8", "nine": "9",
+        ]
+        func resolve(_ s: String) -> String { wordMap[s.lowercased()] ?? s }
+
+        // Pattern A — R1-LOCKED stem regex.
+        let stemPattern = "(?:[A-Z][a-z]?|[A-Z]{2,5}|[a-z][A-Z][a-zA-Z]{0,3})"
+        let patternA = "\\b(\(stemPattern))\\s+(\(digitWords))\\b"
+        result = replaceStructural(result, pattern: patternA) { g in
+            "\(g[1])\(resolve(g[2]))"
+        }
+
+        // Pattern B — version-class word prefix (case-insensitive).
+        let versionClass = "(?i:version|model|item|option|chapter|step|phase|task|level|stage|track|round|tier|grade)"
+        let patternB = "\\b(\(versionClass))\\s+(\(digitWords))\\b"
+        result = replaceStructural(result, pattern: patternB) { g in
+            "\(g[1]) \(resolve(g[2]))"
+        }
+
+        return result
+    }
+
+    /// DE inflected forms in identifier position.
+    /// Scoped to single-digit identifier promotion — NOT added to `germanUnits`
+    /// (which would break `parseGermanNumber` compound parsing like `einundzwanzig`).
+    private static let germanIdentifierUnits: [String: String] = [
+        "eins": "1", "ein": "1", "eine": "1", "einen": "1", "einer": "1",
+        "einem": "1", "eines": "1",
+        "zwei": "2", "drei": "3", "vier": "4", "fünf": "5", "sechs": "6",
+        "sieben": "7", "acht": "8", "neun": "9", "zehn": "10", "elf": "11", "zwölf": "12",
+    ]
+
+    /// Promotes single-digit number-words to digits when identifier-adjacent (DE).
+    /// Handles inflected forms (eins/ein/eine/einen/einer/einem/eines) via `germanIdentifierUnits`.
+    static func applyGermanSingleDigitIdentifier(to text: String) -> String {
+        var result = text
+
+        let digitWords = "(?i:eins|ein|eine|einen|einer|einem|eines|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf)"
+        func resolve(_ s: String) -> String { germanIdentifierUnits[s.lowercased()] ?? s }
+
+        // Pattern A — R1-LOCKED stem regex (extended for German diacritics).
+        let stemPattern = "(?:[A-Z][a-zäöüß]?|[A-Z]{2,5}|[a-zäöü][A-Z][a-zA-ZäöüÄÖÜß]{0,3})"
+        let patternA = "\\b(\(stemPattern))\\s+(\(digitWords))\\b"
+        result = replaceStructural(result, pattern: patternA) { g in
+            "\(g[1])\(resolve(g[2]))"
+        }
+
+        // Pattern B — DE version-class words (case-insensitive).
+        let versionClass = "(?i:version|modell|item|option|kapitel|schritt|phase|aufgabe|stufe|ebene|runde|rang|klasse)"
+        let patternB = "\\b(\(versionClass))\\s+(\(digitWords))\\b"
+        result = replaceStructural(result, pattern: patternB) { g in
+            "\(g[1]) \(resolve(g[2]))"
+        }
+
+        return result
+    }
 
     private static func applyEnglishITN(to text: String) -> String {
         let locale = Locale(identifier: "en_US")
