@@ -565,6 +565,7 @@ final class DictionaryServiceK7AddsTests: XCTestCase {
 
 // MARK: - Phase 29 DICT-ZED-01: period-anchored "the set." -> "Zed." (Spike 001)
 
+@MainActor
 final class DictionaryServiceZedTests: XCTestCase {
 
     override func setUp() {

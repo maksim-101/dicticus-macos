@@ -162,9 +162,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LLM-DEDUP-01 | Phase 28 | Complete |
 | LLM-NUM-01 | Phase 28 | Complete |
 | LLM-PROMPT-AUDIT-01 | Phase 28 | Complete |
-| ACRONYM-COLLAPSE-01 | Phase 29 | Not started |
-| SPOKEN-LETTER-01 | Phase 29 | Not started |
-| DICT-ZED-01 | Phase 29 | Not started |
+| ACRONYM-COLLAPSE-01 | Phase 29 | Complete |
+| SPOKEN-LETTER-01 | Phase 29 | Complete |
+| DICT-ZED-01 | Phase 29 | Complete |
 | MEDIA-PAUSE-01 | Phase 30 | Not started |
 
 **Coverage:**
