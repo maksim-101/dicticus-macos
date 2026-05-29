@@ -98,6 +98,16 @@ Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: liv
 - [x] **LLM-NUM-01**: Standalone digit-words in prose (`one`, `three`, etc.) follow a principled and consistent policy across the rules + LLM pipeline
 - [x] **LLM-PROMPT-AUDIT-01**: Static `Domain topic words` line in the prompt is audited for bias and either justified, generalized, or removed
 
+### ASR Post-Processing (Phase 29)
+
+- [x] **ACRONYM-COLLAPSE-01**: Deterministic post-ASR step collapses spaced single/short uppercase fragment runs (`N F S K`→`NFSK`), handles mixed-case fragments (`Br N A C`), and does not corrupt non-acronym single-letter runs (`I am O K`)
+- [x] **SPOKEN-LETTER-01**: Inside a spelling run, spoken letter names resolve to letters — Z spoken as "zed"/"zee"→`Z` (plus `aitch`→H, `double-u`→W); ambiguous "zee" handled conservatively
+- [x] **DICT-ZED-01**: `DictionaryService` default entry `"the set."`→`"Zed."` ships (Spike-001-validated; period-anchored to avoid "the set of …" / compound "X set" false positives)
+
+### Media Control (Phase 30, macOS)
+
+- [ ] **MEDIA-PAUSE-01**: While push-to-talk is held, currently-playing media is paused (or muted per agreed fallback) and resumes on release — macOS only. Approach selected by spike (MediaRemote / media-key / mute) given macOS 15.4+ now-playing entitlement gating
+
 ## Out of Scope
 
 Explicitly excluded. Documented to prevent scope creep.
@@ -152,12 +162,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LLM-DEDUP-01 | Phase 28 | Complete |
 | LLM-NUM-01 | Phase 28 | Complete |
 | LLM-PROMPT-AUDIT-01 | Phase 28 | Complete |
+| ACRONYM-COLLAPSE-01 | Phase 29 | Not started |
+| SPOKEN-LETTER-01 | Phase 29 | Not started |
+| DICT-ZED-01 | Phase 29 | Not started |
+| MEDIA-PAUSE-01 | Phase 30 | Not started |
 
 **Coverage:**
 - v2.0 requirements: 22 total
 - v2.1 requirements (started): 4 total
-- v2.3 requirements: 9 total
-- Mapped to phases: 35
+- v2.3 requirements: 13 total (9 complete + 4 added 2026-05-29 across Phases 29-30)
+- Mapped to phases: 39
 - Unmapped: 0
 
 ---

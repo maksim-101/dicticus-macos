@@ -296,13 +296,15 @@ Plans:
 
 **Started:** 2026-05-26
 **Goal:** Eliminate dictionary fuzzy-pass data corruption and ship V19D prompt iteration informed by 118-cycle, 4-day live-capture analysis (`.planning/debug/log-analysis-2026-05-26.md`).
-**Phases:** 2 (Phases 27, 28)
-**Total v2.3 requirements:** 9 (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01, LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01)
+**Phases:** 4 (Phases 27, 28, 29, 30 — 29 & 30 added 2026-05-29 from V19D live-UAT findings)
+**Total v2.3 requirements:** 13 (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01, LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01, ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01, MEDIA-PAUSE-01)
 
 ### v2.3 Summary Checklist
 
 - [x] **Phase 27: Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds** — Block fuzzy-pass mutations of valid English words, enrich recorder schema with per-replacement attribution, batch-add observed brand misses. (completed 2026-05-27)
-- [x] **Phase 28: V19D Prompt Iteration** — Clause preservation, contraction handling, generalized stutter dedup, principled standalone-number policy, audit static domain-topic-words bias. (completed 2026-05-27)
+- [x] **Phase 28: V19D Prompt Iteration** — Clause preservation, contraction handling, generalized stutter dedup, principled standalone-number policy, audit static domain-topic-words bias. (completed 2026-05-27; UAT closed 2026-05-29 via debug-log evidence)
+- [x] **Phase 29: ASR Post-Processing — Acronym Collapse, Spoken-Letter Lexicon & Zed Fix** — Deterministic post-ASR fixes for `N F S K`→`NFSK`, spoken letter Z (zed/zee), and the `"the set."`→`"Zed."` dictionary entry. Cross-platform (Shared/). (completed 2026-05-29)
+- [ ] **Phase 30: PTT Media Auto-Pause (macOS)** — Pause playing media while push-to-talk is held, resume on release (MacWhisper parity). macOS-only; spike-first (macOS 26 MediaRemote feasibility). Mute-output fallback agreed.
 
 ### v2.3 Progress
 
@@ -310,6 +312,8 @@ Plans:
 |-------|----------------|--------|-----------|
 | 27. Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds | 3/3 | Complete    | 2026-05-27 |
 | 28. V19D Prompt Iteration | 4/4 | Complete   | 2026-05-27 |
+| 29. ASR Post-Processing (Acronym/Letter/Zed) | 2/2 | Complete   | 2026-05-29 |
+| 30. PTT Media Auto-Pause (macOS) | 0/? | Not planned (spike first) | — |
 
 ---
 
@@ -382,6 +386,51 @@ Plans:
 **Wave structure:** {28-01, 28-02} (parallel — disjoint files) → {28-03} (depends on 28-01 — Variant A uses V19D prompt) → {28-04} (integration verification — depends on 28-01, 28-02, 28-03)
 
 **Cross-platform:** `CleanupPrompt.swift` lives in `Shared/` (macOS + iOS parity per `feedback_cleanup_cross_platform_parity`).
+
+### Phase 29: ASR Post-Processing: Acronym Collapse, Spoken-Letter Lexicon & Zed Fix
+
+**Goal:** Close three live-UAT findings via a deterministic **post-ASR text-processing** step (NOT prompt changes), shipping macOS + iOS together (code in `Shared/`). All three originate in the raw ASR output, so the LLM never sees the correct form — they must be fixed deterministically before/around the existing ITN pipeline.
+
+**Requirements**: ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01
+
+**Depends on:** Phase 28 (V19D — complete).
+
+**Severity:** Quality polish (tail-end refinement; no anomaly flags in live capture).
+
+**Sub-requirements:**
+- **ACRONYM-COLLAPSE-01** — Collapse runs of spaced single/short uppercase fragments emitted by Parakeet (`N F S K` → `NFSK`). Must handle mixed-case fragment runs (`Br N A C`) and guard false positives (`I am O K`). Candidate location: a sibling of `ITNUtility.applyITN` / `applySwissITN` in `Shared/Utilities/`. Live repro: record `2026-05-28T03:31:04`.
+- **SPOKEN-LETTER-01** — Spoken-letter-name lexicon applied *inside* a spelling run so the letter Z spoken as "zed"/"zee" resolves to `Z` (plus `aitch`→H, `double-u`→W). "zed" is the reliable target; "zee" is ambiguous (collides with C/G/V) — handle conservatively.
+- **DICT-ZED-01** — Add the Spike-001-validated `DictionaryService` default entry `"the set." → "Zed."` (period-anchored: 100% precision/recall on live corpus, immune to "the set of …" and compound "X set"). No new code — the existing multi-word lookaround key supports it. See `.planning/spikes/001-zed-set-narrow-fix/`.
+
+**Out of scope:** K4 prose number-word promotion (`five cards`→`5 cards`) — separate future ITN/prose-boundary phase (see memory `project_v28_k4_prose_number_followon`).
+
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 29-01-PLAN.md — Acronym fragment collapse + spoken-letter lexicon (collapseAcronymRun in ITNUtility, Step 1.5 wiring, ITNUtilityAcronymCollapseTests) — ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01
+- [x] 29-02-PLAN.md — DictionaryService "the set." → "Zed." default entry + DICT-ZED-01 regression tests — DICT-ZED-01
+
+### Phase 30: PTT Media Auto-Pause (macOS)
+
+**Goal:** When push-to-talk is held, pause any currently-playing media on the Mac and resume it on release (MacWhisper-parity feature). macOS-**only**, no iOS scope. New media-control service hooked into the existing PTT hotkey press/release lifecycle.
+
+**Requirements**: MEDIA-PAUSE-01 (+ spike-derived requirements TBD)
+
+**Depends on:** Phase 28. Independent of Phase 29 (different domain). **Spike-first** — feasibility on macOS 26 is uncertain.
+
+**Severity:** Feature add (new capability).
+
+**Key research / risk (macOS 26, Darwin 25.x):** Apple entitlement-gated MediaRemote *now-playing info* in macOS 15.4+, so reliably **reading play-state** (needed to know whether to resume on release) is no longer guaranteed for third-party apps. Three candidate approaches to validate in the spike: (1) MediaRemote `MRMediaRemoteSendCommand` pause/play — true position-preserving pause but state-read is gated; (2) media-key simulation (`NX_KEYTYPE_PLAY`) — entitlement-free but a blind toggle (risks starting media on release); (3) mute system output during the hold — public API, fully reliable, but media keeps playing silently. Dicticus is Developer-ID/Sparkle distributed (not App Store), so private APIs are permitted; the risk is OS-version fragility, not rejection.
+
+**Agreed fallback (2026-05-29):** if a true position-preserving pause proves unreliable on macOS 26, fall back to **muting system output** during the hold (accepts that media keeps playing silently).
+
+**Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
+
+**Plans:** 0 plans (spike first → then plan)
+
+Plans:
+- [ ] Spike 002 — validate MediaRemote vs media-key vs mute on macOS 26 (`/gsd-spike`)
+- [ ] TBD (run /gsd-plan-phase 30 to break down after spike)
 
 ---
 

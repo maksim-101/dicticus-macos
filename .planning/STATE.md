@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Live-Capture Quality Pass
 status: executing
-stopped_at: Phase 28 context gathered
-last_updated: "2026-05-27T05:12:46.833Z"
-last_activity: 2026-05-27 -- Phase 28 execution started
+stopped_at: "V19D UAT analyzed — 57 V19D-tagged DebugRecorder records (05-27→05-29), zero cleanup regressions (no degenerate_collapse / very_short / hallucination / large drops); Phase 27 fuzzy guard confirmed firing live (blocked checks→GSD @ 0.33). DECISIONS: (1) V19D PASSES → verify & close Phase 28 via /gsd-verify-work. (2) NFSK acronym-spacing reproduced (record 2026-05-28T03:31:04) but diagnosed as a post-ASR gap — ASR emits "N F S K" spaced, LLM passes through verbatim; NOT a V19D prompt regression → routed to NEW Phase 29 (deterministic acronym-collapse step, ITNUtility sibling; heuristic must handle mixed-case fragments like "Br N A C" and false-positives like "I am O K")."
+last_updated: "2026-05-29T09:56:12.167Z"
+last_activity: 2026-05-29 -- Phase 29 execution started
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 7
-  completed_plans: 3
-  percent: 43
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 10
+  percent: 75
 ---
 
 # Project State: Dicticus
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 28 (v19d-prompt-iteration) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 28
-Last activity: 2026-05-27 -- Phase 28 execution started
+Phase: 29 (asr-post-processing-acronym-collapse-spoken-letter-lexicon-z) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 29
+Last activity: 2026-05-29 -- Phase 29 execution started
 
 ### Next Action
 
@@ -44,12 +44,14 @@ Run `/gsd-plan-phase 27` to decompose Phase 27 into plans. Context resume file: 
 
 ### Roadmap Evolution
 
+- 2026-05-29: Phases 29 & 30 added to v2.3 from V19D live-UAT findings. Phase 29 = deterministic post-ASR text fixes (acronym collapse, spoken-letter lexicon, `"the set."→"Zed."` dict entry from Spike 001), cross-platform Shared/. Phase 30 = macOS-only PTT media auto-pause (MacWhisper parity), spike-first because macOS 15.4+ entitlement-gated MediaRemote play-state reads; mute-output fallback agreed. K4 prose number-word promotion explicitly deferred to a separate future ITN/prose phase (not 29/30).
 - 2026-05-26: Milestone v2.3 opened. Roadmap created from 118-record live-capture analysis (`.planning/debug/log-analysis-2026-05-26.md`). Two phases: Phase 27 (dictionary hallucination guard + recorder enrichment + K7 brand adds) and Phase 28 (V19D prompt iteration). Phase 28 depends on Phase 27 so recorder enrichment gives V19D UAT better per-replacement attribution.
 
 ## v2.3 Phase Progress
 
-- [ ] Phase 27 — Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01)
-- [ ] Phase 28 — V19D Prompt Iteration (LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01)
+- [x] Phase 27 — Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01) — complete 2026-05-27
+- [x] Phase 28 — V19D Prompt Iteration (LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01) — complete; UAT closed 2026-05-29 via debug-log evidence (2 pass, K4 prose = pre-declared follow-on)
+- [ ] Phase 29 (proposed) — Acronym-collapse + spoken-letter lexicon + `the set.`→Zed dict entry (NFSK spacing, zed/zee spelling, Spike 001)
 
 ## Carried Items (from v2.2)
 
@@ -59,8 +61,18 @@ Run `/gsd-plan-phase 27` to decompose Phase 27 into plans. Context resume file: 
 
 ## Session Continuity
 
-Last session: 2026-05-27T03:29:57.366Z
-Stopped at: Phase 28 context gathered
+Last session: 2026-05-29 (V19D live-UAT debug-log review)
+Stopped at: V19D UAT analyzed — 57 V19D-tagged DebugRecorder records (05-27→05-29), zero cleanup regressions (no degenerate_collapse / very_short / hallucination / large drops); Phase 27 fuzzy guard confirmed firing live (blocked checks→GSD @ 0.33). DECISIONS: (1) V19D PASSES → verify & close Phase 28 via /gsd-verify-work. (2) NFSK acronym-spacing reproduced (record 2026-05-28T03:31:04) but diagnosed as a post-ASR gap — ASR emits "N F S K" spaced, LLM passes through verbatim; NOT a V19D prompt regression → routed to NEW Phase 29 (deterministic acronym-collapse step, ITNUtility sibling; heuristic must handle mixed-case fragments like "Br N A C" and false-positives like "I am O K").
+Previous: 2026-05-27 — Phase 28 context gathered / executed; Debug-Recorder build installed for multi-day live UAT.
+
+### Next Action (2026-05-29)
+
+1. `/gsd-verify-work 28` — formally close Phase 28 (V19D UAT passed per debug-log review).
+2. ✅ DONE — Spike 001 (`.planning/spikes/001-zed-set-narrow-fix/`): Zed-IDE→"set" narrow fix VALIDATED ⚠. Ship `"the set." → "Zed."` as a single DictionaryService default entry (period-anchored; 100% prec/recall on corpus, immune to "the set of …" + compound "X set"; no code change). Fold into Phase 29 scope or a tiny dictionary-add.
+3. `/gsd-phase add` Phase 29 (acronym-collapse) → `/gsd-plan-phase 29` → execute. Scope now includes THREE: (a) collapse spaced single/short uppercase fragment runs ("N F S K"→"NFSK", handling "Br N A C" + "I am O K" false-positives), (b) spoken-letter-name lexicon (zed/zee→Z, aitch→H, double-u→W) inside spelling runs, (c) DictionaryService default `"the set."→"Zed."` (from Spike 001). See `project_acronym_spacing_finding` memory for full heuristic + reproductions + spike result.
+
+UAT findings from this session (3 total): NFSK acronym-spacing (→Phase 29a), Z-spelling zed/zee (→Phase 29b), Zed-IDE→set acoustic confusion (→spike). V19D cleanup itself: zero regressions across 57 records.
+
 Key constraints carried forward:
 
 - No German-parity gating per `project_usage_pattern_english_dominant` memory — English-only UAT acceptable for v2.3.
