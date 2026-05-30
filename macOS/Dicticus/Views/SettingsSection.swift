@@ -163,6 +163,8 @@ struct SettingsSection: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                Link("Full Changelog", destination: AppBuildInfo.releasesURL)
+                    .font(.caption)
             }
             .padding(.horizontal)
             .padding(.vertical, 4)
