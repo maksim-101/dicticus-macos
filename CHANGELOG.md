@@ -14,6 +14,7 @@ Quality pass driven by analysis of real multi-day dictation logs (the DebugRecor
 - **Phase 28 (2026-05-27)** — "V19D" AI-cleanup prompt iteration: better clause handling, contraction handling, de-duplication, and number formatting.
 - **Phase 29 (2026-05-29)** — Post-ASR fixes: spelled-out acronyms collapse (`N F S K` → `NFSK`), spoken letter names resolve inside acronyms (zed/zee → Z, etc.), and the Zed IDE (misheard as "set") is recovered via a period-anchored dictionary entry. Cross-platform (macOS + iOS).
 - **Phase 30 (planned)** — Pause media playback while push-to-talk is held (macOS).
+- **Fix** — ASR model download now retries on a transient network drop instead of failing the whole download (the ~2.7 GB Parakeet download from HuggingFace would abort on a single "connection reset"). macOS + iOS.
 
 _Not yet cut as a released build._
 

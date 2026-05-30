@@ -100,7 +100,7 @@ class ModelWarmupService: ObservableObject {
                 // Step 1: Download + load Parakeet TDT v3 CoreML models from HuggingFace.
                 // First run downloads ~2.69 GB; subsequent runs use cached CoreML package.
                 // AsrModels.downloadAndLoad handles caching, progress, and CoreML compilation.
-                let models = try await AsrModels.downloadAndLoad(version: .v3)
+                let models = try await AsrModelLoader.downloadAndLoadV3()
 
                 // Step 2: Create actor-based AsrManager and load models into it.
                 // CoreML encoder compilation takes ~3.4 s on first run, ~162 ms on warm loads.
