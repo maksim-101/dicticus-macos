@@ -80,6 +80,10 @@ class HotkeyManager: ObservableObject {
     /// Isolated to @MainActor via HotkeyManager's own isolation.
     private let textInjector = TextInjector()
 
+    /// MediaRemote-backed service for PTT media auto-pause (Phase 30, MEDIA-PAUSE-01).
+    /// dlopen happens once at construction; guard inside MediaController handles missing framework.
+    private let mediaController = MediaController()
+
     /// Reference to ModifierHotkeyListener — set via setupModifierListener().
     /// Retains the listener for the app lifetime; closures route events to push-to-talk state machine.
     private var modifierListener: ModifierHotkeyListener?
@@ -262,6 +266,14 @@ class HotkeyManager: ObservableObject {
             try service.startRecording()
             isRecording = true
             activeRecordingMode = mode
+            // Phase 30 MEDIA-PAUSE-01: pause media after a successful recording start.
+            // Gated on the user toggle; treat absent key as true (default ON).
+            let pauseEnabled = UserDefaults.standard.object(forKey: "pauseMediaDuringDictation") == nil
+                ? true
+                : UserDefaults.standard.bool(forKey: "pauseMediaDuringDictation")
+            if pauseEnabled {
+                mediaController.pauseMediaIfPlaying()
+            }
         } catch {
             let notification = DicticusNotification.recordingFailed(error)
             lastPostedNotification = notification
@@ -288,6 +300,11 @@ class HotkeyManager: ObservableObject {
         }
 
         isKeyDown = false
+
+        // Phase 30 MEDIA-PAUSE-01: resume any media we paused on press.
+        // Ungated on the toggle — if toggle was off at press time, didPauseMedia is false
+        // and this is already a no-op. Avoids stranding paused media if user flips toggle mid-hold.
+        mediaController.resumeMediaIfPaused()
 
         guard let service = transcriptionService,
               service.state == .recording else {
