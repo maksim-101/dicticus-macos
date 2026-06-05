@@ -1,4 +1,5 @@
 import AppKit
+import CoreAudio
 import Foundation
 import os
 
@@ -37,6 +38,13 @@ final class MediaController {
     /// One-shot guard so a denied Automation grant logs once, not on every press.
     private var didWarnPermission = false
 
+    /// True when WE muted the default output this hold (pausedApp == nil tier-2
+    /// fallback). Separate from `pausedApp` so resume only un-mutes output we changed.
+    private var didMuteOutput = false
+
+    /// One-shot guard so a CoreAudio mute failure logs once, not on every press.
+    private var didWarnMute = false
+
     /// Running-check via NSWorkspace (no Apple event) so we never LAUNCH a stopped
     /// player just to query it — `tell application "X"` blind would start it.
     private func isRunning(_ bundleID: String) -> Bool {
@@ -63,6 +71,56 @@ final class MediaController {
         mediaLog.warning("MediaController: Apple event failed (\(errorNumber)) — media pause disabled for this session")
     }
 
+    /// Resolve the system default output device, or nil if CoreAudio fails.
+    private func defaultOutputDevice() -> AudioDeviceID? {
+        var addr = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        var dev = AudioDeviceID(0)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject), &addr, 0, nil, &size, &dev)
+        return status == noErr ? dev : nil
+    }
+
+    private func muteAddress() -> AudioObjectPropertyAddress {
+        AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyMute,
+            mScope: kAudioObjectPropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain)
+    }
+
+    /// Read the master mute of the default output device; nil on failure or when the
+    /// device exposes no master-mute property.
+    private func isOutputMuted() -> Bool? {
+        guard let dev = defaultOutputDevice() else { return nil }
+        var addr = muteAddress()
+        guard AudioObjectHasProperty(dev, &addr) else { return nil }
+        var muted = UInt32(0)
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioObjectGetPropertyData(dev, &addr, 0, nil, &size, &muted)
+        return status == noErr ? (muted != 0) : nil
+    }
+
+    /// Write the master mute of the default output device; returns success.
+    private func setOutputMuted(_ muted: Bool) -> Bool {
+        guard let dev = defaultOutputDevice() else { return false }
+        var addr = muteAddress()
+        guard AudioObjectHasProperty(dev, &addr) else { return false }
+        var value = UInt32(muted ? 1 : 0)
+        let size = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioObjectSetPropertyData(dev, &addr, 0, nil, size, &value)
+        return status == noErr
+    }
+
+    /// Degrade to a silent no-op when the CoreAudio mute API fails; log once at warn.
+    private func handleMuteFailure() {
+        guard !didWarnMute else { return }
+        didWarnMute = true
+        mediaLog.warning("MediaController: default-output mute failed — mute fallback disabled for this session")
+    }
+
     /// Pause the one running player that is audibly playing; latch it for resume.
     ///
     /// Must be called AFTER `startRecording()` succeeds so rejected presses (model not
@@ -85,16 +143,38 @@ final class MediaController {
                 break
             }
         }
+
+        // Tier 2: only when the ScriptingBridge tier paused nothing. Mute the default
+        // output to cover non-scriptable sources (browser/YouTube/podcast). We latch
+        // only output WE muted — if the user already muted it, leave it untouched so
+        // release never silently un-mutes a user-muted system.
+        guard pausedApp == nil else { return }
+        guard let muted = isOutputMuted() else { handleMuteFailure(); return }
+        guard !muted else { return }
+        if setOutputMuted(true) {
+            didMuteOutput = true
+        } else {
+            handleMuteFailure()
+        }
     }
 
     /// Resume the latched player if we paused one. Safe to call unconditionally on
     /// every release — a no-op when nothing was paused.
     func resumeMediaIfPaused() {
-        guard let player = pausedApp else { return }
-        pausedApp = nil
-        let result = runAS("tell application \"\(player.name)\" to play")
-        if let err = result.errorNumber {
-            handleError(err)
+        if let player = pausedApp {
+            pausedApp = nil
+            let result = runAS("tell application \"\(player.name)\" to play")
+            if let err = result.errorNumber {
+                handleError(err)
+            }
+            return
+        }
+        // Mute is the else branch of the pause tier: tiers are mutually exclusive per
+        // hold, so we only reach here when no scriptable player was resumed.
+        guard didMuteOutput else { return }
+        didMuteOutput = false
+        if !setOutputMuted(false) {
+            handleMuteFailure()
         }
     }
 }
