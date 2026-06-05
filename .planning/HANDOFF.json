@@ -1,44 +1,36 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T18:21:15.009Z",
-  "phase": "28",
-  "phase_name": "v19d-prompt-iteration",
-  "phase_dir": ".planning/phases/28-v19d-prompt-iteration",
-  "plan": 4,
-  "task": 3,
+  "timestamp": "2026-06-05T18:54:36.272Z",
+  "phase": "30",
+  "phase_name": "ptt-media-auto-pause-macos",
+  "phase_dir": ".planning/phases/30-ptt-media-auto-pause-macos",
+  "plan": 3,
+  "task": 2,
   "total_tasks": 3,
-  "status": "paused_awaiting_live_uat",
+  "status": "paused",
   "completed_tasks": [
-    {"id": "28-01", "name": "V19D prompt iteration + harness templates + DebugCleanupRecord.prompt_version", "status": "done", "commit": "775bac3"},
-    {"id": "28-02", "name": "ITN identifier-adjacent single-digit promotion (EN+DE, R1-locked regex)", "status": "done", "commit": "ac330fd"},
-    {"id": "28-03", "name": "4-variant contraction matrix; ship Variant A winner (no production gate)", "status": "done", "commit": "cbefe60"},
-    {"id": "28-04", "name": "Integration verification (V19D baseline + REQUIREMENTS closures)", "status": "done", "commit": "22ca938"},
-    {"id": "CR-01", "name": "Code review fix: 1-char Title-Case stem regex (No one -> No1 mangling)", "status": "done", "commit": "c443283"},
-    {"id": "WR-01", "name": "DE Regel 8 bullet-prefix consistency", "status": "done", "commit": "ef3d30e"},
-    {"id": "WR-02", "name": "Thread prompt_version from CleanupPrompt.currentVersion", "status": "done", "commit": "2b24f8c"},
-    {"id": "WR-04", "name": "levenshteinGateThreshold doc comment correction", "status": "done", "commit": "cabb005"},
-    {"id": "iOS-FIX", "name": "Restore IOSModelDownloadService refs in iOS CleanupServiceTests (regression from 28-03 byte-identical mirror)", "status": "done", "commit": "748a50c"}
+    {"id": "30-01", "name": "ScriptingBridge MediaController + apple-events entitlement", "status": "done", "commit": "c30e04c"},
+    {"id": "30-02", "name": "Mute-output fallback (CoreAudio + AppleScript)", "status": "done", "commit": "86310e5"},
+    {"id": "30-02-fix", "name": "AppleScript mute fallback for devices without CoreAudio master-mute", "status": "done", "commit": "9a4da59"},
+    {"id": "30-03-task1", "name": "Build + install signed Debug-Recorder build", "status": "done", "progress": "Installed /Applications/Dicticus.app, Developer ID VTWHBCCP36 + hardened runtime + apple-events entitlement confirmed, running"}
   ],
   "remaining_tasks": [
-    {"id": "UAT-1", "name": "DE branch live-dictation (Version zwei, geht's, einer, Im Jahr eins)", "status": "pending_live_observation"},
-    {"id": "UAT-2", "name": "JSONL telemetry — confirm prompt_version='v19d' across post-ship records", "status": "pending_live_observation"},
-    {"id": "UAT-3", "name": "K4 prose boundary — confirm 'five items' stays as word in real dictation (known risk)", "status": "pending_live_observation"},
-    {"id": "PHASE-COMPLETE", "name": "Run /gsd:verify-work 28 after UAT items resolved, then phase.complete", "status": "blocked_by_uat"}
+    {"id": "30-03-task2", "name": "Human signed-app UAT (both tiers) — PAUSED mid-checkpoint", "status": "in_progress", "progress": "Scriptable tier PASS (Music pauses in plain+aiCleanup). Music resume-on-release NOT yet confirmed. Mute tier could not be validated on user's hardware (see blocker)."},
+    {"id": "30-03-task3", "name": "Record 30-03-UAT-RESULTS.md verdict; on PASS update ROADMAP + CHANGELOG + AppBuildInfo.swift", "status": "not_started"}
   ],
   "blockers": [
-    {"description": "Phase 28 cannot be marked complete until multi-day live UAT against installed Debug-Recorder build", "type": "human_action", "workaround": "User chose multi-day observation strategy over single-session test phrases (2026-05-27)"}
+    {"description": "User's default output device is a JDS Labs external DAC (hardware-volume only). CoreAudio mute, CoreAudio volumeScalar, AND AppleScript 'set volume output muted' are ALL unsupported on it (probe: mute/volumeScalar HasProperty == false on every scope; 'get volume settings' returns output muted/volume = missing value). The mute-output fallback (MEDIA-PAUSE-03) is therefore physically impossible to validate on this device — macOS itself cannot mute it. The code is correct and would work on a software-controllable output (built-in speakers, AirPods, HDMI).", "type": "external", "workaround": "Switch default output to MacBook Pro Speakers and re-run the YouTube mute test to validate the code, then document hardware-volume DACs as an unsupported edge case."}
   ],
   "human_actions_pending": [
-    {"action": "Use installed Dicticus.app (Debug-Recorder, git 748a50c) over the next few days for normal EN+DE dictation", "context": "All 3 UAT items need observation in real use, not synthetic tests. UAT-1 and UAT-3 ride on whatever phrases come up naturally; UAT-2 requires a few days of JSONL accumulation.", "blocking": true},
-    {"action": "Run /gsd:verify-work 28 when ready to report observations", "context": "Resumes from 28-UAT.md and walks pass/fail per item. May trigger phase.complete or open 28.1 gap-closure depending on results.", "blocking": false}
+    {"action": "Decide how to close the mute tier (MEDIA-PAUSE-03): (A) switch default output to MacBook Pro Speakers + re-test YouTube mute to validate, then PASS with documented DAC limitation; (B) accept the fix by code inspection + document limitation; (C) keep mute tier open / investigate device-switch mute.", "context": "User chose to take a break instead of answering this. Resume by re-presenting these three options.", "blocking": true},
+    {"action": "Confirm Apple Music RESUMES on PTT release (not just pauses) in plain + aiCleanup modes.", "context": "Scriptable pause was confirmed; resume half of MEDIA-PAUSE-01 was not explicitly observed.", "blocking": true}
   ],
   "decisions": [
-    {"decision": "Plan 28-03 winner is Variant A (V19D prompt few-shot alone, no Swift gate code)", "rationale": "4-variant matrix on Gemma 4 E2B Q4_K_M: A=B=D agg_lev=44, C=53; A wins tiebreaker on latency 0.001ms and simplest implementation. No production gate code ships in CleanupService.swift.", "phase": "28"},
-    {"decision": "Plan 28-02 R1 regex LOCKED to (?:[A-Z](?![a-z])|[A-Z]{2,5}|[a-z][A-Z][a-zA-Z]{0,3}) after CR-01 fix", "rationale": "Original [A-Z][a-z]? accepted 1-2 char Title-Case prose bigrams (No one -> No1). Negative lookahead prevents the bigram mangle while preserving E one -> E1 and iOS seven -> iOS7.", "phase": "28"},
-    {"decision": "Apply relaxed D-14 scoring for contraction matrix due to DE harness template gap", "rationale": "Plan 28-01 only authored EN V19D harness templates. DE fixtures ran with EN prompts -> malformed LLM output but gate behavior verifiable independently (gate_recovered=0 for all DE across all variants). Documented in contraction_matrix_winner.md; future German V19D template would enable strict D-14.", "phase": "28"},
-    {"decision": "Phase 28 stays In Progress in ROADMAP until live UAT resolves", "rationale": "User chose multi-day observation over single-session test phrases. Verifier returned human_needed (5/5 code truths verified, 3 observation items deferred). Marking complete prematurely would lock in unverified production behavior.", "phase": "28"}
+    {"decision": "Execute Phase 30 sequentially on the main working tree, no worktree executors.", "rationale": "Project memory reference_dicticus_build_and_gsd_execution: worktree agents branch from a stale base and .planning/ is gitignored so disk-only SUMMARYs get orphaned. Set workflow.use_worktrees=false for the run.", "phase": "30"},
+    {"decision": "Added an AppleScript mute fallback (set volume output muted / output muted of get volume settings) when CoreAudio kAudioDevicePropertyMute is unavailable.", "rationale": "Original 30-02 implemented CoreAudio-only; the plan required the AppleScript fallback for devices without a master-mute property. Real bug, fixed in 9a4da59.", "phase": "30"},
+    {"decision": "Mute fallback cannot be made to work on the user's JDS Labs DAC.", "rationale": "Empirically probed: no software mute/volume control exists on the device at any scope. This is a macOS/hardware limitation, not a code defect.", "phase": "30"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Use /Applications/Dicticus.app normally for the next few days. When you have observations to report, run /gsd:verify-work 28 — it'll resume from 28-UAT.md and step through the 3 pending items. If anything misbehaves earlier, just describe what you saw and triage will route to the right fix path.",
-  "context_notes": "Phase 28 codebase work is COMPLETE: 4 plans merged + 4 code-review fixes + 1 iOS regression fix. macOS 342 tests pass, iOS 331 tests pass (7 model-cache integration skips, pre-existing). Debug-Recorder build (32MB monolithic, ENABLE_DEBUG_DYLIB=NO) installed at /Applications/Dicticus.app, signed with Developer ID Moritz Wehrli (TeamIdentifier VTWHBCCP36) so TCC permissions persist. Build is git 748a50c. 37 unpushed commits on feature/debug-recording-and-cleanup branch — consider pushing before next pause. Branch is 0 behind origin/main."
+  "uncommitted_files": [".planning/HANDOFF.json (this file)", ".planning/phases/30-ptt-media-auto-pause-macos/30-01-SUMMARY.md (disk-only, gitignored)", ".planning/phases/30-ptt-media-auto-pause-macos/30-02-SUMMARY.md (disk-only, gitignored)", "iOS/build/ (pre-existing untracked, unrelated)"],
+  "next_action": "Re-present the 3 mute-tier close-out options to the user (see human_actions_pending #1). The recommended path is option A: switch default output to MacBook Pro Speakers, replay the YouTube mute test, confirm it mutes/unmutes, then write 30-03-UAT-RESULTS.md and run Task 3.",
+  "context_notes": "Phase 30 is one plan from done. Waves 1+2 built and committed cleanly; signed build installed. The ONLY open item is the mute-tier UAT, blocked purely by the user's external DAC having no software volume/mute. Scriptable tier (Music pause) already works. Do NOT re-debug the mute code — it was investigated to ground truth (CoreAudio + AppleScript both unsupported on deviceID 120). The build/install workflow: cd macOS && xcodegen generate && xcodebuild Debug-Recorder ... then ./scripts/install-local.sh (re-signs Developer ID). Test signing flags: CODE_SIGNING_ALLOWED=NO. Do NOT commit project.pbxproj churn."
 }
