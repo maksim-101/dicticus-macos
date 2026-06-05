@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Live-Capture Quality Pass
 status: executing
-stopped_at: "Phase 30 BLOCKED — Plan 01 committed (guarded no-op); Plan 02 signed-app UAT FAILED (2026-06-05). MediaRemote now-playing read is entitlement-gated in the Developer-ID/hardened-runtime app: isPlaying returns false even while media plays, so pause never fires. dlopen works signed; ordering ruled out. Spike 002's 'gate doesn't apply' was a false-positive (tested unsigned CLI). Chosen follow-up: spike the SEND-based path (CoreAudio is-playing detect + MRMediaRemoteSendCommand) — see .planning/backlog/ptt-media-pause-send-based-spike.md. Phase 30 NOT complete."
-last_updated: "2026-06-05T07:53:19.258Z"
+stopped_at: Completed 30-01-PLAN.md
+last_updated: "2026-06-05T18:11:35.655Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 11
+  total_plans: 12
   completed_plans: 11
   percent: 75
 ---
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 30 (ptt-media-auto-pause-macos) — RE-PLANNED (ScriptingBridge), ready to execute
-Plan: 3 waves — 30-01 (MediaController → ScriptingBridge, MEDIA-PAUSE-01/02), 30-02 (mute-output fallback for non-scriptable sources, MEDIA-PAUSE-03), 30-03 (signed-app UAT of both tiers). Plan-checker PASS.
-Status: Phase 30 re-planned around Spike-003 ScriptingBridge design; superseded MediaRemote plans archived under _superseded-mediaremote/
-Last activity: 2026-06-05 -- Spike 003 → ScriptingBridge validated → Phase 30 re-planned + plan-checked (PASS)
+Phase: 30 (ptt-media-auto-pause-macos) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-06-05
 
 ### Next Action
 
@@ -96,8 +96,8 @@ Full session writeup: `.planning/debug/log-analysis-2026-06-04.md`
 
 ## Session Continuity
 
-Last session: 2026-06-05T07:53:19.252Z
-Stopped at: Spike 002 VALIDATED — true MediaRemote pause+resume with play-state read works on macOS 26.5.1 from an unsigned CLI (contradicts the brief's read-gate fear). Approaches 2 (blind toggle) & 3 (mute) skipped as dominated/contingent; mute kept as documented fallback. One residual gap: confirm in the signed/hardened-runtime app (Phase 30 plan task 1). Ready for /gsd-plan-phase 30.
+Last session: 2026-06-05T18:11:35.647Z
+Stopped at: Completed 30-01-PLAN.md
 Previous: 2026-06-04 (Post-Phase-29 live-UAT debug-log review + v2.4 backlog seeding). Phase 29 confirmed complete. 139-record live UAT showed pipeline GREEN on tracked metrics (0 anomalies, 99.3% gate-pass, 0 R5/R6 violations, 13.7% dict-fire rate above 9.3% baseline). Phase 29's three new code paths (acronym collapse, spoken-letter lexicon, "the set."→Zed) had ZERO triggers in window — not a regression, just absence of conditions. Live repros mid-session uncovered 6 new findings, all routed to v2.4 backlog: V19D R8 over-promotion (kink three→K3, King Four→K4), public-release dictionary leakage, ASR tech-term mishearings (1080p→one thousand ADP), spoken-punctuation non-determinism (Claude minus ops), Qwen brand misses (patch reverted), UI find-ability. Phase 30 (PTT media auto-pause macOS) is the last open v2.3 phase — spike-first.
 Previous: 2026-05-29 — V19D live-UAT review; Phases 27/28 closed; Phase 29 created and executed same-day.
 

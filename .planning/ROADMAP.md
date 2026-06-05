@@ -313,7 +313,7 @@ Plans:
 | 27. Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds | 3/3 | Complete    | 2026-05-27 |
 | 28. V19D Prompt Iteration | 4/4 | Complete   | 2026-05-27 |
 | 29. ASR Post-Processing (Acronym/Letter/Zed) | 2/2 | Complete   | 2026-05-29 |
-| 30. PTT Media Auto-Pause (macOS) | 1/2 | In Progress|  |
+| 30. PTT Media Auto-Pause (macOS) | 1/3 | In Progress|  |
 
 ---
 
@@ -426,10 +426,10 @@ Plans:
 
 **Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
 
-**Plans:** 3 plans / 3 waves (re-planned 2026-06-05 around the Spike-003 ScriptingBridge design after the MediaRemote design FAILED signed-app UAT; mute-output fallback wave added per user scope decision)
+**Plans:** 1/3 plans executed
 - [x] Spike 002 — MediaRemote pause/read VALIDATED on unsigned CLI (later proved a false positive — read is gated in the signed app)
 - [x] Spike 003 — ScriptingBridge per-app (Music/Spotify) VALIDATED from a signed/hardened binary; MediaRemote/CoreAudio detection is gated → re-design
-- [ ] 30-01-PLAN.md (wave 1) — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription [MEDIA-PAUSE-01, -02]
+- [x] 30-01-PLAN.md (wave 1) — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription [MEDIA-PAUSE-01, -02]
 - [ ] 30-02-PLAN.md (wave 2) — Mute-output fallback for non-scriptable sources (browser/YouTube/podcasts): mute system output for the hold when no scriptable player was paused; restore-only-if-we-muted [MEDIA-PAUSE-03]
 - [ ] 30-03-PLAN.md (wave 3) — Signed Debug-Recorder build + human UAT of BOTH tiers (scriptable pause/resume + mute fallback) + Automation-TCC grant (unsigned CLI is not a valid proxy)
 
