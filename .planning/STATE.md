@@ -22,25 +22,28 @@ progress:
 
 ## Current Position
 
-Phase: 30 (ptt-media-auto-pause-macos) — BLOCKED (Plan 02 UAT FAILED, NOT complete)
-Plan: 30-01 built & committed (guarded no-op); 30-02 signed-app verification FAILED
-Status: Phase 30 incomplete — MediaRemote now-playing read is entitlement-gated in the signed app
-Last activity: 2026-06-05 -- Built+signed+tested Phase 30; read-gate confirmed; chose send-based spike follow-up
+Phase: 30 (ptt-media-auto-pause-macos) — RE-PLANNED (ScriptingBridge), ready to execute
+Plan: 30-01 (rewrite MediaController → ScriptingBridge + apple-events entitlement) + 30-02 (signed-app UAT). Plan-checker PASS.
+Status: Phase 30 re-planned around Spike-003 ScriptingBridge design; superseded MediaRemote plans archived under _superseded-mediaremote/
+Last activity: 2026-06-05 -- Spike 003 → ScriptingBridge validated → Phase 30 re-planned + plan-checked (PASS)
 
 ### Next Action
 
-**Phase 30 did NOT pass signed-app UAT (2026-06-05).** `MRMediaRemoteGetNowPlayingApplicationIsPlaying`
-returns `false` in the Developer-ID/hardened-runtime app even while media plays — the macOS 15.4+
-now-playing entitlement gate keys off code-signing context. The unsigned spike CLI bypassed it
-(false-positive). `dlopen` works signed; reading before `startRecording()` (no audio session) still
-returned false, so ordering is ruled out. Decisive A/B (unsigned CLI reads true, signed app reads
-false at same instant) + full writeup: `.planning/phases/30-ptt-media-auto-pause-macos/30-02-UAT-RESULTS.md`.
+**`/gsd-execute-phase 30`** — Phase 30 re-planned around the Spike-003 ScriptingBridge design and
+plan-checked (PASS). Wave 1 (30-01): rewrite `MediaController.swift` internals — drop all MediaRemote
+`dlopen`/`dlsym`, use `NSWorkspace` running-check + `NSAppleScript` `player state`/pause/play for Apple
+Music + Spotify, per-app latch; add `com.apple.security.automation.apple-events` entitlement +
+`NSAppleEventsUsageDescription`; keep the public API + HotkeyManager wiring + default-ON toggle. Wave 2
+(30-02): build signed Debug-Recorder, install via `install-local.sh`, human UAT (Automation TCC grant +
+audible pause/resume in both modes). Plans: `.planning/phases/30-ptt-media-auto-pause-macos/30-0{1,2}-PLAN.md`.
 
-**Spike 003 DONE (2026-06-05) — design resolved.** Send works signed but ALL detection is gated
-(MediaRemote read + notifications) or unreliable (CoreAudio stays true while paused). **Winner =
-ScriptingBridge per-app (Apple Music / Spotify):** exact non-gated detection + true pause/resume,
-confirmed from a signed/hardened binary (003d). Full findings + chosen-design pseudocode + emergent
-requirements: `.planning/spikes/003-send-based-media-pause/README.md`.
+**Why the change:** original MediaRemote design FAILED signed-app UAT (now-playing read entitlement-gated;
+returns false while playing). Spike 003 proved send works signed but all system-level detection is gated;
+ScriptingBridge per-app is the validated path. Superseded MediaRemote artifacts under
+`_superseded-mediaremote/`. Full design: `.planning/spikes/003-send-based-media-pause/README.md`.
+
+**Known gap:** ScriptingBridge covers Apple Music + Spotify only; browser/YouTube/podcast media uncovered
+(mute-output remains the documented universal fallback).
 
 **Next action: `/gsd-plan-phase 30` (re-plan)** around ScriptingBridge — replaces 30-01's gated-read
 MediaController. Design: on press, pause whichever of Music/Spotify is `player state == "playing"`
