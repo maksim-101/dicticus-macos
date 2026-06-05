@@ -106,7 +106,9 @@ Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: liv
 
 ### Media Control (Phase 30, macOS)
 
-- [x] **MEDIA-PAUSE-01**: While push-to-talk is held, currently-playing media is paused (or muted per agreed fallback) and resumes on release — macOS only. Approach selected by spike (MediaRemote / media-key / mute) given macOS 15.4+ now-playing entitlement gating
+- [ ] **MEDIA-PAUSE-01**: While push-to-talk is held, a currently-**playing scriptable player** (Apple Music, Spotify) is paused via ScriptingBridge/Apple events and **resumes the same app** on release — true position-preserving pause; only resume what we paused (never start media that wasn't playing); gated by the default-ON "Pause media while dictating" toggle. macOS only. (Spike-003-validated; the MediaRemote now-playing read is entitlement-gated in the signed app and cannot be used.)
+- [ ] **MEDIA-PAUSE-02**: The media-pause path degrades safely. App carries the `com.apple.security.automation.apple-events` entitlement + `NSAppleEventsUsageDescription`; on Automation-TCC denial (`errAEEventNotPermitted` / -1743), a missing/not-running player, or any AppleScript error, the feature is a **silent no-op** (one warn-level log, never a crash). Running-state is checked via `NSWorkspace` before any `tell application` so a stopped player is never launched.
+- [ ] **MEDIA-PAUSE-03**: For **non-scriptable** audio sources (browser/YouTube/podcast apps) that ScriptingBridge cannot detect or control, a **mute-output fallback** applies: when no scriptable player was paused on a PTT hold, mute the default system output for the hold and restore on release (restore only if *we* muted — never unmute a user-muted system). Accepts mute ≠ pause (audio keeps advancing silently). Gated by the same toggle.
 
 ## Out of Scope
 
@@ -165,7 +167,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ACRONYM-COLLAPSE-01 | Phase 29 | Complete |
 | SPOKEN-LETTER-01 | Phase 29 | Complete |
 | DICT-ZED-01 | Phase 29 | Complete |
-| MEDIA-PAUSE-01 | Phase 30 | Not started |
+| MEDIA-PAUSE-01 | Phase 30 | Re-planned (ScriptingBridge) |
+| MEDIA-PAUSE-02 | Phase 30 | Re-planned (ScriptingBridge) |
+| MEDIA-PAUSE-03 | Phase 30 | Re-planned (mute fallback) |
 
 **Coverage:**
 - v2.0 requirements: 22 total

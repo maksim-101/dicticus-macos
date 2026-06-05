@@ -414,7 +414,7 @@ Plans:
 
 **Goal:** When push-to-talk is held, pause any currently-playing media on the Mac and resume it on release (MacWhisper-parity feature). macOS-**only**, no iOS scope. New media-control service hooked into the existing PTT hotkey press/release lifecycle.
 
-**Requirements**: MEDIA-PAUSE-01 (+ spike-derived requirements TBD)
+**Requirements**: MEDIA-PAUSE-01 (scriptable-player true pause/resume), MEDIA-PAUSE-02 (safe degradation + apple-events entitlement), MEDIA-PAUSE-03 (mute-output fallback for non-scriptable sources)
 
 **Depends on:** Phase 28. Independent of Phase 29 (different domain). **Spike-first** — feasibility on macOS 26 is uncertain.
 
@@ -426,11 +426,12 @@ Plans:
 
 **Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
 
-**Plans:** 2 plans (re-planned 2026-06-05 around the Spike-003 ScriptingBridge design after the MediaRemote design FAILED signed-app UAT)
+**Plans:** 3 plans / 3 waves (re-planned 2026-06-05 around the Spike-003 ScriptingBridge design after the MediaRemote design FAILED signed-app UAT; mute-output fallback wave added per user scope decision)
 - [x] Spike 002 — MediaRemote pause/read VALIDATED on unsigned CLI (later proved a false positive — read is gated in the signed app)
 - [x] Spike 003 — ScriptingBridge per-app (Music/Spotify) VALIDATED from a signed/hardened binary; MediaRemote/CoreAudio detection is gated → re-design
-- [ ] 30-01-PLAN.md — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription
-- [ ] 30-02-PLAN.md — Signed Debug-Recorder build + human UAT of the Automation-TCC pause/resume path (unsigned CLI is not a valid proxy)
+- [ ] 30-01-PLAN.md (wave 1) — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription [MEDIA-PAUSE-01, -02]
+- [ ] 30-02-PLAN.md (wave 2) — Mute-output fallback for non-scriptable sources (browser/YouTube/podcasts): mute system output for the hold when no scriptable player was paused; restore-only-if-we-muted [MEDIA-PAUSE-03]
+- [ ] 30-03-PLAN.md (wave 3) — Signed Debug-Recorder build + human UAT of BOTH tiers (scriptable pause/resume + mute fallback) + Automation-TCC grant (unsigned CLI is not a valid proxy)
 
 > Superseded MediaRemote PLAN/SUMMARY/UAT artifacts archived under `_superseded-mediaremote/`.
 
