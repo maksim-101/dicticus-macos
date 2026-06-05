@@ -313,7 +313,7 @@ Plans:
 | 27. Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds | 3/3 | Complete    | 2026-05-27 |
 | 28. V19D Prompt Iteration | 4/4 | Complete   | 2026-05-27 |
 | 29. ASR Post-Processing (Acronym/Letter/Zed) | 2/2 | Complete   | 2026-05-29 |
-| 30. PTT Media Auto-Pause (macOS) | 0/? | Not planned (spike first) | — |
+| 30. PTT Media Auto-Pause (macOS) | 1/2 | In Progress|  |
 
 ---
 
@@ -426,11 +426,10 @@ Plans:
 
 **Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
 
-**Plans:** 0 plans (spike first → then plan)
-
-Plans:
-- [ ] Spike 002 — validate MediaRemote vs media-key vs mute on macOS 26 (`/gsd-spike`)
-- [ ] TBD (run /gsd-plan-phase 30 to break down after spike)
+**Plans:** 1/2 plans executed
+- [x] Spike 002 — MediaRemote pause + state read VALIDATED (unsigned CLI); signed-app dlopen is the one residual gap → 30-02
+- [x] 30-01-PLAN.md — MediaController (guarded MediaRemote read/pause/play) + PTT wiring + default-ON Settings toggle
+- [ ] 30-02-PLAN.md — Signed Debug-Recorder build + human UAT closing the hardened-runtime dlopen gap
 
 ---
 

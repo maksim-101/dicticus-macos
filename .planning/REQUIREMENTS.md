@@ -106,7 +106,7 @@ Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: liv
 
 ### Media Control (Phase 30, macOS)
 
-- [ ] **MEDIA-PAUSE-01**: While push-to-talk is held, currently-playing media is paused (or muted per agreed fallback) and resumes on release — macOS only. Approach selected by spike (MediaRemote / media-key / mute) given macOS 15.4+ now-playing entitlement gating
+- [x] **MEDIA-PAUSE-01**: While push-to-talk is held, currently-playing media is paused (or muted per agreed fallback) and resumes on release — macOS only. Approach selected by spike (MediaRemote / media-key / mute) given macOS 15.4+ now-playing entitlement gating
 
 ## Out of Scope
 
