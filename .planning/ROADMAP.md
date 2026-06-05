@@ -426,10 +426,13 @@ Plans:
 
 **Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
 
-**Plans:** 1/2 plans executed
-- [x] Spike 002 — MediaRemote pause + state read VALIDATED (unsigned CLI); signed-app dlopen is the one residual gap → 30-02
-- [x] 30-01-PLAN.md — MediaController (guarded MediaRemote read/pause/play) + PTT wiring + default-ON Settings toggle
-- [ ] 30-02-PLAN.md — Signed Debug-Recorder build + human UAT closing the hardened-runtime dlopen gap
+**Plans:** 2 plans (re-planned 2026-06-05 around the Spike-003 ScriptingBridge design after the MediaRemote design FAILED signed-app UAT)
+- [x] Spike 002 — MediaRemote pause/read VALIDATED on unsigned CLI (later proved a false positive — read is gated in the signed app)
+- [x] Spike 003 — ScriptingBridge per-app (Music/Spotify) VALIDATED from a signed/hardened binary; MediaRemote/CoreAudio detection is gated → re-design
+- [ ] 30-01-PLAN.md — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription
+- [ ] 30-02-PLAN.md — Signed Debug-Recorder build + human UAT of the Automation-TCC pause/resume path (unsigned CLI is not a valid proxy)
+
+> Superseded MediaRemote PLAN/SUMMARY/UAT artifacts archived under `_superseded-mediaremote/`.
 
 ---
 
