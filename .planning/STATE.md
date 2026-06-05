@@ -36,15 +36,19 @@ now-playing entitlement gate keys off code-signing context. The unsigned spike C
 returned false, so ordering is ruled out. Decisive A/B (unsigned CLI reads true, signed app reads
 false at same instant) + full writeup: `.planning/phases/30-ptt-media-auto-pause-macos/30-02-UAT-RESULTS.md`.
 
-**Chosen follow-up (user, 2026-06-05): spike the SEND-based path** — detect "is anything playing"
-via a non-gated CoreAudio output signal (`kAudioDevicePropertyDeviceIsRunningSomewhere`) +
-`MRMediaRemoteSendCommand` pause/play, IF send works in the signed app (untested — must spike in the
-SIGNED build, NOT a CLI). Brief: `.planning/backlog/ptt-media-pause-send-based-spike.md`. Mute-output
-remains the documented fallback if send is also gated.
+**Spike 003 DONE (2026-06-05) — design resolved.** Send works signed but ALL detection is gated
+(MediaRemote read + notifications) or unreliable (CoreAudio stays true while paused). **Winner =
+ScriptingBridge per-app (Apple Music / Spotify):** exact non-gated detection + true pause/resume,
+confirmed from a signed/hardened binary (003d). Full findings + chosen-design pseudocode + emergent
+requirements: `.planning/spikes/003-send-based-media-pause/README.md`.
 
-30-01 code ships as a safe guarded no-op (every send gated behind a read that returns false → never
-touches media). Installed app = clean signed Debug-Recorder build (commit c588fec). Recommended:
-`/gsd-spike` the send-based path, then re-plan Phase 30 around the working mechanism.
+**Next action: `/gsd-plan-phase 30` (re-plan)** around ScriptingBridge — replaces 30-01's gated-read
+MediaController. Design: on press, pause whichever of Music/Spotify is `player state == "playing"`
+(via NSWorkspace running-check + AppleScript), latch the app; on release, play it. App needs
+`com.apple.security.automation.apple-events` entitlement + `NSAppleEventsUsageDescription` (Automation
+TCC). Covers Apple Music + Spotify; browser media uncovered → mute-output universal fallback.
+
+30-01 code ships as a safe guarded no-op. Installed app = clean signed Debug-Recorder build (c588fec).
 
 **After Phase 30 resolves → `/gsd-complete-milestone v2.3` → `/gsd-new-milestone v2.4` (theme:
 public-release readiness + dictionary as platform; see v2.4 backlog cluster below).**
