@@ -4,13 +4,13 @@ milestone: v2.3
 milestone_name: Live-Capture Quality Pass
 status: executing
 stopped_at: Completed 30-01-PLAN.md
-last_updated: "2026-06-05T18:11:35.655Z"
+last_updated: "2026-06-05T18:17:27.924Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
   percent: 75
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 30 (ptt-media-auto-pause-macos) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-06-05
 
@@ -96,7 +96,7 @@ Full session writeup: `.planning/debug/log-analysis-2026-06-04.md`
 
 ## Session Continuity
 
-Last session: 2026-06-05T18:11:35.647Z
+Last session: 2026-06-05T18:16:02.403Z
 Stopped at: Completed 30-01-PLAN.md
 Previous: 2026-06-04 (Post-Phase-29 live-UAT debug-log review + v2.4 backlog seeding). Phase 29 confirmed complete. 139-record live UAT showed pipeline GREEN on tracked metrics (0 anomalies, 99.3% gate-pass, 0 R5/R6 violations, 13.7% dict-fire rate above 9.3% baseline). Phase 29's three new code paths (acronym collapse, spoken-letter lexicon, "the set."→Zed) had ZERO triggers in window — not a regression, just absence of conditions. Live repros mid-session uncovered 6 new findings, all routed to v2.4 backlog: V19D R8 over-promotion (kink three→K3, King Four→K4), public-release dictionary leakage, ASR tech-term mishearings (1080p→one thousand ADP), spoken-punctuation non-determinism (Claude minus ops), Qwen brand misses (patch reverted), UI find-ability. Phase 30 (PTT media auto-pause macOS) is the last open v2.3 phase — spike-first.
 Previous: 2026-05-29 — V19D live-UAT review; Phases 27/28 closed; Phase 29 created and executed same-day.
