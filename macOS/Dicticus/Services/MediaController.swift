@@ -91,27 +91,48 @@ final class MediaController {
             mElement: kAudioObjectPropertyElementMain)
     }
 
-    /// Read the master mute of the default output device; nil on failure or when the
-    /// device exposes no master-mute property.
+    /// Read the master mute of the default output device; nil on failure.
+    ///
+    /// CoreAudio first, then AppleScript fallback: built-in MacBook speakers and many
+    /// external devices expose no `kAudioDevicePropertyMute` master-mute property, so
+    /// the CoreAudio path silently no-ops there. `output muted of (get volume settings)`
+    /// is Standard Additions (in-process, no Automation-TCC grant) and works regardless.
     private func isOutputMuted() -> Bool? {
-        guard let dev = defaultOutputDevice() else { return nil }
-        var addr = muteAddress()
-        guard AudioObjectHasProperty(dev, &addr) else { return nil }
-        var muted = UInt32(0)
-        var size = UInt32(MemoryLayout<UInt32>.size)
-        let status = AudioObjectGetPropertyData(dev, &addr, 0, nil, &size, &muted)
-        return status == noErr ? (muted != 0) : nil
+        if let dev = defaultOutputDevice() {
+            var addr = muteAddress()
+            if AudioObjectHasProperty(dev, &addr) {
+                var muted = UInt32(0)
+                var size = UInt32(MemoryLayout<UInt32>.size)
+                let status = AudioObjectGetPropertyData(dev, &addr, 0, nil, &size, &muted)
+                if status == noErr { return muted != 0 }
+            }
+        }
+        let result = runAS("output muted of (get volume settings)")
+        if result.errorNumber != nil { return nil }
+        switch result.value {
+        case "true": return true
+        case "false": return false
+        default: return nil
+        }
     }
 
     /// Write the master mute of the default output device; returns success.
+    ///
+    /// CoreAudio first, then AppleScript fallback (`set volume output muted`,
+    /// Standard Additions, in-process, no Automation-TCC grant) for devices without a
+    /// CoreAudio master-mute property.
     private func setOutputMuted(_ muted: Bool) -> Bool {
-        guard let dev = defaultOutputDevice() else { return false }
-        var addr = muteAddress()
-        guard AudioObjectHasProperty(dev, &addr) else { return false }
-        var value = UInt32(muted ? 1 : 0)
-        let size = UInt32(MemoryLayout<UInt32>.size)
-        let status = AudioObjectSetPropertyData(dev, &addr, 0, nil, size, &value)
-        return status == noErr
+        if let dev = defaultOutputDevice() {
+            var addr = muteAddress()
+            if AudioObjectHasProperty(dev, &addr) {
+                var value = UInt32(muted ? 1 : 0)
+                let size = UInt32(MemoryLayout<UInt32>.size)
+                let status = AudioObjectSetPropertyData(dev, &addr, 0, nil, size, &value)
+                if status == noErr { return true }
+            }
+        }
+        let result = runAS("set volume output muted \(muted ? "true" : "false")")
+        return result.errorNumber == nil
     }
 
     /// Degrade to a silent no-op when the CoreAudio mute API fails; log once at warn.
