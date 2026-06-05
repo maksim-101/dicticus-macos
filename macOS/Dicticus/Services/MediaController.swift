@@ -1,99 +1,100 @@
+import AppKit
 import Foundation
 import os
 
 private let mediaLog = Logger(subsystem: "com.dicticus", category: "media-control")
 
-// MRCommand constants validated in Spike 002a.
-private let kMRPlay  = 0
-private let kMRPause = 1
-
-// dlsym typealiases (proven signatures from Spike 002a-mediaremote.swift).
-private typealias IsPlayingFn   = @convention(c) (DispatchQueue, @escaping (Bool) -> Void) -> Void
-private typealias SendCommandFn = @convention(c) (Int, [AnyHashable: Any]?) -> Bool
-
-/// Guarded MediaRemote play-state reader and command sender.
+/// Pauses/resumes the currently-audible desktop media player while PTT is held.
 ///
-/// Resolves `MRMediaRemoteGetNowPlayingApplicationIsPlaying` and
-/// `MRMediaRemoteSendCommand` via dlopen/dlsym at construction time.
-/// If the framework or either symbol is unavailable (future macOS breakage),
-/// `available` is set to false, one warn-level log is emitted, and every
-/// public method becomes a no-op — the feature degrades silently, never crashes.
+/// Uses ScriptingBridge / Apple events (validated signed in Spike 003d) to control
+/// Apple Music and Spotify — MediaRemote's now-playing read is entitlement-gated in
+/// the signed/hardened-runtime app and was dropped. Requires the
+/// `com.apple.security.automation.apple-events` entitlement plus a one-time
+/// Automation TCC grant; if automation is denied, every method degrades to a silent
+/// no-op (one warn log).
 ///
-/// Algorithm (from CONTEXT.md):
+/// Algorithm (from 30-CONTEXT):
 ///   pauseMediaIfPlaying()  — fire on PTT press, AFTER startRecording() succeeds.
 ///   resumeMediaIfPaused()  — fire on PTT release.
-/// The `didPauseMedia` latch ensures we only resume media that *we* paused.
+/// The `pausedApp` latch holds the SPECIFIC player we paused so resume targets only
+/// that app — we never start media that wasn't already playing.
 @MainActor
 final class MediaController {
 
-    /// True when both MediaRemote symbols resolved successfully.
-    private let available: Bool
-
-    private let isPlayingFn: IsPlayingFn?
-    private let sendCommandFn: SendCommandFn?
-
-    /// Latch: true when we sent the pause command. Resume is a no-op unless this is set.
-    private var didPauseMedia = false
-
-    init() {
-        let path = "/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote"
-        guard let handle = dlopen(path, RTLD_NOW) else {
-            mediaLog.warning("MediaController: dlopen failed for MediaRemote — media pause disabled")
-            available = false
-            isPlayingFn = nil
-            sendCommandFn = nil
-            return
-        }
-
-        guard let isPlayingPtr = dlsym(handle, "MRMediaRemoteGetNowPlayingApplicationIsPlaying") else {
-            mediaLog.warning("MediaController: MRMediaRemoteGetNowPlayingApplicationIsPlaying not found — media pause disabled")
-            available = false
-            isPlayingFn = nil
-            sendCommandFn = nil
-            return
-        }
-
-        guard let sendPtr = dlsym(handle, "MRMediaRemoteSendCommand") else {
-            mediaLog.warning("MediaController: MRMediaRemoteSendCommand not found — media pause disabled")
-            available = false
-            isPlayingFn = nil
-            sendCommandFn = nil
-            return
-        }
-
-        isPlayingFn   = unsafeBitCast(isPlayingPtr, to: IsPlayingFn.self)
-        sendCommandFn = unsafeBitCast(sendPtr, to: SendCommandFn.self)
-        available = true
+    private struct Player {
+        let name: String
+        let bundleID: String
     }
 
-    /// Read play-state asynchronously; if playing, send pause and set the latch.
-    ///
-    /// Must be called AFTER `startRecording()` succeeds so that early-exit paths
-    /// (model not ready, busy, mode mismatch) never reach this call.
-    /// The read is async — recording begins immediately without waiting for the callback.
-    func pauseMediaIfPlaying() {
-        didPauseMedia = false
-        guard available, let isPlaying = isPlayingFn, let send = sendCommandFn else { return }
+    private let players = [
+        Player(name: "Music", bundleID: "com.apple.Music"),
+        Player(name: "Spotify", bundleID: "com.spotify.client"),
+    ]
 
-        isPlaying(DispatchQueue.main) { [weak self] playing in
-            guard let self else { return }
-            if playing {
-                _ = send(kMRPause, nil)
-                self.didPauseMedia = true
+    /// The specific player we paused this hold; nil when nothing was paused.
+    private var pausedApp: Player?
+
+    /// One-shot guard so a denied Automation grant logs once, not on every press.
+    private var didWarnPermission = false
+
+    /// Running-check via NSWorkspace (no Apple event) so we never LAUNCH a stopped
+    /// player just to query it — `tell application "X"` blind would start it.
+    private func isRunning(_ bundleID: String) -> Bool {
+        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == bundleID }
+    }
+
+    /// Runs an AppleScript source, returning its string value or an error number.
+    private func runAS(_ src: String) -> (value: String?, errorNumber: Int?) {
+        var err: NSDictionary?
+        guard let script = NSAppleScript(source: src) else { return (nil, nil) }
+        let out = script.executeAndReturnError(&err)
+        if let err {
+            let num = (err[NSAppleScript.errorNumber] as? Int)
+            return (nil, num)
+        }
+        return (out.stringValue, nil)
+    }
+
+    /// Degrade to a silent no-op when Automation TCC is denied (errAEEventNotPermitted
+    /// / -1743) or any AppleScript error occurs; log once at warn, never crash or retry.
+    private func handleError(_ errorNumber: Int) {
+        guard !didWarnPermission else { return }
+        didWarnPermission = true
+        mediaLog.warning("MediaController: Apple event failed (\(errorNumber)) — media pause disabled for this session")
+    }
+
+    /// Pause the one running player that is audibly playing; latch it for resume.
+    ///
+    /// Must be called AFTER `startRecording()` succeeds so rejected presses (model not
+    /// ready, busy, mode mismatch, sub-threshold) never reach this call.
+    func pauseMediaIfPlaying() {
+        pausedApp = nil
+        for player in players where isRunning(player.bundleID) {
+            let state = runAS("tell application \"\(player.name)\" to return (player state as text)")
+            if let err = state.errorNumber {
+                handleError(err)
+                continue
+            }
+            if state.value == "playing" {
+                let result = runAS("tell application \"\(player.name)\" to pause")
+                if let err = result.errorNumber {
+                    handleError(err)
+                    continue
+                }
+                pausedApp = player
+                break
             }
         }
     }
 
-    /// Resume media if we were the one who paused it.
-    ///
-    /// Safe to call unconditionally on every PTT release — is a no-op when
-    /// `didPauseMedia` is false (nothing was paused by us) or when unavailable.
-    /// The toggle does not need re-checking here: if the toggle was off at
-    /// press time, `didPauseMedia` is false and this is already a no-op.
+    /// Resume the latched player if we paused one. Safe to call unconditionally on
+    /// every release — a no-op when nothing was paused.
     func resumeMediaIfPaused() {
-        guard available, let send = sendCommandFn else { return }
-        guard didPauseMedia else { return }
-        _ = send(kMRPlay, nil)
-        didPauseMedia = false
+        guard let player = pausedApp else { return }
+        pausedApp = nil
+        let result = runAS("tell application \"\(player.name)\" to play")
+        if let err = result.errorNumber {
+            handleError(err)
+        }
     }
 }
