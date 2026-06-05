@@ -53,6 +53,7 @@ targets:
       properties:
         LSUIElement: true
         NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
+        NSAppleEventsUsageDescription: "Dicticus pauses your music while you dictate."
         CFBundleIdentifier: com.dicticus.app
         CFBundleVersion: "4"
         CFBundleShortVersionString: "1.2.0"
@@ -65,6 +66,7 @@ targets:
         com.apple.security.app-sandbox: false
         com.apple.security.application-groups:
           - group.com.dicticus
+        com.apple.security.automation.apple-events: true
         com.apple.security.device.audio-input: true
         com.apple.security.cs.disable-library-validation: true
         com.apple.security.cs.allow-unsigned-executable-memory: true
