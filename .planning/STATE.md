@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Live-Capture Quality Pass
 status: executing
-stopped_at: "Phase 30 Plan 01 complete — MediaController, MediaPauseToggleRow, HotkeyManager wiring all committed and build GREEN. Plan 02 = install Debug-Recorder build, confirm dlopen succeeds under hardened runtime + Developer-ID signing."
+stopped_at: "Phase 30 BLOCKED — Plan 01 committed (guarded no-op); Plan 02 signed-app UAT FAILED (2026-06-05). MediaRemote now-playing read is entitlement-gated in the Developer-ID/hardened-runtime app: isPlaying returns false even while media plays, so pause never fires. dlopen works signed; ordering ruled out. Spike 002's 'gate doesn't apply' was a false-positive (tested unsigned CLI). Chosen follow-up: spike the SEND-based path (CoreAudio is-playing detect + MRMediaRemoteSendCommand) — see .planning/backlog/ptt-media-pause-send-based-spike.md. Phase 30 NOT complete."
 last_updated: "2026-06-05T07:53:19.258Z"
 last_activity: 2026-06-05
 progress:
@@ -22,33 +22,32 @@ progress:
 
 ## Current Position
 
-Phase: 30 (ptt-media-auto-pause-macos) — EXECUTING
-Plan: 2 of 2
-Status: Ready for Plan 02 (signed-app verification)
-Last activity: 2026-06-05
+Phase: 30 (ptt-media-auto-pause-macos) — BLOCKED (Plan 02 UAT FAILED, NOT complete)
+Plan: 30-01 built & committed (guarded no-op); 30-02 signed-app verification FAILED
+Status: Phase 30 incomplete — MediaRemote now-playing read is entitlement-gated in the signed app
+Last activity: 2026-06-05 -- Built+signed+tested Phase 30; read-gate confirmed; chose send-based spike follow-up
 
 ### Next Action
 
-`/gsd-plan-phase 30` — Spike 002 VALIDATED Approach 1 (MediaRemote pause + state read).
-Read-gate feared in the brief does NOT apply on macOS 26.5.1 (proven from unsigned CLI:
-read state + send pause/play all work; isPlaying tracks transitions). Plan task 1 = verify
-in the signed/hardened-runtime app (the one unproven gap); mute-output stays as documented
-fallback, not a parallel build. See `.planning/spikes/002-ptt-media-autopause/README.md`.
+**Phase 30 did NOT pass signed-app UAT (2026-06-05).** `MRMediaRemoteGetNowPlayingApplicationIsPlaying`
+returns `false` in the Developer-ID/hardened-runtime app even while media plays — the macOS 15.4+
+now-playing entitlement gate keys off code-signing context. The unsigned spike CLI bypassed it
+(false-positive). `dlopen` works signed; reading before `startRecording()` (no audio session) still
+returned false, so ordering is ruled out. Decisive A/B (unsigned CLI reads true, signed app reads
+false at same instant) + full writeup: `.planning/phases/30-ptt-media-auto-pause-macos/30-02-UAT-RESULTS.md`.
 
-**Phase 30 scope (proposed, pre-spike):**
+**Chosen follow-up (user, 2026-06-05): spike the SEND-based path** — detect "is anything playing"
+via a non-gated CoreAudio output signal (`kAudioDevicePropertyDeviceIsRunningSomewhere`) +
+`MRMediaRemoteSendCommand` pause/play, IF send works in the signed app (untested — must spike in the
+SIGNED build, NOT a CLI). Brief: `.planning/backlog/ptt-media-pause-send-based-spike.md`. Mute-output
+remains the documented fallback if send is also gated.
 
-- MEDIA-PAUSE-01: pause playing media (Apple Music / Spotify / YouTube / podcasts) while PTT hotkey is held; resume on release (MacWhisper parity)
-- macOS-only — iOS Phase 30 sibling not yet defined
-- **Spike-first** — macOS 15.4+ gated MediaRemote `getNowPlayingInfo` / play-state behind a private entitlement. Public API path may not be feasible.
-- **Agreed fallback:** if MediaRemote spike fails, ship mute-output approach (`AVAudioSession`-equivalent on macOS) instead of pause/resume.
-- See `project_ptt_media_autopause` memory for full context and Spike-002 brief.
+30-01 code ships as a safe guarded no-op (every send gated behind a read that returns false → never
+touches media). Installed app = clean signed Debug-Recorder build (commit c588fec). Recommended:
+`/gsd-spike` the send-based path, then re-plan Phase 30 around the working mechanism.
 
-**Recommended entry sequence on next session:**
-
-1. `/gsd-spike 30` (or manual spike in `.planning/spikes/002-…/`) — verify MediaRemote feasibility on installed macOS version.
-2. If feasible → `/gsd-plan-phase 30`.
-3. If not → adopt mute-output fallback; abbreviated `/gsd-plan-phase 30`.
-4. After Phase 30 ships → `/gsd-complete-milestone v2.3` → `/gsd-new-milestone v2.4` (theme: public-release readiness + dictionary as platform; see v2.4 backlog cluster below).
+**After Phase 30 resolves → `/gsd-complete-milestone v2.3` → `/gsd-new-milestone v2.4` (theme:
+public-release readiness + dictionary as platform; see v2.4 backlog cluster below).**
 
 ### Roadmap Evolution
 
@@ -60,7 +59,7 @@ fallback, not a parallel build. See `.planning/spikes/002-ptt-media-autopause/RE
 - [x] Phase 27 — Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01) — complete 2026-05-27
 - [x] Phase 28 — V19D Prompt Iteration (LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01) — complete; UAT closed 2026-05-29 via debug-log evidence
 - [x] Phase 29 — Acronym-collapse + spoken-letter lexicon + `the set.`→Zed dict entry (ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01) — complete 2026-05-29; post-deploy UAT 2026-06-04 confirmed no regressions (paths not exercised in 139-record window but pipeline GREEN)
-- [ ] Phase 30 — PTT Media Auto-Pause macOS (MEDIA-PAUSE-01) — proposed, spike-first, not started
+- [ ] Phase 30 — PTT Media Auto-Pause macOS (MEDIA-PAUSE-01) — BLOCKED: 30-01 built (guarded no-op), 30-02 signed-app UAT FAILED 2026-06-05 (MediaRemote read entitlement-gated in signed app). Follow-up: send-based spike (`.planning/backlog/ptt-media-pause-send-based-spike.md`).
 
 ## v2.4 Backlog Cluster (seeded 2026-06-04, formalize via /gsd-new-milestone after Phase 30 ships)
 
