@@ -42,7 +42,7 @@
 
 ### v2.4 Phases
 
-- [ ] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path
+- [x] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path (completed 2026-06-06)
 - [ ] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together
 - [ ] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard
 - [ ] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track
@@ -52,7 +52,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 31. Dictionary as Platform | 2/3 | In Progress|  |
+| 31. Dictionary as Platform | 3/3 | Complete   | 2026-06-06 |
 | 32. Spoken Punctuation | 0/? | Not started | - |
 | 33. iOS First-Run & Onboarding Polish | 0/? | Not started | - |
 | 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
@@ -77,7 +77,7 @@
 **Plans**: 3 plans (3 waves)
 - [x] 31-01-PLAN.md — Gating + provenance + migration: PERSONAL_LEXICON flag, empty public default, source field, leak-free migration
 - [x] 31-02-PLAN.md — Import/export engine + UI: RFC 4180 CSV/JSON, 3 merge strategies, line-numbered validation, native file pickers
-- [ ] 31-03-PLAN.md — Starter packs + docs: 3 bundled offline packs, one-tap import, empty-by-design + CSV-author help copy
+- [x] 31-03-PLAN.md — Starter packs + docs: 3 bundled offline packs, one-tap import, empty-by-design + CSV-author help copy
 
 ### Phase 32: Spoken Punctuation
 **Goal**: Users can speak punctuation symbols reliably in both plain and cleanup modes — unambiguous tokens always collapse, conditional tokens (minus, dot, colon) collapse only between identifier-shaped flanks, matching the baseline expectation set by native macOS dictation
