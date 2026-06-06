@@ -333,3 +333,131 @@ final class ITNUtilityAcronymCollapseTests: XCTestCase {
         XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "on zee street"), "on zee street")
     }
 }
+
+// MARK: - Phase 32 PUNCT-01/PUNCT-02: Spoken punctuation collapse tests
+final class ITNUtilitySpokenPunctuationTests: XCTestCase {
+
+    // MARK: - Unambiguous EN
+
+    func testSlash_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "path slash home"), "path/home")
+    }
+
+    func testBackslash_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "C backslash Windows"), "C\\Windows")
+    }
+
+    func testUnderscore_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "foo underscore bar"), "foo_bar")
+    }
+
+    func testAsterisk_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "a asterisk b"), "a * b")
+    }
+
+    func testSemicolon_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "x semicolon y"), "x ; y")
+    }
+
+    func testAtSign_twoToken_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "my email at sign domain"), "my email @ domain")
+    }
+
+    func testHash_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "use hash tag"), "use # tag")
+    }
+
+    func testCaret_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "a caret b"), "a ^ b")
+    }
+
+    func testTilde_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "home tilde folder"), "home ~ folder")
+    }
+
+    func testHyphen_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "well hyphen known"), "well-known")
+    }
+
+    // MARK: - German seeds
+
+    func testBindestrich_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "Bindestrich"), "-")
+    }
+
+    func testSchrägstrich_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "Schrägstrich"), "/")
+    }
+
+    func testUnterstrich_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "foo Unterstrich bar"), "foo _ bar")
+    }
+
+    func testKlammeraffe_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "user Klammeraffe host"), "user @ host")
+    }
+
+    func testRaute_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "Raute tag"), "# tag")
+    }
+
+    func testSternchen_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "a Sternchen b"), "a * b")
+    }
+
+    // MARK: - Conditional positives
+
+    func testMinus_identifierFlank_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "Claude minus ops"), "Claude-ops")
+    }
+
+    func testDot_identifierFlank_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "example dot com"), "example.com")
+    }
+
+    func testColon_identifierFlank_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "key colon value"), "key:value")
+    }
+
+    // MARK: - Decimal dot (numeric flank)
+
+    func testDecimalDot_tenDotFive_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "ten dot five"), "10.5")
+    }
+
+    // MARK: - SC4 negative / prose guards
+
+    func testMinus_proseFlanks_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "five minus three"), "five minus three")
+    }
+
+    func testSixtyPlusRules_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "the 60 plus rules"), "the 60 plus rules")
+    }
+
+    func testColonVsDash_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "colon vs. dash"), "colon vs. dash")
+    }
+
+    func testDotProduct_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "dot product"), "dot product")
+    }
+
+    func testDotDotDot_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "dot dot dot"), "dot dot dot")
+    }
+
+    // MARK: - D-08 dollar / pipe
+
+    func testDollar_proseFlank_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "I earn one dollar"), "I earn one dollar")
+    }
+
+    func testDollar_identifierFlank_collapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "dollar PATH set"), "$PATH set")
+    }
+
+    func testPipe_neverCollapses() {
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "cat pipe grep"), "cat pipe grep")
+    }
+}
