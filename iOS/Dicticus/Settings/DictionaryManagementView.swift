@@ -134,13 +134,20 @@ struct DictionaryManagementView: View {
             // Store data before closure exits — URL scope ends here (Pitfall 4).
             pendingImportData = data
             pendingImportFormat = format.isEmpty ? "csv" : format
-            showingMergeStrategyPicker = true
+            // Nothing to conflict with on an empty dictionary — skip the merge prompt.
+            if dictionaryService.dictionary.isEmpty {
+                applyImport(strategy: .incomingWins)
+            } else {
+                showingMergeStrategyPicker = true
+            }
         }
         .confirmationDialog("Choose Merge Strategy", isPresented: $showingMergeStrategyPicker, titleVisibility: .visible) {
-            Button("Replace All (clears existing)") { applyImport(strategy: .replaceAll) }
-            Button("Keep Existing (skip conflicts)") { applyImport(strategy: .existingWins) }
-            Button("Use Incoming (overwrite conflicts)") { applyImport(strategy: .incomingWins) }
+            Button("Replace All (delete current, then import)") { applyImport(strategy: .replaceAll) }
+            Button("Merge — keep mine on conflicts") { applyImport(strategy: .existingWins) }
+            Button("Merge — use imported on conflicts") { applyImport(strategy: .incomingWins) }
             Button("Cancel", role: .cancel) { pendingImportData = nil }
+        } message: {
+            Text("You have \(dictionaryService.dictionary.count) entries. Choose how to combine them with the imported file. \"Conflicts\" are entries whose Original appears in both.")
         }
         .alert("Import Result", isPresented: $showingImportResult) {
             Button("OK", role: .cancel) {}

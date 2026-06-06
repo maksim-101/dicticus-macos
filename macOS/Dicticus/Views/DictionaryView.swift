@@ -263,16 +263,18 @@ struct DictionaryView: View {
             Text(starterPackResult ?? "")
         }
         .confirmationDialog("Choose Merge Strategy", isPresented: $isShowingMergeStrategyPicker, titleVisibility: .visible) {
-            Button("Replace All (clears existing)") {
+            Button("Replace All (delete current, then import)") {
                 if let url = pendingImportURL { performImport(url: url, strategy: .replaceAll) }
             }
-            Button("Keep Existing (skip conflicts)") {
+            Button("Merge — keep mine on conflicts") {
                 if let url = pendingImportURL { performImport(url: url, strategy: .existingWins) }
             }
-            Button("Use Incoming (overwrite conflicts)") {
+            Button("Merge — use imported on conflicts") {
                 if let url = pendingImportURL { performImport(url: url, strategy: .incomingWins) }
             }
             Button("Cancel", role: .cancel) { pendingImportURL = nil }
+        } message: {
+            Text("You have \(dictionaryService.dictionary.count) entries. Choose how to combine them with the imported file. \"Conflicts\" are entries whose Original appears in both.")
         }
     }
 
@@ -350,7 +352,12 @@ struct DictionaryView: View {
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
             pendingImportURL = url
-            isShowingMergeStrategyPicker = true
+            // Nothing to conflict with on an empty dictionary — skip the merge prompt.
+            if dictionaryService.dictionary.isEmpty {
+                performImport(url: url, strategy: .incomingWins)
+            } else {
+                isShowingMergeStrategyPicker = true
+            }
         }
     }
 

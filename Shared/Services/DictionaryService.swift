@@ -253,7 +253,11 @@ class DictionaryService: ObservableObject {
     /// merged with `source: .default` using the same idempotent guard.
     internal func prepopulateWithDefaults() {
         // Merge public default entries (empty in v2.4; future releases may add entries here).
+        // Skip identical original==replacement pairs: they are no-ops (replacing a word
+        // with itself does nothing) and break export→import round-tripping, since the
+        // import merge correctly refuses them (see DictionaryIOService.merge).
         for (original, replacement) in DefaultLexicon.entries {
+            if original == replacement { continue }
             if dictionary[original] == nil {
                 dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date(), source: .default)
             }
@@ -261,9 +265,9 @@ class DictionaryService: ObservableObject {
 
 #if PERSONAL_LEXICON
         // Merge developer-personal entries — dev builds only (gitignored file).
-        // These are the ~120 personal corrections the developer uses daily.
         // Release builds compile this block to zero bytes.
         for (original, replacement) in PersonalLexicon.entries {
+            if original == replacement { continue }
             if dictionary[original] == nil {
                 dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date(), source: .default)
             }
