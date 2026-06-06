@@ -48,6 +48,9 @@ targets:
         - CFBundleURLName: com.dicticus.ios
           CFBundleURLSchemes:
             - dicticus
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
     dependencies:
       - package: GRDB
         product: GRDB
@@ -87,6 +90,9 @@ targets:
       - path: DicticusTests
     settings:
       GENERATE_INFOPLIST_FILE: YES
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
     dependencies:
       - target: Dicticus
 
