@@ -563,6 +563,45 @@ final class DictionaryServiceK7AddsTests: XCTestCase {
     }
 }
 
+// MARK: - Phase 31-01: source provenance back-compat
+
+/// RED→GREEN TDD tests for the `LexiconSource` provenance field on `DictionaryMetadata`.
+///
+/// These tests must exist and be RED (fail to compile / fail assertion) BEFORE
+/// `DictionaryMetadata` is modified. After adding the custom `init(from:)` with
+/// `decodeIfPresent`, both tests become GREEN.
+///
+/// RESEARCH Finding 1 / Pitfall 1: the `decodeIfPresent` line is load-bearing —
+/// omitting it causes a silent dictionary wipe on upgrade when existing persisted
+/// records lack the `source` key.
+@MainActor
+final class DictionaryServiceSourceProvenance31_01Tests: XCTestCase {
+
+    func testCodableBackCompat_existingRecordDecodesWithDefaultSource() throws {
+        // Encode a legacy JSON blob (no `source` key), decode as the new DictionaryMetadata,
+        // assert .source == .user. This is the upgrade-safety test.
+        let json = """
+        {"replacement":"TrueNAS","createdAt":0}
+        """
+        let data = Data(json.utf8)
+        let decoded = try JSONDecoder().decode(DictionaryMetadata.self, from: data)
+        XCTAssertEqual(decoded.replacement, "TrueNAS")
+        XCTAssertEqual(decoded.source, .user,
+            "Existing records lacking 'source' must decode as .user — prevents silent wipe on upgrade")
+    }
+
+    func testRoundTrip_sourcePersistsThroughEncodeDecode() throws {
+        // A DictionaryMetadata with source = .imported must survive encode→decode
+        // with the same source value.
+        let original = DictionaryMetadata(replacement: "Tailscale", createdAt: Date(), source: .imported)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(DictionaryMetadata.self, from: data)
+        XCTAssertEqual(decoded.replacement, "Tailscale")
+        XCTAssertEqual(decoded.source, .imported,
+            "source field must survive encode→decode round-trip")
+    }
+}
+
 // MARK: - Phase 29 DICT-ZED-01: period-anchored "the set." -> "Zed." (Spike 001)
 
 @MainActor

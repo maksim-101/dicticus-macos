@@ -1,10 +1,39 @@
 import Foundation
 import Combine
 
+/// Provenance tag for a dictionary entry. Persisted as a Codable string inside
+/// `DictionaryMetadata`. Three cases: entries seeded by the app (default), entries
+/// created/edited by the user directly (user), and entries imported from a file
+/// (imported). Old records lacking this key decode as `.user` via `decodeIfPresent`.
+enum LexiconSource: String, Codable {
+    case `default`
+    case user
+    case imported
+}
+
 /// Metadata for a dictionary entry.
+///
+/// Custom `init(from:)` uses `decodeIfPresent` so that existing persisted records
+/// (which lack the `source` key) decode successfully with `source == .user` instead
+/// of throwing `keyNotFound` and wiping the dictionary. This is the critical
+/// upgrade-safety invariant for Phase 31-01 (RESEARCH Pitfall 1).
 struct DictionaryMetadata: Codable, Equatable {
     let replacement: String
     let createdAt: Date
+    let source: LexiconSource
+
+    init(replacement: String, createdAt: Date, source: LexiconSource = .user) {
+        self.replacement = replacement
+        self.createdAt = createdAt
+        self.source = source
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        replacement = try c.decode(String.self, forKey: .replacement)
+        createdAt   = try c.decode(Date.self,   forKey: .createdAt)
+        source      = (try c.decodeIfPresent(LexiconSource.self, forKey: .source)) ?? .user
+    }
 }
 
 /// Manages a custom dictionary of find-replace pairs for dictation correction.
