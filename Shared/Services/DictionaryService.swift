@@ -359,6 +359,42 @@ class DictionaryService: ObservableObject {
         }
     }
 
+    // MARK: - Starter Packs (Phase 31-03)
+
+    /// Hard-coded registry of bundled offline starter packs (RESEARCH Finding 7 —
+    /// hard-code to avoid scanning the bundle directory, which could pull in test CSVs).
+    /// Raw values map to the CSV resource names under Shared/Resources/.
+    enum StarterPack: String, CaseIterable {
+        case tech    = "starter-pack-tech"
+        case brands  = "starter-pack-brands"
+        case general = "starter-pack-general"
+
+        var displayTitle: String {
+            switch self {
+            case .tech:    return "Tech Terms"
+            case .brands:  return "Brand Names"
+            case .general: return "General Terms"
+            }
+        }
+    }
+
+    /// Import a bundled starter pack via the existing DICT-IO pipeline (existing-wins,
+    /// entries tagged source: .imported). Reads the CSV from the app bundle.
+    ///
+    /// Returns .success(added: 0) on a missing/unreadable resource — same defensive
+    /// pattern as loadCommonWords() (never throws, never crashes init or import).
+    func importStarterPack(_ pack: StarterPack) -> ImportResult {
+        guard let url = Bundle.main.url(forResource: pack.rawValue, withExtension: "csv") else {
+            print("[DictionaryService] starter pack not found: \(pack.rawValue).csv")
+            return .success(added: 0, warnings: ["Pack resource not found in bundle: \(pack.rawValue).csv"])
+        }
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            print("[DictionaryService] starter pack unreadable: \(pack.rawValue).csv")
+            return .success(added: 0, warnings: ["Pack resource could not be read: \(pack.rawValue).csv"])
+        }
+        return importData(Data(content.utf8), format: "csv", strategy: .existingWins)
+    }
+
     /// Phase 27 D-08: `apply(to:)` is a thin wrapper over `applyWithTrace(to:)`.
     /// Single source of truth — production and recorder share one code path.
     func apply(to text: String) -> String {
