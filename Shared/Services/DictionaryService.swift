@@ -331,15 +331,28 @@ class DictionaryService: ObservableObject {
                 incoming = result.rows
                 warningMessages = result.warnings.map { $0.message }
             case "json":
-                incoming = try io.parseJSON(data)
+                let parsed = try io.parseJSON(data)
+                var validRows: [CSVImportRow] = []
+                for (offset, row) in parsed.enumerated() {
+                    if row.replacement.isEmpty {
+                        warningMessages.append("Entry \(offset + 1): empty replacement for '\(row.original)' — skipped")
+                        continue
+                    }
+                    if row.original == row.replacement {
+                        warningMessages.append("Entry \(offset + 1): original == replacement '\(row.original)' — skipped")
+                        continue
+                    }
+                    validRows.append(row)
+                }
+                incoming = validRows
             default:
                 return .failure("Unsupported format: \(format). Use 'csv' or 'json'.")
             }
             let merged = io.merge(incoming: incoming, into: dictionary, strategy: strategy)
-            let added = merged.count - dictionary.filter { merged[$0.key] != nil }.count + incoming.count - warningMessages.count
+            let addedCount = merged.keys.filter { dictionary[$0] != merged[$0] }.count
             dictionary = merged
             save()
-            return .success(added: incoming.count - warningMessages.count, warnings: warningMessages)
+            return .success(added: addedCount, warnings: warningMessages)
         } catch {
             return .failure(error.localizedDescription)
         }

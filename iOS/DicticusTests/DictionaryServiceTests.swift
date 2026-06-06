@@ -634,6 +634,73 @@ final class DictionaryServiceZedTests: XCTestCase {
     }
 }
 
+// MARK: - Phase 31 review fixes: import count + JSON validation parity
+
+/// WR-01 / WR-02 regression locks for `importData`:
+/// - the reported `added` count reflects entries actually added/changed (merge delta),
+///   not raw incoming-row count (so a re-import that changes nothing reports 0).
+/// - the JSON import path strips empty/identical rows AND surfaces warnings, matching
+///   the CSV path (previously JSON silently dropped them and over-reported the count).
+@MainActor
+final class DictionaryServiceImportCountTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        DictionaryService.shared.removeAll()
+        DictionaryService.shared.isCaseSensitive = false
+    }
+
+    func testImportData_existingWins_reImportReportsZeroAdded() {
+        let s = DictionaryService.shared
+        let csv = "original,replacement\nssh,SSH\n4 k,4K\n"
+        let first = s.importData(Data(csv.utf8), format: "csv", strategy: .existingWins)
+        guard case .success(let firstAdded, _) = first else {
+            XCTFail("first import must succeed, got \(first)"); return
+        }
+        XCTAssertEqual(firstAdded, 2, "first import adds both new entries")
+
+        // Re-import the same pack under existing-wins: nothing changes.
+        let second = s.importData(Data(csv.utf8), format: "csv", strategy: .existingWins)
+        guard case .success(let secondAdded, _) = second else {
+            XCTFail("second import must succeed, got \(second)"); return
+        }
+        XCTAssertEqual(secondAdded, 0, "WR-01: re-import that changes nothing must report 0 added")
+    }
+
+    func testImportData_jsonEmptyReplacementStrippedAndWarned() {
+        let s = DictionaryService.shared
+        let json = """
+        [
+          {"original": "good", "replacement": "Good", "createdAt": "2024-01-01T00:00:00Z"},
+          {"original": "bad", "replacement": "", "createdAt": "2024-01-01T00:00:00Z"}
+        ]
+        """
+        let result = s.importData(Data(json.utf8), format: "json", strategy: .incomingWins)
+        guard case .success(let added, let warnings) = result else {
+            XCTFail("json import must succeed, got \(result)"); return
+        }
+        XCTAssertEqual(added, 1, "WR-02: only the valid row counts; empty-replacement row is stripped")
+        XCTAssertEqual(warnings.count, 1, "WR-02: JSON import must surface a warning for the stripped row")
+        XCTAssertNil(s.dictionary["bad"], "empty-replacement row must not be stored")
+        XCTAssertEqual(s.dictionary["good"]?.replacement, "Good")
+    }
+
+    func testImportData_jsonIdenticalKeyReplacementStrippedAndWarned() {
+        let s = DictionaryService.shared
+        let json = """
+        [
+          {"original": "xcode", "replacement": "xcode", "createdAt": "2024-01-01T00:00:00Z"}
+        ]
+        """
+        let result = s.importData(Data(json.utf8), format: "json", strategy: .incomingWins)
+        guard case .success(let added, let warnings) = result else {
+            XCTFail("json import must succeed, got \(result)"); return
+        }
+        XCTAssertEqual(added, 0, "WR-02: identical key==replacement row is stripped")
+        XCTAssertEqual(warnings.count, 1, "WR-02: JSON import must warn on identical key==replacement")
+    }
+}
+
 // MARK: - Phase 31-03: starter packs
 
 /// Validates importStarterPack(_:) on DictionaryService:
