@@ -35,7 +35,8 @@ struct DictionaryManagementView: View {
     // Starter packs state (Phase 31-03)
     @State private var starterPackResultMessage: String? = nil
     @State private var showingStarterPackResult = false
-    
+    @State private var importedPacks: Set<DictionaryService.StarterPack> = []
+
     enum EntrySortOrder {
         case alphabetical, mostRecent
     }
@@ -81,8 +82,18 @@ struct DictionaryManagementView: View {
 
             Section {
                 ForEach(DictionaryService.StarterPack.allCases, id: \.self) { pack in
+                    let imported = importedPacks.contains(pack)
                     Button(action: { importStarterPack(pack) }) {
-                        Label(pack.displayTitle, systemImage: "tray.and.arrow.down")
+                        HStack {
+                            Label(pack.displayTitle, systemImage: imported ? "checkmark.circle.fill" : "tray.and.arrow.down")
+                                .foregroundColor(imported ? .green : .accentColor)
+                            if imported {
+                                Spacer()
+                                Text("Imported")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
                     }
                 }
             } header: {
@@ -159,6 +170,8 @@ struct DictionaryManagementView: View {
         } message: {
             Text(starterPackResultMessage ?? "")
         }
+        .onAppear { recomputeImportedPacks() }
+        .onChange(of: dictionaryService.dictionary) { recomputeImportedPacks() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -251,6 +264,10 @@ struct DictionaryManagementView: View {
         let result = dictionaryService.importStarterPack(pack)
         starterPackResultMessage = result.summaryMessage(source: pack.displayTitle)
         showingStarterPackResult = true
+    }
+
+    private func recomputeImportedPacks() {
+        importedPacks = Set(DictionaryService.StarterPack.allCases.filter { dictionaryService.isStarterPackImported($0) })
     }
 
     // MARK: - Import / Export helpers (Phase 31-02)

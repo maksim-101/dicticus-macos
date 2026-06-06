@@ -654,17 +654,18 @@ final class DictionaryServiceImportCountTests: XCTestCase {
         let s = DictionaryService.shared
         let csv = "original,replacement\nssh,SSH\n4 k,4K\n"
         let first = s.importData(Data(csv.utf8), format: "csv", strategy: .existingWins)
-        guard case .success(let firstAdded, _) = first else {
+        guard case .success(let firstAdded, _, _) = first else {
             XCTFail("first import must succeed, got \(first)"); return
         }
         XCTAssertEqual(firstAdded, 2, "first import adds both new entries")
 
-        // Re-import the same pack under existing-wins: nothing changes.
+        // Re-import the same pack under existing-wins: nothing new, both kept.
         let second = s.importData(Data(csv.utf8), format: "csv", strategy: .existingWins)
-        guard case .success(let secondAdded, _) = second else {
+        guard case .success(let secondAdded, let secondKept, _) = second else {
             XCTFail("second import must succeed, got \(second)"); return
         }
         XCTAssertEqual(secondAdded, 0, "WR-01: re-import that changes nothing must report 0 added")
+        XCTAssertEqual(secondKept, 2, "re-import must report both rows as already-present (kept), not lost")
     }
 
     func testImportData_jsonEmptyReplacementStrippedAndWarned() {
@@ -676,7 +677,7 @@ final class DictionaryServiceImportCountTests: XCTestCase {
         ]
         """
         let result = s.importData(Data(json.utf8), format: "json", strategy: .incomingWins)
-        guard case .success(let added, let warnings) = result else {
+        guard case .success(let added, _, let warnings) = result else {
             XCTFail("json import must succeed, got \(result)"); return
         }
         XCTAssertEqual(added, 1, "WR-02: only the valid row counts; empty-replacement row is stripped")
@@ -693,7 +694,7 @@ final class DictionaryServiceImportCountTests: XCTestCase {
         ]
         """
         let result = s.importData(Data(json.utf8), format: "json", strategy: .incomingWins)
-        guard case .success(let added, let warnings) = result else {
+        guard case .success(let added, _, let warnings) = result else {
             XCTFail("json import must succeed, got \(result)"); return
         }
         XCTAssertEqual(added, 0, "WR-02: identical key==replacement row is stripped")
@@ -745,7 +746,7 @@ final class DictionaryServiceStarterPackTests: XCTestCase {
         // Use entries where original != replacement so they are not stripped as no-ops.
         let csv = "original,replacement\nssh,SSH\n4 k,4K\n"
         let result = s.importData(Data(csv.utf8), format: "csv", strategy: .existingWins)
-        guard case .success(let added, _) = result else {
+        guard case .success(let added, _, _) = result else {
             XCTFail("importData must return .success for well-formed CSV, got \(result)")
             return
         }

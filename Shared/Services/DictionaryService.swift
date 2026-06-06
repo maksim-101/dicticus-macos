@@ -314,26 +314,34 @@ class DictionaryService: ObservableObject {
     // MARK: - Import / Export (Phase 31-02)
 
     /// Result of a dictionary import operation.
+    ///
+    /// `added`   — new corrections actually applied.
+    /// `kept`    — valid rows that were already in the dictionary and left unchanged.
+    /// `warnings`— invalid rows (empty replacement, or identical original/replacement).
+    /// added + kept + warnings.count accounts for every row in the file, so the
+    /// summary never appears to "lose" rows.
     enum ImportResult {
-        case success(added: Int, warnings: [String])
+        case success(added: Int, kept: Int, warnings: [String])
         case failure(String)
 
-        /// User-facing summary for an import-result alert. Reports how many entries
-        /// were added and, if any rows were skipped (duplicates already present,
-        /// empty, or identical original/replacement), a single count — not the full
-        /// per-line list, which overwhelms the dialog. `source` optionally names the
-        /// origin (e.g. a starter pack title).
+        /// User-facing summary for an import-result alert. Accounts for every row —
+        /// added, already-present (kept unchanged), and invalid — instead of listing
+        /// each skipped line, which overwhelms the dialog. `source` optionally names
+        /// the origin (e.g. a starter pack title).
         func summaryMessage(source: String? = nil) -> String {
             switch self {
             case .failure(let error):
                 return "Import failed: \(error)"
-            case .success(let added, let warnings):
+            case .success(let added, let kept, let warnings):
                 let from = source.map { " from \($0)" } ?? ""
-                var msg = "Imported \(added) \(added == 1 ? "entry" : "entries")\(from)."
-                if !warnings.isEmpty {
-                    msg += "\n\nSkipped \(warnings.count) \(warnings.count == 1 ? "row" : "rows") (already present, empty, or identical original/replacement)."
+                var lines = ["Imported \(added) new \(added == 1 ? "entry" : "entries")\(from)."]
+                if kept > 0 {
+                    lines.append("\(kept) already in your dictionary (kept unchanged).")
                 }
-                return msg
+                if !warnings.isEmpty {
+                    lines.append("\(warnings.count) \(warnings.count == 1 ? "row" : "rows") skipped — empty or identical original/replacement.")
+                }
+                return lines.joined(separator: "\n")
             }
         }
     }
@@ -373,9 +381,11 @@ class DictionaryService: ObservableObject {
             }
             let merged = io.merge(incoming: incoming, into: dictionary, strategy: strategy)
             let addedCount = merged.keys.filter { dictionary[$0] != merged[$0] }.count
+            // Valid rows that were not applied are duplicates left unchanged.
+            let keptCount = max(0, incoming.count - addedCount)
             dictionary = merged
             save()
-            return .success(added: addedCount, warnings: warningMessages)
+            return .success(added: addedCount, kept: keptCount, warnings: warningMessages)
         } catch {
             return .failure(error.localizedDescription)
         }
@@ -419,13 +429,27 @@ class DictionaryService: ObservableObject {
     func importStarterPack(_ pack: StarterPack) -> ImportResult {
         guard let url = Bundle.main.url(forResource: pack.rawValue, withExtension: "csv") else {
             print("[DictionaryService] starter pack not found: \(pack.rawValue).csv")
-            return .success(added: 0, warnings: ["Pack resource not found in bundle: \(pack.rawValue).csv"])
+            return .success(added: 0, kept: 0, warnings: ["Pack resource not found in bundle: \(pack.rawValue).csv"])
         }
         guard let content = try? String(contentsOf: url, encoding: .utf8) else {
             print("[DictionaryService] starter pack unreadable: \(pack.rawValue).csv")
-            return .success(added: 0, warnings: ["Pack resource could not be read: \(pack.rawValue).csv"])
+            return .success(added: 0, kept: 0, warnings: ["Pack resource could not be read: \(pack.rawValue).csv"])
         }
         return importData(Data(content.utf8), format: "csv", strategy: .existingWins)
+    }
+
+    /// Whether every valid correction in a starter pack is already present in the
+    /// dictionary — drives the "already imported" checkmark in the UI. Returns false
+    /// for a missing/unreadable/empty pack. Cheap (packs are tiny, parsed on demand).
+    func isStarterPackImported(_ pack: StarterPack) -> Bool {
+        guard let url = Bundle.main.url(forResource: pack.rawValue, withExtension: "csv"),
+              let content = try? String(contentsOf: url, encoding: .utf8),
+              let parsed = try? DictionaryIOService().parseCSV(content) else {
+            return false
+        }
+        let valid = parsed.rows.filter { !$0.replacement.isEmpty && $0.original != $0.replacement }
+        guard !valid.isEmpty else { return false }
+        return valid.allSatisfy { dictionary[$0.original] != nil }
     }
 
     /// Phase 27 D-08: `apply(to:)` is a thin wrapper over `applyWithTrace(to:)`.

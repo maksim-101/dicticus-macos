@@ -46,6 +46,7 @@ struct DictionaryView: View {
     // Starter pack state (Phase 31-03)
     @State private var starterPackResult: String? = nil
     @State private var isShowingStarterPackResult = false
+    @State private var importedPacks: Set<DictionaryService.StarterPack> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -216,11 +217,14 @@ struct DictionaryView: View {
 
                 HStack(spacing: 8) {
                     ForEach(DictionaryService.StarterPack.allCases, id: \.self) { pack in
+                        let imported = importedPacks.contains(pack)
                         Button(action: { importStarterPack(pack) }) {
-                            Label(pack.displayTitle, systemImage: "tray.and.arrow.down")
+                            Label(pack.displayTitle, systemImage: imported ? "checkmark.circle.fill" : "tray.and.arrow.down")
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.regular)
+                        .tint(imported ? .green : nil)
+                        .help(imported ? "All entries from this pack are already in your dictionary" : "Import this pack")
                     }
                 }
 
@@ -289,6 +293,8 @@ struct DictionaryView: View {
         case .mostRecent:
             entries = mapped.sorted { $0.createdAt > $1.createdAt }
         }
+
+        importedPacks = Set(DictionaryService.StarterPack.allCases.filter { dictionaryService.isStarterPackImported($0) })
     }
 
     private func checkForDuplicate(_ value: String) {
