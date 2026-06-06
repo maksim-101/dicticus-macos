@@ -224,10 +224,7 @@ class DictionaryService: ObservableObject {
         if changed { save() }
 #else
         // Release build: entries already decoded as .user via decodeIfPresent.
-        // No key list to consult — save so the source tag is persisted.
-        // Only call save if there is anything to persist (avoid a spurious write).
-        let needsSave = dictionary.values.contains { _ in true }
-        if needsSave { save() }
+        // prepopulateWithDefaults() below persists, so no save is needed here.
 #endif
     }
 
