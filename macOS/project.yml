@@ -55,8 +55,8 @@ targets:
         NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
         NSAppleEventsUsageDescription: "Dicticus pauses your music while you dictate."
         CFBundleIdentifier: com.dicticus.app
-        CFBundleVersion: "4"
-        CFBundleShortVersionString: "1.2.0"
+        CFBundleVersion: "5"
+        CFBundleShortVersionString: "1.3.0"
         SUFeedURL: "https://maksim-101.github.io/dicticus-macos/appcast.xml"
         SUPublicEDKey: "svsiIi/mzzxOO1K9AJ7yAXboJb+U0wDoLCoLM1hEqjc="
         SUEnableAutomaticChecks: YES
