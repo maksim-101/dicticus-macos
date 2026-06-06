@@ -6,7 +6,7 @@ Dicticus is a fully local, on-device dictation app (ASR via FluidAudio/Parakeet 
 
 ---
 
-## v2.3 — Live-Capture Quality Pass (in progress, since 2026-05-26)
+## v2.3 — Live-Capture Quality Pass — shipped 2026-06-06 · tag `macos-v1.3.0`
 
 Quality pass driven by analysis of real multi-day dictation logs (the DebugRecorder capture). Focus: stop the dictionary from corrupting text, and sharpen the AI cleanup prompt.
 
@@ -16,7 +16,7 @@ Quality pass driven by analysis of real multi-day dictation logs (the DebugRecor
 - **Phase 30 (2026-06-06)** — Push-to-talk now pauses Apple Music / Spotify while you dictate and resumes on release; for other audio (browser/YouTube/podcasts) it mutes output during the hold and unmutes on release. Respects a system you muted yourself. macOS-only. (Note: output devices with hardware-only volume — some external USB DACs — can't be muted by macOS, so the mute fallback is a no-op there; the Music/Spotify pause is unaffected.)
 - **Fix** — ASR model download now retries on a transient network drop instead of failing the whole download (the ~2.7 GB Parakeet download from HuggingFace would abort on a single "connection reset"). macOS + iOS.
 
-_Not yet cut as a released build._
+_Shipped as macOS `1.3.0` (build 5) on 2026-06-06, tag `macos-v1.3.0` — the first installable update since `macos-v1.2.0`, so it delivers the v2.2 + v2.3 work together to anyone updating from 1.2.0._
 
 ---
 
