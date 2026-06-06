@@ -101,6 +101,9 @@ class TextProcessingService: ObservableObject {
         // Step 1.5: Acronym fragment collapse + spoken-letter lexicon
         processedText = ITNUtility.collapseAcronymRun(to: processedText)
 
+        // Step 1.5b: Spoken punctuation collapse (Phase 32 PUNCT-01/PUNCT-02)
+        processedText = ITNUtility.collapseSpokenPunctuation(to: processedText)
+
         // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
 
