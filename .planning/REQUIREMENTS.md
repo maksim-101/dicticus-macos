@@ -167,9 +167,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ACRONYM-COLLAPSE-01 | Phase 29 | Complete |
 | SPOKEN-LETTER-01 | Phase 29 | Complete |
 | DICT-ZED-01 | Phase 29 | Complete |
-| MEDIA-PAUSE-01 | Phase 30 | Re-planned (ScriptingBridge) |
-| MEDIA-PAUSE-02 | Phase 30 | Re-planned (ScriptingBridge) |
-| MEDIA-PAUSE-03 | Phase 30 | Re-planned (mute fallback) |
+| MEDIA-PAUSE-01 | Phase 30 | Complete |
+| MEDIA-PAUSE-02 | Phase 30 | Complete |
+| MEDIA-PAUSE-03 | Phase 30 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 22 total
