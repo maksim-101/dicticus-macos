@@ -41,6 +41,9 @@ struct SettingsSection: View {
                 .padding(.horizontal)
                 .padding(.vertical, 4)
 
+            // Phase 30: PTT media auto-pause toggle — macOS only, UserDefaults.standard
+            MediaPauseToggleRow()
+
             Divider()
 
             Text("Modifier Hotkeys")
@@ -163,6 +166,8 @@ struct SettingsSection: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                Link("Full Changelog", destination: AppBuildInfo.releasesURL)
+                    .font(.caption)
             }
             .padding(.horizontal)
             .padding(.vertical, 4)

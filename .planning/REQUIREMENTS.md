@@ -98,6 +98,18 @@ Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: liv
 - [x] **LLM-NUM-01**: Standalone digit-words in prose (`one`, `three`, etc.) follow a principled and consistent policy across the rules + LLM pipeline
 - [x] **LLM-PROMPT-AUDIT-01**: Static `Domain topic words` line in the prompt is audited for bias and either justified, generalized, or removed
 
+### ASR Post-Processing (Phase 29)
+
+- [x] **ACRONYM-COLLAPSE-01**: Deterministic post-ASR step collapses spaced single/short uppercase fragment runs (`N F S K`→`NFSK`), handles mixed-case fragments (`Br N A C`), and does not corrupt non-acronym single-letter runs (`I am O K`)
+- [x] **SPOKEN-LETTER-01**: Inside a spelling run, spoken letter names resolve to letters — Z spoken as "zed"/"zee"→`Z` (plus `aitch`→H, `double-u`→W); ambiguous "zee" handled conservatively
+- [x] **DICT-ZED-01**: `DictionaryService` default entry `"the set."`→`"Zed."` ships (Spike-001-validated; period-anchored to avoid "the set of …" / compound "X set" false positives)
+
+### Media Control (Phase 30, macOS)
+
+- [x] **MEDIA-PAUSE-01**: While push-to-talk is held, a currently-**playing scriptable player** (Apple Music, Spotify) is paused via ScriptingBridge/Apple events and **resumes the same app** on release — true position-preserving pause; only resume what we paused (never start media that wasn't playing); gated by the default-ON "Pause media while dictating" toggle. macOS only. (Spike-003-validated; the MediaRemote now-playing read is entitlement-gated in the signed app and cannot be used.)
+- [x] **MEDIA-PAUSE-02**: The media-pause path degrades safely. App carries the `com.apple.security.automation.apple-events` entitlement + `NSAppleEventsUsageDescription`; on Automation-TCC denial (`errAEEventNotPermitted` / -1743), a missing/not-running player, or any AppleScript error, the feature is a **silent no-op** (one warn-level log, never a crash). Running-state is checked via `NSWorkspace` before any `tell application` so a stopped player is never launched.
+- [x] **MEDIA-PAUSE-03**: For **non-scriptable** audio sources (browser/YouTube/podcast apps) that ScriptingBridge cannot detect or control, a **mute-output fallback** applies: when no scriptable player was paused on a PTT hold, mute the default system output for the hold and restore on release (restore only if *we* muted — never unmute a user-muted system). Accepts mute ≠ pause (audio keeps advancing silently). Gated by the same toggle.
+
 ## Out of Scope
 
 Explicitly excluded. Documented to prevent scope creep.
@@ -152,12 +164,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LLM-DEDUP-01 | Phase 28 | Complete |
 | LLM-NUM-01 | Phase 28 | Complete |
 | LLM-PROMPT-AUDIT-01 | Phase 28 | Complete |
+| ACRONYM-COLLAPSE-01 | Phase 29 | Complete |
+| SPOKEN-LETTER-01 | Phase 29 | Complete |
+| DICT-ZED-01 | Phase 29 | Complete |
+| MEDIA-PAUSE-01 | Phase 30 | Complete |
+| MEDIA-PAUSE-02 | Phase 30 | Complete |
+| MEDIA-PAUSE-03 | Phase 30 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 22 total
 - v2.1 requirements (started): 4 total
-- v2.3 requirements: 9 total
-- Mapped to phases: 35
+- v2.3 requirements: 13 total (9 complete + 4 added 2026-05-29 across Phases 29-30)
+- Mapped to phases: 39
 - Unmapped: 0
 
 ---

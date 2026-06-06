@@ -98,6 +98,9 @@ class TextProcessingService: ObservableObject {
         var processedText = dictionaryService.apply(to: text)
         #endif
 
+        // Step 1.5: Acronym fragment collapse + spoken-letter lexicon
+        processedText = ITNUtility.collapseAcronymRun(to: processedText)
+
         // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
 

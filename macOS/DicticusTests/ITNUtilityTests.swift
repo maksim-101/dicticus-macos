@@ -282,3 +282,54 @@ final class ITNUtilitySingleDigitTests: XCTestCase {
         )
     }
 }
+
+final class ITNUtilityAcronymCollapseTests: XCTestCase {
+
+    func testNFSK_collapses() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "The N F S K tool is great"), "The NFSK tool is great")
+    }
+
+    func testBrNAC_mixedCase_collapses() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "Br N A C done"), "BrNAC done")
+    }
+
+    func testUSB_threeFragment_collapses() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "U S B port"), "USB port")
+    }
+
+    func testIAmOK_notCollapsed() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "I am O K"), "I am O K")
+    }
+
+    func testALowercaseB_notCollapsed() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "a B test"), "a B test")
+    }
+
+    func testTwoFragmentRun_notCollapsed() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "N F"), "N F")
+    }
+
+    func testTrailingComma_reattaches() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "ran the N F S K, today"), "ran the NFSK, today")
+    }
+
+    func testZed_insideRun_resolvesToZ() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "zed E D files"), "ZED files")
+    }
+
+    func testZee_insideRun_resolvesToZ() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "zee E D"), "ZED")
+    }
+
+    func testAitch_insideRun_resolvesToH() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "N aitch K S"), "NHKS")
+    }
+
+    func testDoubleU_insideRun_resolvesToW() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "double-u W T F"), "WWTF")
+    }
+
+    func testZee_standalone_notSubstituted() {
+        XCTAssertEqual(ITNUtility.collapseAcronymRun(to: "on zee street"), "on zee street")
+    }
+}

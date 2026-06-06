@@ -252,6 +252,81 @@ struct ITNUtility {
             .replacingOccurrences(of: "\u{1E9E}", with: "SS")
     }
 
+    // MARK: - Acronym collapse (Phase 29 ACRONYM-COLLAPSE-01 / SPOKEN-LETTER-01)
+
+    /// Collapse runs of spelled-out acronym fragments (e.g. "N F S K" -> "NFSK").
+    /// Operates before ITN so spaced single/short uppercase letter runs become a
+    /// single token. Spoken letter names inside a run resolve to their letter.
+    static func collapseAcronymRun(to text: String) -> String {
+        let tokens = text.components(separatedBy: .whitespacesAndNewlines)
+        var resultTokens: [String] = []
+        var i = 0
+
+        while i < tokens.count {
+            var members: [String] = []
+            var j = i
+
+            while j < tokens.count {
+                let stripped = stripTrailingPunctuation(tokens[j])
+                if isAcronymFragment(stripped) {
+                    members.append(stripped)
+                } else if let letter = spokenLetterNames[stripped.lowercased()] {
+                    members.append(letter)
+                } else {
+                    break
+                }
+                j += 1
+                // Stop extending the run at a token that carried trailing
+                // punctuation (e.g. "K," ends the acronym).
+                if stripped != tokens[j - 1] { break }
+            }
+
+            if members.count >= 3 {
+                let last = tokens[j - 1]
+                let punctuation = String(last.suffix(last.count - stripTrailingPunctuation(last).count))
+                resultTokens.append(members.joined(separator: "") + punctuation)
+                i = j
+            } else {
+                resultTokens.append(tokens[i])
+                i += 1
+            }
+        }
+
+        return resultTokens.joined(separator: " ")
+    }
+
+    private static func stripTrailingPunctuation(_ token: String) -> String {
+        var end = token.endIndex
+        while end > token.startIndex {
+            let prev = token.index(before: end)
+            if token[prev].unicodeScalars.allSatisfy({ CharacterSet.punctuationCharacters.contains($0) }) {
+                end = prev
+            } else {
+                break
+            }
+        }
+        return String(token[token.startIndex..<end])
+    }
+
+    private static func isAcronymFragment(_ token: String) -> Bool {
+        guard token.count == 1 || token.count == 2 else { return false }
+        guard let first = token.unicodeScalars.first,
+              CharacterSet.uppercaseLetters.contains(first) else { return false }
+        if token.count == 2 {
+            let second = token.unicodeScalars.dropFirst().first!
+            return CharacterSet.letters.contains(second)
+        }
+        return true
+    }
+
+    private static let spokenLetterNames: [String: String] = [
+        "aitch": "H",
+        "double-u": "W",
+        "double u": "W",
+        "zed": "Z",
+        "zee": "Z",
+    ]
+
     // MARK: - German ITN
 
     /// Custom parser for German compound number words.

@@ -229,6 +229,10 @@ class DictionaryService: ObservableObject {
             // Phase 27 carried backlog — exact-match only under the new fuzzy guard.
             "germinize": "Gemini",                         // ratio 0.44 BLOCKS fuzzy; only exact-match fires
             "crown shop": "cron job",
+            // Phase 29 DICT-ZED-01: Spike-001-validated. Period-anchored to avoid
+            // "the set of …" / compound "X set" false positives. Recovers Zed IDE
+            // misheard as "set" when clause-final. Mid-sentence Zed is missed (safe failure).
+            "the set.": "Zed.",
         ]
 
 

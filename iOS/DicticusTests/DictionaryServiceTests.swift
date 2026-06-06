@@ -562,3 +562,35 @@ final class DictionaryServiceK7AddsTests: XCTestCase {
             "WR-04: apply() must emit the user's customization. Got: \(out)")
     }
 }
+
+// MARK: - Phase 29 DICT-ZED-01: period-anchored "the set." -> "Zed." (Spike 001)
+
+@MainActor
+final class DictionaryServiceZedTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        let s = DictionaryService.shared
+        s.removeAll()
+        s.isCaseSensitive = false
+        s.setReplacement(for: "the set.", with: "Zed.")
+    }
+
+    func testZed_usingTheSet_clauseFinal_recovered() {
+        let result = DictionaryService.shared.apply(to: "I was using the set.")
+        XCTAssertTrue(result.contains("Zed."))
+        XCTAssertFalse(result.contains("the set."))
+    }
+
+    func testZed_theSetOfRules_notCorrupted() {
+        let result = DictionaryService.shared.apply(to: "the set of rules is fixed")
+        XCTAssertTrue(result.contains("the set of rules"))
+        XCTAssertFalse(result.contains("Zed"))
+    }
+
+    func testZed_setThisUp_verb_safe() {
+        let result = DictionaryService.shared.apply(to: "let me set this up")
+        XCTAssertTrue(result.contains("set this up"))
+        XCTAssertFalse(result.contains("Zed"))
+    }
+}

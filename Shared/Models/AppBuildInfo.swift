@@ -26,10 +26,13 @@ enum AppBuildInfo {
     }
 
     static let recentChanges: [String] = [
-        "Fixed: \"twenty five\" now correctly converts to 25",
-        "New: \"X dash/hyphen Y\" converts to X-Y",
-        "New: \"X point Y\" converts to X.Y",
-        "Fixed: German \"doch\"/\"oder\" no longer falsely removed",
-        "Fixed: \"versus\" no longer replaced with \"Vercel\"",
+        "New: media pauses while you dictate — Apple Music & Spotify pause, other audio mutes, all restored on release (macOS)",
+        "New: spelled-out acronyms join up (\"N F S K\" → \"NFSK\")",
+        "New: \"Zed\" is recognised (the Zed editor, not \"set\")",
+        "Improved: AI cleanup handles half-finished sentences and repeated words better",
+        "Fixed: the dictionary no longer alters correctly-spelled words",
+        "New: more brand and tech names recognised",
     ]
+
+    static let releasesURL = URL(string: "https://github.com/maksim-101/dicticus-macos/releases")!
 }

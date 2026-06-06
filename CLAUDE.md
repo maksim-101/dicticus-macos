@@ -134,7 +134,12 @@ A fully local, multi-platform dictation app that replaces native dictation on Ma
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+### Shell command shaping (minimize permission prompts)
+This project runs heavy GSD workflows, which generate many Bash calls. Claude Code auto-approves a chained command only if **every** segment matches an allow rule — and shell control structures and command substitution can't be allowlisted. To avoid manual approvals:
+- **Prefer native tools over bash text pipelines.** Use the **Read** tool instead of `cat`/`sed -n`/`head file`, **Grep** instead of `grep ... | head`, and **Glob** instead of `find`/`ls` globbing. These never prompt.
+- **Don't bundle diagnostics into one command.** Avoid `cmd1 ; echo "---" ; cmd2` chains, `for … do … done` loops, and `if … then … fi` — these prompt structurally. Issue separate, simple commands instead.
+- **Avoid `$(…)` command substitution** in diagnostic commands; it's the most prompt-prone construct even when the inner command is safe.
+- Bare `gsd-sdk …`, `git log/diff/status`, `head`, `tail`, `grep`, `cat`, and (added 2026-05-30) `printf`, `sleep`, `strings`, `cut`, `tr`, `uniq`, `comm`, `column` are allowlisted — simple uses of these clear automatically.
 <!-- GSD:conventions-end -->
 
 ## Multi-Platform Strategy
