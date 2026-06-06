@@ -285,7 +285,7 @@ struct DictionaryView: View {
 
     private func checkForDuplicate(_ value: String) {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        if dictionaryService.dictionary.keys.contains(where: { $0.lowercased() == trimmed.lowercased() }) {
+        if dictionaryService.dictionary.keys.contains(trimmed) {
             duplicateWarning = "Entry '\(trimmed)' already exists."
         } else {
             duplicateWarning = nil

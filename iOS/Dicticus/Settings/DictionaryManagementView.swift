@@ -19,6 +19,7 @@ struct DictionaryManagementView: View {
     @State private var showingAddSheet = false
     @State private var newOriginal = ""
     @State private var newReplacement = ""
+    @State private var duplicateWarning: String? = nil
     @State private var sortOrder: EntrySortOrder = .alphabetical
 
     // Import / Export state (Phase 31-02)
@@ -177,6 +178,14 @@ struct DictionaryManagementView: View {
                         TextField("e.g. true nest", text: $newOriginal)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
+                            .onChange(of: newOriginal) { _, newValue in
+                                checkForDuplicate(newValue)
+                            }
+                    } footer: {
+                        if let warning = duplicateWarning {
+                            Text(warning)
+                                .foregroundColor(.orange)
+                        }
                     }
                     Section("Replacement") {
                         TextField("e.g. TrueNAS", text: $newReplacement)
@@ -199,7 +208,7 @@ struct DictionaryManagementView: View {
                             showingAddSheet = false
                             resetFields()
                         }
-                        .disabled(newOriginal.isEmpty || newReplacement.isEmpty)
+                        .disabled(newOriginal.isEmpty || newReplacement.isEmpty || duplicateWarning != nil)
                     }
                 }
             }
@@ -217,6 +226,16 @@ struct DictionaryManagementView: View {
     private func resetFields() {
         newOriginal = ""
         newReplacement = ""
+        duplicateWarning = nil
+    }
+
+    private func checkForDuplicate(_ value: String) {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if dictionaryService.dictionary.keys.contains(trimmed) {
+            duplicateWarning = "Entry '\(trimmed)' already exists."
+        } else {
+            duplicateWarning = nil
+        }
     }
 
     // MARK: - Starter Packs (Phase 31-03)
