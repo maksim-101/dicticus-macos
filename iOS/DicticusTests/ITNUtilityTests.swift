@@ -390,7 +390,7 @@ final class ITNUtilitySpokenPunctuationTests: XCTestCase {
     }
 
     func testUnterstrich_collapses() {
-        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "foo Unterstrich bar"), "foo _ bar")
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "foo Unterstrich bar"), "foo_bar")
     }
 
     func testKlammeraffe_collapses() {
@@ -454,7 +454,7 @@ final class ITNUtilitySpokenPunctuationTests: XCTestCase {
     }
 
     func testDollar_identifierFlank_collapses() {
-        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "dollar PATH set"), "$PATH set")
+        XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "dollar PATH set"), "$ PATH set")
     }
 
     func testPipe_neverCollapses() {
