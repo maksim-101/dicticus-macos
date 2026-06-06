@@ -13,6 +13,10 @@ struct SettingsView: View {
                         Label("Custom Dictionary", systemImage: "book")
                     }
 
+                    NavigationLink(destination: SpokenPunctuationReferenceView()) {
+                        Label("Spoken Punctuation", systemImage: "character.textbox")
+                    }
+
                     Toggle(isOn: appGroupBinding("useCustomDictionary", default: true)) {
                         Label("Apply Replacements", systemImage: "character.cursor.ibeam")
                     }

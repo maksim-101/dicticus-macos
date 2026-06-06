@@ -14,6 +14,67 @@ struct PlainTextDocument: FileDocument {
     }
 }
 
+private struct AddEntrySheet: View {
+    @Binding var original: String
+    @Binding var replacement: String
+    let duplicateWarning: String?
+    let onAdd: () -> Void
+    let onCancel: () -> Void
+    let onOriginalChange: (String) -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("e.g. true nest", text: $original)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .onChange(of: original) { _, v in onOriginalChange(v) }
+                } header: {
+                    Text("Original Phrase")
+                } footer: {
+                    if let warning = duplicateWarning {
+                        Text(warning).foregroundColor(Color.orange)
+                    }
+                }
+                Section("Replacement") {
+                    TextField("e.g. TrueNAS", text: $replacement)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+            }
+            .navigationTitle("Add Entry")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add", action: onAdd)
+                        .disabled(original.isEmpty || replacement.isEmpty || duplicateWarning != nil)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
+private struct DictionaryEntryRow: View {
+    let key: String
+    let replacement: String
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(key).font(.headline)
+                Text(replacement).font(.subheadline).foregroundColor(.accentColor)
+            }
+            Spacer()
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(key) replaced with \(replacement)")
+    }
+}
+
 struct DictionaryManagementView: View {
     @EnvironmentObject var dictionaryService: DictionaryService
     @State private var showingAddSheet = false
@@ -53,77 +114,67 @@ struct DictionaryManagementView: View {
         }
     }
     
+    @ViewBuilder private var starterPacksSection: some View {
+        Section {
+            Toggle("Case Sensitive Matching", isOn: $dictionaryService.isCaseSensitive)
+        } footer: {
+            Text("When enabled, 'truenas' will not match 'TrueNAS'.")
+        }
+
+        Section {
+            ForEach(DictionaryService.StarterPack.allCases, id: \.self) { pack in
+                let imported = importedPacks.contains(pack)
+                Button(action: { importStarterPack(pack) }) {
+                    let icon = imported ? "checkmark.circle.fill" : "tray.and.arrow.down"
+                    let tint: Color = imported ? .green : .accentColor
+                    HStack {
+                        Label(pack.displayTitle, systemImage: icon).foregroundColor(tint)
+                        if imported { Spacer(); Text("Imported").font(.caption).foregroundColor(.secondary) }
+                    }
+                }
+            }
+        } header: {
+            Text("Starter Packs")
+        } footer: {
+            Text("The dictionary starts empty by design — no personal data ships in the app. Grow it three ways: add entries manually, tap a starter pack to import curated corrections in one click, or import a CSV file.\n\nTip: ask an AI to generate a CSV for your field — then tap Import.")
+        }
+    }
+
+    @ViewBuilder private var importExportSection: some View {
+        Section("Import / Export") {
+            Menu {
+                Button("Export as CSV") { exportFormat = "csv"; showingExporter = true }
+                Button("Export as JSON") { exportFormat = "json"; showingExporter = true }
+            } label: {
+                Label("Export Dictionary", systemImage: "square.and.arrow.up")
+            }
+            Button(action: { showingImporter = true }) {
+                Label("Import Dictionary", systemImage: "square.and.arrow.down")
+            }
+        }
+    }
+
+    @ViewBuilder private var customReplacementsSection: some View {
+        Section("Custom Replacements (\(dictionaryService.dictionary.count))") {
+            if dictionaryService.dictionary.isEmpty {
+                Text("No custom entries yet.").foregroundColor(.secondary)
+            } else {
+                ForEach(sortedKeys, id: \.self) { key in
+                    DictionaryEntryRow(
+                        key: key,
+                        replacement: dictionaryService.dictionary[key]?.replacement ?? ""
+                    )
+                }
+                .onDelete(perform: deleteEntries)
+            }
+        }
+    }
+
     var body: some View {
         List {
-            Section {
-                Toggle("Case Sensitive Matching", isOn: $dictionaryService.isCaseSensitive)
-            } footer: {
-                Text("When enabled, 'truenas' will not match 'TrueNAS'.")
-            }
-            
-            Section("Import / Export") {
-                Menu {
-                    Button("Export as CSV") {
-                        exportFormat = "csv"
-                        showingExporter = true
-                    }
-                    Button("Export as JSON") {
-                        exportFormat = "json"
-                        showingExporter = true
-                    }
-                } label: {
-                    Label("Export Dictionary", systemImage: "square.and.arrow.up")
-                }
-
-                Button(action: { showingImporter = true }) {
-                    Label("Import Dictionary", systemImage: "square.and.arrow.down")
-                }
-            }
-
-            Section {
-                ForEach(DictionaryService.StarterPack.allCases, id: \.self) { pack in
-                    let imported = importedPacks.contains(pack)
-                    Button(action: { importStarterPack(pack) }) {
-                        HStack {
-                            Label(pack.displayTitle, systemImage: imported ? "checkmark.circle.fill" : "tray.and.arrow.down")
-                                .foregroundColor(imported ? .green : .accentColor)
-                            if imported {
-                                Spacer()
-                                Text("Imported")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("Starter Packs")
-            } footer: {
-                Text("The dictionary starts empty by design — no personal data ships in the app. Grow it three ways: add entries manually, tap a starter pack to import curated corrections in one click, or import a CSV file.\n\nTip: ask an AI (ChatGPT, Claude, etc.) to generate a CSV for your field — e.g. \"Give me 50 common medical dictation mishearings as original,replacement CSV\" — then tap Import.")
-            }
-
-            Section("Custom Replacements (\(dictionaryService.dictionary.count))") {
-                if dictionaryService.dictionary.isEmpty {
-                    Text("No custom entries yet.")
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(sortedKeys, id: \.self) { key in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(key)
-                                    .font(.headline)
-                                Text(dictionaryService.dictionary[key]?.replacement ?? "")
-                                    .font(.subheadline)
-                                    .foregroundColor(.accentColor)
-                            }
-                            Spacer()
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(key) replaced with \(dictionaryService.dictionary[key]?.replacement ?? "")")
-                    }
-                    .onDelete(perform: deleteEntries)
-                }
-            }
+            starterPacksSection
+            importExportSection
+            customReplacementsSection
         }
         .navigationTitle("Dictionary")
         .fileExporter(
@@ -158,17 +209,19 @@ struct DictionaryManagementView: View {
             Button("Merge — use imported on conflicts") { applyImport(strategy: .incomingWins) }
             Button("Cancel", role: .cancel) { pendingImportData = nil }
         } message: {
-            Text("You have \(dictionaryService.dictionary.count) entries. Choose how to combine them with the imported file. \"Conflicts\" are entries whose Original appears in both.")
+            Text(mergeDialogMessage)
         }
         .alert("Import Result", isPresented: $showingImportResult) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(importResultMessage ?? "")
+            let msg: String = importResultMessage ?? ""
+            Text(msg)
         }
         .alert("Starter Pack Imported", isPresented: $showingStarterPackResult) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(starterPackResultMessage ?? "")
+            let msg: String = starterPackResultMessage ?? ""
+            Text(msg)
         }
         .onAppear { recomputeImportedPacks() }
         .onChange(of: dictionaryService.dictionary) { recomputeImportedPacks() }
@@ -192,50 +245,29 @@ struct DictionaryManagementView: View {
             }
         }
         .sheet(isPresented: $showingAddSheet) {
-            NavigationStack {
-                Form {
-                    Section("Original Phrase") {
-                        TextField("e.g. true nest", text: $newOriginal)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                            .onChange(of: newOriginal) { _, newValue in
-                                checkForDuplicate(newValue)
-                            }
-                    } footer: {
-                        if let warning = duplicateWarning {
-                            Text(warning)
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    Section("Replacement") {
-                        TextField("e.g. TrueNAS", text: $newReplacement)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                    }
-                }
-                .navigationTitle("Add Entry")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            showingAddSheet = false
-                            resetFields()
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Add") {
-                            dictionaryService.setReplacement(for: newOriginal, with: newReplacement)
-                            showingAddSheet = false
-                            resetFields()
-                        }
-                        .disabled(newOriginal.isEmpty || newReplacement.isEmpty || duplicateWarning != nil)
-                    }
-                }
-            }
-            .presentationDetents([.medium])
+            AddEntrySheet(
+                original: $newOriginal,
+                replacement: $newReplacement,
+                duplicateWarning: duplicateWarning,
+                onAdd: {
+                    dictionaryService.setReplacement(for: newOriginal, with: newReplacement)
+                    showingAddSheet = false
+                    resetFields()
+                },
+                onCancel: {
+                    showingAddSheet = false
+                    resetFields()
+                },
+                onOriginalChange: { checkForDuplicate($0) }
+            )
         }
     }
     
+    private var mergeDialogMessage: String {
+        let count = dictionaryService.dictionary.count
+        return "You have \(count) entries. Choose how to combine them with the imported file. Conflicts are entries whose Original appears in both."
+    }
+
     private func deleteEntries(at offsets: IndexSet) {
         let currentKeys = sortedKeys
         for index in offsets {
