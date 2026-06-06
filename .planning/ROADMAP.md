@@ -52,7 +52,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 31. Dictionary as Platform | 1/3 | In Progress|  |
+| 31. Dictionary as Platform | 2/3 | In Progress|  |
 | 32. Spoken Punctuation | 0/? | Not started | - |
 | 33. iOS First-Run & Onboarding Polish | 0/? | Not started | - |
 | 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
@@ -76,7 +76,7 @@
   7. Entries carry a `source` provenance field (`.default`/`.user`/`.imported`); dev builds reseed cleanly, release builds tag unknown persisted entries as `.user` and never delete them
 **Plans**: 3 plans (3 waves)
 - [x] 31-01-PLAN.md — Gating + provenance + migration: PERSONAL_LEXICON flag, empty public default, source field, leak-free migration
-- [ ] 31-02-PLAN.md — Import/export engine + UI: RFC 4180 CSV/JSON, 3 merge strategies, line-numbered validation, native file pickers
+- [x] 31-02-PLAN.md — Import/export engine + UI: RFC 4180 CSV/JSON, 3 merge strategies, line-numbered validation, native file pickers
 - [ ] 31-03-PLAN.md — Starter packs + docs: 3 bundled offline packs, one-tap import, empty-by-design + CSV-author help copy
 
 ### Phase 32: Spoken Punctuation
