@@ -13,7 +13,7 @@ Quality pass driven by analysis of real multi-day dictation logs (the DebugRecor
 - **Phase 27 (2026-05-27)** — Dictionary hallucination guard (stops fuzzy-matching from mangling correct words), DebugRecorder enrichment, and a batch of brand/jargon dictionary additions.
 - **Phase 28 (2026-05-27)** — "V19D" AI-cleanup prompt iteration: better clause handling, contraction handling, de-duplication, and number formatting.
 - **Phase 29 (2026-05-29)** — Post-ASR fixes: spelled-out acronyms collapse (`N F S K` → `NFSK`), spoken letter names resolve inside acronyms (zed/zee → Z, etc.), and the Zed IDE (misheard as "set") is recovered via a period-anchored dictionary entry. Cross-platform (macOS + iOS).
-- **Phase 30 (planned)** — Pause media playback while push-to-talk is held (macOS).
+- **Phase 30 (2026-06-06)** — Push-to-talk now pauses Apple Music / Spotify while you dictate and resumes on release; for other audio (browser/YouTube/podcasts) it mutes output during the hold and unmutes on release. Respects a system you muted yourself. macOS-only. (Note: output devices with hardware-only volume — some external USB DACs — can't be muted by macOS, so the mute fallback is a no-op there; the Music/Spotify pause is unaffected.)
 - **Fix** — ASR model download now retries on a transient network drop instead of failing the whole download (the ~2.7 GB Parakeet download from HuggingFace would abort on a single "connection reset"). macOS + iOS.
 
 _Not yet cut as a released build._

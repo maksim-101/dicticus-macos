@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Live-Capture Quality Pass
-status: executing
-stopped_at: Completed 30-01-PLAN.md
-last_updated: "2026-06-05T18:17:27.924Z"
-last_activity: 2026-06-05
+status: milestone-complete
+stopped_at: Completed 30-03-PLAN.md — Phase 30 UAT PASS (both tiers), milestone v2.3 complete
+last_updated: "2026-06-06"
+last_activity: 2026-06-06
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
   completed_plans: 12
-  percent: 75
+  percent: 100
 ---
 
 # Project State: Dicticus
@@ -22,12 +22,21 @@ progress:
 
 ## Current Position
 
-Phase: 30 (ptt-media-auto-pause-macos) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-06-05
+Phase: 30 (ptt-media-auto-pause-macos) — COMPLETE (signed-app UAT PASS both tiers, 2026-06-06)
+Plan: 3 of 3 — done
+Status: Milestone v2.3 complete — all 4 phases shipped
+Last activity: 2026-06-06
 
 ### Next Action
+
+**`/gsd-complete-milestone v2.3`** → then **`/gsd-new-milestone v2.4`** (theme: public-release
+readiness + dictionary as platform — see v2.4 backlog cluster below). Phase 30 closed: ScriptingBridge
+pause tier + CoreAudio/AppleScript mute fallback both verified in the signed app
+(`30-03-UAT-RESULTS.md`); hardware-volume DACs documented as an unsupported edge case for the mute
+fallback (the user's JDS Labs DAC can't be muted by macOS at all). Build is NOT yet cut as a release
+DMG — `/gsd-complete-milestone` or a later release phase handles notarized distribution.
+
+<details><summary>Superseded — Phase 30 execution next-action (resolved 2026-06-06)</summary>
 
 **`/gsd-execute-phase 30`** — Phase 30 re-planned (3 waves) around the Spike-003 ScriptingBridge design,
 plan-checked PASS. **Wave 1 (30-01):** rewrite `MediaController.swift` — drop MediaRemote, use
@@ -55,6 +64,8 @@ TCC). Covers Apple Music + Spotify; browser media uncovered → mute-output univ
 
 30-01 code ships as a safe guarded no-op. Installed app = clean signed Debug-Recorder build (c588fec).
 
+</details>
+
 **After Phase 30 resolves → `/gsd-complete-milestone v2.3` → `/gsd-new-milestone v2.4` (theme:
 public-release readiness + dictionary as platform; see v2.4 backlog cluster below).**
 
@@ -68,7 +79,7 @@ public-release readiness + dictionary as platform; see v2.4 backlog cluster belo
 - [x] Phase 27 — Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01) — complete 2026-05-27
 - [x] Phase 28 — V19D Prompt Iteration (LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01) — complete; UAT closed 2026-05-29 via debug-log evidence
 - [x] Phase 29 — Acronym-collapse + spoken-letter lexicon + `the set.`→Zed dict entry (ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01) — complete 2026-05-29; post-deploy UAT 2026-06-04 confirmed no regressions (paths not exercised in 139-record window but pipeline GREEN)
-- [ ] Phase 30 — PTT Media Auto-Pause macOS (MEDIA-PAUSE-01) — BLOCKED: 30-01 built (guarded no-op), 30-02 signed-app UAT FAILED 2026-06-05 (MediaRemote read entitlement-gated in signed app). Follow-up: send-based spike (`.planning/backlog/ptt-media-pause-send-based-spike.md`).
+- [x] Phase 30 — PTT Media Auto-Pause macOS (MEDIA-PAUSE-01/-02/-03) — COMPLETE 2026-06-06. Re-designed around ScriptingBridge (Music/Spotify pause-on-hold/resume-on-release) + CoreAudio/AppleScript mute fallback for non-scriptable audio. Signed-app UAT PASS both tiers (`30-03-UAT-RESULTS.md`). Documented limitation: hardware-volume-only output DACs can't be muted by macOS → mute fallback no-op on those (scriptable tier unaffected).
 
 ## v2.4 Backlog Cluster (seeded 2026-06-04, formalize via /gsd-new-milestone after Phase 30 ships)
 

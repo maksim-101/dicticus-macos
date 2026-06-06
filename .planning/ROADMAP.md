@@ -304,7 +304,7 @@ Plans:
 - [x] **Phase 27: Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds** — Block fuzzy-pass mutations of valid English words, enrich recorder schema with per-replacement attribution, batch-add observed brand misses. (completed 2026-05-27)
 - [x] **Phase 28: V19D Prompt Iteration** — Clause preservation, contraction handling, generalized stutter dedup, principled standalone-number policy, audit static domain-topic-words bias. (completed 2026-05-27; UAT closed 2026-05-29 via debug-log evidence)
 - [x] **Phase 29: ASR Post-Processing — Acronym Collapse, Spoken-Letter Lexicon & Zed Fix** — Deterministic post-ASR fixes for `N F S K`→`NFSK`, spoken letter Z (zed/zee), and the `"the set."`→`"Zed."` dictionary entry. Cross-platform (Shared/). (completed 2026-05-29)
-- [ ] **Phase 30: PTT Media Auto-Pause (macOS)** — Pause playing media while push-to-talk is held, resume on release (MacWhisper parity). macOS-only; spike-first (macOS 26 MediaRemote feasibility). Mute-output fallback agreed.
+- [x] **Phase 30: PTT Media Auto-Pause (macOS)** — Pause playing media while push-to-talk is held, resume on release (MacWhisper parity). macOS-only; spike-first (macOS 26 MediaRemote feasibility). ScriptingBridge pause tier (Music/Spotify) + CoreAudio/AppleScript mute-output fallback for non-scriptable sources. Signed-app UAT PASS both tiers. (completed 2026-06-06)
 
 ### v2.3 Progress
 
@@ -426,12 +426,12 @@ Plans:
 
 **Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans executed
 - [x] Spike 002 — MediaRemote pause/read VALIDATED on unsigned CLI (later proved a false positive — read is gated in the signed app)
 - [x] Spike 003 — ScriptingBridge per-app (Music/Spotify) VALIDATED from a signed/hardened binary; MediaRemote/CoreAudio detection is gated → re-design
 - [x] 30-01-PLAN.md (wave 1) — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription [MEDIA-PAUSE-01, -02]
 - [x] 30-02-PLAN.md (wave 2) — Mute-output fallback for non-scriptable sources (browser/YouTube/podcasts): mute system output for the hold when no scriptable player was paused; restore-only-if-we-muted [MEDIA-PAUSE-03]
-- [ ] 30-03-PLAN.md (wave 3) — Signed Debug-Recorder build + human UAT of BOTH tiers (scriptable pause/resume + mute fallback) + Automation-TCC grant (unsigned CLI is not a valid proxy)
+- [x] 30-03-PLAN.md (wave 3) — Signed Debug-Recorder build + human UAT of BOTH tiers (scriptable pause/resume + mute fallback) + Automation-TCC grant. PASS 2026-06-06 (`30-03-UAT-RESULTS.md`); hardware-volume DACs documented as unsupported edge case for the mute fallback
 
 > Superseded MediaRemote PLAN/SUMMARY/UAT artifacts archived under `_superseded-mediaremote/`.
 
