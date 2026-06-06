@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Live-Capture Quality Pass
-status: milestone-complete
-stopped_at: Completed 30-03-PLAN.md — Phase 30 UAT PASS (both tiers), milestone v2.3 complete
-last_updated: "2026-06-06"
-last_activity: 2026-06-06
+status: Awaiting next milestone
+stopped_at: Milestone v2.3 shipped (macOS 1.3.0, tag macos-v1.3.0) and archived
+last_updated: "2026-06-06T09:13:47.724Z"
+last_activity: 2026-06-06 — Milestone v2.3 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 12
-  completed_plans: 12
+  completed_plans: 13
   percent: 100
 ---
 
@@ -22,15 +22,33 @@ progress:
 
 ## Current Position
 
-Phase: 30 (ptt-media-auto-pause-macos) — COMPLETE (signed-app UAT PASS both tiers, 2026-06-06)
-Plan: 3 of 3 — done
-Status: Milestone v2.3 complete — all 4 phases shipped
-Last activity: 2026-06-06
+Phase: Milestone v2.3 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-06 — Milestone v2.3 completed and archived
 
 ### Next Action
 
-**`/gsd-complete-milestone v2.3`** → then **`/gsd-new-milestone v2.4`** (theme: public-release
-readiness + dictionary as platform — see v2.4 backlog cluster below). Phase 30 closed: ScriptingBridge
+**`/gsd-new-milestone v2.4`** (theme: public-release readiness + dictionary as platform — see v2.4
+backlog cluster below). **v2.3 is shipped and archived** — macOS `1.3.0` (build 5), tag `macos-v1.3.0`,
+notarized + Sparkle live (the first functional release since 1.2.0, delivering v2.2 + v2.3 together).
+
+## Deferred Items
+
+Acknowledged and deferred at v2.3 milestone close (2026-06-06) — all covered by the v2.3 audit's
+`tech_debt` verdict (0 blockers):
+
+| Category | Count | Notes |
+|----------|-------|-------|
+| UAT gaps | 11 | `human_verification` items in phase VERIFICATIONs (live-capture UAT, 7-day JSONL monitoring) — mostly closed via live-capture/debug-log evidence; frontmatter not back-updated |
+| Verification gaps | 4 | Phases 27 & 28 verified `human_needed`, closed via debug-log evidence; Nyquist `nyquist_compliant: false` on 27/28 (process artifact, not coverage hole) |
+| Debug sessions | 4 | Historical `log-analysis-*` docs + 1 partially-resolved + 1 completed (no open work) |
+
+Optional cleanup: `/gsd-validate-phase 27` & `28` to backfill the formal Nyquist artifacts.
+
+---
+
+**(archived context below — Phase 30 closeout)** Phase 30 closed: ScriptingBridge
 pause tier + CoreAudio/AppleScript mute fallback both verified in the signed app
 (`30-03-UAT-RESULTS.md`); hardware-volume DACs documented as an unsupported edge case for the mute
 fallback (the user's JDS Labs DAC can't be muted by macOS at all). Build is NOT yet cut as a release
@@ -129,3 +147,7 @@ Key constraints carried forward:
 - No German-parity gating per `project_usage_pattern_english_dominant`.
 - v2.4 public-release readiness work has a hard precondition: empty (or minimal-universal) default dictionary before any public release — see `personal-vs-default-dictionary-split.md` backlog item.
 - Currently installed macOS app is build `addc5c2` (2026-05-30, Debug-Recorder) — no rebuild scheduled until Phase 30 work produces something material, per user decision 2026-06-04.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
