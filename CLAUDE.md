@@ -195,6 +195,41 @@ Branch and PR as normal. Scope changes to the platform directory:
 - iOS-only change: edit `iOS/` files, PR targets `main`
 - Shared change: edit `Shared/`, verify both platforms build
 
+## Code Signing & Keychain
+
+**This Mac has iCloud Keychain on (`KEYCHAIN_SYNC` enabled), which silently deletes code-signing private keys from the `login` keychain between sessions.** Certificates sync and survive; locally-imported private keys don't and get pruned on reconciliation (login / wake / sync). Symptom: `security find-identity -v -p codesigning` returns `0 valid identities found` even though the certs are still listed in Keychain Access → Certificates. This is **not** a wipe and **not** caused by any Claude session — no transcript ever runs a delete; the OS sync daemon does it. Root cause confirmed 2026-06-06.
+
+### Two identities, two homes
+
+| Identity | Hash | Used for | Lives in | 1Password backup (TrueNAS vault) |
+|---|---|---|---|---|
+| `Developer ID Application: Moritz Wehrli (VTWHBCCP36)` | `B9CA1FF8209D9B1BD4940F2D39C327EF836FD3C0` | macOS distribution + notarization (`build-dmg.sh`, manual `codesign --sign <hash>`) | **`~/Library/Keychains/Apple Development.keychain-db`** (custom keychain, not iCloud-synced → persistent) | item `sqn2j6zeygtpewb2v66expqxva`, file `Certificates.p12` |
+| `Apple Development: Moritz Wehrli (G44X84Y62H)` | `755FF335B472D578154E6D8B5E875AFFF4D97D1B` | iOS + macOS **development** (Xcode automatic signing) | **`login`** keychain — Xcode auto-signing only looks here, so it can't live in the custom keychain; **expect iCloud to prune it periodically** | item `z33n6vbwcwtuzglvivw47hsq3a`, file `Certificates.p12` |
+
+The custom keychain is in the search list (`security list-keychains -d user`), so `codesign --sign B9CA1FF8…` finds the Developer ID there — macOS distribution signing is now permanent. The Apple Development key is the unavoidable exception: Xcode "Automatically manage signing" requires it in `login` (the synced keychain), so until the iOS target moves to manual signing it will keep vanishing and must be re-imported. After a reboot the custom keychain may be locked — the first `codesign` prompts for it; click **Always Allow**.
+
+**Decision (2026-06-06):** staying on **automatic** signing for iOS. Manual signing would let the Apple Development key live in the custom keychain too (permanently fixing the vanishing and removing the dangerous Revoke prompt), but it requires hand-managing two provisioning profiles (`com.dicticus.ios` + `…widget`), which isn't worth it at the current iOS rebuild cadence. Fallback when the key is pruned: Cancel Xcode's Revoke prompt and re-import from `z33n…` (one-liner below). Revisit if iOS rebuilds become frequent.
+
+### NEVER click "Revoke Certificate" in Xcode
+
+When Xcode says *"its private key is not installed in your keychain … revoke?"* it means the Apple Development key was pruned from `login`. **Cancel** — never Revoke (revoking invalidates the cert and kills already-installed dev-signed apps on devices). Restore the key instead:
+
+```bash
+# Apple Development (iOS dev) → login keychain, so Xcode auto-signing finds it:
+op read "op://TrueNAS/z33n6vbwcwtuzglvivw47hsq3a/Certificates.p12" --out-file /tmp/appledev.p12
+PW="$(op item get z33n6vbwcwtuzglvivw47hsq3a --fields password --reveal)"
+security import /tmp/appledev.p12 -k ~/Library/Keychains/login.keychain-db -P "$PW" -T /usr/bin/codesign
+rm /tmp/appledev.p12
+
+# Developer ID (macOS dist) → custom keychain (only if find-identity shows it missing):
+op read "op://TrueNAS/sqn2j6zeygtpewb2v66expqxva/Certificates.p12" --out-file /tmp/devid.p12
+PW="$(op item get sqn2j6zeygtpewb2v66expqxva --fields password --reveal)"
+security import /tmp/devid.p12 -k ~/Library/Keychains/"Apple Development.keychain-db" -P "$PW" -T /usr/bin/codesign
+rm /tmp/devid.p12
+```
+
+**`op` caveat:** the 1Password CLI returns `account is not signed in` from headless / sandboxed agent contexts (no desktop-app socket, no Touch ID). Run these restores from an interactive terminal or have the user run them — never assume `op` works from an automation Bash context. The legacy RC2-40-CBC cipher in these `.p12` files is rejected by OpenSSL 3.x (`openssl pkcs12` errors); `security import` reads them natively, or use `openssl … -legacy` to inspect.
+
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
