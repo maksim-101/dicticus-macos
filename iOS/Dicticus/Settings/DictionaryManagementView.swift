@@ -1,4 +1,18 @@
 import SwiftUI
+import UniformTypeIdentifiers
+
+/// FileDocument wrapper for .fileExporter (Phase 31-02).
+struct PlainTextDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.commaSeparatedText, .json, .plainText] }
+    var text: String
+    init(_ text: String) { self.text = text }
+    init(configuration: ReadConfiguration) throws {
+        text = String(data: configuration.file.regularFileContents ?? Data(), encoding: .utf8) ?? ""
+    }
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(text.utf8))
+    }
+}
 
 struct DictionaryManagementView: View {
     @EnvironmentObject var dictionaryService: DictionaryService
@@ -6,6 +20,16 @@ struct DictionaryManagementView: View {
     @State private var newOriginal = ""
     @State private var newReplacement = ""
     @State private var sortOrder: EntrySortOrder = .alphabetical
+
+    // Import / Export state (Phase 31-02)
+    @State private var showingExporter = false
+    @State private var exportFormat = "csv"
+    @State private var showingImporter = false
+    @State private var showingMergeStrategyPicker = false
+    @State private var pendingImportData: Data? = nil
+    @State private var pendingImportFormat: String = "csv"
+    @State private var importResultMessage: String? = nil
+    @State private var showingImportResult = false
     
     enum EntrySortOrder {
         case alphabetical, mostRecent
@@ -31,6 +55,25 @@ struct DictionaryManagementView: View {
                 Text("When enabled, 'truenas' will not match 'TrueNAS'.")
             }
             
+            Section("Import / Export") {
+                Menu {
+                    Button("Export as CSV") {
+                        exportFormat = "csv"
+                        showingExporter = true
+                    }
+                    Button("Export as JSON") {
+                        exportFormat = "json"
+                        showingExporter = true
+                    }
+                } label: {
+                    Label("Export Dictionary", systemImage: "square.and.arrow.up")
+                }
+
+                Button(action: { showingImporter = true }) {
+                    Label("Import Dictionary", systemImage: "square.and.arrow.down")
+                }
+            }
+
             Section("Custom Replacements") {
                 if dictionaryService.dictionary.isEmpty {
                     Text("No custom entries yet.")
@@ -55,6 +98,38 @@ struct DictionaryManagementView: View {
             }
         }
         .navigationTitle("Dictionary")
+        .fileExporter(
+            isPresented: $showingExporter,
+            document: PlainTextDocument(exportedText()),
+            contentType: exportFormat == "json" ? .json : .commaSeparatedText,
+            defaultFilename: "Dicticus-dictionary-\(dateStamp()).\(exportFormat)"
+        ) { _ in }
+        .fileImporter(
+            isPresented: $showingImporter,
+            allowedContentTypes: [.commaSeparatedText, .json],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url) else { return }
+            let format = url.pathExtension.lowercased()
+            // Store data before closure exits — URL scope ends here (Pitfall 4).
+            pendingImportData = data
+            pendingImportFormat = format.isEmpty ? "csv" : format
+            showingMergeStrategyPicker = true
+        }
+        .confirmationDialog("Choose Merge Strategy", isPresented: $showingMergeStrategyPicker, titleVisibility: .visible) {
+            Button("Replace All (clears existing)") { applyImport(strategy: .replaceAll) }
+            Button("Keep Existing (skip conflicts)") { applyImport(strategy: .existingWins) }
+            Button("Use Incoming (overwrite conflicts)") { applyImport(strategy: .incomingWins) }
+            Button("Cancel", role: .cancel) { pendingImportData = nil }
+        }
+        .alert("Import Result", isPresented: $showingImportResult) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importResultMessage ?? "")
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -121,6 +196,34 @@ struct DictionaryManagementView: View {
     private func resetFields() {
         newOriginal = ""
         newReplacement = ""
+    }
+
+    // MARK: - Import / Export helpers (Phase 31-02)
+
+    private func exportedText() -> String {
+        let data = dictionaryService.exportData(format: exportFormat)
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    private func dateStamp() -> String {
+        String(ISO8601DateFormatter().string(from: Date()).prefix(10))
+    }
+
+    private func applyImport(strategy: MergeStrategy) {
+        guard let data = pendingImportData else { return }
+        let result = dictionaryService.importData(data, format: pendingImportFormat, strategy: strategy)
+        switch result {
+        case .success(let added, let warnings):
+            var msg = "Imported \(added) entries."
+            if !warnings.isEmpty {
+                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
+            }
+            importResultMessage = msg
+        case .failure(let error):
+            importResultMessage = "Import failed: \(error)"
+        }
+        showingImportResult = true
+        pendingImportData = nil
     }
 }
 

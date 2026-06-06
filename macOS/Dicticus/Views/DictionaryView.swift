@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 /// A model representing a single replacement entry for the SwiftUI Table.
 struct DictionaryEntry: Identifiable, Hashable {
@@ -34,6 +36,12 @@ struct DictionaryView: View {
     @State private var newOriginal: String = ""
     @State private var newReplacement: String = ""
     @State private var isShowingAddRow = false
+
+    // Import / Export state (Phase 31-02)
+    @State private var importResult: String? = nil
+    @State private var isShowingImportResult = false
+    @State private var pendingImportURL: URL? = nil
+    @State private var isShowingMergeStrategyPicker = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -156,13 +164,31 @@ struct DictionaryView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .disabled(selection.isEmpty)
-                    
+
                     Button("Remove All") {
                         isShowingRemoveAllConfirmation = true
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .foregroundStyle(.red)
+
+                    Divider()
+                        .frame(height: 20)
+
+                    Menu {
+                        Button("Export as CSV") { exportDictionary(format: "csv") }
+                        Button("Export as JSON") { exportDictionary(format: "json") }
+                    } label: {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+
+                    Button(action: { showImportPanel() }) {
+                        Label("Import", systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
                 }
             }
             .font(.system(size: 13))
@@ -188,6 +214,23 @@ struct DictionaryView: View {
         }
         .onChange(of: sortMode) { _, _ in
             refreshEntries()
+        }
+        .alert("Import Result", isPresented: $isShowingImportResult) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importResult ?? "")
+        }
+        .confirmationDialog("Choose Merge Strategy", isPresented: $isShowingMergeStrategyPicker, titleVisibility: .visible) {
+            Button("Replace All (clears existing)") {
+                if let url = pendingImportURL { performImport(url: url, strategy: .replaceAll) }
+            }
+            Button("Keep Existing (skip conflicts)") {
+                if let url = pendingImportURL { performImport(url: url, strategy: .existingWins) }
+            }
+            Button("Use Incoming (overwrite conflicts)") {
+                if let url = pendingImportURL { performImport(url: url, strategy: .incomingWins) }
+            }
+            Button("Cancel", role: .cancel) { pendingImportURL = nil }
         }
     }
 
@@ -235,5 +278,51 @@ struct DictionaryView: View {
         }
         selection.removeAll()
         refreshEntries()
+    }
+
+    // MARK: - Import / Export (Phase 31-02)
+
+    private func exportDictionary(format: String) {
+        let data = dictionaryService.exportData(format: format)
+        let ext = format.lowercased()
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = ext == "json" ? [.json] : [.commaSeparatedText]
+        let dateStamp = ISO8601DateFormatter().string(from: Date()).prefix(10)
+        panel.nameFieldStringValue = "Dicticus-dictionary-\(dateStamp).\(ext)"
+        if panel.runModal() == .OK, let url = panel.url {
+            try? data.write(to: url)
+        }
+    }
+
+    private func showImportPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.commaSeparatedText, .json]
+        panel.allowsMultipleSelection = false
+        if panel.runModal() == .OK, let url = panel.url {
+            pendingImportURL = url
+            isShowingMergeStrategyPicker = true
+        }
+    }
+
+    private func performImport(url: URL, strategy: MergeStrategy) {
+        guard let data = try? Data(contentsOf: url) else {
+            importResult = "Could not read file."
+            isShowingImportResult = true
+            return
+        }
+        let format = url.pathExtension.lowercased()
+        let result = dictionaryService.importData(data, format: format, strategy: strategy)
+        switch result {
+        case .success(let added, let warnings):
+            var msg = "Imported \(added) entries."
+            if !warnings.isEmpty {
+                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
+            }
+            importResult = msg
+        case .failure(let error):
+            importResult = "Import failed: \(error)"
+        }
+        isShowingImportResult = true
+        pendingImportURL = nil
     }
 }
