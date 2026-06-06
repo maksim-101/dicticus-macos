@@ -214,12 +214,11 @@ public final class DictionaryIOService {
                 // do NOT append field again — it was appended before break above.
                 // If we exited because index >= endIndex, append now.
                 if index >= content.endIndex {
-                    // Check if we were in the middle of a field (field not appended yet).
-                    // This happens only if content had no trailing newline for the last field,
-                    // but we added one above so this shouldn't occur. Guard anyway.
-                    if !field.isEmpty || fields.isEmpty {
-                        fields.append(field)
-                    }
+                    // EOF reached mid-field (only when the input lacked a trailing
+                    // newline; parseCSV normally appends one). Always commit the
+                    // in-progress field so a legitimately empty trailing field is
+                    // preserved rather than silently dropped.
+                    fields.append(field)
                     break
                 }
             }

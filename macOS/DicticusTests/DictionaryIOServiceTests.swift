@@ -129,6 +129,17 @@ final class DictionaryIOServiceTests: XCTestCase {
         XCTAssertEqual(result.warnings.count, 1)
     }
 
+    func testParseCSV_noTrailingNewlineFinalRowPreserved() throws {
+        // WR-05: a final row without a trailing newline must still parse its
+        // unquoted fields correctly (parseCSV appends the newline; the EOF
+        // guard must commit the in-progress field rather than drop it).
+        let csv = "foo,bar"
+        let result = try sut.parseCSV(csv)
+        XCTAssertEqual(result.rows.count, 1)
+        XCTAssertEqual(result.rows[0].original, "foo")
+        XCTAssertEqual(result.rows[0].replacement, "bar")
+    }
+
     // MARK: - JSON Parsing
 
     func testParseJSON_basic() throws {
