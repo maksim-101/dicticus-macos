@@ -358,6 +358,8 @@ struct DictionaryView: View {
     }
 
     private func performImport(url: URL, strategy: MergeStrategy) {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
         guard let data = try? Data(contentsOf: url) else {
             importResult = "Could not read file."
             isShowingImportResult = true
