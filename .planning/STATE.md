@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Public-Release Readiness + Dictionary as Platform
-status: verifying
-stopped_at: Phase 31 context gathered
-last_updated: "2026-06-06T14:58:38.715Z"
+status: executing
+stopped_at: Phase 32 context gathered
+last_updated: "2026-06-06T19:24:47.828Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 21
   completed_phases: 16
-  total_plans: 65
-  completed_plans: 66
+  total_plans: 67
+  completed_plans: 67
   percent: 76
 ---
 
@@ -22,28 +22,30 @@ progress:
 
 ## Current Position
 
-Phase: 31 (dictionary-as-platform) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 32 (spoken-punctuation) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-06-06
 
 Progress: [██████████] 100%
 
 ### Next Action
 
-**`/gsd-plan-phase 31`** — Dictionary as Platform (public-release BLOCKER). Sequence:
+**`/gsd-discuss-phase 32`** then `/gsd-plan-phase 32` — Spoken Punctuation. Remaining v2.4 sequence:
 
-1. Phase 31: Dictionary Split + Import/Export + TECHLEX docs (BLOCKER — ship before any public release)
+1. ✅ Phase 31: Dictionary Split + Import/Export + TECHLEX docs (BLOCKER) — DONE
 2. Phase 32: Spoken Punctuation (deterministic pre-LLM pass, cross-platform)
 3. Phase 33: iOS First-Run & Onboarding Polish (decoupled — can interleave with 32)
 4. Phase 34: V19E — R8 Over-Promotion Fix (independent quality track)
 5. Phase 35: UI Reorganization (discuss-first; may defer to v2.5)
 
+**Residual from Phase 31:** iOS on-device verification of import/export + starter packs (covered by shared-code parity; both targets build) — fold into the next iOS device pass / Phase 33.
+
 ## Phase Overview
 
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
-| 31. Dictionary as Platform | Public default split + CSV import/export + docs | DICT-SPLIT-01..04, DICT-IO-01..04, TECHLEX-01..02 | Not started |
+| 31. Dictionary as Platform | Public default split + CSV import/export + docs | DICT-SPLIT-01..04, DICT-IO-01..04, TECHLEX-01..02 | ✅ Complete (2026-06-06) |
 | 32. Spoken Punctuation | Deterministic pre-LLM punctuation collapse (Shared/) | PUNCT-01..04 | Not started |
 | 33. iOS First-Run & Onboarding | Fix flash glitch, truncation, duplicate; add wizard | IOS-ONB-01..05 | Not started |
 | 34. V19E — R8 Over-Promotion Fix | Tighten R8, add content-word gate | V19E-01..03 | Not started |
@@ -82,8 +84,8 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: 2026-06-06T14:58:38.709Z
-Stopped at: Phase 31 context gathered
+Last session: 2026-06-06T19:24:47.821Z
+Stopped at: Phase 32 context gathered
 Next: `/gsd-plan-phase 31`
 
 ---

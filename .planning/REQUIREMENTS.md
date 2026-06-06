@@ -110,6 +110,57 @@ Defined 2026-05-26 from `.planning/debug/log-analysis-2026-05-26.md`. Scope: liv
 - [x] **MEDIA-PAUSE-02**: The media-pause path degrades safely. App carries the `com.apple.security.automation.apple-events` entitlement + `NSAppleEventsUsageDescription`; on Automation-TCC denial (`errAEEventNotPermitted` / -1743), a missing/not-running player, or any AppleScript error, the feature is a **silent no-op** (one warn-level log, never a crash). Running-state is checked via `NSWorkspace` before any `tell application` so a stopped player is never launched.
 - [x] **MEDIA-PAUSE-03**: For **non-scriptable** audio sources (browser/YouTube/podcast apps) that ScriptingBridge cannot detect or control, a **mute-output fallback** applies: when no scriptable player was paused on a PTT hold, mute the default system output for the hold and restore on release (restore only if *we* muted — never unmute a user-muted system). Accepts mute ≠ pause (audio keeps advancing silently). Gated by the same toggle.
 
+## v2.4 Requirements
+
+Defined 2026-06-06 for the **Public-Release Readiness + Dictionary as Platform** milestone (Phases 31–35). Authoritative IDs live in `ROADMAP.md` per-phase requirement lists and success criteria; descriptions below are derived from those locked success criteria. 26 requirements across 5 phases. (The ROADMAP milestone header rounds this to "27" — an off-by-one; the enumerated set is 26.)
+
+### Dictionary Split & Provenance (Phase 31, complete)
+
+- [x] **DICT-SPLIT-01**: Release build ships a **truly empty** default dictionary — zero personal entries, zero baked-in universal entries; no personal keys appear as strings in the Release binary or a locally-built DMG
+- [x] **DICT-SPLIT-02**: Dev build (local-only `PERSONAL_LEXICON` build flag) loads all ~120 current entries with behavior identical to today — clean-rate baseline preserved, no regression against the V19D 139-record corpus
+- [x] **DICT-SPLIT-03**: Entries carry a `source` provenance field (`.default`/`.user`/`.imported`), applied on both macOS and iOS (cross-platform parity)
+- [x] **DICT-SPLIT-04**: Leak-free migration — dev builds reseed defaults cleanly; release builds tag unknown persisted entries as `.user` and never delete them (no silent wipe of pre-existing user data)
+
+### Dictionary Import/Export (Phase 31, complete)
+
+- [x] **DICT-IO-01**: User can export their full dictionary to CSV or JSON in one action (macOS: NSSavePanel; iOS: document picker)
+- [x] **DICT-IO-02**: User can import a CSV or JSON dictionary with a choice of merge strategy (three strategies); CSV/JSON round-trip is lossless
+- [x] **DICT-IO-03**: Malformed rows are rejected with line-number errors (not silently discarded); RFC 4180 CSV handling (UTF-8 BOM stripped, quoted commas/newlines parsed, header skipped)
+- [x] **DICT-IO-04**: Import and export are available on macOS **and** iOS (cross-platform parity)
+
+### Tech-Lexicon Recovery (Phase 31, complete)
+
+- [x] **TECHLEX-01**: Onboarding/help copy documents the dictionary + "ask an AI to generate a CSV for your domain" workflow as the canonical tech-mishearing recovery path, on both platforms
+- [x] **TECHLEX-02**: User can one-tap import bundled offline starter packs (tech mishearings + brand/product casing + general/mainstream terms) from Settings; imported entries are tagged `source=.imported` and use "existing wins" merge
+
+### Spoken Punctuation (Phase 32, planned)
+
+- [x] **PUNCT-01**: Unambiguous spoken tokens (hyphen, slash, backslash, underscore, asterisk, semicolon, at sign, hash, caret, tilde) always collapse to their symbol in both plain and cleanup modes
+- [x] **PUNCT-02**: Conditional spoken tokens (minus, dot, colon, dollar) collapse only between identifier-shaped flanks; `dot` also collapses between numeric flanks ("ten dot five" → "10.5"). (Per decision D-08: `dollar` is conditional, not always-collapse; `pipe` is dropped from the lexicon.)
+- [ ] **PUNCT-03**: The spoken-punctuation step ships on macOS **and** iOS together (cross-platform parity), and the supported lexicon is discoverable as a static reference list in help/Settings copy on both platforms
+- [x] **PUNCT-04**: No prose or arithmetic false positives in a replay of the V19D 139-record corpus — the precision-first gate preserves "five minus three", "the 60 plus rules", and "colon vs. dash"
+
+### iOS First-Run & Onboarding (Phase 33, not started)
+
+- [ ] **IOS-ONB-01**: On a device with the model already downloaded, cold-launch shows the home screen directly — no download-screen flash, even briefly
+- [ ] **IOS-ONB-02**: On first install, the download-screen copy reads clearly with no truncated labels at SE/mini/standard/Pro/Max device widths
+- [ ] **IOS-ONB-03**: After completing mic permission + model download, a guided onboarding wizard appears automatically
+- [ ] **IOS-ONB-04**: The onboarding wizard can be re-triggered from Settings at any time
+- [ ] **IOS-ONB-05**: Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
+
+### V19E — R8 Over-Promotion Fix (Phase 34, not started)
+
+- [ ] **V19E-01**: AI cleanup no longer promotes real English words adjacent to number-words into identifier stems — "kink three" stays "kink three", "King Four" stays "King four"; ordinary prose pairings are untouched
+- [ ] **V19E-02**: A deterministic content-word-preservation gate rejects LLM output that drops a content word (≥4 chars, non-stop-word) present in the post-ITN input, falling back to post-ITN text
+- [ ] **V19E-03**: The V19D 139-record corpus clean rate does not drop below 90.2% and the 9.3% dictionary-hit baseline is preserved after shipping
+
+### UI Reorganization (Phase 35, discuss-first; may defer to v2.5)
+
+- [ ] **UIORG-01**: Opening the macOS popover, a user can reach dictionary management (add, edit, import, export) without scrolling past unrelated controls
+- [ ] **UIORG-02**: All hotkey configuration (standard shortcuts + modifier hotkeys + Fn-key note) is in one consolidated section — no duplicate or scattered config blocks
+- [ ] **UIORG-03**: iOS UI is audited against the same IA principles and brought into parity, with review findings documented before any changes are made
+- [ ] **UIORG-04**: No existing user-visible behavior regresses — hotkey bindings fire, dictionary contents are preserved, history is accessible, DESIGN.md tokens are respected
+
 ## Out of Scope
 
 Explicitly excluded. Documented to prevent scope creep.
@@ -170,14 +221,41 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MEDIA-PAUSE-01 | Phase 30 | Complete |
 | MEDIA-PAUSE-02 | Phase 30 | Complete |
 | MEDIA-PAUSE-03 | Phase 30 | Complete |
+| DICT-SPLIT-01 | Phase 31 | Complete |
+| DICT-SPLIT-02 | Phase 31 | Complete |
+| DICT-SPLIT-03 | Phase 31 | Complete |
+| DICT-SPLIT-04 | Phase 31 | Complete |
+| DICT-IO-01 | Phase 31 | Complete |
+| DICT-IO-02 | Phase 31 | Complete |
+| DICT-IO-03 | Phase 31 | Complete |
+| DICT-IO-04 | Phase 31 | Complete |
+| TECHLEX-01 | Phase 31 | Complete |
+| TECHLEX-02 | Phase 31 | Complete |
+| PUNCT-01 | Phase 32 | Planned |
+| PUNCT-02 | Phase 32 | Planned |
+| PUNCT-03 | Phase 32 | Planned |
+| PUNCT-04 | Phase 32 | Planned |
+| IOS-ONB-01 | Phase 33 | Pending |
+| IOS-ONB-02 | Phase 33 | Pending |
+| IOS-ONB-03 | Phase 33 | Pending |
+| IOS-ONB-04 | Phase 33 | Pending |
+| IOS-ONB-05 | Phase 33 | Pending |
+| V19E-01 | Phase 34 | Pending |
+| V19E-02 | Phase 34 | Pending |
+| V19E-03 | Phase 34 | Pending |
+| UIORG-01 | Phase 35 | Pending |
+| UIORG-02 | Phase 35 | Pending |
+| UIORG-03 | Phase 35 | Pending |
+| UIORG-04 | Phase 35 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 22 total
 - v2.1 requirements (started): 4 total
 - v2.3 requirements: 13 total (9 complete + 4 added 2026-05-29 across Phases 29-30)
-- Mapped to phases: 39
+- v2.4 requirements: 26 total (10 complete Phase 31 + 16 planned/pending Phases 32–35)
+- Mapped to phases: 65
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-05-26 — v2.3 Live-Capture Quality Pass requirements added (9 reqs across Phases 27-28)*
+*Last updated: 2026-06-06 — v2.4 Public-Release Readiness + Dictionary as Platform requirements added (26 reqs across Phases 31–35)*

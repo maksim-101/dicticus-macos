@@ -38,11 +38,11 @@
 
 **Started:** 2026-06-06
 **Goal:** Make Dicticus shippable beyond personal use. Replace the developer-personal default dictionary with a curated public lexicon, add CSV import/export so the minimal default is acceptable, ship spoken punctuation (baseline expectation parity with native dictation), fix the iOS first-run experience, fix the K3/K4 over-promotion quality bug, and (if the IA is agreed) reorganize the macOS/iOS UI.
-**Total requirements:** 27 (DICT-SPLIT-01..04, DICT-IO-01..04, PUNCT-01..04, TECHLEX-01..02, IOS-ONB-01..05, UIORG-01..04, V19E-01..03)
+**Total requirements:** 26 (DICT-SPLIT-01..04, DICT-IO-01..04, PUNCT-01..04, TECHLEX-01..02, IOS-ONB-01..05, UIORG-01..04, V19E-01..03)
 
 ### v2.4 Phases
 
-- [x] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path (completed 2026-06-06)
+- [x] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path (completed 2026-06-06; plans 3/3 + code-review fixes + UAT-driven polish; Release-binary leak check PASSED, UAT all green — see 31-HUMAN-UAT.md; branch feature/phase-31-dictionary-platform pushed)
 - [ ] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together
 - [ ] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard
 - [ ] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track
@@ -52,8 +52,8 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 31. Dictionary as Platform | 3/3 | Complete   | 2026-06-06 |
-| 32. Spoken Punctuation | 0/? | Not started | - |
+| 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
+| 32. Spoken Punctuation | 1/2 | In Progress|  |
 | 33. iOS First-Run & Onboarding Polish | 0/? | Not started | - |
 | 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
 | 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
@@ -88,7 +88,9 @@
   2. Unambiguous tokens (hyphen, slash, backslash, underscore, asterisk, semicolon, at sign, hash, dollar, caret, tilde, pipe) always collapse to their symbol in both plain and cleanup modes
   3. The supported spoken-punctuation lexicon is listed in onboarding or help copy so users can discover it without trial and error
   4. No prose or arithmetic false positives appear in a replay of the V19D 139-record corpus (the conditional gate preserves "the 60 plus rules", "colon vs. dash", meta-discussion usages)
-**Plans**: TBD
+**Plans**: 2 plans
+- [x] 32-01-PLAN.md — collapseSpokenPunctuation step in Shared/ + pipeline wiring + unit tests (PUNCT-01/02/04)
+- [ ] 32-02-PLAN.md — D-07 reference table UI on macOS + iOS (PUNCT-03)
 **UI hint**: yes
 
 ### Phase 33: iOS First-Run & Onboarding Polish

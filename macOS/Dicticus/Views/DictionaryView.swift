@@ -236,6 +236,56 @@ struct DictionaryView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(.ultraThinMaterial)
+
+            Divider()
+
+            // Spoken Punctuation Reference (Phase 32 D-07)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Spoken Punctuation")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Text("Always")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Group {
+                        LabeledContent("hyphen / Bindestrich", value: "-")
+                        LabeledContent("slash / Schrägstrich", value: "/")
+                        LabeledContent("backslash", value: "\\")
+                        LabeledContent("underscore / Unterstrich", value: "_")
+                        LabeledContent("asterisk / Sternchen", value: "*")
+                        LabeledContent("semicolon", value: ";")
+                        LabeledContent("at sign / Klammeraffe", value: "@")
+                        LabeledContent("hash / Raute", value: "#")
+                        LabeledContent("caret", value: "^")
+                        LabeledContent("tilde", value: "~")
+                    }
+                    .font(.system(size: 12))
+                }
+
+                Text("Between identifier words")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    LabeledContent("minus", value: "-")
+                    LabeledContent("dot", value: ".")
+                    LabeledContent("colon", value: ":")
+                    LabeledContent("dollar", value: "$")
+                }
+                .font(.system(size: 12))
+
+                Text("Conditional symbols collapse only when flanked by identifier-shaped words (e.g. \"Claude minus ops\" → \"Claude-ops\"). \"dot\" also collapses between number-words (\"ten dot five\" → \"10.5\").")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
         }
         .frame(minWidth: 550, minHeight: 450)
         .navigationTitle("Custom Dictionary")
