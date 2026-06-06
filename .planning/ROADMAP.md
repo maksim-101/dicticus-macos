@@ -6,6 +6,9 @@
 - ✅ **v1.1 Cleanup Intelligence & Distribution** — Phases 6-11 (shipped 2026-04-20)
 - ✅ **v2.0 iOS App — Shortcut Dictation** — Phases 12-16 (shipped 2026-04-22)
 - ✅ **v2.1 Keyboard Extension & Polish** — Phases 17+ (shipped 2026-04-23)
+- ✅ **v2.2 Adaptive Cleanup & Stability** — Phases 21-26 (shipped 2026-05-22)
+- ✅ **v2.3 Live-Capture Quality Pass** — Phases 27-30 (shipped 2026-06-06, macOS 1.3.0) — [Archive](milestones/v2.3-ROADMAP.md)
+- 🔄 **v2.4 Public-Release Readiness + Dictionary as Platform** — Phases 31-35 (in progress)
 
 ---
 
@@ -20,26 +23,109 @@
 | 16. Universal App | v2.0 | iPad Layout, WhatsNew, Launch Screen | ✅ Done | Success |
 | 17. Keyboard Extension | v2.1 | Custom iOS Keyboard with in-app dictation — text at cursor without app switching | ✅ Done | Success |
 
-## Upcoming Phases
+## Upcoming Phases (v2.3 archive — see ROADMAP.md pre-v2.4 for full detail)
 
 | Phase | Milestone | Scope | Status | Result |
 |-------|-----------|-------|--------|--------|
-| 17.5. Inline Shortcut Dictation | v2.1 | Darwin IPC keyboard dictation — mic button on Dicticus keyboard triggers recording in main app via Darwin notifications, transcription inserts at cursor via textDocumentProxy (PIVOTED from shortcut UI) | Done | Success |
-| 18. iCloud Sync | v2.1 | CloudKit integration for Dictionary & History | Deferred | - |
-| 19. AI Cleanup iOS | v2.1 | llama.cpp Metal for on-device AI cleanup | Code Complete | Pending physical-device UAT (findings → 19.5/19.6) |
-| **DESIGN.md** | v2.1 | Cross-platform design tokens (brand, color, typography, spacing, motion) + per-platform sections (iOS/macOS/Windows) + asset inventory | Next | Prerequisite for 19.6 |
-| 19.5. AI Cleanup CH-Determinism | v2.1 | 5/5 | Complete   | 2026-04-26 |
-| 19.6. iOS UX Polish | v2.1 | Dynamic home screen (clipboard-aware), bigger mic icon, scrollable dictation pane, auto-stop toggle, history-row expand + search-match highlight, restart-trigger button after model download, toggle→download visual cue | Planned | Depends on DESIGN.md |
-| 19.7. macOS Hygiene | v2.1 | Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS | Done 2026-04-25 | M1/M2/M3/D1 resolved — D1 confirmed by Finder UAT |
-| 20. AI Cleanup Demotion + UAT Visibility | v2.1 | 5/5 | Shipped 2026-04-27 | UAT findings closed via Phase 20.06; AI-cleanup path GREEN on the test sentence |
-| 20.06. AI Cleanup Behavioural Hotfix | v2.1 | 4/4 | Shipped 2026-04-27 | HELVETISMS dialect preserved + currency idempotency + iOS history gestures + Settings-toggle reactivity (UAT GREEN on AI-cleanup path) |
-| 20.07. Rules-only ASR-Mishearing Recovery | v2.1 | 0/? | Planned | Rules-only Swiss path produces unrecoverable shapes when ASR drifts (e.g. `4, Franken50 Euro`) — needs an aggressive split-rule with false-positive guards |
-| 20.08. LLM Swiss-Ification Suppression | v2.1 | 5/5 | Shipped 2026-05-01 | Wave-A (Plans 01–03) shipped variant (e); Plan 04 pivoted to variant (g15) (see `20.08-VARIANT-G-RATIONALE.md`); Plan 05 gap closure (R-G15-01 currency-digit truncation) shipped via 3 UAT iterations: drop §3 priming-trap directive, add `naja` filler, add 6th tense exemplar, reorder so currency-preservation exemplar holds the recency-anchor slot. macOS Release UAT 2026-05-01 ACCEPTED with sentence-stitching note. See `20.08-05-UAT-RESULTS.md` |
-| 21. Adaptive Cleanup & Stability | v2.2 | — | Shipped 2026-05-03 | Debounce fix, Surgical Completion, 6-token repair window — UAT ACCEPTED |
-| 22. Resolver Regression Hotfix | v2.2 | 2/2 | Shipped 2026-05-08 | Plan 22-01: regex L75 comma-prefix + word-boundary fix; 7 JSONL fixtures locked in cross-platform; macOS resolver suite 25/25 green. Plan 22-02: pre-flight grep + 1 XCTAssertFalse test in macOS CleanupPromptTests confirming the 8a79e6b cosmetic LLM few-shot is absent (verification-by-test, no production source touched). macOS targeted test green (1/1 in 0.001s). |
-| 23. Decimal Words & Digit Grouping | v2.2 | 0/? | Absorbed → Phase 26 | ITN doesn't fold spoken decimal markers (`Punkt`/`Komma`/`point`) and English ITN concatenates comma-separated digit words (`three, five` → `35`). Scope absorbed into Phase 26 (Pipeline Quality Hardening) |
-| 24. AI Cleanup Quality v2 | v2.2 | 0/? | Blocked on capture window (until 2026-05-12) | Self-correction handling + speech disfluency removal + structured eval refresh. Triggered by Phase 22 UAT G-01 (Gemma 4 E2B passed `"persist now or will is not or will it not"` through verbatim instead of dropping the abandoned fragment). Capture window 2026-05-09 → 2026-05-12 via Dicticus-Debug-Recorder build at /Applications/Dicticus.app, then `/gsd-plan-phase 24` |
-| 26. Pipeline Quality Hardening | v2.2 | 3/3 | Complete    | 2026-05-22 |
+| 27. Dictionary Hallucination Guard | v2.3 | Fuzzy-pass guard, recorder enrichment, K7 brand adds | ✅ Done | 2026-05-27 |
+| 28. V19D Prompt Iteration | v2.3 | Clause preservation, contraction, dedup, number policy | ✅ Done | 2026-05-27 |
+| 29. ASR Post-Processing | v2.3 | Acronym collapse, spoken-letter lexicon, Zed fix | ✅ Done | 2026-05-29 |
+| 30. PTT Media Auto-Pause (macOS) | v2.3 | ScriptingBridge pause/resume + mute fallback | ✅ Done | 2026-06-06 |
+
+---
+
+## Milestone v2.4 — Public-Release Readiness + Dictionary as Platform
+
+**Started:** 2026-06-06
+**Goal:** Make Dicticus shippable beyond personal use. Replace the developer-personal default dictionary with a curated public lexicon, add CSV import/export so the minimal default is acceptable, ship spoken punctuation (baseline expectation parity with native dictation), fix the iOS first-run experience, fix the K3/K4 over-promotion quality bug, and (if the IA is agreed) reorganize the macOS/iOS UI.
+**Total requirements:** 27 (DICT-SPLIT-01..04, DICT-IO-01..04, PUNCT-01..04, TECHLEX-01..02, IOS-ONB-01..05, UIORG-01..04, V19E-01..03)
+
+### v2.4 Phases
+
+- [ ] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path
+- [ ] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together
+- [ ] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard
+- [ ] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track
+- [ ] **Phase 35: UI Reorganization (discuss-first)** - Declutter macOS popover, promote dictionary editing, consolidate hotkeys, iOS parity audit — IA to be resolved at discuss-phase time; may defer to v2.5
+
+### v2.4 Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 31. Dictionary as Platform | 1/3 | In Progress|  |
+| 32. Spoken Punctuation | 0/? | Not started | - |
+| 33. iOS First-Run & Onboarding Polish | 0/? | Not started | - |
+| 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
+| 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
+
+---
+
+## Phase Details
+
+### Phase 31: Dictionary as Platform
+**Goal**: Users own their dictionary — the public-release build ships a curated minimal default, developer-personal entries are gated, and any user can grow their lexicon by CSV-importing an AI-generated domain list
+**Depends on**: Phase 30 (complete)
+**Requirements**: DICT-SPLIT-01, DICT-SPLIT-02, DICT-SPLIT-03, DICT-SPLIT-04, DICT-IO-01, DICT-IO-02, DICT-IO-03, DICT-IO-04, TECHLEX-01, TECHLEX-02
+**Success Criteria** (what must be TRUE):
+  1. A release build of Dicticus ships a **truly empty** default dictionary — zero personal entries, zero baked-in universal entries; no personal keys appear as strings in the release binary (verified against a Release-config build, including a locally-built DMG)
+  2. A dev build (local-only `PERSONAL_LEXICON` flag) loads all ~120 current entries with behavior identical to today — clean-rate baseline preserved, no regression against the V19D 139-record corpus
+  3. User can export their full dictionary to CSV or JSON in one action (macOS: NSSavePanel; iOS: document picker)
+  4. User can import a CSV or JSON dictionary with a choice of merge strategy; malformed rows are rejected with line-number errors, not silently discarded
+  5. User can one-tap import bundled offline starter packs (tech mishearings + brand casing + general/mainstream terms) from Settings; imported entries are tagged `source=.imported` and use "existing wins" merge
+  6. Settings and/or onboarding copy explains that the dictionary starts empty by design and walks the user through both the starter packs and the "ask an AI to generate a CSV for your domain" workflow
+  7. Entries carry a `source` provenance field (`.default`/`.user`/`.imported`); dev builds reseed cleanly, release builds tag unknown persisted entries as `.user` and never delete them
+**Plans**: 3 plans (3 waves)
+- [x] 31-01-PLAN.md — Gating + provenance + migration: PERSONAL_LEXICON flag, empty public default, source field, leak-free migration
+- [ ] 31-02-PLAN.md — Import/export engine + UI: RFC 4180 CSV/JSON, 3 merge strategies, line-numbered validation, native file pickers
+- [ ] 31-03-PLAN.md — Starter packs + docs: 3 bundled offline packs, one-tap import, empty-by-design + CSV-author help copy
+
+### Phase 32: Spoken Punctuation
+**Goal**: Users can speak punctuation symbols reliably in both plain and cleanup modes — unambiguous tokens always collapse, conditional tokens (minus, dot, colon) collapse only between identifier-shaped flanks, matching the baseline expectation set by native macOS dictation
+**Depends on**: Phase 31 (preferred; ensures Shared/ is stable after the dictionary refactor)
+**Requirements**: PUNCT-01, PUNCT-02, PUNCT-03, PUNCT-04
+**Success Criteria** (what must be TRUE):
+  1. Speaking "Claude minus ops" produces `Claude-ops`; speaking "five minus three" leaves "five minus three" unchanged — the conditional-collapse heuristic fires only between identifier-shaped tokens
+  2. Unambiguous tokens (hyphen, slash, backslash, underscore, asterisk, semicolon, at sign, hash, dollar, caret, tilde, pipe) always collapse to their symbol in both plain and cleanup modes
+  3. The supported spoken-punctuation lexicon is listed in onboarding or help copy so users can discover it without trial and error
+  4. No prose or arithmetic false positives appear in a replay of the V19D 139-record corpus (the conditional gate preserves "the 60 plus rules", "colon vs. dash", meta-discussion usages)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 33: iOS First-Run & Onboarding Polish
+**Goal**: A first-time iOS user completes setup without confusion — the download screen is clear and untruncated at any device size, no phantom flash appears when the model is already present, duplicate UI is cleaned up, and a guided wizard orients users to the app after setup
+**Depends on**: Phase 30 (complete) — independent of Phases 31, 32, 34, 35
+**Requirements**: IOS-ONB-01, IOS-ONB-02, IOS-ONB-03, IOS-ONB-04, IOS-ONB-05
+**Success Criteria** (what must be TRUE):
+  1. On a device with the model already downloaded, cold-launching the app shows the home screen directly — no download screen flash, even briefly
+  2. On first install (model not present), the download screen copy reads clearly with no truncated labels at SE/mini/standard/Pro/Max device widths
+  3. After completing mic permission + model download, a guided onboarding wizard appears automatically and can be re-triggered from Settings at any time
+  4. Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 34: V19E — R8 Over-Promotion Fix
+**Goal**: AI cleanup no longer promotes real English words adjacent to number-words into identifier stems — "kink three" stays "kink three", "King Four" stays "King four", ordinary prose pairings are untouched — while the V19D 90.2% clean-rate baseline is preserved
+**Depends on**: Phase 30 (complete) — independent quality track, can run in any order relative to Phases 31-33
+**Requirements**: V19E-01, V19E-02, V19E-03
+**Success Criteria** (what must be TRUE):
+  1. "kink three", "King Four", "option one is", and "every two weeks" pass through cleanup unchanged (or with correct lowercase normalization) — the `kink→K3`, `King→K4` collapse class no longer occurs
+  2. A deterministic content-word-preservation gate rejects LLM output that drops a content word (≥4 chars, non-stop-word) present in the post-ITN input, falling back to post-ITN text
+  3. The V19D 139-record corpus clean rate does not drop below 90.2% and the 9.3% dictionary-hit baseline is preserved after shipping
+**Plans**: TBD
+
+### Phase 35: UI Reorganization (discuss-first; candidate to defer to v2.5)
+**Goal**: The macOS popover and iOS app are reorganized by frequency-of-use — dictionary editing is a top-level action, hotkey configuration is consolidated into a single section, and the overall surface feels like a focused tool rather than an accretion of features
+**Depends on**: Phase 31 (dictionary import/export UI must already exist before reorganizing the dictionary panel)
+**Requirements**: UIORG-01, UIORG-02, UIORG-03, UIORG-04
+**Success Criteria** (what must be TRUE):
+  1. Opening the macOS popover, a user can reach dictionary management (add, edit, import, export) without scrolling past unrelated controls
+  2. All hotkey configuration (standard KeyboardShortcuts + modifier hotkeys + Fn-key note) is in one consolidated section — no duplicate or scattered config blocks
+  3. iOS UI has been audited against the same IA principles and brought into parity, with the review findings documented before any changes are made
+  4. No existing user-visible behavior regresses: hotkey bindings fire, dictionary contents are preserved, history is accessible, DESIGN.md tokens are respected
+**Plans**: TBD
+
+**Note on Phase 35:** The information architecture must be worked out at discuss-phase time, not pre-decided here. If the IA discussion surfaces blocking open questions (popover vs. floating window, tab-bar vs. nested-list on iOS, whether a fresh DESIGN.md pass is needed), Phase 35 may slip to v2.5 without blocking the v2.4 public release — the remaining four phases already satisfy the public-release goal.
+**UI hint**: yes
 
 ---
 
@@ -100,343 +186,104 @@
 ### Phase 20: AI Cleanup Demotion + UAT Visibility
 **Goal:** Demote the LLM cleanup stage from authoritative rewriter to optional polish layer. Move deterministic cleanup (filler removal, currency-fold, self-correction) into Swift; gate the LLM behind a Levenshtein verification step with a low-creativity prompt; expose raw vs. polished output in the iOS history detail view; replace the App-Group-container `fatalError` in HistoryService with graceful degradation so the app never crashes when entitlements are missing.
 
-**Requirements:** None directly — follow-on from Phase 19.5 UAT findings (Gemma hallucination "ausgeflogen"→"ausgezogen", currency literal "Franken Rappen", missed self-corrections, iOS history truncation, simulator crash at HistoryService.swift:61). Cross-platform parity: ships on macOS and iOS together (per cross-platform parity convention).
+**Requirements:** None directly — follow-on from Phase 19.5 UAT findings. Cross-platform parity: ships on macOS and iOS together.
 
 **Plans:** 5/5 plans executed
-- [x] 20-01-PLAN.md — Wave 0 RED test scaffolding (Levenshtein, Filler, SelfCorrection, RulesCleanup fixtures, gate + fallback test stubs)
+- [x] 20-01-PLAN.md — Wave 0 RED test scaffolding
 - [x] 20-02-PLAN.md — Action 1 (Rein in LLM): temp 0.1, "Lightly edit" prompt, LevenshteinDistance utility, gateLLMOutput helper
-- [x] 20-03-PLAN.md — Action 2 (Rules-first deterministic): FillerWordRemover + SelfCorrectionResolver + currency-fold + RulesCleanupService + Step 2c/3a wiring in TextProcessingService
-- [x] 20-04-PLAN.md — Action 4 (Resilience): HistoryService graceful App-Group fallback + appGroupAvailable flag + Settings warning rows (iOS + macOS)
-- [x] 20-05-PLAN.md — Action 3 (Visibility): iOS HistoryDetailView + macOS inline disclosure + CleanupCopyMode UserDefault + Settings parity row
-
-**Out of scope:** Phase 19.6 (iOS UX polish, depends on DESIGN.md), Phase 18 (iCloud Sync, deferred).
+- [x] 20-03-PLAN.md — Action 2 (Rules-first deterministic): FillerWordRemover + SelfCorrectionResolver + currency-fold + RulesCleanupService
+- [x] 20-04-PLAN.md — Action 4 (Resilience): HistoryService graceful App-Group fallback
+- [x] 20-05-PLAN.md — Action 3 (Visibility): iOS HistoryDetailView + macOS inline disclosure
 
 ---
 
 ### Phase 20.06: AI Cleanup Behavioural Hotfix
-**Goal:** Close the gap between Phase 20's *artifact-level success* (12/12 must-haves verified) and its *behavioural goal* ("demote the LLM"). UAT 2026-04-27 surfaced four real regressions that the Phase 20 test matrix did not cover. Fix them, re-run UAT, then declare Phase 20 done.
+**Goal:** Close the gap between Phase 20's artifact-level success and its behavioural goal. Fix HELVETISMS regression, currency-fold idempotency, iOS history UX issues.
 
-**Requirements:** None directly — corrective follow-on to Phase 20 + Phase 19.5 HELVETISMS.
-
-**Findings to address** (full triage in `.planning/phases/20-ai-cleanup-demotion-uat-visibility/20-UAT-FINDINGS.md`):
-- F-20-UAT-01 🔴 HELVETISMS prompt block reworded so LLM preserves speaker dialect (no HG→Swiss German translation). Add NEGATIVE list of common traps (auf→uf, ausgeflogen→usgfloge, gekostet→choschtet, ...).
-- F-20-UAT-02 🔴 Currency-fold idempotency + speaker-explicit-currency-wins. Fix "110.57 €" → "110.57 Euro Euro" duplication and "4.50 Franken" → "4.50 Euro" wrong-direction flip. Audit `SwissNumberFormatter.foldCurrencyUnits` + `CurrencyAntiFlip`.
-- F-20-UAT-03 🟡 iOS long-press on history row: replace SwiftUI Text auto-detection (showing path/link preview) with explicit `.contextMenu { Copy }`.
-- F-20-UAT-04 🟡 iOS row chevron + verify NavigationLink fires (parity with macOS chevron from 20.05). HistoryDetailView shipped but tap not discoverable.
-- F-20-UAT-05 🟢 Re-test number-drift "110.57"→"100.57" after F-20-UAT-01 (likely no separate fix needed).
-
-**Cross-platform parity rule:** HELVETISMS prompt + currency formatter changes must ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity).
-
-**Plans:** 4 plans
-
-Plans:
-- [x] 20.06-01-PLAN.md — Wave 1: HELVETISMS prompt rework — preservation-first wording + NEGATIVE list of HG→CH-G traps + tests (F-20-UAT-01, F-20-UAT-05)
-- [x] 20.06-02-PLAN.md — Wave 2: Currency idempotency + speaker-explicit anchor + STRICT prompt extension (F-20-UAT-02) — depends on 20.06-01 (shared CleanupPrompt.swift)
-- [x] 20.06-03-PLAN.md — Wave 1: iOS HistoryRow .contextMenu Copy + trailing chevron (F-20-UAT-03, F-20-UAT-04)
-- [x] 20.06-04-PLAN.md — Wave 3: Manual UAT re-run gate; flips Phase 20 + 20.06 to Shipped on GREEN (F-20-UAT-01..05) — depends on 20.06-01, 02, 03
-- [x] 20.06-05-FIX (in-phase) — iOS warmup hang + fake progress UI + Settings AI-cleanup-toggle reactivity (real FluidAudio progressHandler + CleanupService nonisolated load + @AppStorage in AiCleanupSection)
-
-**UAT outcome (2026-04-27):**
-- Configuration B (iOS, AI cleanup ON, Swiss ON — the critical case): ✅ GREEN. Output `Das hat mich dann ca. 4.50 Franken gekostet.` — currency preserved, dialect preserved, no hang.
-- Configuration A (iOS, AI cleanup OFF, Swiss ON): ⚠️ deferred to 20.07. ASR drift on this run produced `4, Franken50 Euro` — an unrecoverable shape for the rules-only path. Not a 20.06-introduced regression in `SwissNumberFormatter`; the formatter's bridge regex cannot rescue tokens with letters glued to digits without a more aggressive split-rule.
-- Settings UX bug (AI Cleanup toggle → Download Required panel reveal lag): ✅ fixed in-phase via `@AppStorage` refactor.
-
----
-
-### Phase 20.07: Rules-only ASR-Mishearing Recovery
-**Goal:** Recover currency phrases on the rules-only path (Swiss ON, AI cleanup OFF) when ASR drifts to shapes like `4, Franken50 Euro` (comma after the digit, currency-word concatenated to the cents). Today's `SwissNumberFormatter.bridgeCrossTokenDecimal` requires whitespace-separated tokens and bails on any token containing letters; the rules-only path therefore emits the corrupted ASR verbatim.
-
-**Requirements:** None directly — follow-on to Phase 20.06 UAT findings.
-
-**Tentative scope:**
-- Add a pre-tokenization regex to split `<currency-word><digits>` patterns (`Franken50` → `Franken 50`).
-- Strip leading punctuation from the integer side of the currency phrase (`4,` → `4`) before bridging.
-- False-positive guards: only fire when the trailing digit run is exactly 2 digits AND the currency-word matches the strict alternation already used by Bridge 2.
-- Fixtures: a UAT replay table covering the 2 known mishearings (`4 Franken 50 Euro`, `4, Franken50 Euro`) plus a deliberately-not-currency adjacency case (e.g. `Frankreich50` should NOT split).
-
-**Plans:** TBD — opens after a fresh round of rules-only UAT to widen the failure-mode catalog.
+**Plans:** 4 plans (+ in-phase fix) — all complete. macOS Release UAT 2026-04-27 ACCEPTED.
 
 ---
 
 ### Phase 20.08: LLM Swiss-Ification Suppression
-**Goal:** Stop the LLM from rewriting clean High German into Swiss German dialect on the AI-cleanup ON + Swiss ON path. UAT 2026-04-27 (post-20.06 ship): user dictated standard High German and the LLM produced `uf de andere Siite, wahrschiinli, alli mini, wuer ich denn, het, hie usfiltere`. Phase 20.06's preservation-first prompt (`HELVETISMS: Preserve the speaker's dialect register exactly. Do NOT replace High German words with Swiss German equivalents.`) is being ignored by Gemma 4 E2B because the appended `SwissHelvetisms.words` reference list is interpreted as a preferred vocabulary.
+**Goal:** Stop the LLM from rewriting clean High German into Swiss German dialect. Two-pronged: dialect-suppression gate + empirical prompt restructure (V19C winner variant g15).
 
-**Requirements:** R1, R2, R3, R4, R5, R6, R7, R8, R9 (locally defined in `20.08-RESEARCH.md` §6 + `20.08-VALIDATION.md`).
-
-**Approach:** Two-pronged structural fix —
-1. **Dialect-suppression gate** (`CleanupService.gateLLMDialect`) inserted in `TextProcessingService.swift` BEFORE the existing Levenshtein gate. Demotes to `rulesCleanedText` if the LLM injects any token from `SwissDialectForms.tokens` that was not present in the raw ASR (speaker-said exception preserved).
-2. **Empirical prompt restructure** via debug-only macOS spike harness (`CleanupSpikeView`) running 5 fixtures × 4 candidate prompt variants with pinned sampler seed (0xDEADBEEF). Winning variant ships in `CleanupPrompt.swift` HELVETISMS block, pivoting from "preserve speaker's register" (D-05 pivot) to "Standard High German output".
-
-**Cross-platform parity rule:** dialect gate + SwissDialectForms data + integration tests ship on iOS AND macOS together (per memory: feedback_cleanup_cross_platform_parity). `CleanupPromptTests.swift` remains macOS-only by 20.06-01 precedent.
-
-**Plans:** 5/5 plans complete; Wave-B variant pivot 2026-04-29 (variant e → variant g15); Plan 05 gap closure shipped 2026-05-01 across 3 UAT iterations (macOS Release ACCEPTED with sentence-stitching note)
-
-Plans:
-- [x] 20.08-01-PLAN.md — Wave 1: `Shared/Models/SwissDialectForms.swift` (curated 38-token list, homographs `de`/`sind`/`müesli` excluded, CC BY-SA 4.0 attribution) + iOS + macOS parity tests (R4, R5)
-- [x] 20.08-02-PLAN.md — Wave 2: `CleanupService.gateLLMDialect` + `tokenizeForDialectGate` + integration call at `TextProcessingService.swift` ~line 97 (BEFORE existing `gateLLMOutput`) + R1/R2/R3 unit tests + R7 stacking-safe integration test on both platforms (depends on 20.08-01)
-- [x] 20.08-03-PLAN.md — Wave 3 (CHECKPOINT): macOS Debug-only spike harness `CleanupSpikeView` — runs 5 fixtures × 4 prompt variants with seed 0xDEADBEEF; user picked variant (e), recorded in `20.08-SPIKE-RESULTS.md`. **SUPERSEDED:** post-checkpoint UAT exposed identity-preservation failures (lowercase nouns, `und Und`, `Würdigten` mishear scar) → Wave-B re-spike → variant (g15) ships instead. See `20.08-VARIANT-G-RATIONALE.md` §1.5 + §10.
-- [x] 20.08-04-PLAN.md — Wave 4 (CHECKPOINT): Tasks A+B SHIPPED on `0c6e883` (variant g15 prompt restructure under two-layer German conditional + R6 tests, 14/14 green); Task C UAT 2026-05-01 FAILED with R-G15-01 currency-digit truncation reproduced cross-platform → triggered Plan 05 gap closure. Primary anti-Swiss-ification contract HELD on both platforms.
-- [x] 20.08-05-PLAN.md — Wave 5 (gap closure): R-G15-01 closed via 3 UAT iterations on macOS Release. Final shipped state: drop §3 priming-trap directive, keep 5th currency exemplar, add 6th past-tense exemplar (one slot earlier than anchor), add `naja` to FillerWordRemover.germanFillers (5-token ship list), R6 order-lock test guards recency-bias arrangement. macOS UAT 2026-05-01 ACCEPTED with sentence-stitching note. See `20.08-05-UAT-RESULTS.md`.
+**Plans:** 5/5 plans complete. macOS UAT 2026-05-01 ACCEPTED.
 
 ---
 
 ### Phase 19.7: macOS Hygiene
-**Goal:** Hotkey re-authorization flow, multi-install cleanup (build script + uninstaller), in-app permission status indicator, app icon consistency macOS↔iOS — Unblocks daily macOS dictation.
-
-**Requirements:** M1, M2, M3, D1 (UAT row IDs from `19-UAT-FINDINGS.md`); D-01..D-18 (CONTEXT.md decisions)
+**Goal:** Hotkey re-authorization flow, multi-install cleanup, in-app permission status indicator, app icon consistency.
 
 **Plans:** 4 plans (all complete)
-- [x] 19.7-01-PLAN.md — M2 dev install/uninstall scripts (D-01..D-03) + README "Manual uninstall"
-- [x] 19.7-02-PLAN.md — M3 Input Monitoring permission row + per-row Repair label + hide-when-all-granted (D-08..D-12)
-- [x] 19.7-03-PLAN.md — M1 Hotkey re-authorization flow: Repair banner + Re-register button + multi-copy warning (D-04..D-07)
-- [x] 19.7-04-PLAN.md — D1 Icon canonicalization: assets/icon-master.png + scripts/generate-icons.sh + regenerated PNGs + README (D-13..D-17)
 
 ---
 
 ### Phase 22: Resolver Regression Hotfix
-**Goal:** Stop `SelfCorrectionResolver` from eating user content as substring matches inside unrelated words (e.g. `now`, `noticed`, `wait`, German `nehmen`/`warten`). Confirmed root cause of the long-running "T"/"W" degenerate-collapse production bug.
+**Goal:** Stop SelfCorrectionResolver from eating user content as substring matches inside unrelated words.
 
-**Trigger:** DebugRecorder live capture 2026-05-08 produced 30 JSONL records under the `Dicticus-Debug-Recorder` scheme. Records 5, 6, 9, 11, 18, 19, 29 show `post_rules` text drift caused by the regex at `Shared/Utilities/SelfCorrectionResolver.swift:75`. Pattern flaws: optional punctuation prefix (`[,;:.?!]?`) fires on naked whitespace, and missing trailing `\b` matches connectors as word substrings.
-
-**Companion:** Revert commit `8a79e6b`'s cosmetic LLM few-shot ("W → 'this is good'") in `Shared/Models/CleanupPrompt.swift` once the regex is fixed — the few-shot was treating a downstream symptom of this bug.
-
-**Cross-platform:** Both files live in `Shared/`; ships on macOS + iOS together (per memory `feedback_cleanup_cross_platform_parity`).
-
-**Evidence:** `~/Library/Application Support/Dicticus/DebugRecordings/cleanup-2026-05-08.jsonl` + `.planning/phases/22-resolver-regression-hotfix/22-CONTEXT.md`
-
-**Plans:** 2 plans (1/2 complete)
-- [x] 22-01-PLAN.md — Regex one-liner fix at SelfCorrectionResolver.swift:75 + 7 JSONL regression-net fixtures on macOS and iOS test targets (cross-platform parity) — **completed 2026-05-08** (commits ba2b01b, 7fce68b, d4af189; macOS suite 25/25 green; iOS file byte-identical via `diff -q`; iOS xcodebuild gate deferred — iOS 26.4 SDK runtime not installed locally)
-- [ ] 22-02-PLAN.md — Verify 8a79e6b cosmetic LLM few-shot is absent from CleanupPrompt.swift; lock in via XCTAssertFalse regression-net test
+**Plans:** 2 plans — complete.
 
 ---
-
-### Phase 23: Decimal Words & Digit Grouping
-**Goal:** ITN should fold spoken decimal markers (`Punkt`, `Komma`, `point`) when they sit between digit groups, and English ITN should respect comma boundaries instead of fusing `three, five` → `35`. Discovered alongside Phase 22 in records 24-28 of the 2026-05-08 capture; deferred so the resolver fix ships first without scope creep.
-
-**Plans:** TBD — opens after Phase 22 is in production.
-
----
-
-### Phase 24: AI Cleanup Quality v2
-**Goal:** Improve AI Cleanup (Gemma 4 E2B) quality across three axes that current prompt under-serves: (1) self-correction handling — drop abandoned/restated phrases mid-sentence; (2) speech disfluency removal — fillers, false starts, stuttered word-restarts; (3) structured eval refresh — labelled JSONL corpus + baseline + variant-comparison tooling so future prompt changes are measured, not assumed.
-
-**Trigger:** Phase 22 UAT 2026-05-09 finding G-01. Input `"And what you did will persist now or will is not or will it not?"` was passed through verbatim by AI Cleanup; expected `"...persist now or will it not?"`. Documented in `.planning/phases/22-resolver-regression-hotfix/22-HUMAN-UAT.md` Gaps section and auto-memory `project_ai_cleanup_self_correction_gap`.
-
-**Status:** Blocked on capture window (2026-05-09 → 2026-05-12). Dicticus-Debug-Recorder build installed at `/Applications/Dicticus.app` 2026-05-09 (Developer ID re-signed, TeamIdentifier `VTWHBCCP36`). After window closes, run `/gsd-plan-phase 24` against the captured JSONL corpus.
-
-**Plans:** TBD — opens after capture window + corpus catalog.
-
-**Cross-platform:** Per `feedback_cleanup_cross_platform_parity`, all plans ship on macOS AND iOS together.
-
-**Context file:** `.planning/phases/24-ai-cleanup-quality-v2/24-CONTEXT.md`
 
 ### Phase 25: AI Cleanup Quality v3 — Brand & Acronym Recognition
 
-**Goal:** Reduce isolated-brand mishearing failure rate (target: ≤ 30% of V15 baseline on the captured brand corpus), eliminate the `forty one → 4001` digit-concatenation class entirely, collapse acronym-letter-spacing without regressing list-of-letters enumeration, fix the `phase ↔ face` homophone class, enable plain-mode JSONL for production A/B comparison.
-**Requirements**: N/A (quality phase — measured against capture-window scoreboard, not requirement IDs)
-**Depends on:** Phase 24
+**Goal:** Reduce isolated-brand mishearing failure rate, eliminate `forty one → 4001` digit-concatenation class, collapse acronym-letter-spacing, fix the `phase ↔ face` homophone class, enable plain-mode JSONL for A/B comparison.
 **Plans:** 2/4 plans executed
-
-Plans:
-- [x] 25-01-hypothesis-matrix-PLAN.md — Offline hypothesis matrix in `.planning/debug/harness/` (Wave 1, no app code). Tests H1–H7 against prod GGUF at seed=42, produces `results/v16_matrix.md` naming the winning V16 variant.
-- [x] 25-02-plain-mode-logging-PLAN.md — Plain-mode DebugRecorder logging in `Shared/Services/TextProcessingService.swift` (Wave 1, ships in parallel with 25-01). macOS + iOS parity. Enables plain-vs-AI A/B from production capture.
-- [ ] 25-03-v16-prompt-and-dictionary-feeder-PLAN.md — V16 prompt + always-on canonical-term injector (Wave 2, depends on 25-01). macOS + iOS parity. Phase 24 regression-net (27 SelfCorrectionResolverTests + 10 CleanupPromptTests) preserved; new Phase 25 fixtures cite real CONTEXT.md timestamps.
-- [ ] 25-04-capture-window-and-uat-PLAN.md — 3-day V16 capture + V15→V16 diff + human UAT verdict (Wave 3, depends on 25-02 AND 25-03). Closes Phase 25 with ACCEPTED / CONDITIONAL ACCEPT / REJECTED.
-
-**Wave structure:** {25-01, 25-02} → {25-03} → {25-04}. Plans 25-01 and 25-02 are file-disjoint (harness vs. Swift); 25-03 consumes 25-01's matrix; 25-04 consumes both 25-02 (logging) and 25-03 (V16 code).
-
-**Cross-platform:** Per `feedback_cleanup_cross_platform_parity` memory, 25-02 and 25-03 each ship macOS + iOS in the same plan. 25-01 is harness-only.
-
-**Context file:** `.planning/phases/25-ai-cleanup-quality-v3-brand-acronym-recognition/25-CONTEXT.md`
 
 ---
 
-*Last updated: 2026-05-16 — Phase 25 planned. Four-plan structure locked per CONTEXT.md user mandate (hypothesis-first methodology).*
+### Phase 25.1: AI Cleanup Quality v3b — paper-driven remediation
 
-*Last updated: 2026-05-09 — Phase 22 production UAT 2/3 PASSED + 1 deferred (iOS sim runtime). Phase 24 (AI Cleanup Quality v2) scaffolded as blocked on data capture (window 2026-05-09 → 2026-05-12).*
-
-### Phase 25.1: AI Cleanup Quality v3b — paper-driven remediation (telemetry parity, XML output tags, dictionary expansion, language-isolated prompts, disfluency taxonomy) (INSERTED)
-
-**Goal:** Apply the "Enhancing Local Dictation AI Cleanup" research paper's recommendations to close the 5 defect classes (A–E) and 2 telemetry gaps surfaced by Phase 25's live-capture window. Foundation-first dependency order: telemetry parity → XML envelope → dictionary expansion → English disfluency few-shots → German language-isolated prompt → NLD/Jaccard safety-net gates. Plans 04 + 05 use mandatory pre-build hypothesis matrices (`.planning/debug/harness/`) before shipping; Plans 01/02/03/06 are deterministic regression-net work.
-**Requirements**: telemetry parity (paper §1.1), XML output tags (paper §6.2), dictionary expansion (paper §2.2), disfluency taxonomy (paper §3), language-isolated prompts (paper §5), NLD/Jaccard gates (paper §7)
-**Depends on:** Phase 25
-**Plans:** 4/6 plans executed
-
-Plans:
-- [x] 25.1-01-PLAN.md — Telemetry parity: add `lang_used` + `emission_counter` to DebugCleanupRecord; close 25-04 telemetry gaps (paper §1.1) **SHIPPED**
-- [x] 25.1-02-PLAN.md — XML output tags: V16-COMPOSITE prompt instructs `<corrected_text>` envelope; CleanupService.stripPreamble extracts + falls back; Class D `<unk>` strip (paper §6.2) **SHIPPED**
-- [x] 25.1-03-PLAN.md — Dictionary expansion: 11 Class B entries + applyFuzzyPass (Levenshtein ≤ 2 for keys ≥ 6 chars); 255/255 macOS tests green (paper §2.2, Parakeet implication §4) **SHIPPED**
-- [x] 25.1-04-PLAN.md — Disfluency few-shots: V18C winner via 2-iteration matrix (V18C drops Rule 1 per Parakeet §1 hypothesis + adds Class C targeted few-shot). 80/80 tests pass including resolver gate 27/27 (paper §3 Reparandum/Interregnum/Repair) **SHIPPED**
-- [x] 25.1-05-PLAN.md — Language-isolated prompts: V19C winner (native German rewrite + V2/compound few-shots). UAT pass: 90.2% clean rate, 39.3% improvement rate, 0% damage rate across 153 records. **SHIPPED 2026-05-22**
-- [ ] 25.1-06-PLAN.md — NLD/Jaccard deterministic gates: DEPRIORITIZED — gate at 0.45 threshold never triggered in 153 records; V19C has 0% damage rate. Gate is working well as-is. Remaining quality issues are in pre-LLM pipeline (→ Phase 26).
+**Goal:** Apply research paper recommendations to close 5 defect classes and 2 telemetry gaps from Phase 25's live-capture window.
+**Plans:** 4/6 plans executed. V19C shipped 2026-05-22 (90.2% clean rate).
 
 ---
 
 ### Phase 26: Pipeline Quality Hardening
 
-**Goal:** Fix the 4 user-visible quality issues found in the V19C live UAT (153 records, May 19-22): P0 ITN number concatenation ("twenty five" → "2005"), P1 SelfCorrectionResolver drops German "doch"/"oder" clauses (3 content-drop records), P2 dictionary "versus"→"Vercel" false positive, P3 "point"/"dash"/"zero" not converted to symbols in numeric contexts. Absorbs Phase 23 (Decimal Words & Digit Grouping) scope.
-**Requirements**: None (bug fixes driven by live UAT evidence)
-**Depends on:** Phase 25.1
-**Source:** `v19c-corrected-analysis-may19-22.md`
-
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 26-01-PLAN.md — P0 ITN number concatenation fix + P3 numeric structural words (point/dash/zero/Punkt/Komma)
-- [x] 26-02-PLAN.md — P1 SelfCorrectionResolver doch/oder false-positive removal
-- [x] 26-03-PLAN.md — P2 Dictionary versus->Vercel false-positive retirement
-
-**Wave structure:** {26-01, 26-02, 26-03} — all Wave 1, file-disjoint (ITNUtility vs SelfCorrectionResolver vs DictionaryService).
-
-**Cross-platform:** All 3 plans modify Shared/ code + macOS tests + iOS tests (byte-identical copy). Per feedback_cleanup_cross_platform_parity.
-
----
-
-## Milestone v2.3 — Live-Capture Quality Pass
-
-**Started:** 2026-05-26
-**Goal:** Eliminate dictionary fuzzy-pass data corruption and ship V19D prompt iteration informed by 118-cycle, 4-day live-capture analysis (`.planning/debug/log-analysis-2026-05-26.md`).
-**Phases:** 4 (Phases 27, 28, 29, 30 — 29 & 30 added 2026-05-29 from V19D live-UAT findings)
-**Total v2.3 requirements:** 13 (DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01, LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01, ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01, MEDIA-PAUSE-01)
-
-### v2.3 Summary Checklist
-
-- [x] **Phase 27: Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds** — Block fuzzy-pass mutations of valid English words, enrich recorder schema with per-replacement attribution, batch-add observed brand misses. (completed 2026-05-27)
-- [x] **Phase 28: V19D Prompt Iteration** — Clause preservation, contraction handling, generalized stutter dedup, principled standalone-number policy, audit static domain-topic-words bias. (completed 2026-05-27; UAT closed 2026-05-29 via debug-log evidence)
-- [x] **Phase 29: ASR Post-Processing — Acronym Collapse, Spoken-Letter Lexicon & Zed Fix** — Deterministic post-ASR fixes for `N F S K`→`NFSK`, spoken letter Z (zed/zee), and the `"the set."`→`"Zed."` dictionary entry. Cross-platform (Shared/). (completed 2026-05-29)
-- [x] **Phase 30: PTT Media Auto-Pause (macOS)** — Pause playing media while push-to-talk is held, resume on release (MacWhisper parity). macOS-only; spike-first (macOS 26 MediaRemote feasibility). ScriptingBridge pause tier (Music/Spotify) + CoreAudio/AppleScript mute-output fallback for non-scriptable sources. Signed-app UAT PASS both tiers. (completed 2026-06-06)
-
-### v2.3 Progress
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 27. Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds | 3/3 | Complete    | 2026-05-27 |
-| 28. V19D Prompt Iteration | 4/4 | Complete   | 2026-05-27 |
-| 29. ASR Post-Processing (Acronym/Letter/Zed) | 2/2 | Complete   | 2026-05-29 |
-| 30. PTT Media Auto-Pause (macOS) | 2/3 | In Progress|  |
+**Goal:** Fix 4 user-visible quality issues found in V19C live UAT (ITN concatenation, SelfCorrectionResolver doch/oder, dictionary Vercel false positive, point/dash/zero numeric structural words).
+**Plans:** 3/3 plans complete.
 
 ---
 
 ### Phase 27: Dictionary Hallucination Guard + Recorder Enrichment + K7 Brand Adds
 
-**Goal:** Stop `DictionaryService` fuzzy-pass from mutating valid English/German words into brand names (the `remind→Gemini`, `applies→AppLite` data-corruption class), enrich the cleanup recorder's JSONL schema with per-replacement `{key, from, to}` attribution so future regressions are diagnosable in one log-pass, and batch-add the observed K7 brand misses from the live-capture analysis.
-
-**Depends on:** Phase 26 (Pipeline Quality Hardening — ITN + resolver + dictionary baseline).
-
-**Severity:** Data-corruption fix (urgent — `~0.5–2%` of cleanup outputs in live capture window carried a non-word that survived dict + LLM).
+**Goal:** Stop DictionaryService fuzzy-pass from mutating valid English/German words into brand names; enrich recorder schema; batch-add K7 brand misses.
 
 **Requirements:** DICT-SAFE-01, DICT-SAFE-02, DICT-EXPAND-01, OBS-DICT-01
 
-**Primary files:**
-- `Shared/Services/DictionaryService.swift` — fuzzy-pass guard + K7 entry adds
-- `Shared/Diagnostics/DebugRecorder.swift` — DebugCleanupRecord schema extension
-- `Shared/Services/TextProcessingService.swift` — applyWithTrace wiring under #if DEBUG_RECORDER
-- `Shared/Resources/allowlist-{en,de}.txt` + `ALLOWLIST_LICENSE.md` — bundled allowlist (NEW)
-
-**Success Criteria** (what must be TRUE — observable from user/log perspective):
-
-1. **No fuzzy-pass mutation of valid English words.** A 7-day post-ship live-capture window shows zero records where `post_dict.text` mutated a real English/German word into a brand name. The `remind→Gemini` and `applies→AppLite` shapes from the 2026-05-23→26 window cannot recur — regression-net fixtures lock them in.
-2. **Recorder JSONL emits per-replacement attribution.** Every cleanup record with a dictionary mutation contains a `dictionary_replacements` array of `{key, from, to}` objects (replacing or supplementing the existing `dictionary_context_keys` field). A future log analysis can attribute every text change to a specific entry without re-running the pipeline.
-3. **K7 brand misses fire correctly in live capture.** Speaking `Aqara`, `Karpathy`, `Swissfolio`, `Gemini`, `cron job`, and known `Claude Code` variants produces correctly-cased brand names in the paste buffer without manual correction. Verified against next live-capture window.
-4. **Guard does not over-block.** Existing exact-match brand fixes (`cloud code→Claude Code`, `anti-gravity→Antigravity`, `Swiss Quote→Swissquote`, `true NAS→TrueNAS`, `gsd→GSD`) continue to fire — `~9.3%` dictionary-hit baseline from the 2026-05-23→26 window is preserved or improved, not regressed.
-
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 27-01-PLAN.md — Wave 1: Fuzzy-pass hallucination guard (DICT-SAFE-01, DICT-SAFE-02) — allowlist veto + ratio cap + bundled assets + applyWithTrace canonical implementation + Wave 0 test scaffolding (`DictionaryServiceHallucinationGuardTests`, `DictionaryServiceApplyWithTraceTests`, `Tailscele` assertion update). Includes open-decision flag on ratio threshold (0.20 vs 0.25 — default 0.25 per RESEARCH §6.1).
-- [x] 27-02-PLAN.md — Wave 2: Recorder schema enrichment (OBS-DICT-01) — extend `DebugCleanupRecord` with `dictionary_replacements` + `dictionary_blocked` non-optional `[]` arrays + nested Codable types; wire `applyWithTrace` through `TextProcessingService` under `#if DEBUG_RECORDER`; Codable round-trip + integration tests. Depends on 27-01 (types).
-- [x] 27-03-PLAN.md — Wave 3: K7 brand batch-adds (DICT-EXPAND-01) — 8 entries (`clawed code→Claude Code`, `Accara/accara→Aqara`, `Andre Karpaty→Andrej Karpathy`, `Swiss folio/swiss folio→Swissfolio`, `germinize→Gemini`, `crown shop→cron job`) in `prepopulateWithDefaults()` + `DictionaryServiceK7AddsTests` (10 tests including idempotency + `germinate` non-corruption). Depends on 27-01 (file-overlap on `DictionaryService.swift`).
-
-**Wave structure:** Serialized {27-01} → {27-02} → {27-03}. 27-02 and 27-03 both depend on 27-01 ship; researcher recommendation to serialize all three rather than parallelize 27-02/27-03 (RESEARCH §6 Open Q4) since 27-03 file-overlaps with 27-01 on `DictionaryService.swift` and forcing serialization avoids merge-boundary risk.
-
-**Cross-platform:** All changes land in `Shared/` (macOS + iOS parity per `feedback_cleanup_cross_platform_parity`). Test files byte-identical between `macOS/DicticusTests/` and `iOS/DicticusTests/` per D-15.
+**Plans:** 3/3 plans complete (completed 2026-05-27)
 
 ---
 
 ### Phase 28: V19D Prompt Iteration
 
-**Goal:** Iterate `CleanupPrompt.swift` from V19C → V19D to close the K2 (clause deletion / contraction mangling) and K5 (generalized stutter dedup) prompt-tunable failure classes identified in the live-capture analysis, settle a principled standalone-number policy (K4), and audit the static `Domain topic words` line for bias.
-
-**Depends on:** Phase 27. **Reason:** Phase 27's recorder enrichment (OBS-DICT-01) lets Phase 28 attribute any residual issues to prompt-vs-dict origin without re-running cycles. Land Phase 27 first so V19D UAT has the better telemetry.
-
-**Severity:** Quality polish (no anomaly flag fired in 118 records; this is tail-end refinement on an already 90.2%-clean V19C baseline).
+**Goal:** Iterate CleanupPrompt.swift V19C → V19D: clause preservation, contraction handling, generalized stutter dedup, principled standalone-number policy, topic-words audit.
 
 **Requirements:** LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01
 
-**Primary file:** `Shared/Models/CleanupPrompt.swift` (V19C → V19D)
-
-**Validation path:** Harness matrix re-run if Phase 25.1 / Phase 26 harness is still available in `.planning/debug/harness/`; otherwise live-capture verification after ship.
-
-**Success Criteria** (what must be TRUE — observable from user/log perspective):
-
-1. **Substantive clauses are preserved.** Re-running the 118-record live-capture set through V19D shows zero silent clause deletions for the K2 cases (`in the meantime`, `as minimal as possible`). Cleanup may add punctuation but does not drop meaningful prepositional phrases.
-2. **Contractions survive intact.** Inputs containing English contractions (`I'd say`, `don't have`, `it's`, `we're`) produce outputs where every contraction is preserved as a real English contraction — no non-word artifacts (`I't`, `don'`, `we'`) leak to the user's cursor.
-3. **Word-level repetitions collapse generally.** Immediate word repetitions beyond the existing `the the` case (`for for`, `that that`, `also also`, `unusual, unusual`) collapse in the output regardless of which token is repeated. Existing `the the` behavior is preserved.
-4. **Standalone-number policy is consistent.** A single, documented rule governs whether spoken `one`–`ten` in prose convert to digits or stay as words. The pipeline (rules + LLM) follows that rule across all 118 sample records; no per-utterance vibes-driven inconsistency.
-5. **Domain-topic-words line is justified or removed.** The static `Domain topic words: phase, plan, workflow, framework, dictation, cleanup, prompt` line in `CleanupPrompt.swift` is either (a) replaced with a context-aware mechanism, (b) generalized to a non-biasing form, or (c) removed entirely — with the decision recorded in the phase summary.
-
-**Plans:** 4/4 plans complete
-
-Plans:
-- [x] 28-01-PLAN.md — V19D prompt iteration (V19C→V19D Rule 5 extension + Rule 8 K4 policy + topic-words deletion + EN/DE K2/K5/K4 few-shots) + DebugCleanupRecord.prompt_version field (R3) + harness V19D templates (LLM-CLAUSE-01, LLM-CONTR-01, LLM-DEDUP-01, LLM-NUM-01, LLM-PROMPT-AUDIT-01)
-- [x] 28-02-PLAN.md — ITN single-digit identifier-adjacent promotion in `Shared/Utilities/ITNUtility.swift` (deterministic floor for K4 policy; R1-locked Pattern A regex; EN + DE morphology) (LLM-NUM-01)
-- [x] 28-03-PLAN.md — Post-LLM contraction defense matrix (4 variants A/B/C/D) + harness runner `run_contraction_matrix.py` + 12-fixture set + winning variant ship in `CleanupService.swift` (LLM-CONTR-01)
-- [x] 28-04-PLAN.md — Integration verification: V19D harness re-run vs 118-record baseline + brand fixtures + DE Gates 1-3 + full macOS/iOS test suites + Phase 28 SUMMARY + ROADMAP/REQUIREMENTS/STATE updates
-
-**Wave structure:** {28-01, 28-02} (parallel — disjoint files) → {28-03} (depends on 28-01 — Variant A uses V19D prompt) → {28-04} (integration verification — depends on 28-01, 28-02, 28-03)
-
-**Cross-platform:** `CleanupPrompt.swift` lives in `Shared/` (macOS + iOS parity per `feedback_cleanup_cross_platform_parity`).
-
-### Phase 29: ASR Post-Processing: Acronym Collapse, Spoken-Letter Lexicon & Zed Fix
-
-**Goal:** Close three live-UAT findings via a deterministic **post-ASR text-processing** step (NOT prompt changes), shipping macOS + iOS together (code in `Shared/`). All three originate in the raw ASR output, so the LLM never sees the correct form — they must be fixed deterministically before/around the existing ITN pipeline.
-
-**Requirements**: ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01
-
-**Depends on:** Phase 28 (V19D — complete).
-
-**Severity:** Quality polish (tail-end refinement; no anomaly flags in live capture).
-
-**Sub-requirements:**
-- **ACRONYM-COLLAPSE-01** — Collapse runs of spaced single/short uppercase fragments emitted by Parakeet (`N F S K` → `NFSK`). Must handle mixed-case fragment runs (`Br N A C`) and guard false positives (`I am O K`). Candidate location: a sibling of `ITNUtility.applyITN` / `applySwissITN` in `Shared/Utilities/`. Live repro: record `2026-05-28T03:31:04`.
-- **SPOKEN-LETTER-01** — Spoken-letter-name lexicon applied *inside* a spelling run so the letter Z spoken as "zed"/"zee" resolves to `Z` (plus `aitch`→H, `double-u`→W). "zed" is the reliable target; "zee" is ambiguous (collides with C/G/V) — handle conservatively.
-- **DICT-ZED-01** — Add the Spike-001-validated `DictionaryService` default entry `"the set." → "Zed."` (period-anchored: 100% precision/recall on live corpus, immune to "the set of …" and compound "X set"). No new code — the existing multi-word lookaround key supports it. See `.planning/spikes/001-zed-set-narrow-fix/`.
-
-**Out of scope:** K4 prose number-word promotion (`five cards`→`5 cards`) — separate future ITN/prose-boundary phase (see memory `project_v28_k4_prose_number_followon`).
-
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 29-01-PLAN.md — Acronym fragment collapse + spoken-letter lexicon (collapseAcronymRun in ITNUtility, Step 1.5 wiring, ITNUtilityAcronymCollapseTests) — ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01
-- [x] 29-02-PLAN.md — DictionaryService "the set." → "Zed." default entry + DICT-ZED-01 regression tests — DICT-ZED-01
-
-### Phase 30: PTT Media Auto-Pause (macOS)
-
-**Goal:** When push-to-talk is held, pause any currently-playing media on the Mac and resume it on release (MacWhisper-parity feature). macOS-**only**, no iOS scope. New media-control service hooked into the existing PTT hotkey press/release lifecycle.
-
-**Requirements**: MEDIA-PAUSE-01 (scriptable-player true pause/resume), MEDIA-PAUSE-02 (safe degradation + apple-events entitlement), MEDIA-PAUSE-03 (mute-output fallback for non-scriptable sources)
-
-**Depends on:** Phase 28. Independent of Phase 29 (different domain). **Spike-first** — feasibility on macOS 26 is uncertain.
-
-**Severity:** Feature add (new capability).
-
-**Key research / risk (macOS 26, Darwin 25.x):** Apple entitlement-gated MediaRemote *now-playing info* in macOS 15.4+, so reliably **reading play-state** (needed to know whether to resume on release) is no longer guaranteed for third-party apps. Three candidate approaches to validate in the spike: (1) MediaRemote `MRMediaRemoteSendCommand` pause/play — true position-preserving pause but state-read is gated; (2) media-key simulation (`NX_KEYTYPE_PLAY`) — entitlement-free but a blind toggle (risks starting media on release); (3) mute system output during the hold — public API, fully reliable, but media keeps playing silently. Dicticus is Developer-ID/Sparkle distributed (not App Store), so private APIs are permitted; the risk is OS-version fragility, not rejection.
-
-**Agreed fallback (2026-05-29):** if a true position-preserving pause proves unreliable on macOS 26, fall back to **muting system output** during the hold (accepts that media keeps playing silently).
-
-**Integration point:** existing PTT press/release (KeyboardShortcuts) in macOS app shell. Lives in `macOS/`, not `Shared/`.
-
-**Plans:** 3/3 plans executed
-- [x] Spike 002 — MediaRemote pause/read VALIDATED on unsigned CLI (later proved a false positive — read is gated in the signed app)
-- [x] Spike 003 — ScriptingBridge per-app (Music/Spotify) VALIDATED from a signed/hardened binary; MediaRemote/CoreAudio detection is gated → re-design
-- [x] 30-01-PLAN.md (wave 1) — Replace MediaController internals with ScriptingBridge (NSWorkspace running-check + NSAppleScript pause/play, app-latch) + apple-events entitlement + NSAppleEventsUsageDescription [MEDIA-PAUSE-01, -02]
-- [x] 30-02-PLAN.md (wave 2) — Mute-output fallback for non-scriptable sources (browser/YouTube/podcasts): mute system output for the hold when no scriptable player was paused; restore-only-if-we-muted [MEDIA-PAUSE-03]
-- [x] 30-03-PLAN.md (wave 3) — Signed Debug-Recorder build + human UAT of BOTH tiers (scriptable pause/resume + mute fallback) + Automation-TCC grant. PASS 2026-06-06 (`30-03-UAT-RESULTS.md`); hardware-volume DACs documented as unsupported edge case for the mute fallback
-
-> Superseded MediaRemote PLAN/SUMMARY/UAT artifacts archived under `_superseded-mediaremote/`.
+**Plans:** 4/4 plans complete (completed 2026-05-27; UAT closed 2026-05-29)
 
 ---
 
-*Last updated: 2026-05-26 — Phase 27 decomposed into 3 plans (27-01 fuzzy guard → 27-02 recorder schema → 27-03 K7 brand adds). Serialized waves due to `DictionaryService.swift` file-overlap.*
+### Phase 29: ASR Post-Processing: Acronym Collapse, Spoken-Letter Lexicon & Zed Fix
 
-*Last updated: 2026-05-26 — Milestone v2.3 roadmap created from `.planning/debug/log-analysis-2026-05-26.md` (118 records, 4 days, V19C baseline 90.2% clean).*
+**Goal:** Deterministic post-ASR text-processing: acronym collapse, spoken-letter lexicon (zed/zee→Z), Zed-editor dictionary entry. Cross-platform (Shared/).
+
+**Requirements:** ACRONYM-COLLAPSE-01, SPOKEN-LETTER-01, DICT-ZED-01
+
+**Plans:** 2/2 plans complete (completed 2026-05-29)
+
+---
+
+### Phase 30: PTT Media Auto-Pause (macOS)
+
+**Goal:** Pause media while PTT is held, resume on release. ScriptingBridge for Music/Spotify; CoreAudio/AppleScript mute fallback for non-scriptable sources. macOS-only.
+
+**Requirements:** MEDIA-PAUSE-01, MEDIA-PAUSE-02, MEDIA-PAUSE-03
+
+**Plans:** 3/3 plans complete (completed 2026-06-06; signed-app UAT PASS both tiers)
+
+---
+
+*Last updated: 2026-06-06 — v2.4 roadmap created. 5 phases (31-35), 27 requirements, 100% coverage.*
