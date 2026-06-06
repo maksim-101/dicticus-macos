@@ -109,6 +109,12 @@ class DictionaryService: ObservableObject {
         // bad keys cached in UserDefaults.
         purgeRetiredDefaults()
 
+        // Phase 31-01: tag persisted entries that pre-date the source field.
+        // In Release builds this is a no-op (entries already decoded as .user
+        // via decodeIfPresent). In dev builds it also purges stale personal
+        // keys and re-seeds them cleanly via prepopulateWithDefaults().
+        migrateLegacySource()
+
         // Always merge defaults — adds new entries on updates, preserves existing user entries
         prepopulateWithDefaults()
     }
@@ -181,6 +187,50 @@ class DictionaryService: ObservableObject {
         }
     }
 
+    /// Phase 31-01 (D-06): tag all persisted entries that pre-date the `source`
+    /// field. After Phase 31-01, new entries always carry an explicit `source`
+    /// set by the call site. Entries decoded from older persisted data already
+    /// receive `source == .user` via `DictionaryMetadata.init(from:)` — this
+    /// method handles the in-place save so the tag is persisted.
+    ///
+    /// Dev builds (PERSONAL_LEXICON flag on): purge keys that are no longer in
+    /// DefaultLexicon + PersonalLexicon, then allow prepopulateWithDefaults() to
+    /// reseed them cleanly so every developer-local entry carries source == .default.
+    ///
+    /// Release builds: leave all entries in place — entries already decoded as
+    /// .user via decodeIfPresent. Ship NO personal-key list (D-06 leak rationale:
+    /// the key names themselves reveal the developer's dictation patterns).
+    private func migrateLegacySource() {
+#if PERSONAL_LEXICON
+        // Dev build: remove stale personal entries (no longer in either lexicon)
+        // so prepopulateWithDefaults() can re-seed them with source == .default.
+        // This converges existing dev installs to the new provenance model.
+        let knownKeys = Set(DefaultLexicon.entries.keys).union(Set(PersonalLexicon.entries.keys))
+        var changed = false
+        for key in Array(dictionary.keys) {
+            if !knownKeys.contains(key) {
+                // Key is not in any known lexicon — it's a user entry; leave it alone.
+                // Keys that ARE in known lexicons but came from an older build will
+                // be removed and re-seeded by prepopulateWithDefaults() below since
+                // they still appear in PersonalLexicon.entries. We only remove the
+                // true personal-lexicon entries here to let prepopulate re-tag them.
+                continue
+            }
+            // Key is from a known lexicon but may be tagged .user from the old build.
+            // Remove so prepopulateWithDefaults() re-inserts it with source == .default.
+            dictionary.removeValue(forKey: key)
+            changed = true
+        }
+        if changed { save() }
+#else
+        // Release build: entries already decoded as .user via decodeIfPresent.
+        // No key list to consult — save so the source tag is persisted.
+        // Only call save if there is anything to persist (avoid a spurious write).
+        let needsSave = dictionary.values.contains { _ in true }
+        if needsSave { save() }
+#endif
+    }
+
     private func migrateOldFormat() {
         let oldKey = "customDictionary"
         if let oldStored = UserDefaults.standard.dictionary(forKey: oldKey) as? [String: String] {
@@ -199,77 +249,30 @@ class DictionaryService: ObservableObject {
     /// overwritten on re-merge). Not exposed publicly — `@testable
     /// import Dicticus` provides access; production callers continue
     /// to go through the singleton's private init only.
+    ///
+    /// Phase 31-01: the inline `defaults` literal has been extracted to
+    /// `DefaultLexicon.entries` (always, public seed — empty for v2.4) and
+    /// `PersonalLexicon.entries` (dev builds only, gitignored). Both are
+    /// merged with `source: .default` using the same idempotent guard.
     internal func prepopulateWithDefaults() {
-        let defaults: [String: String] = [
-            "true nest": "TrueNAS", "true Nest": "TrueNAS", "TrueNest": "TrueNAS",
-            "truenest": "TrueNAS", "True Nest": "TrueNAS",
-            "clods.md": "Claude.MD", "DOC-G": "Dockge", "cloth desktop": "Claude Desktop",
-            "medviki": "MedWiki", "matviki": "MedWiki", "add guard": "adguard", "trueness": "TrueNAS",
-            "claw desktop": "Claude Desktop", "Cloud Desktop": "Claude Desktop",
-            "cloud.md": "Claude.MD", "clot.md": "Claude.MD", "clod.md": "Claude.MD",
-            "Swiss \"": "Swissquote", "Swiss quote": "Swissquote", "Swiss code": "Swissquote",
-            "this quote": "Swissquote", "This quote": "Swissquote", "dot cloud": ".claude",
-            "Zyria": "ZüriA", "Acara": "Aqara", "engine X": "NGINX", "X code": "Xcode", "x code": "Xcode",
-            "docg": "Dockge", "true NAS": "TrueNAS", "tail scale": "Tailscale",
-            "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM",
-            "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code",
-            ".cloud": ".claude", "Cloud Code": "Claude Code",
-            // 2026-05-06: removed brittle "1m"/"1 m"/"I m"/"one m"/"One m" → "I'm"
-            // mappings. They false-fired on legitimate phrases like "one meeting"
-            // ("one m" matched on "one meeting" when ASR injected punctuation
-            // between tokens) and Gemma already capitalizes "i" → "I" without
-            // dictionary forcing. See purgeRetiredDefaults() for in-place cleanup.
-            "Selguard": "Cellguard", "selguard": "Cellguard", "Mac Vesper": "MacWhisper", "Kai-Agenten": "KI-Agenten", "Ki-Argenten": "KI-Agenten", "KI-Agenten": "KI-Agenten", "AI-Agenten": "AI-Agenten", "Dektik-Tools": "Dicticus", "Sigby": "Zigbee", "Sig B": "Zigbee", "sig b": "Zigbee", "Sigbee": "Zigbee", "sigbee": "Zigbee", "Zigbee": "Zigbee", "AI Cleanup": "AI Cleanup", "AI-Cleanup": "AI Cleanup",
-            "GSD": "GSD", "gest": "GSD", "GST": "GSD", "cheers": "GSD", "G.S.D.": "GSD", "gsd": "GSD",
-            // Phase 25-03 Lever 1 (matrix.md §5, 2026-05-16): brand/anchor
-            // mishearings from V15 capture-window. H9 (rules+dict) collapses
-            // brand 35→2 and anchor 28→0 without any LLM cost. Each entry
-            // cites the V15 fixture timestamp it closes.
-            "Chemini": "Gemini", "Cheminai": "Gemini", "chemini": "Gemini", "cheminai": "Gemini",
-            "Jemini": "Gemini",
-            "MPM": "NPM",
-            "engine eggs": "NGINX",
-            "Doghand": "Dokku", "Dog Hand": "Dokku", "doghand": "Dokku", "dog hand": "Dokku",
-            "DogChee": "Dockge", "Dog Chee": "Dockge", "dogchee": "Dockge", "dog chee": "Dockge",
-            "C Oli": "CLI", "c oli": "CLI",
-            "true Nas": "TrueNAS",
-            // Phase 25.1-03 — paper §2.2 lexical priming. Closes 25-03 Class B defects
-            // (own-brand mishearings the LLM correctly leaves alone per §4.2 lexical
-            // fidelity). Each entry cites the JSONL timestamp it closes.
-            "Chema 4 2EB": "Gemma 4 E2B",                 // 2026-05-17 06:02:10
-            "chema 4 2eb": "Gemma 4 E2B",
-            "Chema": "Gemma",                              // partial fallback for "Chema 7B" / "Chema 12B" variants
-            "chema": "Gemma",
-            "Dicticos": "Dicticus",                        // 25-03 Class B exemplar (Dicticus own-brand)
-            "dicticos": "Dicticus",
-            "Olama": "Ollama",                             // 25-03 Class B exemplar
-            "olama": "Ollama",
-            "Tailskill": "Tailscale",                      // 2026-05-17 05:30:23 (existing `tail scale` entry doesn't catch this — single-token mishearing)
-            "tailskill": "Tailscale",
-            "hopath": "homeopath",                         // 25-03 Class B exemplar (medical-context dictation)
-            // Phase 27 K7: brand misses from log-analysis 2026-05-26 §K7.
-            // Each entry cites the live-capture JSONL timestamp it closes.
-            "clawed code": "Claude Code",                  // 2026-05-23T05:24:32.417Z
-            "Accara": "Aqara",                             // 2026-05-24T17:50:00.606Z (×2)
-            "accara": "Aqara",
-            "Andre Karpaty": "Andrej Karpathy",            // 2026-05-25T04:14:30.688Z
-            "Swiss folio": "Swissfolio",                   // log-analysis §K7
-            "swiss folio": "Swissfolio",
-            // Phase 27 carried backlog — exact-match only under the new fuzzy guard.
-            "germinize": "Gemini",                         // ratio 0.44 BLOCKS fuzzy; only exact-match fires
-            "crown shop": "cron job",
-            // Phase 29 DICT-ZED-01: Spike-001-validated. Period-anchored to avoid
-            // "the set of …" / compound "X set" false positives. Recovers Zed IDE
-            // misheard as "set" when clause-final. Mid-sentence Zed is missed (safe failure).
-            "the set.": "Zed.",
-        ]
-
-
-        for (original, replacement) in defaults {
+        // Merge public default entries (empty in v2.4; future releases may add entries here).
+        for (original, replacement) in DefaultLexicon.entries {
             if dictionary[original] == nil {
-                dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date())
+                dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date(), source: .default)
             }
         }
+
+#if PERSONAL_LEXICON
+        // Merge developer-personal entries — dev builds only (gitignored file).
+        // These are the ~120 personal corrections the developer uses daily.
+        // Release builds compile this block to zero bytes.
+        for (original, replacement) in PersonalLexicon.entries {
+            if dictionary[original] == nil {
+                dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date(), source: .default)
+            }
+        }
+#endif
+
         save()
     }
 
