@@ -310,6 +310,55 @@ class DictionaryService: ObservableObject {
         save()
     }
 
+    // MARK: - Import / Export (Phase 31-02)
+
+    /// Result of a dictionary import operation.
+    enum ImportResult {
+        case success(added: Int, warnings: [String])
+        case failure(String)
+    }
+
+    /// Import a CSV or JSON file into the dictionary using the specified merge strategy.
+    ///
+    /// Instantiates DictionaryIOService synchronously on the main actor (Finding 8 — safe
+    /// at ~1000-row scale, <1ms parse time). Imported entries are tagged source: .imported.
+    /// On parse/decode error, returns .failure with the localized error description.
+    func importData(_ data: Data, format: String, strategy: MergeStrategy) -> ImportResult {
+        let io = DictionaryIOService()
+        do {
+            let incoming: [CSVImportRow]
+            var warningMessages: [String] = []
+            switch format.lowercased() {
+            case "csv":
+                let result = try io.parseCSV(String(data: data, encoding: .utf8) ?? "")
+                incoming = result.rows
+                warningMessages = result.warnings.map { $0.message }
+            case "json":
+                incoming = try io.parseJSON(data)
+            default:
+                return .failure("Unsupported format: \(format). Use 'csv' or 'json'.")
+            }
+            let merged = io.merge(incoming: incoming, into: dictionary, strategy: strategy)
+            let added = merged.count - dictionary.filter { merged[$0.key] != nil }.count + incoming.count - warningMessages.count
+            dictionary = merged
+            save()
+            return .success(added: incoming.count - warningMessages.count, warnings: warningMessages)
+        } catch {
+            return .failure(error.localizedDescription)
+        }
+    }
+
+    /// Export the full dictionary (all entries regardless of provenance) to CSV or JSON Data.
+    func exportData(format: String) -> Data {
+        let io = DictionaryIOService()
+        switch format.lowercased() {
+        case "json":
+            return io.serializeJSON(dictionary)
+        default:
+            return Data(io.serializeCSV(dictionary).utf8)
+        }
+    }
+
     /// Phase 27 D-08: `apply(to:)` is a thin wrapper over `applyWithTrace(to:)`.
     /// Single source of truth — production and recorder share one code path.
     func apply(to text: String) -> String {
