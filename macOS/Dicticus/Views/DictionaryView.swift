@@ -62,9 +62,15 @@ struct DictionaryView: View {
                         .frame(width: 32, height: 20)
                 }
                 .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
+                Text("\(dictionaryService.dictionary.count) \(dictionaryService.dictionary.count == 1 ? "entry" : "entries")")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
                 Picker("", selection: $sortMode) {
                     ForEach(DictionarySortMode.allCases) { mode in
                         Text(mode.displayName).tag(mode)
@@ -320,16 +326,7 @@ struct DictionaryView: View {
 
     private func importStarterPack(_ pack: DictionaryService.StarterPack) {
         let result = dictionaryService.importStarterPack(pack)
-        switch result {
-        case .success(let added, let warnings):
-            var msg = "Imported \(added) entries from \(pack.displayTitle)."
-            if !warnings.isEmpty {
-                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
-            }
-            starterPackResult = msg
-        case .failure(let error):
-            starterPackResult = "Import failed: \(error)"
-        }
+        starterPackResult = result.summaryMessage(source: pack.displayTitle)
         isShowingStarterPackResult = true
     }
 
@@ -367,16 +364,7 @@ struct DictionaryView: View {
         }
         let format = url.pathExtension.lowercased()
         let result = dictionaryService.importData(data, format: format, strategy: strategy)
-        switch result {
-        case .success(let added, let warnings):
-            var msg = "Imported \(added) entries."
-            if !warnings.isEmpty {
-                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
-            }
-            importResult = msg
-        case .failure(let error):
-            importResult = "Import failed: \(error)"
-        }
+        importResult = result.summaryMessage()
         isShowingImportResult = true
         pendingImportURL = nil
     }

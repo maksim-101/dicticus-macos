@@ -313,6 +313,25 @@ class DictionaryService: ObservableObject {
     enum ImportResult {
         case success(added: Int, warnings: [String])
         case failure(String)
+
+        /// User-facing summary for an import-result alert. Reports how many entries
+        /// were added and, if any rows were skipped (duplicates already present,
+        /// empty, or identical original/replacement), a single count — not the full
+        /// per-line list, which overwhelms the dialog. `source` optionally names the
+        /// origin (e.g. a starter pack title).
+        func summaryMessage(source: String? = nil) -> String {
+            switch self {
+            case .failure(let error):
+                return "Import failed: \(error)"
+            case .success(let added, let warnings):
+                let from = source.map { " from \($0)" } ?? ""
+                var msg = "Imported \(added) \(added == 1 ? "entry" : "entries")\(from)."
+                if !warnings.isEmpty {
+                    msg += "\n\nSkipped \(warnings.count) \(warnings.count == 1 ? "row" : "rows") (already present, empty, or identical original/replacement)."
+                }
+                return msg
+            }
+        }
     }
 
     /// Import a CSV or JSON file into the dictionary using the specified merge strategy.

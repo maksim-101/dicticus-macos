@@ -91,7 +91,7 @@ struct DictionaryManagementView: View {
                 Text("The dictionary starts empty by design — no personal data ships in the app. Grow it three ways: add entries manually, tap a starter pack to import curated corrections in one click, or import a CSV file.\n\nTip: ask an AI (ChatGPT, Claude, etc.) to generate a CSV for your field — e.g. \"Give me 50 common medical dictation mishearings as original,replacement CSV\" — then tap Import.")
             }
 
-            Section("Custom Replacements") {
+            Section("Custom Replacements (\(dictionaryService.dictionary.count))") {
                 if dictionaryService.dictionary.isEmpty {
                     Text("No custom entries yet.")
                         .foregroundColor(.secondary)
@@ -242,16 +242,7 @@ struct DictionaryManagementView: View {
 
     private func importStarterPack(_ pack: DictionaryService.StarterPack) {
         let result = dictionaryService.importStarterPack(pack)
-        switch result {
-        case .success(let added, let warnings):
-            var msg = "Imported \(added) entries from \(pack.displayTitle)."
-            if !warnings.isEmpty {
-                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
-            }
-            starterPackResultMessage = msg
-        case .failure(let error):
-            starterPackResultMessage = "Import failed: \(error)"
-        }
+        starterPackResultMessage = result.summaryMessage(source: pack.displayTitle)
         showingStarterPackResult = true
     }
 
@@ -269,16 +260,7 @@ struct DictionaryManagementView: View {
     private func applyImport(strategy: MergeStrategy) {
         guard let data = pendingImportData else { return }
         let result = dictionaryService.importData(data, format: pendingImportFormat, strategy: strategy)
-        switch result {
-        case .success(let added, let warnings):
-            var msg = "Imported \(added) entries."
-            if !warnings.isEmpty {
-                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
-            }
-            importResultMessage = msg
-        case .failure(let error):
-            importResultMessage = "Import failed: \(error)"
-        }
+        importResultMessage = result.summaryMessage()
         showingImportResult = true
         pendingImportData = nil
     }
