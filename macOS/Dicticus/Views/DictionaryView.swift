@@ -43,6 +43,10 @@ struct DictionaryView: View {
     @State private var pendingImportURL: URL? = nil
     @State private var isShowingMergeStrategyPicker = false
 
+    // Starter pack state (Phase 31-03)
+    @State private var starterPackResult: String? = nil
+    @State private var isShowingStarterPackResult = false
+
     var body: some View {
         VStack(spacing: 0) {
             // Header / Toolbar
@@ -195,6 +199,33 @@ struct DictionaryView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(.ultraThinMaterial)
+
+            Divider()
+
+            // Starter Packs (Phase 31-03)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Starter Packs")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    ForEach(DictionaryService.StarterPack.allCases, id: \.self) { pack in
+                        Button(action: { importStarterPack(pack) }) {
+                            Label(pack.displayTitle, systemImage: "tray.and.arrow.down")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                    }
+                }
+
+                Text("The dictionary starts empty by design so no personal data ships in the public app. Grow it three ways: add entries manually above, tap a starter pack to import curated corrections in one click, or import a CSV file. You can also ask an AI (ChatGPT, Claude, etc.) to generate a CSV for your field — e.g. \"Give me 50 common medical dictation mishearings as original,replacement CSV\" — then import it here.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
         }
         .frame(minWidth: 550, minHeight: 450)
         .navigationTitle("Custom Dictionary")
@@ -219,6 +250,11 @@ struct DictionaryView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(importResult ?? "")
+        }
+        .alert("Starter Pack Imported", isPresented: $isShowingStarterPackResult) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(starterPackResult ?? "")
         }
         .confirmationDialog("Choose Merge Strategy", isPresented: $isShowingMergeStrategyPicker, titleVisibility: .visible) {
             Button("Replace All (clears existing)") {
@@ -278,6 +314,23 @@ struct DictionaryView: View {
         }
         selection.removeAll()
         refreshEntries()
+    }
+
+    // MARK: - Starter Packs (Phase 31-03)
+
+    private func importStarterPack(_ pack: DictionaryService.StarterPack) {
+        let result = dictionaryService.importStarterPack(pack)
+        switch result {
+        case .success(let added, let warnings):
+            var msg = "Imported \(added) entries from \(pack.displayTitle)."
+            if !warnings.isEmpty {
+                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
+            }
+            starterPackResult = msg
+        case .failure(let error):
+            starterPackResult = "Import failed: \(error)"
+        }
+        isShowingStarterPackResult = true
     }
 
     // MARK: - Import / Export (Phase 31-02)

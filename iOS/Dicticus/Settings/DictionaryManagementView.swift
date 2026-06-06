@@ -30,6 +30,10 @@ struct DictionaryManagementView: View {
     @State private var pendingImportFormat: String = "csv"
     @State private var importResultMessage: String? = nil
     @State private var showingImportResult = false
+
+    // Starter packs state (Phase 31-03)
+    @State private var starterPackResultMessage: String? = nil
+    @State private var showingStarterPackResult = false
     
     enum EntrySortOrder {
         case alphabetical, mostRecent
@@ -72,6 +76,18 @@ struct DictionaryManagementView: View {
                 Button(action: { showingImporter = true }) {
                     Label("Import Dictionary", systemImage: "square.and.arrow.down")
                 }
+            }
+
+            Section {
+                ForEach(DictionaryService.StarterPack.allCases, id: \.self) { pack in
+                    Button(action: { importStarterPack(pack) }) {
+                        Label(pack.displayTitle, systemImage: "tray.and.arrow.down")
+                    }
+                }
+            } header: {
+                Text("Starter Packs")
+            } footer: {
+                Text("The dictionary starts empty by design — no personal data ships in the app. Grow it three ways: add entries manually, tap a starter pack to import curated corrections in one click, or import a CSV file.\n\nTip: ask an AI (ChatGPT, Claude, etc.) to generate a CSV for your field — e.g. \"Give me 50 common medical dictation mishearings as original,replacement CSV\" — then tap Import.")
             }
 
             Section("Custom Replacements") {
@@ -129,6 +145,11 @@ struct DictionaryManagementView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(importResultMessage ?? "")
+        }
+        .alert("Starter Pack Imported", isPresented: $showingStarterPackResult) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(starterPackResultMessage ?? "")
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -196,6 +217,23 @@ struct DictionaryManagementView: View {
     private func resetFields() {
         newOriginal = ""
         newReplacement = ""
+    }
+
+    // MARK: - Starter Packs (Phase 31-03)
+
+    private func importStarterPack(_ pack: DictionaryService.StarterPack) {
+        let result = dictionaryService.importStarterPack(pack)
+        switch result {
+        case .success(let added, let warnings):
+            var msg = "Imported \(added) entries from \(pack.displayTitle)."
+            if !warnings.isEmpty {
+                msg += "\n\nWarnings:\n" + warnings.joined(separator: "\n")
+            }
+            starterPackResultMessage = msg
+        case .failure(let error):
+            starterPackResultMessage = "Import failed: \(error)"
+        }
+        showingStarterPackResult = true
     }
 
     // MARK: - Import / Export helpers (Phase 31-02)
