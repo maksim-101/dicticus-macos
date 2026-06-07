@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject var warmupService: IOSModelWarmupService
     @Environment(\.dismiss) var dismiss
     @State private var showingModelInfo = false
+    @AppStorage("hasSeenOnboardingTour") private var hasSeenOnboardingTour = false
 
     var body: some View {
         NavigationStack {
@@ -48,6 +49,10 @@ struct SettingsView: View {
                 Section("Integration") {
                     NavigationLink(destination: SetupGuidesView()) {
                         Label("Setup Guides", systemImage: "questionmark.circle")
+                    }
+
+                    Button(action: { hasSeenOnboardingTour = false }) {
+                        Label("Show Onboarding Tour", systemImage: "arrow.counterclockwise")
                     }
 
                     Button(action: openSystemSettings) {
