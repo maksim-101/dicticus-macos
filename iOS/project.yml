@@ -92,10 +92,12 @@ targets:
     sources:
       - path: DicticusTests
     settings:
-      GENERATE_INFOPLIST_FILE: YES
       configs:
         Debug:
+          GENERATE_INFOPLIST_FILE: YES
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
+        Release:
+          GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dicticus
 
