@@ -44,7 +44,7 @@
 
 - [x] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path (completed 2026-06-06; plans 3/3 + code-review fixes + UAT-driven polish; Release-binary leak check PASSED, UAT all green — see 31-HUMAN-UAT.md; branch feature/phase-31-dictionary-platform pushed)
 - [x] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together (completed 2026-06-07)
-- [ ] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard
+- [x] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard (completed 2026-06-07)
 - [ ] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track
 - [ ] **Phase 35: UI Reorganization (discuss-first)** - Declutter macOS popover, promote dictionary editing, consolidate hotkeys, iOS parity audit — IA to be resolved at discuss-phase time; may defer to v2.5
 
@@ -54,7 +54,7 @@
 |-------|----------------|--------|-----------|
 | 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
-| 33. iOS First-Run & Onboarding Polish | 1/2 | In Progress|  |
+| 33. iOS First-Run & Onboarding Polish | 2/2 | Complete   | 2026-06-07 |
 | 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
 | 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
 
@@ -104,7 +104,7 @@
   4. Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
 **Plans**: 2 plans
   - [x] 33-01-PLAN.md — First-run bug fixes: relaunch flash (IOS-ONB-01), download-screen truncation (IOS-ONB-02), duplicate Action Button removal (IOS-ONB-05)
-  - [ ] 33-02-PLAN.md — Onboarding wizard: 3-page paged tour + auto-present sequencing (IOS-ONB-03) + Settings re-entry (IOS-ONB-04)
+  - [x] 33-02-PLAN.md — Onboarding wizard: 3-page paged tour + auto-present sequencing (IOS-ONB-03) + Settings re-entry (IOS-ONB-04)
 **UI hint**: yes
 
 ### Phase 34: V19E — R8 Over-Promotion Fix

@@ -144,8 +144,8 @@ Defined 2026-06-06 for the **Public-Release Readiness + Dictionary as Platform**
 
 - [x] **IOS-ONB-01**: On a device with the model already downloaded, cold-launch shows the home screen directly — no download-screen flash, even briefly
 - [x] **IOS-ONB-02**: On first install, the download-screen copy reads clearly with no truncated labels at SE/mini/standard/Pro/Max device widths
-- [ ] **IOS-ONB-03**: After completing mic permission + model download, a guided onboarding wizard appears automatically
-- [ ] **IOS-ONB-04**: The onboarding wizard can be re-triggered from Settings at any time
+- [x] **IOS-ONB-03**: After completing mic permission + model download, a guided onboarding wizard appears automatically
+- [x] **IOS-ONB-04**: The onboarding wizard can be re-triggered from Settings at any time
 - [x] **IOS-ONB-05**: Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
 
 ### V19E — R8 Over-Promotion Fix (Phase 34, not started)
@@ -237,8 +237,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PUNCT-04 | Phase 32 | Planned |
 | IOS-ONB-01 | Phase 33 | Complete |
 | IOS-ONB-02 | Phase 33 | Complete |
-| IOS-ONB-03 | Phase 33 | Pending |
-| IOS-ONB-04 | Phase 33 | Pending |
+| IOS-ONB-03 | Phase 33 | Complete |
+| IOS-ONB-04 | Phase 33 | Complete |
 | IOS-ONB-05 | Phase 33 | Complete |
 | V19E-01 | Phase 34 | Pending |
 | V19E-02 | Phase 34 | Pending |
