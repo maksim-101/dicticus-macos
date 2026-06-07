@@ -51,6 +51,9 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
+          PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
     dependencies:
       - package: GRDB
         product: GRDB

@@ -11,7 +11,9 @@ struct DicticusApp: App {
     @State private var transcriptionService: IOSTranscriptionService?
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasSeenWhatsNewV2") private var hasSeenWhatsNewV2 = false
+    @AppStorage("hasSeenOnboardingTour") private var hasSeenOnboardingTour = false
     @State private var showingWhatsNew = false
+    @State private var showingOnboardingTour = false
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -29,6 +31,14 @@ struct DicticusApp: App {
                             NotificationCenter.default.post(name: .startDictation, object: nil)
                         }
                     }
+                    .sheet(isPresented: $showingOnboardingTour, onDismiss: {
+                        hasSeenOnboardingTour = true
+                        if !hasSeenWhatsNewV2 {
+                            showingWhatsNew = true
+                        }
+                    }) {
+                        OnboardingTourView()
+                    }
                     .sheet(isPresented: $showingWhatsNew) {
                         WhatsNewView()
                             .onDisappear {
@@ -38,7 +48,9 @@ struct DicticusApp: App {
                     .onAppear {
                         SwissDefaultMigration.runIfNeeded()  // D-A3 — first-launch belt-and-suspenders before scenePhase fires
                         let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
-                        if !hasSeenWhatsNewV2 && !pendingDictation {
+                        if !hasSeenOnboardingTour && !pendingDictation {
+                            showingOnboardingTour = true
+                        } else if !hasSeenWhatsNewV2 && !pendingDictation {
                             showingWhatsNew = true
                         }
                     }
