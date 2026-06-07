@@ -107,6 +107,12 @@ class TextProcessingService: ObservableObject {
         // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
 
+        // Step 2a: Identifier–number punctuation collapse (Phase 32 PUNCT-02 extension).
+        // Runs after ITN so model-name patterns like "mt minus 24" → "mt-24"
+        // collapse once the number-word is a digit. Precision-gated; never touches
+        // prose subtraction or number–number arithmetic.
+        processedText = ITNUtility.collapseIdentifierNumberPunctuation(to: processedText)
+
         #if DEBUG_RECORDER
         let dbgPostItn = processedText
         let dbgPostItnMs = Date().timeIntervalSince(dbgItnStart) * 1000.0

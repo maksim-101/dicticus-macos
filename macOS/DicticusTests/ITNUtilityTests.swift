@@ -461,3 +461,71 @@ final class ITNUtilitySpokenPunctuationTests: XCTestCase {
         XCTAssertEqual(ITNUtility.collapseSpokenPunctuation(to: "cat pipe grep"), "cat pipe grep")
     }
 }
+
+// MARK: - Phase 32 PUNCT-02 extension: identifier–number collapse (post-ITN model names)
+
+final class ITNUtilityIdentifierNumberPunctuationTests: XCTestCase {
+
+    // MARK: Positives — model-name patterns (alpha identifier + digit number)
+
+    func testMinus_shortStemAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "mt minus 24"), "mt-24")
+    }
+
+    func testMinus_singleCapLetterAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "H minus 100"), "H-100")
+    }
+
+    func testMinus_acronymAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "GPT minus 4"), "GPT-4")
+    }
+
+    func testMinus_capitalizedWordAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "Claude minus 4"), "Claude-4")
+    }
+
+    func testMinus_mixedStemWithDigitAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "RTX minus 4090"), "RTX-4090")
+    }
+
+    func testMinus_inSentence_collapses() {
+        XCTAssertEqual(
+            ITNUtility.collapseIdentifierNumberPunctuation(to: "Would the mt minus 24 work"),
+            "Would the mt-24 work"
+        )
+    }
+
+    func testDot_shortStemAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "v dot 2"), "v.2")
+    }
+
+    func testColon_shortStemAndNumber_collapses() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "key colon 5"), "key:5")
+    }
+
+    func testMinus_trailingPunctuationPreserved() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "the mt minus 24."), "the mt-24.")
+    }
+
+    // MARK: Negatives — prose subtraction and arithmetic must stay untouched
+
+    func testMinus_proseNounAndNumber_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "total minus 12"), "total minus 12")
+    }
+
+    func testMinus_proseNounAndNumber_budget_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "budget minus 100"), "budget minus 100")
+    }
+
+    func testMinus_numberAndNumber_arithmetic_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "24 minus 12"), "24 minus 12")
+    }
+
+    func testMinus_numberWords_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "five minus three"), "five minus three")
+    }
+
+    func testMinus_stopwordStem_unchanged() {
+        XCTAssertEqual(ITNUtility.collapseIdentifierNumberPunctuation(to: "a minus 5"), "a minus 5")
+    }
+}

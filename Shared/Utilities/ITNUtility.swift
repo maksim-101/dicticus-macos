@@ -405,6 +405,63 @@ struct ITNUtility {
         return result.joined(separator: " ")
     }
 
+    /// Post-ITN pass for model-name patterns: collapse a conditional symbol
+    /// (minus/dot/colon) between an identifier-shaped alpha flank and a digit
+    /// number — "mt minus 24" → "mt-24", "H minus 100" → "H-100", "v dot 2" → "v.2".
+    /// Runs AFTER `applyITN` so number-words are already digits (the pre-ITN
+    /// `collapseSpokenPunctuation` pass cannot see "twenty four" as "24").
+    /// Precision-first: the alpha flank must look like an identifier (≤3 chars,
+    /// OR contains an uppercase letter, OR contains a digit) so prose subtraction
+    /// like "total minus 12" / "budget minus 100" is left untouched; never
+    /// collapses number–number ("24 minus 12" stays arithmetic).
+    static func collapseIdentifierNumberPunctuation(to text: String) -> String {
+        let tokens = text.components(separatedBy: .whitespacesAndNewlines)
+        var result: [String] = []
+        var i = 0
+
+        while i < tokens.count {
+            let lower = tokens[i].lowercased()
+
+            if let symbol = conditionalPunctuation[lower], !result.isEmpty, i < tokens.count - 1 {
+                let left = result[result.count - 1]
+                let right = tokens[i + 1]
+                let leftModel = isModelIdentifier(left), rightModel = isModelIdentifier(right)
+                let leftDigit = isDigitToken(left), rightDigit = isDigitToken(right)
+
+                if (leftModel && rightDigit) || (leftDigit && rightModel) {
+                    result.removeLast()
+                    result.append("\(left)\(symbol)\(right)")
+                    i += 2
+                    continue
+                }
+            }
+
+            result.append(tokens[i])
+            i += 1
+        }
+
+        return result.joined(separator: " ")
+    }
+
+    // A bare digit run (ignoring trailing sentence punctuation): "24", "4090", "12."
+    private static func isDigitToken(_ token: String) -> Bool {
+        let stripped = token.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?)"))
+        return !stripped.isEmpty && stripped.allSatisfy { $0.isNumber }
+    }
+
+    // An identifier-shaped alpha token that reads like a model stem, not a prose word:
+    // short (≤3), capitalized, or already containing a digit. Excludes plain
+    // lowercase dictionary words (total, budget, number, amount) to avoid prose
+    // subtraction false positives.
+    private static func isModelIdentifier(_ token: String) -> Bool {
+        guard isIdentifierShaped(token) else { return false }
+        guard token.contains(where: { $0.isLetter }) else { return false }
+        if token.count <= 3 { return true }
+        if token.contains(where: { $0.isUppercase }) { return true }
+        if token.contains(where: { $0.isNumber }) { return true }
+        return false
+    }
+
     // Connector tokens merge with their left and right neighbors (path/identifier connectors)
     private static let connectorPunctuation: [String: String] = [
         "hyphen": "-",
