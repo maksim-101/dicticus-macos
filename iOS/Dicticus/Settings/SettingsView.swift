@@ -49,21 +49,7 @@ struct SettingsView: View {
                     NavigationLink(destination: SetupGuidesView()) {
                         Label("Setup Guides", systemImage: "questionmark.circle")
                     }
-                    
-                    if UIDevice.current.userInterfaceIdiom == .phone {
-                        DisclosureGroup {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("1. Open **Settings** → **Action Button**")
-                                Text("2. Select **Shortcut**")
-                                Text("3. Choose **Dictate with Dicticus**")
-                            }
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        } label: {
-                            Label("Action Button Setup", systemImage: "iphone.gen3")
-                        }
-                    }
-                    
+
                     Button(action: openSystemSettings) {
                         Label("System Permissions", systemImage: "gear")
                     }
