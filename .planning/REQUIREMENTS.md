@@ -137,16 +137,16 @@ Defined 2026-06-06 for the **Public-Release Readiness + Dictionary as Platform**
 
 - [x] **PUNCT-01**: Unambiguous spoken tokens (hyphen, slash, backslash, underscore, asterisk, semicolon, at sign, hash, caret, tilde) always collapse to their symbol in both plain and cleanup modes
 - [x] **PUNCT-02**: Conditional spoken tokens (minus, dot, colon, dollar) collapse only between identifier-shaped flanks; `dot` also collapses between numeric flanks ("ten dot five" → "10.5"). (Per decision D-08: `dollar` is conditional, not always-collapse; `pipe` is dropped from the lexicon.)
-- [ ] **PUNCT-03**: The spoken-punctuation step ships on macOS **and** iOS together (cross-platform parity), and the supported lexicon is discoverable as a static reference list in help/Settings copy on both platforms
+- [x] **PUNCT-03**: The spoken-punctuation step ships on macOS **and** iOS together (cross-platform parity), and the supported lexicon is discoverable as a static reference list in help/Settings copy on both platforms
 - [x] **PUNCT-04**: No prose or arithmetic false positives in a replay of the V19D 139-record corpus — the precision-first gate preserves "five minus three", "the 60 plus rules", and "colon vs. dash"
 
 ### iOS First-Run & Onboarding (Phase 33, not started)
 
-- [ ] **IOS-ONB-01**: On a device with the model already downloaded, cold-launch shows the home screen directly — no download-screen flash, even briefly
-- [ ] **IOS-ONB-02**: On first install, the download-screen copy reads clearly with no truncated labels at SE/mini/standard/Pro/Max device widths
+- [x] **IOS-ONB-01**: On a device with the model already downloaded, cold-launch shows the home screen directly — no download-screen flash, even briefly
+- [x] **IOS-ONB-02**: On first install, the download-screen copy reads clearly with no truncated labels at SE/mini/standard/Pro/Max device widths
 - [ ] **IOS-ONB-03**: After completing mic permission + model download, a guided onboarding wizard appears automatically
 - [ ] **IOS-ONB-04**: The onboarding wizard can be re-triggered from Settings at any time
-- [ ] **IOS-ONB-05**: Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
+- [x] **IOS-ONB-05**: Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
 
 ### V19E — R8 Over-Promotion Fix (Phase 34, not started)
 
@@ -235,11 +235,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PUNCT-02 | Phase 32 | Planned |
 | PUNCT-03 | Phase 32 | Planned |
 | PUNCT-04 | Phase 32 | Planned |
-| IOS-ONB-01 | Phase 33 | Pending |
-| IOS-ONB-02 | Phase 33 | Pending |
+| IOS-ONB-01 | Phase 33 | Complete |
+| IOS-ONB-02 | Phase 33 | Complete |
 | IOS-ONB-03 | Phase 33 | Pending |
 | IOS-ONB-04 | Phase 33 | Pending |
-| IOS-ONB-05 | Phase 33 | Pending |
+| IOS-ONB-05 | Phase 33 | Complete |
 | V19E-01 | Phase 34 | Pending |
 | V19E-02 | Phase 34 | Pending |
 | V19E-03 | Phase 34 | Pending |
