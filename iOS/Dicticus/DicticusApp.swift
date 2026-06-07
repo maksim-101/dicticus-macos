@@ -39,11 +39,8 @@ struct DicticusApp: App {
                     }) {
                         OnboardingTourView()
                     }
-                    .sheet(isPresented: $showingWhatsNew) {
+                    .sheet(isPresented: $showingWhatsNew, onDismiss: { hasSeenWhatsNewV2 = true }) {
                         WhatsNewView()
-                            .onDisappear {
-                                hasSeenWhatsNewV2 = true
-                            }
                     }
                     .onAppear {
                         SwissDefaultMigration.runIfNeeded()  // D-A3 — first-launch belt-and-suspenders before scenePhase fires
