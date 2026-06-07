@@ -45,9 +45,12 @@ struct DicticusApp: App {
                     .onAppear {
                         SwissDefaultMigration.runIfNeeded()  // D-A3 — first-launch belt-and-suspenders before scenePhase fires
                         let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
-                        if !hasSeenOnboardingTour && !pendingDictation {
+                        // Guard on viewModel.state as well: checkPendingIntent() may have already
+                        // consumed pendingDictation and started dictation before onAppear fires.
+                        let noDictation = pendingDictation == false && viewModel.state == .idle
+                        if !hasSeenOnboardingTour && noDictation {
                             showingOnboardingTour = true
-                        } else if !hasSeenWhatsNewV2 && !pendingDictation {
+                        } else if !hasSeenWhatsNewV2 && noDictation {
                             showingWhatsNew = true
                         }
                     }
