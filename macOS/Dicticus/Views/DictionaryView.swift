@@ -48,6 +48,11 @@ struct DictionaryView: View {
     @State private var isShowingStarterPackResult = false
     @State private var importedPacks: Set<DictionaryService.StarterPack> = []
 
+    private let spokenPunctuationColumns = [
+        GridItem(.flexible(), spacing: 16, alignment: .leading),
+        GridItem(.flexible(), spacing: 16, alignment: .leading),
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
             // Header / Toolbar
@@ -244,60 +249,57 @@ struct DictionaryView: View {
             // does not scroll); expanded content scrolls internally so it can never
             // clip off-window. Mirrors the iOS tap-to-reveal NavigationLink.
             DisclosureGroup {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Always")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Always")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Group {
-                                LabeledContent("hyphen / Bindestrich", value: "-")
-                                LabeledContent("slash / Schrägstrich", value: "/")
-                                LabeledContent("backslash", value: "\\")
-                                LabeledContent("underscore / Unterstrich", value: "_")
-                                LabeledContent("asterisk / Sternchen", value: "*")
-                                LabeledContent("semicolon", value: ";")
-                                LabeledContent("at sign / Klammeraffe", value: "@")
-                                LabeledContent("hash / Raute", value: "#")
-                                LabeledContent("caret", value: "^")
-                                LabeledContent("tilde", value: "~")
-                            }
-                            .font(.system(size: 12))
-                        }
-
-                        Text("Between identifier words")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            LabeledContent("minus", value: "-")
-                            LabeledContent("dot", value: ".")
-                            LabeledContent("colon", value: ":")
-                            LabeledContent("dollar", value: "$")
-                        }
-                        .font(.system(size: 12))
-
-                        Text("Conditional symbols collapse only when flanked by identifier-shaped words (e.g. \"Claude minus ops\" → \"Claude-ops\"). \"dot\" also collapses between number-words (\"ten dot five\" → \"10.5\").")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                    LazyVGrid(columns: spokenPunctuationColumns, alignment: .leading, spacing: 4) {
+                        LabeledContent("hyphen / Bindestrich", value: "-")
+                        LabeledContent("slash / Schrägstrich", value: "/")
+                        LabeledContent("backslash", value: "\\")
+                        LabeledContent("underscore / Unterstrich", value: "_")
+                        LabeledContent("asterisk / Sternchen", value: "*")
+                        LabeledContent("semicolon", value: ";")
+                        LabeledContent("at sign / Klammeraffe", value: "@")
+                        LabeledContent("hash / Raute", value: "#")
+                        LabeledContent("caret", value: "^")
+                        LabeledContent("tilde", value: "~")
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 8)
+                    .font(.system(size: 12))
+
+                    Text("Between identifier words")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+
+                    LazyVGrid(columns: spokenPunctuationColumns, alignment: .leading, spacing: 4) {
+                        LabeledContent("minus", value: "-")
+                        LabeledContent("dot", value: ".")
+                        LabeledContent("colon", value: ":")
+                        LabeledContent("dollar", value: "$")
+                    }
+                    .font(.system(size: 12))
+
+                    Text("Conditional symbols collapse only when flanked by identifier-shaped words (e.g. \"Claude minus ops\" → \"Claude-ops\"). \"dot\" also collapses between number-words (\"ten dot five\" → \"10.5\").")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.bottom, 6)
                 }
-                .frame(maxHeight: 220)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 8)
             } label: {
                 Text("Spoken Punctuation")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.top, 10)
+            .padding(.bottom, 14)
             .background(.ultraThinMaterial)
         }
-        .frame(minWidth: 550, minHeight: 450)
+        .frame(minWidth: 550, minHeight: 600)
         .navigationTitle("Custom Dictionary")
         .alert("Remove All Entries?", isPresented: $isShowingRemoveAllConfirmation) {
             Button("Remove All", role: .destructive) {
