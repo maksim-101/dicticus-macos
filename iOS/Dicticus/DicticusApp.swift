@@ -100,5 +100,13 @@ struct DicticusApp: App {
                 viewModel.cleanupService = nil
             }
         }
+        // WR-03: Re-present the tour when Settings resets hasSeenOnboardingTour.
+        // oldValue guard ensures the initial false default does NOT auto-trigger;
+        // only an explicit true→false transition (Settings button) shows the tour.
+        .onChange(of: hasSeenOnboardingTour) { oldValue, newValue in
+            if oldValue == true && newValue == false {
+                showingOnboardingTour = true
+            }
+        }
     }
 }
