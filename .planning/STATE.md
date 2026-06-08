@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Public-Release Readiness + Dictionary as Platform
 status: executing
-stopped_at: Phase 35 UI-SPEC approved
-last_updated: "2026-06-08T19:46:26.776Z"
+stopped_at: Phase 35 Plan 02 complete (Q-03 spike resolved — mechanism B locked)
+last_updated: "2026-06-08T20:00:00.000Z"
 last_activity: 2026-06-08
 progress:
   total_phases: 22
   completed_phases: 19
   total_plans: 80
-  completed_plans: 79
-  percent: 86
+  completed_plans: 80
+  percent: 87
 ---
 
 # Project State: Dicticus
@@ -23,8 +23,8 @@ progress:
 ## Current Position
 
 Phase: 35 (ui-reorganization-discuss-first-candidate-to-defer-to-v2-5) — EXECUTING
-Plan: 5 of 7
-Status: Ready to execute
+Plan: 3 of 7 (35-02 complete; next: 35-03 already done; continue with 35-05)
+Status: Executing — 35-02 DONE, 35-SPIKE-SETTINGS-OPEN.md locked
 Last activity: 2026-06-08
 
 Progress: [██████████] 99%
@@ -58,6 +58,7 @@ Phase 35: UI Reorganization (discuss-first; may defer to v2.5). Remaining v2.4 s
 | Phase 31 groups DICT-SPLIT + DICT-IO + TECHLEX | TECHLEX-01 is docs for the CSV workflow that only makes sense after import/export ships; DICT-SPLIT is unacceptable without import as the "empty default" remedy |
 | Phase 33 (iOS onboarding) sequenced before Phase 35 (UI reorg) | Onboarding bugs are concrete and decoupled; fixing them doesn't require IA decisions |
 | Phase 35 flagged discuss-first | IA questions (popover vs. floating window, iOS navigation pattern) cannot be pre-decided — must be resolved in the phase discussion |
+| Q-03 locked: mechanism B for Settings-open (35-02) | `NSApp.activate(ignoringOtherApps: true)` then `openSettings()` — both A and B verified on signed build; B chosen for documented `.accessory` first-click-foreground hardening; C rejected (Stage Manager conflict). ⌘, auto-registers; Settings coexists with dictionary/history WindowGroups. |
 | V19E (Phase 34) independent | Quality track shares no files with dictionary/UI work; can ship in any window |
 | Cross-platform parity applies to Phases 31, 32 | DICT-SPLIT-03, DICT-IO-04, PUNCT-03 explicitly require iOS parity in the same phase |
 | SC3 harness not app-faithful (Phase 34) | score_v19e_corpus.py live mode applies Levenshtein-only gate against raw input — not the real app chain (rules-clean + gateContentWords + Levenshtein); measured 38.3% vs 55.6% floor is a measurement artifact; phase gated on test suite (443/435 GREEN) instead; harness rebuild tracked in .planning/backlog/ |
@@ -86,9 +87,9 @@ Phase 35: UI Reorganization (discuss-first; may defer to v2.5). Remaining v2.4 s
 
 ## Session Continuity
 
-Last session: 2026-06-08T19:46:26.768Z
-Stopped at: Phase 35 UI-SPEC approved
-Next: `/gsd-plan-phase 31`
+Last session: 2026-06-08T20:00:00.000Z
+Stopped at: Phase 35 Plan 02 — Task 2 complete (Q-03 locked, spike reverted, decision in 35-SPIKE-SETTINGS-OPEN.md)
+Next: Execute Phase 35 Plan 05 — Settings window wiring (consumes Q-03 decision, mechanism B)
 
 ---
 

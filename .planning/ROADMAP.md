@@ -56,7 +56,7 @@
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
 | 34. V19E — R8 Over-Promotion Fix | 5/4 | Complete    | 2026-06-08 |
-| 35. UI Reorganization (discuss-first) | 4/7 | In Progress|  |
+| 35. UI Reorganization (discuss-first) | 5/7 | In Progress|  |
 
 ---
 
