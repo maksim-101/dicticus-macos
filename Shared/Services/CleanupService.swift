@@ -785,6 +785,22 @@ extension CleanupService {
         "gpt", "ios"
     ]
 
+    /// Spelled-out English cardinal and ordinal number-words (≥4 chars) that
+    /// the LLM may legitimately promote to a digit form (e.g. "M three" → "M3").
+    /// Excluding these from "required content words" prevents the gate from
+    /// reverting a legitimate promotion when the only dropped token is a
+    /// number-word (WR-01). Does NOT weaken R8 detection because the R8 bug
+    /// cases drop a non-number content word ("kink", "King") — those still trip
+    /// the gate.
+    public static let contentWordNumberWords: Set<String> = [
+        "zero", "four", "five", "six", "seven", "eight", "nine", "ten",
+        "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+        "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty",
+        "fifty", "sixty", "seventy", "eighty", "ninety", "hundred", "thousand",
+        "first", "second", "third", "fourth", "fifth", "sixth", "seventh",
+        "eighth", "ninth", "tenth"
+    ]
+
     /// Content-word-preservation gate. Returns `rulesCleaned` (fallback) if
     /// `llmOutput` drops any required content word present in `rulesCleaned`.
     ///
@@ -814,7 +830,8 @@ extension CleanupService {
         let requiredContentWords: Set<String> = baselineTokens.reduce(into: []) { set, tok in
             if tok.count >= 4,
                !contentWordStopWords.contains(tok),
-               !contentWordStemAllowlist.contains(tok) {
+               !contentWordStemAllowlist.contains(tok),
+               !contentWordNumberWords.contains(tok) {
                 set.insert(tok)
             }
         }
