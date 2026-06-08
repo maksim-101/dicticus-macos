@@ -56,7 +56,7 @@
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
 | 34. V19E — R8 Over-Promotion Fix | 5/4 | Complete    | 2026-06-08 |
-| 35. UI Reorganization (discuss-first) | 3/7 | In Progress|  |
+| 35. UI Reorganization (discuss-first) | 4/7 | In Progress|  |
 
 ---
 
@@ -136,7 +136,7 @@
 - [x] 35-03-PLAN.md — Wave 1: macOS tabbed fixed-height popover (Home/Dictionary/History) + lifecycle re-attach
 - [x] 35-04-PLAN.md — Wave 1: iOS IA audit doc (UIORG-03 gate; precedes iOS code)
 - [ ] 35-05-PLAN.md — Wave 2: macOS Settings window (4 panes) + hotkey consolidation + gear wiring
-- [ ] 35-06-PLAN.md — Wave 2: iOS 3-tab restructure + Settings reorder (parity)
+- [x] 35-06-PLAN.md — Wave 2: iOS 3-tab restructure + Settings reorder (parity)
 - [ ] 35-07-PLAN.md — Wave 3: DESIGN.md D-15 update + D-16/D-17 HIG/UX/AX conformance report
 
 **Note on Phase 35:** The information architecture must be worked out at discuss-phase time, not pre-decided here. If the IA discussion surfaces blocking open questions (popover vs. floating window, tab-bar vs. nested-list on iOS, whether a fresh DESIGN.md pass is needed), Phase 35 may slip to v2.5 without blocking the v2.4 public release — the remaining four phases already satisfy the public-release goal.
