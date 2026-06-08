@@ -115,6 +115,18 @@ struct DicticusApp: App {
                 .environmentObject(HistoryService.shared)
         }
 
+        // ⌘, Settings window — 4-pane (Hotkeys / AI Cleanup / General / About).
+        // The Settings scene auto-registers ⌘, as the keyboard shortcut (no manual .keyboardShortcut needed).
+        // Coexists cleanly with the dictionary/history WindowGroups (spike-verified, Q-03).
+        Settings {
+            SettingsRoot()
+                .environmentObject(permissionManager)
+                .environmentObject(warmupService)
+                .environmentObject(hotkeyManager)
+                .environmentObject(modifierListener)
+                .environmentObject(updater)
+        }
+
 #if DEBUG
         // Phase 20.08 D-02: prompt-spike harness for AI-cleanup A/B comparison.
         // DEBUG-only — kept behind #if DEBUG for future LLM-prompt iterations

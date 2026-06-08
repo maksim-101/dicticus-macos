@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Persistent header row for the popover: wordmark on the left, gear button on the right.
 ///
@@ -9,8 +10,10 @@ import SwiftUI
 ///   - Accessibility label: "Settings (Command-Comma)"
 ///   - Spacing exception `phead`: 10pt top/bottom, 16pt leading, 12pt trailing.
 ///
-/// The gear ACTION is a placeholder using @Environment(\.openSettings).
-/// PLAN 35-05: replace with the Q-03 spike-locked mechanism once the Settings scene is wired.
+/// Gear action uses Q-03 spike-locked mechanism B:
+///   NSApp.activate(ignoringOtherApps: true) then openSettings().
+///   The NSApp.activate call guards against the .accessory MenuBarExtra first-click
+///   foreground pitfall documented in 35-RESEARCH (Pitfall 1).
 struct PopoverHeader: View {
 
     @Environment(\.openSettings) private var openSettings
@@ -24,7 +27,9 @@ struct PopoverHeader: View {
             Spacer()
 
             Button {
-                // PLAN 35-05: replace with locked Q-03 mechanism
+                // Q-03 spike-locked mechanism B (35-SPIKE-SETTINGS-OPEN.md):
+                // NSApp.activate guards the .accessory first-click foreground pitfall.
+                NSApp.activate(ignoringOtherApps: true)
                 openSettings()
             } label: {
                 Image(systemName: "gear")
