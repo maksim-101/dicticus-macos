@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Public-Release Readiness + Dictionary as Platform
 status: planning
-stopped_at: Phase 35 context gathered
-last_updated: "2026-06-08T18:25:14.726Z"
+stopped_at: Phase 35 UI-SPEC approved
+last_updated: "2026-06-08T18:37:02.342Z"
 last_activity: 2026-06-08
 progress:
   total_phases: 22
@@ -86,8 +86,8 @@ Phase 35: UI Reorganization (discuss-first; may defer to v2.5). Remaining v2.4 s
 
 ## Session Continuity
 
-Last session: 2026-06-08T18:25:14.717Z
-Stopped at: Phase 35 context gathered
+Last session: 2026-06-08T18:37:02.333Z
+Stopped at: Phase 35 UI-SPEC approved
 Next: `/gsd-plan-phase 31`
 
 ---
