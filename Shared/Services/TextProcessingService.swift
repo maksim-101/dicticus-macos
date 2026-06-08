@@ -241,6 +241,10 @@ class TextProcessingService: ObservableObject {
             let baselineWordCount = rulesCleanedText
                 .split(whereSeparator: { $0.isWhitespace })
                 .count
+            // Dialect and Levenshtein gates keep the >3-word guard: edit-distance
+            // is lossy on short inputs and produces false rejections (see comment above).
+            // The content-word gate uses exact set-membership, not distance, so it is
+            // safe on all lengths — run it unconditionally (WR-03).
             if baselineWordCount > 3 {
                 processedText = CleanupService.gateLLMDialect(
                     rulesCleaned: rulesCleanedText,
@@ -250,11 +254,11 @@ class TextProcessingService: ObservableObject {
                     rulesCleaned: rulesCleanedText,
                     llmOutput: processedText
                 )
-                processedText = CleanupService.gateContentWords(
-                    rulesCleaned: rulesCleanedText,
-                    llmOutput: processedText
-                )
             }
+            processedText = CleanupService.gateContentWords(
+                rulesCleaned: rulesCleanedText,
+                llmOutput: processedText
+            )
 
             #if DEBUG_RECORDER
             let dbgGateMs = Date().timeIntervalSince(dbgGateStart) * 1000.0
