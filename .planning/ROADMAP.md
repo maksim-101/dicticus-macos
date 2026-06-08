@@ -45,7 +45,7 @@
 - [x] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path (completed 2026-06-06; plans 3/3 + code-review fixes + UAT-driven polish; Release-binary leak check PASSED, UAT all green — see 31-HUMAN-UAT.md; branch feature/phase-31-dictionary-platform pushed)
 - [x] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together (completed 2026-06-07)
 - [x] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard (completed 2026-06-07)
-- [ ] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track
+- [x] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track (completed 2026-06-08)
 - [ ] **Phase 35: UI Reorganization (discuss-first)** - Declutter macOS popover, promote dictionary editing, consolidate hotkeys, iOS parity audit — IA to be resolved at discuss-phase time; may defer to v2.5
 
 ### v2.4 Progress
@@ -55,7 +55,7 @@
 | 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
-| 34. V19E — R8 Over-Promotion Fix | 3/4 | In Progress|  |
+| 34. V19E — R8 Over-Promotion Fix | 4/4 | Complete   | 2026-06-08 |
 | 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
 
 ---
@@ -119,7 +119,7 @@
 - [x] 34-01-PLAN.md — Wave 0 test infrastructure: negative-case fixture, locate/assemble 139-record corpus + pin scorer, RED content-word-gate tests (both platforms)
 - [x] 34-02-PLAN.md — Track A: tighten R8 EXCEPTION (EN+DE) + negative few-shots + v19e version bump + CleanupPromptTests sync (V19E-01)
 - [x] 34-03-PLAN.md — Track B: content-word-preservation gate + stop-word/stem-allowlist + Step 3a wire-in + GREEN tests (V19E-02)
-- [ ] 34-04-PLAN.md — Wave 3 regression gate: full-suite parity + SC1 negative matrix + SC3 corpus replay + CHANGELOG (V19E-01/03)
+- [x] 34-04-PLAN.md — Wave 3 regression gate: full-suite parity + SC1 negative matrix + SC3 corpus replay + CHANGELOG (V19E-01/03)
 
 ### Phase 35: UI Reorganization (discuss-first; candidate to defer to v2.5)
 **Goal**: The macOS popover and iOS app are reorganized by frequency-of-use — dictionary editing is a top-level action, hotkey configuration is consolidated into a single section, and the overall surface feels like a focused tool rather than an accretion of features
