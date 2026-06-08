@@ -76,6 +76,7 @@
 		C524718AC8111D53B30A01FD /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F103886FBBE1F7D287929D /* NotificationService.swift */; };
 		C88A581C1776F2B4EFC2C57C /* CleanupPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174AD8DEBAA5EAA8DF8734DB /* CleanupPromptTests.swift */; };
 		CBBDC30D928B8712C0A88FCF /* LevenshteinDistance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28628EC17301483856068EDB /* LevenshteinDistance.swift */; };
+		CEBF8B3840C25CA310E6D130 /* HotkeyDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52E7128C312E2EA67531500 /* HotkeyDisplayTests.swift */; };
 		D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67E8F41AEFC9688C93191DD0 /* PermissionManager.swift */; };
 		D40E4EE4B8E09E3462AA5918 /* ModelWarmupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */; };
 		D4D6BCE4D1B51F414284317C /* HistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E60BA27B4C9B8FC047449A2 /* HistoryService.swift */; };
@@ -185,6 +186,7 @@
 		C454E415EBC55F52775B578C /* SwissDefaultMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissDefaultMigration.swift; sourceTree = "<group>"; };
 		CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelWarmupServiceTests.swift; sourceTree = "<group>"; };
 		D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
+		D52E7128C312E2EA67531500 /* HotkeyDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyDisplayTests.swift; sourceTree = "<group>"; };
 		D667692C5EE7BB68CC659EE0 /* CleanupCopyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCopyMode.swift; sourceTree = "<group>"; };
 		D6CF6C951598DD95DF8012E2 /* ITNUtilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ITNUtilityTests.swift; sourceTree = "<group>"; };
 		DCA28F8F142CE72EB85279C5 /* starter-pack-tech.csv */ = {isa = PBXFileReference; path = "starter-pack-tech.csv"; sourceTree = "<group>"; };
@@ -323,6 +325,7 @@
 				606D5FDC1193F1A7D2D5302E /* DictionaryServiceTests.swift */,
 				8C32AC7140BED86730FA3B98 /* Fixtures */,
 				2F53F54165D5AFE6D0BC7F33 /* HistoryServiceTests.swift */,
+				D52E7128C312E2EA67531500 /* HotkeyDisplayTests.swift */,
 				70F70EF5ED301ED2D480B920 /* HotkeyManagerTests.swift */,
 				D6CF6C951598DD95DF8012E2 /* ITNUtilityTests.swift */,
 				E09C1D66A0C3F4875FA7680F /* ModelDownloadServiceTests.swift */,
@@ -647,6 +650,7 @@
 				343DB4913F68FD632327DCC5 /* DictionaryIOServiceTests.swift in Sources */,
 				707548B3DD5BD5C30A385546 /* DictionaryServiceTests.swift in Sources */,
 				698CDD27BAFCFBC9D3E53EB9 /* HistoryServiceTests.swift in Sources */,
+				CEBF8B3840C25CA310E6D130 /* HotkeyDisplayTests.swift in Sources */,
 				2CBB9E936439E4D8CA60F825 /* HotkeyManagerTests.swift in Sources */,
 				224D944F8C69C4D182295A23 /* ITNUtilityTests.swift in Sources */,
 				46B52C3C05E290F9EF02A653 /* ModelDownloadServiceTests.swift in Sources */,
