@@ -53,7 +53,7 @@ struct OnboardingTourView: View {
             Text("How to Dictate")
                 .font(.title).bold()
 
-            Text("Tap **Dictate** on the home screen and speak. No setup required — it works immediately.\n\nThe Action Button and Siri Shortcut are optional convenience accelerators, not prerequisites.")
+            Text("Tap **Dictate** on the home screen and speak. Your transcript is automatically copied to the clipboard — just leave the app and paste it anywhere.\n\nNo setup required. The Action Button and Siri Shortcut are optional convenience accelerators, not prerequisites.")
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
