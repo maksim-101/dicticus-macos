@@ -250,6 +250,10 @@ class TextProcessingService: ObservableObject {
                     rulesCleaned: rulesCleanedText,
                     llmOutput: processedText
                 )
+                processedText = CleanupService.gateContentWords(
+                    rulesCleaned: rulesCleanedText,
+                    llmOutput: processedText
+                )
             }
 
             #if DEBUG_RECORDER
