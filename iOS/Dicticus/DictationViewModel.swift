@@ -45,6 +45,7 @@ class DictationViewModel: ObservableObject {
 
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
     nonisolated(unsafe) private var notificationObservers: [NSObjectProtocol] = []
+    private var finalizeBackgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     func startDictation(fromShortcut: Bool = false) async {
         guard state == .idle else { return }
@@ -63,16 +64,15 @@ class DictationViewModel: ObservableObject {
             return
         }
 
-        state = .preparingLiveActivity
+        // The Live Activity was removed here. It implied dictation kept recording
+        // after you leave the app, but with no `audio` background mode iOS suspends
+        // the app and recording stops — so the activity (with a frozen 0s ticker) was
+        // misleading. Interim behavior is finalize-on-background (see finalizeIfRecording).
+        // FUTURE (background-recording phase): re-introduce the Live Activity together
+        // with a real AVAudioSession-backed background capture + Stop control
+        // (StopDictationIntent is already wired). See 33-HUMAN-UAT.md backlog.
 
-        // STEP 2: Live Activity MUST start before AVAudioSession
-        do {
-            try startLiveActivity()
-        } catch {
-            // Non-fatal: Live Activities may be disabled by user — still attempt recording
-        }
-
-        // STEP 3: Activate AVAudioSession + start recording (inside IOSTranscriptionService)
+        // Activate AVAudioSession + start recording (inside IOSTranscriptionService)
         state = .recording
         do {
             try transcriptionService?.startRecording()
@@ -146,6 +146,31 @@ class DictationViewModel: ObservableObject {
         state = .idle
     }
 
+    /// Interim background behavior (option A). Without an `audio` background mode iOS
+    /// suspends the app when it leaves the foreground, so an in-progress recording can't
+    /// continue. Rather than leave a zombie recording, finalize what was captured —
+    /// stop, transcribe, copy — guarded by a background task so the async transcribe +
+    /// optional LLM cleanup completes before suspension.
+    /// FUTURE (background-recording phase): replace this with keep-recording.
+    func finalizeIfRecording() {
+        guard state == .recording else { return }
+        finalizeBackgroundTask = UIApplication.shared.beginBackgroundTask(withName: "FinalizeDictation") { [weak self] in
+            self?.endFinalizeBackgroundTask()
+        }
+        Task { @MainActor in
+            await stopDictation()
+            endFinalizeBackgroundTask()
+        }
+    }
+
+    private func endFinalizeBackgroundTask() {
+        guard finalizeBackgroundTask != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(finalizeBackgroundTask)
+        finalizeBackgroundTask = .invalid
+    }
+
+    // FUTURE (background-recording phase): not currently invoked — the Live Activity was
+    // removed from startDictation() because it falsely implied background recording.
     private func startLiveActivity() throws {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         currentActivity = try Activity.request(

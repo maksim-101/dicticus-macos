@@ -2,6 +2,11 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 
+// FUTURE (background-recording phase): this Live Activity is currently DORMANT — the app
+// no longer calls Activity.request() (see DictationViewModel.startDictation), because
+// without an `audio` background mode iOS suspends the app and recording stops, making a
+// "Recording… 0s" activity misleading. Re-enable alongside real background capture +
+// a working elapsed timer + the Stop control below.
 struct DictationLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DictationAttributes.self) { context in

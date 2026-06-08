@@ -74,6 +74,11 @@ struct DicticusApp: App {
                         warmupService.warmup()
                     }
                 }
+            } else if newPhase == .background {
+                // Interim (option A): no background-audio mode yet, so leaving the app
+                // can't keep recording. Finalize what was captured instead of leaving a
+                // zombie recording. FUTURE: background-recording phase replaces this.
+                viewModel.finalizeIfRecording()
             }
         }
         .onChange(of: warmupService.isReady) { _, isReady in
