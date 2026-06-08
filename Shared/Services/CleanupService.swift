@@ -755,6 +755,80 @@ extension CleanupService {
     }
 }
 
+// MARK: - Phase 34 V19E content-word-preservation gate (SC2)
+
+extension CleanupService {
+
+    /// Minimal EN+DE stop-word set for gateContentWords.
+    ///
+    /// Precision-first: over-inclusion is the only risk because this gate is a
+    /// backstop. A word on this list that the LLM drops will silently pass the
+    /// gate even if its absence changes meaning. Keep the list tight.
+    ///
+    /// Only ≥4-char function words are relevant — the ≥4-char content-word filter
+    /// already excludes shorter tokens, so entries shorter than 4 chars would be
+    /// dead code.
+    public static let contentWordStopWords: Set<String> = [
+        // English function words (≥4 chars) that the LLM may legitimately rephrase/drop
+        "that", "this", "with", "from", "have", "will", "your", "they", "them",
+        "then", "than", "what", "when", "which", "would", "could", "should",
+        "about", "just", "like",
+        // German function words (≥4 chars)
+        "dass", "dies", "dieser", "eine", "einen", "oder", "aber", "auch",
+        "nicht", "schon", "noch", "wenn", "dann", "sich", "mehr"
+    ]
+
+    /// Closed set of known identifier stems the LLM may legitimately contract
+    /// (e.g. "gpt" in multi-token context). Single-letter stems are already
+    /// excluded by the ≥4-char rule, so only multi-char acronyms belong here.
+    public static let contentWordStemAllowlist: Set<String> = [
+        "gpt", "ios"
+    ]
+
+    /// Content-word-preservation gate. Returns `rulesCleaned` (fallback) if
+    /// `llmOutput` drops any required content word present in `rulesCleaned`.
+    ///
+    /// A required content word is a token that is:
+    ///   - ≥ 4 characters (after lowercasing)
+    ///   - NOT in `contentWordStopWords`
+    ///   - NOT in `contentWordStemAllowlist`
+    ///
+    /// Uses SET MEMBERSHIP, not Levenshtein, because whole-text edit-distance
+    /// misses local 8-char word-loss — that is the entire R8 bug (e.g.
+    /// "kink three" → "K3" has low overall distance but loses the content word
+    /// "kink" entirely).
+    ///
+    /// Graceful degradation: empty `rulesCleaned`, empty `llmOutput`, or zero
+    /// required content words → returns `llmOutput` unchanged (mirrors
+    /// `gateLLMDialect` contract — no demotion on degenerate inputs).
+    ///
+    /// - Parameters:
+    ///   - rulesCleaned: deterministic Swift-side cleanup output (rules pass).
+    ///   - llmOutput: post-stripPreamble LLM output.
+    /// - Returns: `llmOutput` when all content words are present; else `rulesCleaned`.
+    public static func gateContentWords(rulesCleaned: String, llmOutput: String) -> String {
+        guard !rulesCleaned.isEmpty, !llmOutput.isEmpty else { return llmOutput }
+
+        // tokenizeForDialectGate lowercases and splits on whitespace + punctuation.
+        let baselineTokens = tokenizeForDialectGate(rulesCleaned)
+        let requiredContentWords: Set<String> = baselineTokens.reduce(into: []) { set, tok in
+            if tok.count >= 4,
+               !contentWordStopWords.contains(tok),
+               !contentWordStemAllowlist.contains(tok) {
+                set.insert(tok)
+            }
+        }
+
+        guard !requiredContentWords.isEmpty else { return llmOutput }
+
+        let outputTokenSet = Set(tokenizeForDialectGate(llmOutput))
+        for word in requiredContentWords where !outputTokenSet.contains(word) {
+            return rulesCleaned
+        }
+        return llmOutput
+    }
+}
+
 // MARK: - Phase 20.08 Spike harness helpers (DEBUG-only, D-02/D-03)
 
 #if DEBUG
