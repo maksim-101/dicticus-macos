@@ -54,7 +54,7 @@
 |-------|----------------|--------|-----------|
 | 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
-| 33. iOS First-Run & Onboarding Polish | 2/2 | Complete   | 2026-06-07 |
+| 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
 | 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
 | 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
 
@@ -130,6 +130,20 @@
 
 **Note on Phase 35:** The information architecture must be worked out at discuss-phase time, not pre-decided here. If the IA discussion surfaces blocking open questions (popover vs. floating window, tab-bar vs. nested-list on iOS, whether a fresh DESIGN.md pass is needed), Phase 35 may slip to v2.5 without blocking the v2.4 public release — the remaining four phases already satisfy the public-release goal.
 **UI hint**: yes
+
+### Phase 36: iOS Background Dictation Recording (v2.5 candidate — SPIKE-FIRST)
+**Goal**: A user can trigger dictation, leave Dicticus (or lock the screen), keep speaking while looking at what they're answering, stop from the Live Activity, and paste the result — all without reopening the app
+**Origin**: Found during Phase 33 UAT (2026-06-08). The dictation Live Activity implied background recording but iOS suspended the app and recording stopped (no `audio` background mode; elapsed ticker hardcoded to 0). Interim fix (commit 82f2860) removed the misleading Live Activity and finalizes-on-background; this phase builds the real feature.
+**Not public-release-blocking** — deferred to v2.5.
+**Technical feasibility (established in discussion)**:
+  - Background mic recording IS possible for the main app via `UIBackgroundModes: audio` + a keep-alive `AVAudioSession` — recording must be STARTED in the foreground, then continues into background/lock. (The keyboard-extension mic restriction is a separate, unrelated constraint.)
+  - Stop without returning: Live Activity Stop control (Dynamic Island / lock screen) — `StopDictationIntent` already wired. Optional VAD silence auto-stop (`onSilenceDetected` already exists).
+  - Clipboard without returning: `UIPasteboard` write is programmatic; wrap the post-stop transcribe tail in `beginBackgroundTask` so it completes while backgrounded.
+  - Known friction: iOS has no API to auto-return the user to their previous app (Messages, etc.) — "return" is a manual swipe; and App Store review scrutinizes the `audio` background mode (defensible for a dictation app, not a rubber stamp).
+**Spike-first targets**: (1) can an AppIntent/Shortcut start the mic without a jarring app-switch; (2) the background-task transcription tail under real suspension timing.
+**Re-enable**: the dormant Live Activity (DictationLiveActivity.swift), `startLiveActivity()`, real elapsed timer, Stop control.
+**Requirements**: TBD (define at spec/discuss time)
+**Plans**: TBD
 
 ---
 
