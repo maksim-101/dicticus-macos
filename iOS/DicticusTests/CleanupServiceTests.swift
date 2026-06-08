@@ -380,6 +380,46 @@ final class CleanupServiceTests: XCTestCase {
             "Phase 34 SC2: empty rulesCleaned must return llmOutput (graceful degradation)")
     }
 
+    // MARK: - Phase 34 gap-closure: WR-01 (number-word allowlist) + WR-03 (short-utterance gate)
+
+    func testGateContentWords_preservesLegitimateNumberPromotion() {
+        // "three" is a spelled-out number-word; the LLM legitimately promotes "M three" → "M3".
+        // After the number-word allowlist (WR-01), "three" is excluded from requiredContentWords,
+        // so the only other token "M" is too short (1 char) → zero required content words →
+        // gate must pass llmOutput unchanged (promotion preserved).
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "and the same goes for M three",
+            llmOutput: "and the same goes for M3"
+        )
+        XCTAssertEqual(result, "and the same goes for M3",
+            "WR-01: gate must not revert legitimate number-word promotion 'M three' → 'M3'")
+    }
+
+    func testGateContentWords_stillRejectsKinkThreeAfterAllowlist() {
+        // CRITICAL REGRESSION GUARD: "three" is allowlisted as a number-word,
+        // but "kink" (4-char, non-stop, non-number content word) is NOT allowlisted.
+        // Collapsing "kink three" → "K3" drops "kink" → gate must still revert.
+        // Verifies that the WR-01 allowlist did NOT weaken R8 detection.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "so why would you mark kink three",
+            llmOutput: "so why would you mark K3"
+        )
+        XCTAssertEqual(result, "so why would you mark kink three",
+            "WR-01 regression guard: 'kink' is a non-number content word and must still trip the gate after number-word allowlist")
+    }
+
+    func testGateContentWords_rejectsShortKinkThree() {
+        // WR-03: the gate must protect short utterances (≤3 words at the function level).
+        // "mark kink three" has 3 tokens; "kink" is a required content word; "K3" drops it.
+        // Gate must return the rulesCleaned baseline.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "mark kink three",
+            llmOutput: "mark K3"
+        )
+        XCTAssertEqual(result, "mark kink three",
+            "WR-03: gate must reject content-word loss even on short (3-word) inputs")
+    }
+
     // MARK: - Phase 20.08 dialect-suppression gate (R1, R2, R3)
 
     /// R1: Gate must DEMOTE when LLM injects a Swiss dialect form that was

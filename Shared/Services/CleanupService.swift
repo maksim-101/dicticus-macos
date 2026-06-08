@@ -793,7 +793,7 @@ extension CleanupService {
     /// cases drop a non-number content word ("kink", "King") — those still trip
     /// the gate.
     public static let contentWordNumberWords: Set<String> = [
-        "zero", "four", "five", "six", "seven", "eight", "nine", "ten",
+        "zero", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
         "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
         "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty",
         "fifty", "sixty", "seventy", "eighty", "ninety", "hundred", "thousand",
