@@ -32,7 +32,7 @@ struct DicticusApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView()
+            PopoverRoot()
                 .environmentObject(permissionManager)
                 .environmentObject(warmupService)
                 .environmentObject(hotkeyManager)
