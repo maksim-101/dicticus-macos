@@ -55,7 +55,7 @@
 | 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
-| 34. V19E — R8 Over-Promotion Fix | 2/4 | In Progress|  |
+| 34. V19E — R8 Over-Promotion Fix | 3/4 | In Progress|  |
 | 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
 
 ---
@@ -118,7 +118,7 @@
 **Plans**: 4 plans (3 waves)
 - [x] 34-01-PLAN.md — Wave 0 test infrastructure: negative-case fixture, locate/assemble 139-record corpus + pin scorer, RED content-word-gate tests (both platforms)
 - [x] 34-02-PLAN.md — Track A: tighten R8 EXCEPTION (EN+DE) + negative few-shots + v19e version bump + CleanupPromptTests sync (V19E-01)
-- [ ] 34-03-PLAN.md — Track B: content-word-preservation gate + stop-word/stem-allowlist + Step 3a wire-in + GREEN tests (V19E-02)
+- [x] 34-03-PLAN.md — Track B: content-word-preservation gate + stop-word/stem-allowlist + Step 3a wire-in + GREEN tests (V19E-02)
 - [ ] 34-04-PLAN.md — Wave 3 regression gate: full-suite parity + SC1 negative matrix + SC3 corpus replay + CHANGELOG (V19E-01/03)
 
 ### Phase 35: UI Reorganization (discuss-first; candidate to defer to v2.5)
