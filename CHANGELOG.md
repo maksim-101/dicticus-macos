@@ -6,6 +6,16 @@ Dicticus is a fully local, on-device dictation app (ASR via FluidAudio/Parakeet 
 
 ---
 
+## v2.4 — Public-Release Readiness + Dictionary as Platform — in progress (unreleased)
+
+Public-release prep: the dictionary becomes a user-owned platform, deterministic spoken-punctuation lands pre-cleanup, and the iOS first-run experience gets an overhaul. Not yet shipped as a tagged release (Phases 34–35 remaining).
+
+- **Phase 31 (2026-06-06)** — Dictionary as a platform: the public build ships an empty default dictionary (personal entries gated behind a local-only flag and kept out of the release binary), CSV/JSON import & export with three merge strategies and RFC-4180 validation, bundled offline starter packs with one-tap import, and docs for the CSV-author tech-term recovery workflow. macOS + iOS.
+- **Phase 32 (2026-06-07)** — Spoken punctuation: saying "comma", "period", "new line", etc. is converted deterministically before AI cleanup, with an in-app reference table. macOS + iOS.
+- **Phase 33 (2026-06-08)** — iOS first-run & onboarding overhaul: fixed the relaunch download-screen flash (including a follow-up where an already-downloaded model still showed a fake "Downloading" screen during warmup), download-screen label truncation at small widths, and a duplicate Action Button entry in Settings; added a 3-page guided onboarding tour that auto-presents after setup and is re-triggerable from Settings. Also removed a misleading dictation Live Activity that implied background recording the app couldn't actually do — leaving the app mid-dictation now finalizes and copies what you said instead. iOS.
+
+---
+
 ## v2.3 — Live-Capture Quality Pass — shipped 2026-06-06 · tag `macos-v1.3.0`
 
 Quality pass driven by analysis of real multi-day dictation logs (the DebugRecorder capture). Focus: stop the dictionary from corrupting text, and sharpen the AI cleanup prompt.
