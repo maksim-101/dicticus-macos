@@ -10,10 +10,6 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Transcriptions") {
-                    NavigationLink(destination: DictionaryManagementView()) {
-                        Label("Custom Dictionary", systemImage: "book")
-                    }
-
                     NavigationLink(destination: SpokenPunctuationReferenceView()) {
                         Label("Spoken Punctuation", systemImage: "character.textbox")
                     }
@@ -59,7 +55,7 @@ struct SettingsView: View {
                         Label("System Permissions", systemImage: "gear")
                     }
                 }
-                
+
                 Section("Model Management") {
                     HStack {
                         Label("ASR Model", systemImage: "cpu")
@@ -82,10 +78,15 @@ struct SettingsView: View {
                     }
                     .disabled(warmupService.isWarming)
                 }
-                
+
                 Section {
                     Link(destination: URL(string: "https://github.com/maksim-101/dicticus")!) {
                         Label("Source Code", systemImage: "link")
+                    }
+                    ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
+                        Text(note)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("About")
@@ -96,14 +97,6 @@ struct SettingsView: View {
                             Text("Built \(date)")
                         }
                         Text("\u{00A9} 2026 Maksim-101")
-                    }
-                }
-
-                Section("Recent Changes") {
-                    ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
-                        Text(note)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
