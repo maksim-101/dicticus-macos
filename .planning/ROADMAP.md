@@ -56,7 +56,7 @@
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
 | 34. V19E — R8 Over-Promotion Fix | 5/4 | Complete    | 2026-06-08 |
-| 35. UI Reorganization (discuss-first) | 2/7 | In Progress|  |
+| 35. UI Reorganization (discuss-first) | 3/7 | In Progress|  |
 
 ---
 
@@ -133,7 +133,7 @@
 **Plans**: 7 plans in 4 waves
 - [x] 35-01-PLAN.md — Wave 0: pure HotkeyDisplay subline/VoiceOver formatter + XCTest (D-07 foundation)
 - [ ] 35-02-PLAN.md — Wave 0: Q-03 Settings-open SPIKE on a signed build (locks the gear mechanism)
-- [ ] 35-03-PLAN.md — Wave 1: macOS tabbed fixed-height popover (Home/Dictionary/History) + lifecycle re-attach
+- [x] 35-03-PLAN.md — Wave 1: macOS tabbed fixed-height popover (Home/Dictionary/History) + lifecycle re-attach
 - [x] 35-04-PLAN.md — Wave 1: iOS IA audit doc (UIORG-03 gate; precedes iOS code)
 - [ ] 35-05-PLAN.md — Wave 2: macOS Settings window (4 panes) + hotkey consolidation + gear wiring
 - [ ] 35-06-PLAN.md — Wave 2: iOS 3-tab restructure + Settings reorder (parity)

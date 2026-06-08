@@ -156,7 +156,7 @@ Defined 2026-06-06 for the **Public-Release Readiness + Dictionary as Platform**
 
 ### UI Reorganization (Phase 35, discuss-first; may defer to v2.5)
 
-- [ ] **UIORG-01**: Opening the macOS popover, a user can reach dictionary management (add, edit, import, export) without scrolling past unrelated controls
+- [x] **UIORG-01**: Opening the macOS popover, a user can reach dictionary management (add, edit, import, export) without scrolling past unrelated controls
 - [x] **UIORG-02**: All hotkey configuration (standard shortcuts + modifier hotkeys + Fn-key note) is in one consolidated section — no duplicate or scattered config blocks
 - [x] **UIORG-03**: iOS UI is audited against the same IA principles and brought into parity, with review findings documented before any changes are made
 - [x] **UIORG-04**: No existing user-visible behavior regresses — hotkey bindings fire, dictionary contents are preserved, history is accessible, DESIGN.md tokens are respected
@@ -243,7 +243,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | V19E-01 | Phase 34 | Complete |
 | V19E-02 | Phase 34 | Complete |
 | V19E-03 | Phase 34 | Complete |
-| UIORG-01 | Phase 35 | Pending |
+| UIORG-01 | Phase 35 | Complete |
 | UIORG-02 | Phase 35 | Complete |
 | UIORG-03 | Phase 35 | Complete |
 | UIORG-04 | Phase 35 | Complete |
