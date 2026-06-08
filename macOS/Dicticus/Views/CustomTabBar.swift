@@ -40,6 +40,7 @@ struct CustomTabBar: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 9)
             .padding(.bottom, 7)
+            .contentShape(Rectangle())
             .foregroundStyle(selection == tab ? Color.accentColor : Color.secondary)
         }
         .buttonStyle(.plain)
