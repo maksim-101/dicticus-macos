@@ -150,9 +150,9 @@ Defined 2026-06-06 for the **Public-Release Readiness + Dictionary as Platform**
 
 ### V19E — R8 Over-Promotion Fix (Phase 34, not started)
 
-- [ ] **V19E-01**: AI cleanup no longer promotes real English words adjacent to number-words into identifier stems — "kink three" stays "kink three", "King Four" stays "King four"; ordinary prose pairings are untouched
-- [ ] **V19E-02**: A deterministic content-word-preservation gate rejects LLM output that drops a content word (≥4 chars, non-stop-word) present in the post-ITN input, falling back to post-ITN text
-- [ ] **V19E-03**: The V19D 139-record corpus clean rate does not drop below 90.2% and the 9.3% dictionary-hit baseline is preserved after shipping
+- [x] **V19E-01**: AI cleanup no longer promotes real English words adjacent to number-words into identifier stems — "kink three" stays "kink three", "King Four" stays "King four"; ordinary prose pairings are untouched
+- [x] **V19E-02**: A deterministic content-word-preservation gate rejects LLM output that drops a content word (≥4 chars, non-stop-word) present in the post-ITN input, falling back to post-ITN text
+- [x] **V19E-03**: The V19D 139-record corpus clean rate does not drop below 90.2% and the 9.3% dictionary-hit baseline is preserved after shipping
 
 ### UI Reorganization (Phase 35, discuss-first; may defer to v2.5)
 
@@ -240,9 +240,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IOS-ONB-03 | Phase 33 | Complete |
 | IOS-ONB-04 | Phase 33 | Complete |
 | IOS-ONB-05 | Phase 33 | Complete |
-| V19E-01 | Phase 34 | Pending |
-| V19E-02 | Phase 34 | Pending |
-| V19E-03 | Phase 34 | Pending |
+| V19E-01 | Phase 34 | Complete |
+| V19E-02 | Phase 34 | Complete |
+| V19E-03 | Phase 34 | Complete |
 | UIORG-01 | Phase 35 | Pending |
 | UIORG-02 | Phase 35 | Pending |
 | UIORG-03 | Phase 35 | Pending |

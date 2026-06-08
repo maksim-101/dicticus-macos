@@ -55,7 +55,7 @@
 | 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
-| 34. V19E — R8 Over-Promotion Fix | 0/? | Not started | - |
+| 34. V19E — R8 Over-Promotion Fix | 1/4 | In Progress|  |
 | 35. UI Reorganization (discuss-first) | 0/? | Not started | - |
 
 ---
@@ -115,7 +115,11 @@
   1. "kink three", "King Four", "option one is", and "every two weeks" pass through cleanup unchanged (or with correct lowercase normalization) — the `kink→K3`, `King→K4` collapse class no longer occurs
   2. A deterministic content-word-preservation gate rejects LLM output that drops a content word (≥4 chars, non-stop-word) present in the post-ITN input, falling back to post-ITN text
   3. The V19D 139-record corpus clean rate does not drop below 90.2% and the 9.3% dictionary-hit baseline is preserved after shipping
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+- [x] 34-01-PLAN.md — Wave 0 test infrastructure: negative-case fixture, locate/assemble 139-record corpus + pin scorer, RED content-word-gate tests (both platforms)
+- [ ] 34-02-PLAN.md — Track A: tighten R8 EXCEPTION (EN+DE) + negative few-shots + v19e version bump + CleanupPromptTests sync (V19E-01)
+- [ ] 34-03-PLAN.md — Track B: content-word-preservation gate + stop-word/stem-allowlist + Step 3a wire-in + GREEN tests (V19E-02)
+- [ ] 34-04-PLAN.md — Wave 3 regression gate: full-suite parity + SC1 negative matrix + SC3 corpus replay + CHANGELOG (V19E-01/03)
 
 ### Phase 35: UI Reorganization (discuss-first; candidate to defer to v2.5)
 **Goal**: The macOS popover and iOS app are reorganized by frequency-of-use — dictionary editing is a top-level action, hotkey configuration is consolidated into a single section, and the overall surface feels like a focused tool rather than an accretion of features
