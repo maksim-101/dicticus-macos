@@ -50,16 +50,16 @@ struct HotkeysPane: View {
                     .accessibilityLabel("AI Cleanup modifier hotkey")
                 }
 
-                LabeledContent("") {
+                HStack {
+                    Text("If a hotkey stops firing after reinstall, re-register.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
                     Button("Re-register") {
                         hotkeyManager.reregisterAll()
                     }
                     .controlSize(.small)
                 }
-
-                Text("If a hotkey stops firing after reinstall, re-register.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
 
                 Text("Fn-based hotkeys require a Mac keyboard with an Fn key. Standard hotkeys above work on all keyboards.")
                     .font(.caption)
