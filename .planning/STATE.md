@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: Public-Release Readiness + Dictionary as Platform
-status: Awaiting next milestone
-stopped_at: Phase 35 Plan 07 — Phase 35 complete. UAT approved on Developer-ID-signed build. DESIGN.md updated. Conformance report closed.
-last_updated: "2026-06-09T17:55:27.211Z"
-last_activity: 2026-06-09 — Milestone v2.4 completed and archived
+milestone: v2.5
+milestone_name: iOS Release & Context-Aware Dictation
+status: planning
+last_updated: "2026-06-09T19:29:26.862Z"
+last_activity: 2026-06-09
 progress:
-  total_phases: 22
-  completed_phases: 20
-  total_plans: 80
-  completed_plans: 82
-  percent: 91
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State: Dicticus
@@ -22,10 +21,10 @@ progress:
 
 ## Current Position
 
-Phase: v2.4 complete (2026-06-09); next: v2.5 planning
+Phase: Not started (defining requirements)
 Plan: —
-Status: v2.4 complete / v2.5 next
-Last activity: 2026-06-09 — Milestone v2.4 completed and archived; doc close-out done
+Status: Defining requirements
+Last activity: 2026-06-09 — Milestone v2.5 started
 
 ### Next Action
 
