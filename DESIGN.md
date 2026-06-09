@@ -219,11 +219,11 @@ iPhone and iPad app shell. The most active design surface — Phase 19.6 polish 
 
 ## iOS Layout Specifics
 
-- **TabView**: 2 tabs after Phase 19.6 (`Home`, `Settings`). The current `Action Button` tab is removed (UAT B1) — its content folds into Settings → Setup Guides.
+- **TabView**: 3 tabs — Dictate / Dictionary / History. Settings is a route (Done-dismissable), not a tab. Dictionary was promoted from Settings → Transcriptions to a top-level tab in Phase 35.
 - **Home screen** is **dynamic** based on clipboard state (UAT U3):
   - **Clipboard empty** → mic button rendered as `mic-button-hero` (240 pt), centered vertically, dominating the canvas. No text panel.
   - **Clipboard contains transcript** → mic button collapses to `mic-button-compact` (96 pt) at bottom-center, and a text panel appears above it showing the transcript with copy/edit/clear actions. Transition uses `matchedGeometryEffect(id: "micButton")` and `.spring(response: 0.45, dampingFraction: 0.85)`.
-- **Settings** uses `Form` with `.insetGrouped` style. Sections in order: Dictation, AI Cleanup, Dictionary, Setup Guides, About.
+- **Settings** uses `Form` with `.insetGrouped` style. Sections in order: Transcriptions, AI Cleanup, History, Integration, Model Management, About. (Dictionary link removed from Transcriptions — Dictionary is now a top-level tab.)
 
 ## iOS Color Application
 
@@ -257,8 +257,8 @@ Menu bar utility shell. Phase 19.7 hygiene work happens here (UAT M1–M3, D1).
 ## macOS Layout Specifics
 
 - **MenuBarExtra**: 18×18 template SF Symbol (`mic.fill` or custom monochrome icon). Renders correctly in light/dark menu bar without explicit color.
-- **Dropdown panel**: 320 pt wide. Sections: current model status, recent transcriptions (last 5), permission-status row (UAT M3), Settings entry.
-- **Settings window**: `Settings { TabView { ... } }` style. Tabs: General, Hotkeys, Models, Dictionary, About.
+- **Dropdown panel**: 348 pt wide; tabbed (Home / Dictionary / History); fixed-height, never scrolls; no config controls. Persistent header: "Dicticus" wordmark + a 40pt gear button that opens the Settings window.
+- **Settings window**: `Settings { }` scene (⌘,). 4 panes: Hotkeys / AI Cleanup / General / About. ("Models" folds into AI Cleanup; "Dictionary" is NOT a Settings pane — it is a popover tab + the existing manager window.)
 
 ## macOS Color Application
 
