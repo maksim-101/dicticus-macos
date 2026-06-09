@@ -27,6 +27,10 @@ Dicticus.dmg
 .DS_Store
 **/.DS_Store
 
+# Local dictionary snapshots — personal App Group UserDefaults backups taken
+# before rebuilds. Contain the developer's personal dictionary keys; never commit.
+.dict-backups/
+
 # Claude Code session state — local-only, includes worktrees + per-machine settings
 .claude/
 
