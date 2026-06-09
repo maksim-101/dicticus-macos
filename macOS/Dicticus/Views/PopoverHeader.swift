@@ -74,6 +74,7 @@ struct PopoverHeader: View {
                 isHoveringGear = hovering
             }
             .accessibilityLabel("Settings (Command-Comma)")
+            .help("Settings (⌘,)")
         }
         .padding(.top, 10)
         .padding(.bottom, 10)
