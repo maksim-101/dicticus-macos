@@ -18,6 +18,7 @@ struct PopoverHeader: View {
 
     @Environment(\.openSettings) private var openSettings
     @State private var isHoveringGear = false
+    @State private var isHoveringQuit = false
 
     var body: some View {
         HStack {
@@ -25,6 +26,29 @@ struct PopoverHeader: View {
                 .font(.headline)
 
             Spacer()
+
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                Image(systemName: "power")
+                    .font(.system(size: 15))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 26, height: 26)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.primary.opacity(isHoveringQuit ? 0.14 : 0.07))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.primary.opacity(0.10), lineWidth: 1)
+            )
+            .onHover { hovering in
+                isHoveringQuit = hovering
+            }
+            .accessibilityLabel("Quit Dicticus")
+            .help("Quit Dicticus")
 
             Button {
                 // Q-03 spike-locked mechanism B (35-SPIKE-SETTINGS-OPEN.md):
