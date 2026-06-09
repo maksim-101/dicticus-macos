@@ -33,16 +33,17 @@ struct PopoverHeader: View {
                 openSettings()
             } label: {
                 Image(systemName: "gear")
-                    .font(.system(size: 22))
+                    .font(.system(size: 15))
             }
             .buttonStyle(.plain)
-            .frame(width: 40, height: 40)
+            .frame(width: 26, height: 26)
+            .contentShape(Rectangle())
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 6)
                     .fill(Color.primary.opacity(isHoveringGear ? 0.14 : 0.07))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 6)
                     .stroke(Color.primary.opacity(0.10), lineWidth: 1)
             )
             .onHover { hovering in
