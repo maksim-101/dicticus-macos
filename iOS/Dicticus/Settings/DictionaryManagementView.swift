@@ -107,9 +107,15 @@ struct DictionaryManagementView: View {
         case .alphabetical:
             return dictionaryService.dictionary.keys.sorted()
         case .mostRecent:
+            // Sort by source priority first (user > imported > default), then most
+            // recent createdAt within each group. This ensures the user's own entries
+            // always surface at the top regardless of when default entries were stamped.
             return dictionaryService.dictionary.keys.sorted {
-                (dictionaryService.dictionary[$0]?.createdAt ?? Date.distantPast) >
-                (dictionaryService.dictionary[$1]?.createdAt ?? Date.distantPast)
+                let ma = dictionaryService.dictionary[$0], mb = dictionaryService.dictionary[$1]
+                let pa = ma?.source.sortPriority ?? 0, pb = mb?.source.sortPriority ?? 0
+                if pa != pb { return pa < pb }
+                let da = ma?.createdAt ?? Date.distantPast, db = mb?.createdAt ?? Date.distantPast
+                return da > db
             }
         }
     }

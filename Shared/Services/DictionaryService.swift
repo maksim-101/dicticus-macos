@@ -9,6 +9,16 @@ enum LexiconSource: String, Codable {
     case `default`
     case user
     case imported
+
+    /// Display sort priority: lower value surfaces higher in the list.
+    /// user (0) > imported (1) > default (2).
+    var sortPriority: Int {
+        switch self {
+        case .user:     return 0
+        case .imported: return 1
+        case .default:  return 2
+        }
+    }
 }
 
 /// Metadata for a dictionary entry.

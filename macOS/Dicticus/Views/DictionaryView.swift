@@ -8,6 +8,7 @@ struct DictionaryEntry: Identifiable, Hashable {
     var original: String
     var replacement: String
     var createdAt: Date
+    var source: LexiconSource
 }
 
 enum DictionarySortMode: String, CaseIterable, Identifiable {
@@ -345,15 +346,22 @@ struct DictionaryView: View {
     }
 
     private func refreshEntries() {
-        let mapped = dictionaryService.dictionary.map { 
-            DictionaryEntry(id: $0.key, original: $0.key, replacement: $0.value.replacement, createdAt: $0.value.createdAt) 
+        let mapped = dictionaryService.dictionary.map {
+            DictionaryEntry(id: $0.key, original: $0.key, replacement: $0.value.replacement, createdAt: $0.value.createdAt, source: $0.value.source)
         }
-        
+
         switch sortMode {
         case .alphabetical:
             entries = mapped.sorted { $0.original.lowercased() < $1.original.lowercased() }
         case .mostRecent:
-            entries = mapped.sorted { $0.createdAt > $1.createdAt }
+            // Sort by source priority first (user > imported > default), then most
+            // recent createdAt within each group. This ensures the user's own entries
+            // always surface at the top regardless of when default entries were stamped.
+            entries = mapped.sorted {
+                let pa = $0.source.sortPriority, pb = $1.source.sortPriority
+                if pa != pb { return pa < pb }
+                return $0.createdAt > $1.createdAt
+            }
         }
 
         importedPacks = Set(DictionaryService.StarterPack.allCases.filter { dictionaryService.isStarterPackImported($0) })
