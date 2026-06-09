@@ -8,10 +8,11 @@ A fully local dictation app for macOS and iOS. Hold a key or trigger a shortcut,
 - **System-wide push-to-talk** — Works in any text field on macOS.
 - **Siri Shortcuts & Action Button** — Trigger iOS dictation from anywhere, even when locked.
 - **On-device ASR** — Parakeet TDT v3 via FluidAudio on Apple Neural Engine (~200x realtime).
-- **AI cleanup mode (macOS)** — Grammar, punctuation, and filler word correction via Gemma 3 1B (llama.cpp).
+- **AI cleanup mode** — Grammar, punctuation, and filler-word correction via Gemma 4 E2B (llama.cpp), on both macOS and iOS.
+- **Spoken punctuation** — Say "comma", "new line", etc. and it's inserted deterministically before cleanup.
 - **Auto language detection** — German and English, no manual switching.
 - **Local History & Search** — Browse and search your past transcriptions with FTS5.
-- **Custom Dictionary** — Define your own replacements for technical terms or names.
+- **Custom Dictionary** — Define your own replacements for technical terms or names; import/export as CSV/JSON and add bundled starter packs.
 
 ## Requirements
 
@@ -30,8 +31,8 @@ A fully local dictation app for macOS and iOS. Hold a key or trigger a shortcut,
 ### macOS
 1. Download `Dicticus.dmg` from [Releases](../../releases)
 2. Open the DMG and drag Dicticus to Applications
-3. On first launch: **System Settings > Privacy & Security > Open Anyway** (app is ad-hoc signed)
-4. Grant Microphone and Accessibility permissions.
+3. Launch Dicticus — it's Developer ID signed and notarized, so it opens normally (no Gatekeeper override needed).
+4. Grant Microphone and Accessibility permissions when prompted.
 
 ### iOS
 1. Build from source using Xcode 26.
@@ -82,7 +83,7 @@ All processing happens on-device. No audio or text is ever sent to any server. T
 |-----------|-----------|
 | App shell | Swift 6 + SwiftUI, MenuBarExtra (macOS) |
 | ASR | FluidAudio + Parakeet TDT v3 (CoreML, Apple Neural Engine) |
-| LLM (macOS) | llama.cpp + Gemma 3 1B IT QAT Q4_0 (Metal) |
+| LLM | llama.cpp + Gemma 4 E2B IT Q4_K_M (Metal) — macOS + iOS |
 | Database | GRDB + SQLite (FTS5) |
 | Live Activity | ActivityKit (iOS) |
 | Text injection | NSPasteboard (macOS) + UIPasteboard (iOS) |

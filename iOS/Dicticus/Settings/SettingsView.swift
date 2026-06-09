@@ -4,13 +4,14 @@ struct SettingsView: View {
     @EnvironmentObject var warmupService: IOSModelWarmupService
     @Environment(\.dismiss) var dismiss
     @State private var showingModelInfo = false
+    @AppStorage("hasSeenOnboardingTour") private var hasSeenOnboardingTour = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Transcriptions") {
-                    NavigationLink(destination: DictionaryManagementView()) {
-                        Label("Custom Dictionary", systemImage: "book")
+                    NavigationLink(destination: SpokenPunctuationReferenceView()) {
+                        Label("Spoken Punctuation", systemImage: "character.textbox")
                     }
 
                     Toggle(isOn: appGroupBinding("useCustomDictionary", default: true)) {
@@ -45,26 +46,16 @@ struct SettingsView: View {
                     NavigationLink(destination: SetupGuidesView()) {
                         Label("Setup Guides", systemImage: "questionmark.circle")
                     }
-                    
-                    if UIDevice.current.userInterfaceIdiom == .phone {
-                        DisclosureGroup {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("1. Open **Settings** → **Action Button**")
-                                Text("2. Select **Shortcut**")
-                                Text("3. Choose **Dictate with Dicticus**")
-                            }
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        } label: {
-                            Label("Action Button Setup", systemImage: "iphone.gen3")
-                        }
+
+                    Button(action: { hasSeenOnboardingTour = false }) {
+                        Label("Show Onboarding Tour", systemImage: "arrow.counterclockwise")
                     }
-                    
+
                     Button(action: openSystemSettings) {
                         Label("System Permissions", systemImage: "gear")
                     }
                 }
-                
+
                 Section("Model Management") {
                     HStack {
                         Label("ASR Model", systemImage: "cpu")
@@ -87,7 +78,15 @@ struct SettingsView: View {
                     }
                     .disabled(warmupService.isWarming)
                 }
-                
+
+                Section("What's New") {
+                    ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
+                        Text(note)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Section {
                     Link(destination: URL(string: "https://github.com/maksim-101/dicticus")!) {
                         Label("Source Code", systemImage: "link")
@@ -101,14 +100,6 @@ struct SettingsView: View {
                             Text("Built \(date)")
                         }
                         Text("\u{00A9} 2026 Maksim-101")
-                    }
-                }
-
-                Section("Recent Changes") {
-                    ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
-                        Text(note)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }

@@ -101,8 +101,17 @@ class TextProcessingService: ObservableObject {
         // Step 1.5: Acronym fragment collapse + spoken-letter lexicon
         processedText = ITNUtility.collapseAcronymRun(to: processedText)
 
+        // Step 1.5b: Spoken punctuation collapse (Phase 32 PUNCT-01/PUNCT-02)
+        processedText = ITNUtility.collapseSpokenPunctuation(to: processedText)
+
         // Step 2: Rule-based ITN
         processedText = ITNUtility.applyITN(to: processedText, language: language)
+
+        // Step 2a: Identifier–number punctuation collapse (Phase 32 PUNCT-02 extension).
+        // Runs after ITN so model-name patterns like "mt minus 24" → "mt-24"
+        // collapse once the number-word is a digit. Precision-gated; never touches
+        // prose subtraction or number–number arithmetic.
+        processedText = ITNUtility.collapseIdentifierNumberPunctuation(to: processedText)
 
         #if DEBUG_RECORDER
         let dbgPostItn = processedText
@@ -232,6 +241,10 @@ class TextProcessingService: ObservableObject {
             let baselineWordCount = rulesCleanedText
                 .split(whereSeparator: { $0.isWhitespace })
                 .count
+            // Dialect and Levenshtein gates keep the >3-word guard: edit-distance
+            // is lossy on short inputs and produces false rejections (see comment above).
+            // The content-word gate uses exact set-membership, not distance, so it is
+            // safe on all lengths — run it unconditionally (WR-03).
             if baselineWordCount > 3 {
                 processedText = CleanupService.gateLLMDialect(
                     rulesCleaned: rulesCleanedText,
@@ -242,6 +255,10 @@ class TextProcessingService: ObservableObject {
                     llmOutput: processedText
                 )
             }
+            processedText = CleanupService.gateContentWords(
+                rulesCleaned: rulesCleanedText,
+                llmOutput: processedText
+            )
 
             #if DEBUG_RECORDER
             let dbgGateMs = Date().timeIntervalSince(dbgGateStart) * 1000.0

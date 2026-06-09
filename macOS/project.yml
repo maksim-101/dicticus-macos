@@ -55,8 +55,8 @@ targets:
         NSMicrophoneUsageDescription: "Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device."
         NSAppleEventsUsageDescription: "Dicticus pauses your music while you dictate."
         CFBundleIdentifier: com.dicticus.app
-        CFBundleVersion: "5"
-        CFBundleShortVersionString: "1.3.0"
+        CFBundleVersion: "6"
+        CFBundleShortVersionString: "1.4.0"
         SUFeedURL: "https://maksim-101.github.io/dicticus-macos/appcast.xml"
         SUPublicEDKey: "svsiIi/mzzxOO1K9AJ7yAXboJb+U0wDoLCoLM1hEqjc="
         SUEnableAutomaticChecks: YES
@@ -85,8 +85,10 @@ targets:
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         OTHER_LDFLAGS: "-framework llama"
       configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
         Debug-Recorder:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG DEBUG_RECORDER"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG DEBUG_RECORDER PERSONAL_LEXICON"
     dependencies:
       - package: FluidAudio
         product: FluidAudio
@@ -117,8 +119,10 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "15.0"
         GENERATE_INFOPLIST_FILE: YES
       configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
         Debug-Recorder:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG DEBUG_RECORDER"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG DEBUG_RECORDER PERSONAL_LEXICON"
     dependencies:
       - target: Dicticus
       - package: KeyboardShortcuts

@@ -6,6 +6,18 @@ Dicticus is a fully local, on-device dictation app (ASR via FluidAudio/Parakeet 
 
 ---
 
+## v2.4 — Public-Release Readiness + Dictionary as Platform — shipped 2026-06-09 · tag `macos-v1.4.0`
+
+Public-release prep: the dictionary becomes a user-owned platform, deterministic spoken-punctuation lands pre-cleanup, the iOS first-run experience gets an overhaul, and both apps are reorganized into a clean tabbed information architecture.
+
+- **Phase 31 (2026-06-06)** — Dictionary as a platform: the public build ships an empty default dictionary (personal entries gated behind a local-only flag and kept out of the release binary), CSV/JSON import & export with three merge strategies and RFC-4180 validation, bundled offline starter packs with one-tap import, and docs for the CSV-author tech-term recovery workflow. macOS + iOS.
+- **Phase 32 (2026-06-07)** — Spoken punctuation: saying "comma", "period", "new line", etc. is converted deterministically before AI cleanup, with an in-app reference table. macOS + iOS.
+- **Phase 33 (2026-06-08)** — iOS first-run & onboarding overhaul: fixed the relaunch download-screen flash (including a follow-up where an already-downloaded model still showed a fake "Downloading" screen during warmup), download-screen label truncation at small widths, and a duplicate Action Button entry in Settings; added a 3-page guided onboarding tour that auto-presents after setup and is re-triggerable from Settings. Also removed a misleading dictation Live Activity that implied background recording the app couldn't actually do — leaving the app mid-dictation now finalizes and copies what you said instead. iOS.
+- **Phase 34 (2026-06-08)** — AI cleanup R8 over-promotion fix (V19D → V19E): tightened the R8 EXCEPTION so AI cleanup no longer collapses real words next to number-words into identifier stems ("kink three" stays "kink three", "King Four" → "King four" — not K3/K4). The EXCEPTION now requires the preceding stem to be ALL-CAPS (e.g. GPT, E, API) or contain a non-letter character (e.g. iOS, E2), not just any capitalized word. Also added a deterministic content-word-preservation gate that falls back to pre-LLM text when a content word is dropped — a backstop for local word-loss invisible to the whole-text Levenshtein gate. Gap-closure (2026-06-08): the gate now runs on short utterances (≤3 words) instead of only on longer inputs, and legitimate number-word promotions ("M three" → "M3") are preserved by allowlisting spelled-out cardinals and ordinals. macOS + iOS.
+- **Phase 35 (2026-06-09)** — UI reorganization (macOS + iOS): the macOS menu-bar popover is split into a fixed-height tabbed layout (Home / Dictionary / History) with a 4-pane ⌘, Settings window (Hotkeys / AI Cleanup / General / About) and all hotkey configuration consolidated into one pane; the popover Dictionary tab gains an inline add-entry form. iPhone gains a matching 3-tab layout (Dictate / Dictionary / History) with frequency-ordered Settings and Dictionary promoted out of Settings; on iPad the NavigationSplitView sidebar gains a Dictionary destination. Custom-dictionary entries you add now sort to the top of the list (above imported and default entries). Signed-build polish: full-width tab tap targets, a visible Quit button + hover tooltips in the popover header, and a Stage Manager fix so the Dictionary / History / Settings windows stay findable when switching apps. macOS + iOS.
+
+---
+
 ## v2.3 — Live-Capture Quality Pass — shipped 2026-06-06 · tag `macos-v1.3.0`
 
 Quality pass driven by analysis of real multi-day dictation logs (the DebugRecorder capture). Focus: stop the dictionary from corrupting text, and sharpen the AI cleanup prompt.

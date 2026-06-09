@@ -6,7 +6,7 @@ options:
 settings:
   SWIFT_VERSION: "6.0"
   IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-  MARKETING_VERSION: "2.0"
+  MARKETING_VERSION: "2.4.0"
   CURRENT_PROJECT_VERSION: "1"
   ENABLE_USER_SCRIPT_SANDBOXING: YES
   SWIFT_EMIT_LOC_STRINGS: YES
@@ -48,6 +48,12 @@ targets:
         - CFBundleURLName: com.dicticus.ios
           CFBundleURLSchemes:
             - dicticus
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
+          PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: com.dicticus.ios
     dependencies:
       - package: GRDB
         product: GRDB
@@ -86,7 +92,12 @@ targets:
     sources:
       - path: DicticusTests
     settings:
-      GENERATE_INFOPLIST_FILE: YES
+      configs:
+        Debug:
+          GENERATE_INFOPLIST_FILE: YES
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG PERSONAL_LEXICON"
+        Release:
+          GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dicticus
 

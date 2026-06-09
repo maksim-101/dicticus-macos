@@ -1,10 +1,49 @@
 import Foundation
 import Combine
 
+/// Provenance tag for a dictionary entry. Persisted as a Codable string inside
+/// `DictionaryMetadata`. Three cases: entries seeded by the app (default), entries
+/// created/edited by the user directly (user), and entries imported from a file
+/// (imported). Old records lacking this key decode as `.user` via `decodeIfPresent`.
+enum LexiconSource: String, Codable {
+    case `default`
+    case user
+    case imported
+
+    /// Display sort priority: lower value surfaces higher in the list.
+    /// user (0) > imported (1) > default (2).
+    var sortPriority: Int {
+        switch self {
+        case .user:     return 0
+        case .imported: return 1
+        case .default:  return 2
+        }
+    }
+}
+
 /// Metadata for a dictionary entry.
+///
+/// Custom `init(from:)` uses `decodeIfPresent` so that existing persisted records
+/// (which lack the `source` key) decode successfully with `source == .user` instead
+/// of throwing `keyNotFound` and wiping the dictionary. This is the critical
+/// upgrade-safety invariant for Phase 31-01 (RESEARCH Pitfall 1).
 struct DictionaryMetadata: Codable, Equatable {
     let replacement: String
     let createdAt: Date
+    let source: LexiconSource
+
+    init(replacement: String, createdAt: Date, source: LexiconSource = .user) {
+        self.replacement = replacement
+        self.createdAt = createdAt
+        self.source = source
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        replacement = try c.decode(String.self, forKey: .replacement)
+        createdAt   = try c.decode(Date.self,   forKey: .createdAt)
+        source      = (try c.decodeIfPresent(LexiconSource.self, forKey: .source)) ?? .user
+    }
 }
 
 /// Manages a custom dictionary of find-replace pairs for dictation correction.
@@ -80,6 +119,12 @@ class DictionaryService: ObservableObject {
         // bad keys cached in UserDefaults.
         purgeRetiredDefaults()
 
+        // Phase 31-01: tag persisted entries that pre-date the source field.
+        // In Release builds this is a no-op (entries already decoded as .user
+        // via decodeIfPresent). In dev builds it also purges stale personal
+        // keys and re-seeds them cleanly via prepopulateWithDefaults().
+        migrateLegacySource()
+
         // Always merge defaults — adds new entries on updates, preserves existing user entries
         prepopulateWithDefaults()
     }
@@ -152,6 +197,47 @@ class DictionaryService: ObservableObject {
         }
     }
 
+    /// Phase 31-01 (D-06): tag all persisted entries that pre-date the `source`
+    /// field. After Phase 31-01, new entries always carry an explicit `source`
+    /// set by the call site. Entries decoded from older persisted data already
+    /// receive `source == .user` via `DictionaryMetadata.init(from:)` — this
+    /// method handles the in-place save so the tag is persisted.
+    ///
+    /// Dev builds (PERSONAL_LEXICON flag on): purge keys that are no longer in
+    /// DefaultLexicon + PersonalLexicon, then allow prepopulateWithDefaults() to
+    /// reseed them cleanly so every developer-local entry carries source == .default.
+    ///
+    /// Release builds: leave all entries in place — entries already decoded as
+    /// .user via decodeIfPresent. Ship NO personal-key list (D-06 leak rationale:
+    /// the key names themselves reveal the developer's dictation patterns).
+    private func migrateLegacySource() {
+#if PERSONAL_LEXICON
+        // Dev build: remove stale personal entries (no longer in either lexicon)
+        // so prepopulateWithDefaults() can re-seed them with source == .default.
+        // This converges existing dev installs to the new provenance model.
+        let knownKeys = Set(DefaultLexicon.entries.keys).union(Set(PersonalLexicon.entries.keys))
+        var changed = false
+        for key in Array(dictionary.keys) {
+            if !knownKeys.contains(key) {
+                // Key is not in any known lexicon — it's a user entry; leave it alone.
+                // Keys that ARE in known lexicons but came from an older build will
+                // be removed and re-seeded by prepopulateWithDefaults() below since
+                // they still appear in PersonalLexicon.entries. We only remove the
+                // true personal-lexicon entries here to let prepopulate re-tag them.
+                continue
+            }
+            // Key is from a known lexicon but may be tagged .user from the old build.
+            // Remove so prepopulateWithDefaults() re-inserts it with source == .default.
+            dictionary.removeValue(forKey: key)
+            changed = true
+        }
+        if changed { save() }
+#else
+        // Release build: entries already decoded as .user via decodeIfPresent.
+        // prepopulateWithDefaults() below persists, so no save is needed here.
+#endif
+    }
+
     private func migrateOldFormat() {
         let oldKey = "customDictionary"
         if let oldStored = UserDefaults.standard.dictionary(forKey: oldKey) as? [String: String] {
@@ -170,77 +256,34 @@ class DictionaryService: ObservableObject {
     /// overwritten on re-merge). Not exposed publicly — `@testable
     /// import Dicticus` provides access; production callers continue
     /// to go through the singleton's private init only.
+    ///
+    /// Phase 31-01: the inline `defaults` literal has been extracted to
+    /// `DefaultLexicon.entries` (always, public seed — empty for v2.4) and
+    /// `PersonalLexicon.entries` (dev builds only, gitignored). Both are
+    /// merged with `source: .default` using the same idempotent guard.
     internal func prepopulateWithDefaults() {
-        let defaults: [String: String] = [
-            "true nest": "TrueNAS", "true Nest": "TrueNAS", "TrueNest": "TrueNAS",
-            "truenest": "TrueNAS", "True Nest": "TrueNAS",
-            "clods.md": "Claude.MD", "DOC-G": "Dockge", "cloth desktop": "Claude Desktop",
-            "medviki": "MedWiki", "matviki": "MedWiki", "add guard": "adguard", "trueness": "TrueNAS",
-            "claw desktop": "Claude Desktop", "Cloud Desktop": "Claude Desktop",
-            "cloud.md": "Claude.MD", "clot.md": "Claude.MD", "clod.md": "Claude.MD",
-            "Swiss \"": "Swissquote", "Swiss quote": "Swissquote", "Swiss code": "Swissquote",
-            "this quote": "Swissquote", "This quote": "Swissquote", "dot cloud": ".claude",
-            "Zyria": "ZüriA", "Acara": "Aqara", "engine X": "NGINX", "X code": "Xcode", "x code": "Xcode",
-            "docg": "Dockge", "true NAS": "TrueNAS", "tail scale": "Tailscale",
-            "Telscale": "Tailscale", "light llm": "LiteLLM", "LightLLM": "LiteLLM",
-            "doc G": "Dockge", "Clot": "Claude", ".clot": ".claude", "clot code": "Claude Code",
-            ".cloud": ".claude", "Cloud Code": "Claude Code",
-            // 2026-05-06: removed brittle "1m"/"1 m"/"I m"/"one m"/"One m" → "I'm"
-            // mappings. They false-fired on legitimate phrases like "one meeting"
-            // ("one m" matched on "one meeting" when ASR injected punctuation
-            // between tokens) and Gemma already capitalizes "i" → "I" without
-            // dictionary forcing. See purgeRetiredDefaults() for in-place cleanup.
-            "Selguard": "Cellguard", "selguard": "Cellguard", "Mac Vesper": "MacWhisper", "Kai-Agenten": "KI-Agenten", "Ki-Argenten": "KI-Agenten", "KI-Agenten": "KI-Agenten", "AI-Agenten": "AI-Agenten", "Dektik-Tools": "Dicticus", "Sigby": "Zigbee", "Sig B": "Zigbee", "sig b": "Zigbee", "Sigbee": "Zigbee", "sigbee": "Zigbee", "Zigbee": "Zigbee", "AI Cleanup": "AI Cleanup", "AI-Cleanup": "AI Cleanup",
-            "GSD": "GSD", "gest": "GSD", "GST": "GSD", "cheers": "GSD", "G.S.D.": "GSD", "gsd": "GSD",
-            // Phase 25-03 Lever 1 (matrix.md §5, 2026-05-16): brand/anchor
-            // mishearings from V15 capture-window. H9 (rules+dict) collapses
-            // brand 35→2 and anchor 28→0 without any LLM cost. Each entry
-            // cites the V15 fixture timestamp it closes.
-            "Chemini": "Gemini", "Cheminai": "Gemini", "chemini": "Gemini", "cheminai": "Gemini",
-            "Jemini": "Gemini",
-            "MPM": "NPM",
-            "engine eggs": "NGINX",
-            "Doghand": "Dokku", "Dog Hand": "Dokku", "doghand": "Dokku", "dog hand": "Dokku",
-            "DogChee": "Dockge", "Dog Chee": "Dockge", "dogchee": "Dockge", "dog chee": "Dockge",
-            "C Oli": "CLI", "c oli": "CLI",
-            "true Nas": "TrueNAS",
-            // Phase 25.1-03 — paper §2.2 lexical priming. Closes 25-03 Class B defects
-            // (own-brand mishearings the LLM correctly leaves alone per §4.2 lexical
-            // fidelity). Each entry cites the JSONL timestamp it closes.
-            "Chema 4 2EB": "Gemma 4 E2B",                 // 2026-05-17 06:02:10
-            "chema 4 2eb": "Gemma 4 E2B",
-            "Chema": "Gemma",                              // partial fallback for "Chema 7B" / "Chema 12B" variants
-            "chema": "Gemma",
-            "Dicticos": "Dicticus",                        // 25-03 Class B exemplar (Dicticus own-brand)
-            "dicticos": "Dicticus",
-            "Olama": "Ollama",                             // 25-03 Class B exemplar
-            "olama": "Ollama",
-            "Tailskill": "Tailscale",                      // 2026-05-17 05:30:23 (existing `tail scale` entry doesn't catch this — single-token mishearing)
-            "tailskill": "Tailscale",
-            "hopath": "homeopath",                         // 25-03 Class B exemplar (medical-context dictation)
-            // Phase 27 K7: brand misses from log-analysis 2026-05-26 §K7.
-            // Each entry cites the live-capture JSONL timestamp it closes.
-            "clawed code": "Claude Code",                  // 2026-05-23T05:24:32.417Z
-            "Accara": "Aqara",                             // 2026-05-24T17:50:00.606Z (×2)
-            "accara": "Aqara",
-            "Andre Karpaty": "Andrej Karpathy",            // 2026-05-25T04:14:30.688Z
-            "Swiss folio": "Swissfolio",                   // log-analysis §K7
-            "swiss folio": "Swissfolio",
-            // Phase 27 carried backlog — exact-match only under the new fuzzy guard.
-            "germinize": "Gemini",                         // ratio 0.44 BLOCKS fuzzy; only exact-match fires
-            "crown shop": "cron job",
-            // Phase 29 DICT-ZED-01: Spike-001-validated. Period-anchored to avoid
-            // "the set of …" / compound "X set" false positives. Recovers Zed IDE
-            // misheard as "set" when clause-final. Mid-sentence Zed is missed (safe failure).
-            "the set.": "Zed.",
-        ]
-
-
-        for (original, replacement) in defaults {
+        // Merge public default entries (empty in v2.4; future releases may add entries here).
+        // Skip identical original==replacement pairs: they are no-ops (replacing a word
+        // with itself does nothing) and break export→import round-tripping, since the
+        // import merge correctly refuses them (see DictionaryIOService.merge).
+        for (original, replacement) in DefaultLexicon.entries {
+            if original == replacement { continue }
             if dictionary[original] == nil {
-                dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date())
+                dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date(), source: .default)
             }
         }
+
+#if PERSONAL_LEXICON
+        // Merge developer-personal entries — dev builds only (gitignored file).
+        // Release builds compile this block to zero bytes.
+        for (original, replacement) in PersonalLexicon.entries {
+            if original == replacement { continue }
+            if dictionary[original] == nil {
+                dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date(), source: .default)
+            }
+        }
+#endif
+
         save()
     }
 
@@ -276,6 +319,147 @@ class DictionaryService: ObservableObject {
     func removeAll() {
         dictionary.removeAll()
         save()
+    }
+
+    // MARK: - Import / Export (Phase 31-02)
+
+    /// Result of a dictionary import operation.
+    ///
+    /// `added`   — new corrections actually applied.
+    /// `kept`    — valid rows that were already in the dictionary and left unchanged.
+    /// `warnings`— invalid rows (empty replacement, or identical original/replacement).
+    /// added + kept + warnings.count accounts for every row in the file, so the
+    /// summary never appears to "lose" rows.
+    enum ImportResult {
+        case success(added: Int, kept: Int, warnings: [String])
+        case failure(String)
+
+        /// User-facing summary for an import-result alert. Accounts for every row —
+        /// added, already-present (kept unchanged), and invalid — instead of listing
+        /// each skipped line, which overwhelms the dialog. `source` optionally names
+        /// the origin (e.g. a starter pack title).
+        func summaryMessage(source: String? = nil) -> String {
+            switch self {
+            case .failure(let error):
+                return "Import failed: \(error)"
+            case .success(let added, let kept, let warnings):
+                let from = source.map { " from \($0)" } ?? ""
+                var lines = ["Imported \(added) new \(added == 1 ? "entry" : "entries")\(from)."]
+                if kept > 0 {
+                    lines.append("\(kept) already in your dictionary (kept unchanged).")
+                }
+                if !warnings.isEmpty {
+                    lines.append("\(warnings.count) \(warnings.count == 1 ? "row" : "rows") skipped — empty or identical original/replacement.")
+                }
+                return lines.joined(separator: "\n")
+            }
+        }
+    }
+
+    /// Import a CSV or JSON file into the dictionary using the specified merge strategy.
+    ///
+    /// Instantiates DictionaryIOService synchronously on the main actor (Finding 8 — safe
+    /// at ~1000-row scale, <1ms parse time). Imported entries are tagged source: .imported.
+    /// On parse/decode error, returns .failure with the localized error description.
+    func importData(_ data: Data, format: String, strategy: MergeStrategy) -> ImportResult {
+        let io = DictionaryIOService()
+        do {
+            let incoming: [CSVImportRow]
+            var warningMessages: [String] = []
+            switch format.lowercased() {
+            case "csv":
+                let result = try io.parseCSV(String(data: data, encoding: .utf8) ?? "")
+                incoming = result.rows
+                warningMessages = result.warnings.map { $0.message }
+            case "json":
+                let parsed = try io.parseJSON(data)
+                var validRows: [CSVImportRow] = []
+                for (offset, row) in parsed.enumerated() {
+                    if row.replacement.isEmpty {
+                        warningMessages.append("Entry \(offset + 1): empty replacement for '\(row.original)' — skipped")
+                        continue
+                    }
+                    if row.original == row.replacement {
+                        warningMessages.append("Entry \(offset + 1): original == replacement '\(row.original)' — skipped")
+                        continue
+                    }
+                    validRows.append(row)
+                }
+                incoming = validRows
+            default:
+                return .failure("Unsupported format: \(format). Use 'csv' or 'json'.")
+            }
+            let merged = io.merge(incoming: incoming, into: dictionary, strategy: strategy)
+            let addedCount = merged.keys.filter { dictionary[$0] != merged[$0] }.count
+            // Valid rows that were not applied are duplicates left unchanged.
+            let keptCount = max(0, incoming.count - addedCount)
+            dictionary = merged
+            save()
+            return .success(added: addedCount, kept: keptCount, warnings: warningMessages)
+        } catch {
+            return .failure(error.localizedDescription)
+        }
+    }
+
+    /// Export the full dictionary (all entries regardless of provenance) to CSV or JSON Data.
+    func exportData(format: String) -> Data {
+        let io = DictionaryIOService()
+        switch format.lowercased() {
+        case "json":
+            return io.serializeJSON(dictionary)
+        default:
+            return Data(io.serializeCSV(dictionary).utf8)
+        }
+    }
+
+    // MARK: - Starter Packs (Phase 31-03)
+
+    /// Hard-coded registry of bundled offline starter packs (RESEARCH Finding 7 —
+    /// hard-code to avoid scanning the bundle directory, which could pull in test CSVs).
+    /// Raw values map to the CSV resource names under Shared/Resources/.
+    enum StarterPack: String, CaseIterable {
+        case tech    = "starter-pack-tech"
+        case brands  = "starter-pack-brands"
+        case general = "starter-pack-general"
+
+        var displayTitle: String {
+            switch self {
+            case .tech:    return "Tech Terms"
+            case .brands:  return "Brand Names"
+            case .general: return "General Terms"
+            }
+        }
+    }
+
+    /// Import a bundled starter pack via the existing DICT-IO pipeline (existing-wins,
+    /// entries tagged source: .imported). Reads the CSV from the app bundle.
+    ///
+    /// Returns .success(added: 0) on a missing/unreadable resource — same defensive
+    /// pattern as loadCommonWords() (never throws, never crashes init or import).
+    func importStarterPack(_ pack: StarterPack) -> ImportResult {
+        guard let url = Bundle.main.url(forResource: pack.rawValue, withExtension: "csv") else {
+            print("[DictionaryService] starter pack not found: \(pack.rawValue).csv")
+            return .success(added: 0, kept: 0, warnings: ["Pack resource not found in bundle: \(pack.rawValue).csv"])
+        }
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            print("[DictionaryService] starter pack unreadable: \(pack.rawValue).csv")
+            return .success(added: 0, kept: 0, warnings: ["Pack resource could not be read: \(pack.rawValue).csv"])
+        }
+        return importData(Data(content.utf8), format: "csv", strategy: .existingWins)
+    }
+
+    /// Whether every valid correction in a starter pack is already present in the
+    /// dictionary — drives the "already imported" checkmark in the UI. Returns false
+    /// for a missing/unreadable/empty pack. Cheap (packs are tiny, parsed on demand).
+    func isStarterPackImported(_ pack: StarterPack) -> Bool {
+        guard let url = Bundle.main.url(forResource: pack.rawValue, withExtension: "csv"),
+              let content = try? String(contentsOf: url, encoding: .utf8),
+              let parsed = try? DictionaryIOService().parseCSV(content) else {
+            return false
+        }
+        let valid = parsed.rows.filter { !$0.replacement.isEmpty && $0.original != $0.replacement }
+        guard !valid.isEmpty else { return false }
+        return valid.allSatisfy { dictionary[$0.original] != nil }
     }
 
     /// Phase 27 D-08: `apply(to:)` is a thin wrapper over `applyWithTrace(to:)`.

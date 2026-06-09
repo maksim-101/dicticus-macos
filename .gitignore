@@ -27,6 +27,10 @@ Dicticus.dmg
 .DS_Store
 **/.DS_Store
 
+# Local dictionary snapshots — personal App Group UserDefaults backups taken
+# before rebuilds. Contain the developer's personal dictionary keys; never commit.
+.dict-backups/
+
 # Claude Code session state — local-only, includes worktrees + per-machine settings
 .claude/
 
@@ -44,3 +48,9 @@ Dicticus.dmg
 # ~/Library/Application Support, but this guards against a project-relative
 # override.
 DebugRecordings/
+
+# Developer-personal dictionary lexicon — gitignored so personal entries never
+# land in the public Release binary. The entire file is inside #if PERSONAL_LEXICON
+# so it compiles to zero bytes in Release even when physically present on disk.
+# Must be gitignored BEFORE the file is created (see RESEARCH Pitfall 5).
+Shared/Services/PersonalLexicon.swift

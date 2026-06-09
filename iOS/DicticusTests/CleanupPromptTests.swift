@@ -64,7 +64,7 @@ final class CleanupPromptTests: XCTestCase {
 
     func testDefaultInstructionString() {
         let instruction = CleanupPrompt.defaultInstruction
-        XCTAssertTrue(instruction.contains("V19D"), "Default instruction must reference V19D version (Phase 28 winner)")
+        XCTAssertTrue(instruction.contains("V19E"), "Default instruction must reference V19E version (Phase 34 R8 fix)")
         XCTAssertTrue(instruction.contains("smart-verbatim"), "Default instruction must reference smart-verbatim policy")
     }
 
@@ -282,7 +282,8 @@ final class CleanupPromptTests: XCTestCase {
     }
 
     func testPhase28_V19D_DefaultInstructionUpdated() {
-        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("V19D"), "defaultInstruction must reference V19D (Phase 28 winner)")
+        // V19E: defaultInstruction now references V19E (Phase 34 R8 fix supersedes V19D label).
+        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("V19E"), "defaultInstruction must reference V19E (Phase 34 R8 fix)")
         XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("smart-verbatim"), "defaultInstruction must reference smart-verbatim policy")
     }
 
@@ -292,5 +293,29 @@ final class CleanupPromptTests: XCTestCase {
         XCTAssertTrue(enPrompt.contains("meeting at forty one Penn"), "Phase 25 anchor 'meeting at forty one Penn' must survive V19D (regression guard)")
         XCTAssertTrue(enPrompt.contains("command i"), "Class C anchor 'command i' must survive V19D (regression guard)")
         XCTAssertTrue(dePrompt.contains("Regeln (auf Deutsch):"), "DE 'Regeln (auf Deutsch):' block must survive V19D (regression guard)")
+    }
+
+    // MARK: - Phase 34 V19E
+
+    func testV19E_R8NegativeFewShotsPresent() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("mark kink three"), "V19E EN prompt must contain 'kink three' negative few-shot (R8 over-promotion fix)")
+        XCTAssertTrue(prompt.contains("King four"), "V19E EN prompt must contain 'King four' negative few-shot (R8 over-promotion fix)")
+        XCTAssertTrue(prompt.contains("option one is the default"), "V19E EN prompt must contain 'option one is the default' negative few-shot (R8 over-promotion fix)")
+        XCTAssertTrue(prompt.contains("every two weeks"), "V19E EN prompt must contain 'every two weeks' negative few-shot (R8 over-promotion fix)")
+    }
+
+    func testV19E_R8ExceptionTightened() {
+        let prompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertTrue(prompt.contains("ALL-CAPS"), "V19E EN Rule 8 must contain ALL-CAPS discriminator (R8 over-promotion fix)")
+        XCTAssertTrue(prompt.contains("Do NOT promote ordinary capitalized words"), "V19E EN Rule 8 must contain ordinary-word exclusion clause")
+        XCTAssertFalse(prompt.contains("after a capitalized stem like 'E one'"), "V19E EN Rule 8 must not contain the loose V19D capitalized-stem wording")
+    }
+
+    func testV19E_GermanR8ExceptionTightened() {
+        let prompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(prompt.contains("VOLLSTÄNDIG in Großbuchstaben"), "V19E DE Regel 8 must contain ALL-CAPS discriminator in German (R8 over-promotion fix)")
+        XCTAssertTrue(prompt.contains("Keine gewöhnlichen großgeschriebenen Wörter"), "V19E DE Regel 8 must contain ordinary-word exclusion clause in German")
+        XCTAssertFalse(prompt.contains("nach einem großgeschriebenen Stamm wie 'E eins'"), "V19E DE Regel 8 must not contain the loose V19D capitalized-stem wording")
     }
 }

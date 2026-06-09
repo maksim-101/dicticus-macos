@@ -35,7 +35,11 @@ struct DictationView: View {
                 .accessibilityLabel(buttonLabel)
                 .accessibilityHint(modelMissing ? "Downloads the ASR model" : viewModel.state == .recording ? "Stops recording and transcribes" : "Starts a new dictation")
 
-                if warmupService.isWarming {
+                // Only show the download progress bar during an actual network download
+                // (models absent). When the model is already present, warmup() is just an
+                // ANE load — showing this block made the home screen flash a fake "Downloading"
+                // screen on every cold launch (IOS-ONB-01).
+                if warmupService.isWarming && !warmupService.hasModels {
                     VStack(spacing: 8) {
                         ProgressView(value: warmupService.downloadProgress, total: 1.0)
                             .progressViewStyle(.linear)
@@ -116,7 +120,9 @@ struct DictationView: View {
     }
 
     private var iconName: String {
-        if warmupService.isWarming { return "arrow.down.circle" }
+        // Present-model warmup keeps the normal mic so the home screen doesn't look
+        // like a download is in progress (IOS-ONB-01).
+        if warmupService.isWarming { return warmupService.hasModels ? "mic" : "arrow.down.circle" }
         if modelMissing { return "arrow.down.to.line" }
         switch viewModel.state {
         case .idle:                  return "mic"
@@ -127,7 +133,9 @@ struct DictationView: View {
     }
 
     private var statusLabel: String {
-        if warmupService.isWarming { return "Downloading ASR Models (2.7GB)\u{2026}" }
+        if warmupService.isWarming {
+            return warmupService.hasModels ? "Preparing\u{2026}" : "Downloading ASR Models (2.7GB)\u{2026}"
+        }
         if let error = warmupService.error { return error }
         if modelMissing { return "ASR model not downloaded" }
         switch viewModel.state {

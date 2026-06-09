@@ -11,7 +11,9 @@ struct DicticusApp: App {
     @State private var transcriptionService: IOSTranscriptionService?
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasSeenWhatsNewV2") private var hasSeenWhatsNewV2 = false
+    @AppStorage("hasSeenOnboardingTour") private var hasSeenOnboardingTour = false
     @State private var showingWhatsNew = false
+    @State private var showingOnboardingTour = false
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -29,16 +31,26 @@ struct DicticusApp: App {
                             NotificationCenter.default.post(name: .startDictation, object: nil)
                         }
                     }
-                    .sheet(isPresented: $showingWhatsNew) {
+                    .sheet(isPresented: $showingOnboardingTour, onDismiss: {
+                        hasSeenOnboardingTour = true
+                        if !hasSeenWhatsNewV2 {
+                            showingWhatsNew = true
+                        }
+                    }) {
+                        OnboardingTourView()
+                    }
+                    .sheet(isPresented: $showingWhatsNew, onDismiss: { hasSeenWhatsNewV2 = true }) {
                         WhatsNewView()
-                            .onDisappear {
-                                hasSeenWhatsNewV2 = true
-                            }
                     }
                     .onAppear {
                         SwissDefaultMigration.runIfNeeded()  // D-A3 — first-launch belt-and-suspenders before scenePhase fires
                         let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
-                        if !hasSeenWhatsNewV2 && !pendingDictation {
+                        // Guard on viewModel.state as well: checkPendingIntent() may have already
+                        // consumed pendingDictation and started dictation before onAppear fires.
+                        let noDictation = pendingDictation == false && viewModel.state == .idle
+                        if !hasSeenOnboardingTour && noDictation {
+                            showingOnboardingTour = true
+                        } else if !hasSeenWhatsNewV2 && noDictation {
                             showingWhatsNew = true
                         }
                     }
@@ -62,6 +74,11 @@ struct DicticusApp: App {
                         warmupService.warmup()
                     }
                 }
+            } else if newPhase == .background {
+                // Interim (option A): no background-audio mode yet, so leaving the app
+                // can't keep recording. Finalize what was captured instead of leaving a
+                // zombie recording. FUTURE: background-recording phase replaces this.
+                viewModel.finalizeIfRecording()
             }
         }
         .onChange(of: warmupService.isReady) { _, isReady in
@@ -86,6 +103,14 @@ struct DicticusApp: App {
                 viewModel.cleanupService = cleanup
             } else if !isLlmReady {
                 viewModel.cleanupService = nil
+            }
+        }
+        // WR-03: Re-present the tour when Settings resets hasSeenOnboardingTour.
+        // oldValue guard ensures the initial false default does NOT auto-trigger;
+        // only an explicit true→false transition (Settings button) shows the tour.
+        .onChange(of: hasSeenOnboardingTour) { oldValue, newValue in
+            if oldValue == true && newValue == false {
+                showingOnboardingTour = true
             }
         }
     }

@@ -118,6 +118,7 @@ struct OnboardingView: View {
                             Label("Type: Multilingual (EN, DE, and 23+ more)", systemImage: "globe")
                             Label("Compute: Apple Neural Engine (ANE)", systemImage: "bolt.ring.closed")
                         }
+                        .fixedSize(horizontal: false, vertical: true)
                         .font(.footnote)
                         .foregroundColor(.secondary)
                     }
@@ -138,6 +139,8 @@ struct OnboardingView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
 
                         Text("\(Int(warmupService.downloadProgress * 100))%")
                             .font(.caption2).monospacedDigit()
@@ -190,6 +193,7 @@ struct OnboardingView: View {
                         Text("2. Select **Shortcut**")
                         Text("3. Choose the **Dictate with Dicticus** shortcut")
                     }
+                    .fixedSize(horizontal: false, vertical: true)
                     .font(.caption)
                     .foregroundColor(.secondary)
                 }

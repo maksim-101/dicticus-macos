@@ -82,13 +82,13 @@ import NaturalLanguage
 struct CleanupPrompt {
 
     static let customInstructionKey = "cleanupInstruction"
-    static let defaultInstruction = "Minimal cleanup of dictated speech (V19D smart-verbatim + XML envelope, clause-preservation, contraction defense, K5 dedup generalization, K4 number policy, topic-words audit)."
+    static let defaultInstruction = "Minimal cleanup of dictated speech (V19E smart-verbatim + XML envelope, clause-preservation, contraction defense, K5 dedup generalization, K4 number policy, topic-words audit, R8 over-promotion fix)."
 
     /// Phase 28 WR-02: single source of truth for the prompt-variant tag
-    /// emitted into DebugCleanupRecord.prompt_version. When V19E/etc ships,
-    /// update this constant in lockstep with the prompt content above so
-    /// downstream JSONL analysis can correctly bucket records by prompt.
-    static let currentVersion = "v19d"
+    /// emitted into DebugCleanupRecord.prompt_version. Update this constant
+    /// in lockstep with the prompt content above so downstream JSONL analysis
+    /// can correctly bucket records by prompt version.
+    static let currentVersion = "v19e"
 
     static func build(
         text: String,
@@ -125,7 +125,10 @@ struct CleanupPrompt {
         // W-01 dual-defense: ITN (Plan 28-02) runs BEFORE the LLM and promotes identifier-adjacent
         // numbers deterministically. The trailing "Preserve digits" clause prevents the LLM from
         // re-spelling already-converted digits (e.g., re-spelling "E1" back to "E one").
-        prompt += "8. Standalone single-digit number-words ('one'..'nine' EN, 'eins'..'zwölf' DE): in prose, spell them out. EXCEPTION: when identifier-adjacent (after a capitalized stem like 'E one' -> E1, 'M three' -> M3, or after a version-class word like 'version two' -> version 2), render as digits. Sentence-start always spells out. Preserve digits and number-formats already present in the input — do not re-spell them as words.\n\n"
+        // Phase 34 V19E: tightened the EXCEPTION — stem must be ALL-CAPS (GPT, API, E, M) OR
+        // contain a non-letter character (iOS, GPT-4, E2) to qualify. Ordinary capitalized words
+        // (sentence-start, names, common nouns) do NOT qualify even when adjacent to a number-word.
+        prompt += "8. Standalone single-digit number-words ('one'..'nine' EN, 'eins'..'zwölf' DE): in prose, spell them out. EXCEPTION: when identifier-adjacent — the preceding stem must be ALL-CAPS (e.g. 'E one' -> E1, 'GPT four' -> GPT4) or contain a non-letter character (e.g. 'E2 one' -> E21, 'iOS three' -> iOS3), or follow a version-class word (e.g. 'version two' -> version 2) — render as digits. Do NOT promote ordinary capitalized words (sentence-start, names, or nouns) followed by a number-word (e.g. 'King Four', 'option one', 'every two'). Sentence-start always spells out. Preserve digits and number-formats already present in the input — do not re-spell them as words.\n\n"
         // Phase 25.1-02 — paper §6.2 XML output tags (Class D mitigation):
         // the envelope is the parser contract (CleanupService.stripPreamble extracts
         // content between the tags; fallback to verbatim when tags are missing).
@@ -191,7 +194,10 @@ struct CleanupPrompt {
             // Phase 28 D-10 (W-01 DE parity): Regel 8 mirrors EN Rule 8 including digit-preservation clause.
             // Phase 28 WR-01: use bullet ('- ') prefix to match Regeln 1-7 — the prior '8.' numeric prefix
             // created a heterogeneous list that may have caused the LLM to weight rule 8 differently.
-            prompt += "- Einzelne Zahlwörter ('eins'..'zwölf'): im Prosa-Text ausschreiben. AUSNAHME: identifier-adjazent (nach einem großgeschriebenen Stamm wie 'E eins' -> E1 oder nach einem Versions-Wort wie 'Version zwei' -> Version 2) werden sie als Ziffern gesetzt. Satzanfang immer ausgeschrieben. Behalte bereits im Text vorhandene Ziffern und Zahlenformate bei — formuliere sie nicht in Wörter um.\n"
+            // Phase 34 V19E: tightened — Stamm muss VOLLSTÄNDIG in Großbuchstaben sein oder ein
+            // Nicht-Buchstaben-Zeichen enthalten; gewöhnliche großgeschriebene Wörter (Satzanfang,
+            // Eigennamen, Nomen) qualifizieren NICHT, auch wenn ein Zahlwort folgt.
+            prompt += "- Einzelne Zahlwörter ('eins'..'zwölf'): im Prosa-Text ausschreiben. AUSNAHME: identifier-adjazent — der vorangehende Stamm muss VOLLSTÄNDIG in Großbuchstaben sein (z.B. 'E eins' -> E1, 'GPT vier' -> GPT4) oder ein Nicht-Buchstaben-Zeichen enthalten (z.B. 'iOS drei' -> iOS3), oder es folgt ein Versions-Wort (z.B. 'Version zwei' -> Version 2) — dann als Ziffern setzen. Keine gewöhnlichen großgeschriebenen Wörter (Satzanfang, Eigennamen, Substantive) mit nachfolgendem Zahlwort promoten. Satzanfang immer ausgeschrieben. Behalte bereits im Text vorhandene Ziffern und Zahlenformate bei — formuliere sie nicht in Wörter um.\n"
             prompt += "\n"
 
             prompt += "In: das das Meeting ist um fünf\n"
@@ -282,6 +288,21 @@ struct CleanupPrompt {
             // Identifier case: capitalized stem triggers digit rendering.
             prompt += "In: working on E one and M three\n"
             prompt += "Out: Working on E1 and M3.\n\n"
+
+            // Phase 34 V19E: negative few-shots teaching Gemma NOT to promote ordinary
+            // capitalized words + number-word pairs. The Out: lines show the correct
+            // treatment — preserve the word, lowercase sentence-initial capitals.
+            prompt += "In: so why would you mark kink three\n"
+            prompt += "Out: So why would you mark kink three.\n\n"
+
+            prompt += "In: and the same goes for King Four\n"
+            prompt += "Out: And the same goes for King four.\n\n"
+
+            prompt += "In: your option one is the default\n"
+            prompt += "Out: Your option one is the default.\n\n"
+
+            prompt += "In: we meet every two weeks\n"
+            prompt += "Out: We meet every two weeks.\n\n"
 
             // Prose case: standalone number-word preserved as word.
             prompt += "In: I have three meetings today\n"

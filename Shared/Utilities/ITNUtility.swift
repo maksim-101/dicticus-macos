@@ -327,6 +327,209 @@ struct ITNUtility {
         "zee": "Z",
     ]
 
+    // MARK: - Spoken punctuation collapse (Phase 32 PUNCT-01/PUNCT-02)
+
+    static func collapseSpokenPunctuation(to text: String) -> String {
+        let tokens = text.components(separatedBy: .whitespacesAndNewlines)
+        var result: [String] = []
+        var i = 0
+
+        while i < tokens.count {
+            let lower = tokens[i].lowercased()
+
+            // Two-token unambiguous: "at sign" → "@"
+            if lower == "at" && i + 1 < tokens.count && tokens[i + 1].lowercased() == "sign" {
+                result.append("@")
+                i += 2
+                continue
+            }
+
+            // Unambiguous connector: merges with left and right neighbors (hyphen, slash, backslash, underscore)
+            if let symbol = connectorPunctuation[lower], i > 0, i < tokens.count - 1 {
+                let left = result.removeLast()
+                let right = tokens[i + 1]
+                result.append("\(left)\(symbol)\(right)")
+                i += 2
+                continue
+            }
+
+            // Unambiguous connector at edge (no both-side neighbors): emit standalone symbol
+            if let symbol = connectorPunctuation[lower] {
+                result.append(symbol)
+                i += 1
+                continue
+            }
+
+            // Unambiguous standalone: emit symbol in place
+            if let symbol = standalonePunctuation[lower] {
+                result.append(symbol)
+                i += 1
+                continue
+            }
+
+            // Conditional: dollar (right-flank identifier gate only)
+            if lower == "dollar" && i + 1 < tokens.count && isIdentifierShaped(tokens[i + 1]) {
+                result.append("$")
+                i += 1
+                continue
+            }
+
+            // Conditional: minus, dot, colon (both-flank identifier gate; dot also has numeric-flank path)
+            if let symbol = conditionalPunctuation[lower], i > 0, i < tokens.count - 1 {
+                let left = tokens[i - 1]
+                let right = tokens[i + 1]
+
+                // dot: numeric-flank path → resolve both number-words to digits, emit "left.right"
+                if lower == "dot" && isNumericFlank(left) && isNumericFlank(right) {
+                    let leftDigit = numericWordToDigit[left.lowercased()] ?? left
+                    let rightDigit = numericWordToDigit[right.lowercased()] ?? right
+                    result.removeLast()
+                    result.append("\(leftDigit).\(rightDigit)")
+                    i += 2
+                    continue
+                }
+
+                // identifier-flank path (dot also handles identifier context here)
+                if isIdentifierShaped(left) && isIdentifierShaped(right) {
+                    result.removeLast()
+                    result.append("\(left)\(symbol)\(right)")
+                    i += 2
+                    continue
+                }
+            }
+
+            result.append(tokens[i])
+            i += 1
+        }
+
+        return result.joined(separator: " ")
+    }
+
+    /// Post-ITN pass for model-name patterns: collapse a conditional symbol
+    /// (minus/dot/colon) between an identifier-shaped alpha flank and a digit
+    /// number — "mt minus 24" → "mt-24", "H minus 100" → "H-100", "v dot 2" → "v.2".
+    /// Runs AFTER `applyITN` so number-words are already digits (the pre-ITN
+    /// `collapseSpokenPunctuation` pass cannot see "twenty four" as "24").
+    /// Precision-first: the alpha flank must look like an identifier (≤3 chars,
+    /// OR contains an uppercase letter, OR contains a digit) so prose subtraction
+    /// like "total minus 12" / "budget minus 100" is left untouched; never
+    /// collapses number–number ("24 minus 12" stays arithmetic).
+    static func collapseIdentifierNumberPunctuation(to text: String) -> String {
+        let tokens = text.components(separatedBy: .whitespacesAndNewlines)
+        var result: [String] = []
+        var i = 0
+
+        while i < tokens.count {
+            let lower = tokens[i].lowercased()
+
+            if let symbol = conditionalPunctuation[lower], !result.isEmpty, i < tokens.count - 1 {
+                let left = result[result.count - 1]
+                let right = tokens[i + 1]
+                let leftModel = isModelIdentifier(left), rightModel = isModelIdentifier(right)
+                let leftDigit = isDigitToken(left), rightDigit = isDigitToken(right)
+
+                if (leftModel && rightDigit) || (leftDigit && rightModel) {
+                    result.removeLast()
+                    result.append("\(left)\(symbol)\(right)")
+                    i += 2
+                    continue
+                }
+            }
+
+            result.append(tokens[i])
+            i += 1
+        }
+
+        return result.joined(separator: " ")
+    }
+
+    // A bare digit run (ignoring trailing sentence punctuation): "24", "4090", "12."
+    private static func isDigitToken(_ token: String) -> Bool {
+        let stripped = token.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?)"))
+        return !stripped.isEmpty && stripped.allSatisfy { $0.isNumber }
+    }
+
+    // An identifier-shaped alpha token that reads like a model stem, not a prose word:
+    // short (≤3), capitalized, or already containing a digit. Excludes plain
+    // lowercase dictionary words (total, budget, number, amount) to avoid prose
+    // subtraction false positives.
+    private static func isModelIdentifier(_ token: String) -> Bool {
+        guard isIdentifierShaped(token) else { return false }
+        guard token.contains(where: { $0.isLetter }) else { return false }
+        if token.count <= 3 { return true }
+        if token.contains(where: { $0.isUppercase }) { return true }
+        if token.contains(where: { $0.isNumber }) { return true }
+        return false
+    }
+
+    // Connector tokens merge with their left and right neighbors (path/identifier connectors)
+    private static let connectorPunctuation: [String: String] = [
+        "hyphen": "-",
+        "slash": "/",
+        "backslash": "\\",
+        "underscore": "_",
+        "bindestrich": "-",
+        "schrägstrich": "/",
+        "unterstrich": "_",
+    ]
+
+    // Standalone tokens replace themselves with a symbol, preserving surrounding spaces
+    private static let standalonePunctuation: [String: String] = [
+        "asterisk": "*",
+        "semicolon": ";",
+        "hash": "#",
+        "caret": "^",
+        "tilde": "~",
+        "klammeraffe": "@",
+        "raute": "#",
+        "sternchen": "*",
+    ]
+
+    private static let conditionalPunctuation: [String: String] = [
+        "minus": "-",
+        "dot": ".",
+        "colon": ":",
+    ]
+
+    private static let numericWordToDigit: [String: String] = [
+        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+        "ten": "10", "eleven": "11", "twelve": "12",
+    ]
+
+    private static let proseStopWords: Set<String> = [
+        "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+        "it", "its", "this", "that", "these", "those", "which", "who",
+        "and", "or", "but", "not", "vs", "versus",
+        "in", "of", "for", "at", "to", "as", "by", "on", "from", "with",
+    ]
+
+    private static let englishNumberWords: Set<String> = [
+        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+        "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+        "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty",
+        "sixty", "seventy", "eighty", "ninety", "hundred", "thousand", "million", "billion",
+    ]
+
+    // Tokens that are themselves conditional punctuation words must not act as identifier flanks
+    private static let conditionalPunctuationWords: Set<String> = ["dot", "minus", "colon", "dollar"]
+
+    private static func isIdentifierShaped(_ token: String) -> Bool {
+        let lower = token.lowercased()
+        guard token.count >= 1 && token.count <= 20 else { return false }
+        guard !proseStopWords.contains(lower) else { return false }
+        guard !englishNumberWords.contains(lower) else { return false }
+        guard !conditionalPunctuationWords.contains(lower) else { return false }
+        guard token.unicodeScalars.contains(where: { CharacterSet.alphanumerics.contains($0) }) else { return false }
+        return true
+    }
+
+    private static func isNumericFlank(_ token: String) -> Bool {
+        let lower = token.lowercased()
+        if Int(lower) != nil { return true }
+        return numericWordToDigit.keys.contains(lower)
+    }
+
     // MARK: - German ITN
 
     /// Custom parser for German compound number words.

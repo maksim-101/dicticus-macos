@@ -312,6 +312,114 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(once, twice, "stripPreamble must be idempotent on post-envelope output")
     }
 
+    // MARK: - Phase 34 V19E content-word gate (SC2)
+    //
+    // RED tests — CleanupService.gateContentWords(rulesCleaned:llmOutput:) does NOT
+    // yet exist (implemented in Plan 34-03).  These tests MUST fail to compile until
+    // that gate is added.  The compile failure is the intended RED signal.
+    //
+    // Gate contract (Plan 34-03):
+    //   public static func gateContentWords(rulesCleaned: String, llmOutput: String) -> String
+    //   - Returns rulesCleaned (fallback) if llmOutput drops any content word
+    //     (≥4 chars, lowercased, not stop-word, not stem-allowlist) present in rulesCleaned.
+    //   - Returns llmOutput unchanged otherwise and on graceful-degradation cases
+    //     (empty input, zero content words, unexpected shape).
+
+    func testGateContentWords_rejectsLocalWordLoss() {
+        // "kink" is a ≥4-char content word in rulesCleaned; llmOutput collapses it
+        // into "K3" — the gate must fall back to rulesCleaned.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "so why would you mark kink three",
+            llmOutput: "so why would you mark K3"
+        )
+        XCTAssertEqual(result, "so why would you mark kink three",
+            "Phase 34 SC2: gate must reject llmOutput that drops content word 'kink'")
+    }
+
+    func testGateContentWords_rejectsKingFourCollapse() {
+        // Both "King" and "Four" are ≥4-char content words; collapsing them to "K4"
+        // drops meaningful words — gate must fall back.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "and the same goes for King Four",
+            llmOutput: "and the same goes for K4"
+        )
+        XCTAssertEqual(result, "and the same goes for King Four",
+            "Phase 34 SC2: gate must reject llmOutput that drops 'King' and 'Four'")
+    }
+
+    func testGateContentWords_passesLegitimateEdit() {
+        // Light edit (recasing + punctuation only) preserves all ≥4-char content
+        // words — gate must pass llmOutput unchanged.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "please check whether the model works",
+            llmOutput: "Please check whether the model works."
+        )
+        XCTAssertEqual(result, "Please check whether the model works.",
+            "Phase 34 SC2: gate must pass llmOutput when all content words are preserved")
+    }
+
+    func testGateContentWords_passesStopWordReword() {
+        // Dropping a stop word ("that") does NOT constitute content-word loss —
+        // gate must pass llmOutput unchanged.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "I think that we should proceed",
+            llmOutput: "I think we should proceed."
+        )
+        XCTAssertEqual(result, "I think we should proceed.",
+            "Phase 34 SC2: stop-word deletion must not trigger gate rejection")
+    }
+
+    func testGateContentWords_gracefulDegradationEmptyInput() {
+        // Empty rulesCleaned → zero content words → gate returns llmOutput unchanged
+        // (mirrors gateLLMDialect graceful-degradation contract).
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "",
+            llmOutput: "some output"
+        )
+        XCTAssertEqual(result, "some output",
+            "Phase 34 SC2: empty rulesCleaned must return llmOutput (graceful degradation)")
+    }
+
+    // MARK: - Phase 34 gap-closure: WR-01 (number-word allowlist) + WR-03 (short-utterance gate)
+
+    func testGateContentWords_preservesLegitimateNumberPromotion() {
+        // "three" is a spelled-out number-word; the LLM legitimately promotes "M three" → "M3".
+        // After the number-word allowlist (WR-01), "three" is excluded from requiredContentWords,
+        // so the only other token "M" is too short (1 char) → zero required content words →
+        // gate must pass llmOutput unchanged (promotion preserved).
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "and the same goes for M three",
+            llmOutput: "and the same goes for M3"
+        )
+        XCTAssertEqual(result, "and the same goes for M3",
+            "WR-01: gate must not revert legitimate number-word promotion 'M three' → 'M3'")
+    }
+
+    func testGateContentWords_stillRejectsKinkThreeAfterAllowlist() {
+        // CRITICAL REGRESSION GUARD: "three" is allowlisted as a number-word,
+        // but "kink" (4-char, non-stop, non-number content word) is NOT allowlisted.
+        // Collapsing "kink three" → "K3" drops "kink" → gate must still revert.
+        // Verifies that the WR-01 allowlist did NOT weaken R8 detection.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "so why would you mark kink three",
+            llmOutput: "so why would you mark K3"
+        )
+        XCTAssertEqual(result, "so why would you mark kink three",
+            "WR-01 regression guard: 'kink' is a non-number content word and must still trip the gate after number-word allowlist")
+    }
+
+    func testGateContentWords_rejectsShortKinkThree() {
+        // WR-03: the gate must protect short utterances (≤3 words at the function level).
+        // "mark kink three" has 3 tokens; "kink" is a required content word; "K3" drops it.
+        // Gate must return the rulesCleaned baseline.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "mark kink three",
+            llmOutput: "mark K3"
+        )
+        XCTAssertEqual(result, "mark kink three",
+            "WR-03: gate must reject content-word loss even on short (3-word) inputs")
+    }
+
     // MARK: - Phase 20.08 dialect-suppression gate (R1, R2, R3)
 
     /// R1: Gate must DEMOTE when LLM injects a Swiss dialect form that was

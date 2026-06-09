@@ -4,7 +4,8 @@ struct ContentView: View {
     @EnvironmentObject var viewModel: DictationViewModel
     @EnvironmentObject var warmupService: IOSModelWarmupService
     @EnvironmentObject var historyService: HistoryService
-    
+    @EnvironmentObject var dictionaryService: DictionaryService
+
     @Environment(\.horizontalSizeClass) var sizeClass
     @State private var selectedTab = 0
     @State private var columnVisibility = NavigationSplitViewVisibility.all
@@ -19,8 +20,12 @@ struct ContentView: View {
                             .foregroundColor(selectedTab == 0 ? .accentColor : .primary)
                     }
                     Button { selectedTab = 1 } label: {
-                        Label("History", systemImage: "clock")
+                        Label("Dictionary", systemImage: "book")
                             .foregroundColor(selectedTab == 1 ? .accentColor : .primary)
+                    }
+                    Button { selectedTab = 2 } label: {
+                        Label("History", systemImage: "clock")
+                            .foregroundColor(selectedTab == 2 ? .accentColor : .primary)
                     }
                 }
                 .navigationTitle("Dicticus")
@@ -29,6 +34,11 @@ struct ContentView: View {
                     DictationView()
                         .environmentObject(viewModel)
                         .environmentObject(warmupService)
+                } else if selectedTab == 1 {
+                    NavigationStack {
+                        DictionaryManagementView()
+                            .environmentObject(dictionaryService)
+                    }
                 } else {
                     HistoryView()
                         .environmentObject(historyService)
@@ -52,13 +62,22 @@ struct ContentView: View {
                         Label("Dictate", systemImage: "mic")
                     }
                     .tag(0)
-                
+
+                NavigationStack {
+                    DictionaryManagementView()
+                        .environmentObject(dictionaryService)
+                }
+                .tabItem {
+                    Label("Dictionary", systemImage: "book")
+                }
+                .tag(1)
+
                 HistoryView()
                     .environmentObject(historyService)
                     .tabItem {
                         Label("History", systemImage: "clock")
                     }
-                    .tag(1)
+                    .tag(2)
             }
             .task {
                 viewModel.setupNotificationObserver()
@@ -77,4 +96,5 @@ struct ContentView: View {
         .environmentObject(DictationViewModel())
         .environmentObject(IOSModelWarmupService())
         .environmentObject(HistoryService.shared)
+        .environmentObject(DictionaryService.shared)
 }

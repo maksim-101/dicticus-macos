@@ -53,7 +53,15 @@ class IOSModelWarmupService: ObservableObject {
 
     @Published var isWarming = false
     @Published var isReady = false
-    @Published var hasModels = false
+    // IOS-ONB-01: Initialize synchronously from the filesystem so the first
+    // SwiftUI frame already reflects true model presence. The previous `= false`
+    // literal caused a one-frame flash on cold launch when models were present:
+    // the property briefly published `false` before `checkHasModels()` ran in
+    // `init()`. Using a closure initializer removes that race entirely.
+    @Published var hasModels: Bool = {
+        let cacheDir = AsrModels.defaultCacheDirectory(for: .v3)
+        return AsrModels.modelsExist(at: cacheDir, version: .v3)
+    }()
     @Published var downloadProgress: Double = 0.0
     @Published var downloadStatus: String = ""
     @Published var error: String?
@@ -103,8 +111,11 @@ class IOSModelWarmupService: ObservableObject {
         // Fire the once-only static backend init (D-29). `_ =` ensures the
         // compiler doesn't elide the reference; Swift evaluates `backendInitToken`
         // on first touch and caches the result for subsequent instances.
+        // IOS-ONB-01: checkHasModels() removed from init — hasModels now
+        // self-initializes via the property closure above. checkHasModels()
+        // is retained for the scenePhase.active foreground re-check (DicticusApp
+        // line 60) and the warmup()/retry() call sites.
         _ = IOSModelWarmupService.backendInitToken
-        checkHasModels()
     }
 
     /// Check if models are already downloaded.
