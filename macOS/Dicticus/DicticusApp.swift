@@ -30,6 +30,34 @@ struct DicticusApp: App {
     // entry that uses it is gated by #if DEBUG.
     @Environment(\.openWindow) private var openWindow
 
+    // Stage Manager fix (Finding 5): track how many auxiliary windows (Dictionary,
+    // History, Settings) are currently open. When the count goes 0→1 we promote to
+    // .regular so Stage Manager groups these windows under a real app identity (with a
+    // transient Dock icon). When the count returns to 0 we restore .accessory so the
+    // app vanishes from the Dock and Cmd-Tab again — matching the pure menu-bar default.
+    @State private var auxiliaryWindowCount = 0
+
+    private func auxiliaryWindowOpened() {
+        auxiliaryWindowCount += 1
+        if auxiliaryWindowCount == 1 {
+            NSApp.setActivationPolicy(.regular)
+            // Bring the newly-opened window to the front. Without this the window can
+            // open behind the currently-active Stage Manager group.
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private func auxiliaryWindowClosed() {
+        auxiliaryWindowCount = max(0, auxiliaryWindowCount - 1)
+        if auxiliaryWindowCount == 0 {
+            // Brief delay so Stage Manager can process the window closure before the
+            // app's entry disappears from its strip, avoiding a jarring instant removal.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NSApp.setActivationPolicy(.accessory)
+            }
+        }
+    }
+
     var body: some Scene {
         MenuBarExtra {
             PopoverRoot()
@@ -93,12 +121,20 @@ struct DicticusApp: App {
                     // Wire CleanupService into HotkeyManager and icon state.
                     if ready, let cleanup = warmupService.cleanupServiceInstance {
                         cleanupService = cleanup
-                        
+
                         let processingService = TextProcessingService(cleanupService: cleanup)
                         textProcessingService = processingService
                         hotkeyManager.textProcessingService = processingService
                         hotkeyManager.cleanupService = cleanup
                     }
+                }
+                // Stage Manager fix: listen for auxiliary-window open/close notifications
+                // posted by DictionaryView, HistoryView, and SettingsRoot (Finding 5).
+                .onReceive(NotificationCenter.default.publisher(for: .dicticusAuxWindowOpened)) { _ in
+                    auxiliaryWindowOpened()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .dicticusAuxWindowClosed)) { _ in
+                    auxiliaryWindowClosed()
                 }
         }
         .menuBarExtraStyle(.window)
