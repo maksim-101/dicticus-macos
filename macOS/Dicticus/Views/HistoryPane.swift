@@ -32,7 +32,7 @@ struct HistoryPane: View {
                         .padding(.top, 12)
                         .padding(.bottom, 6)
 
-                    let recentEntries = Array(historyService.entries.prefix(2))
+                    let recentEntries = Array(historyService.entries.prefix(4))
                     ForEach(Array(recentEntries.enumerated()), id: \.element.uuid) { index, entry in
                         inlineHistoryRow(entry)
                         if index < recentEntries.count - 1 {
