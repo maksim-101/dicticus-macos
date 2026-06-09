@@ -9,6 +9,7 @@
 - ✅ **v2.2 Adaptive Cleanup & Stability** — Phases 21-26 (shipped 2026-05-22)
 - ✅ **v2.3 Live-Capture Quality Pass** — Phases 27-30 (shipped 2026-06-06, macOS 1.3.0) — [Archive](milestones/v2.3-ROADMAP.md)
 - ✅ **v2.4 Public-Release Readiness + Dictionary as Platform** — Phases 31-35 (shipped 2026-06-09) — [Archive](milestones/v2.4-ROADMAP.md)
+- 🔄 **v2.5 iOS Release & Context-Aware Dictation** — Phases 36-40 (in progress)
 
 ---
 
@@ -34,19 +35,91 @@
 
 ---
 
-## Upcoming: v2.5
+## Phases: v2.5 iOS Release & Context-Aware Dictation
 
-| Phase | Milestone | Scope | Status |
-|-------|-----------|-------|--------|
-| 36. iOS Background Dictation Recording | v2.5 (candidate) | Spike-first: background mic recording + Live Activity stop control | Backlog |
+- [ ] **Phase 36: iOS Background Dictation** — Spike-first: validate App Review design, then implement background mic recording with Live Activity stop control
+- [ ] **Phase 37: iOS Distribution** — Background Assets model download, privacy labels, TestFlight + App Store submission
+- [ ] **Phase 38: Context-Aware Formatting** — Active-app detection → AI-cleanup prompt adaptation (macOS-primary, cross-platform via Shared/)
+- [ ] **Phase 39: Voice Edit Commands** — Deterministic pre-LLM spoken edit commands ("scratch that", "new paragraph", "capitalize X")
+- [ ] **Phase 40: Windows Feasibility Spike** — Written feasibility report for Windows port; no shipping code
 
-Additional v2.5 candidates: public release (notarized `macos-v2.4.0` DMG + Sparkle; `ios-v2.4.0`), menu-bar right-click→Quit (NSStatusItem refactor), Stage Manager ongoing watch.
+---
+
+## Progress: v2.5
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 36. iOS Background Dictation | 0/TBD | Not started | - |
+| 37. iOS Distribution | 0/TBD | Not started | - |
+| 38. Context-Aware Formatting | 0/TBD | Not started | - |
+| 39. Voice Edit Commands | 0/TBD | Not started | - |
+| 40. Windows Feasibility Spike | 0/TBD | Not started | - |
 
 ---
 
 ## Phase Details
 
-### Phase 36: iOS Background Dictation Recording (v2.5 candidate — SPIKE-FIRST)
+### Phase 36: iOS Background Dictation
+**Goal**: User can start dictating on iOS, switch apps or lock the screen mid-dictation, and receive a complete accurate transcript when they stop — without data loss and without keeping Dicticus in the foreground
+**Depends on**: Phase 35 (v2.4 shipped)
+**Requirements**: IOSBG-01, IOSBG-02, IOSBG-03
+**App-Review risk**: HIGH — `UIBackgroundModes: audio` is scrutinized; spike validates the design before implementation commits to it
+**Success Criteria** (what must be TRUE):
+  1. User starts dictation in Dicticus, switches to another app (or locks screen), and the orange mic indicator stays visible in the iOS status bar throughout
+  2. User stops dictation via the Live Activity stop control (Dynamic Island / lock screen) without returning to the Dicticus app
+  3. When the user next opens Dicticus (or the transcript completes in background), the full recording is transcribed with no audio data lost
+  4. The background-recording design has been reviewed against App Store review guidelines and uses the correct `AVAudioSession` category with a clear user-facing justification documented in the spike
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 37: iOS Distribution
+**Goal**: Any iOS user can install Dicticus from TestFlight (then the App Store), download the ASR model post-install with clear progress and consent, and trust that the app accurately represents its data practices to Apple and to them
+**Depends on**: Phase 36
+**Requirements**: IOSDIST-01, IOSDIST-02, IOSDIST-03
+**App-Review risk**: MEDIUM — privacy labels and microphone/background justifications must be accurate and specific to avoid rejection
+**Success Criteria** (what must be TRUE):
+  1. A user with no Xcode or developer tools can install Dicticus on their iPhone by accepting a TestFlight invite (or App Store link)
+  2. On first launch, the app presents the ~2.7 GB model download with its size stated, a progress indicator, and a consent step — the user is never surprised by a large download
+  3. The app's App Store privacy label correctly states "Data Not Collected" (no audio/transcripts leave the device) and specifies microphone and background-audio usage in terms App Review accepts
+  4. The app passes at least one complete App Review cycle (TestFlight or App Store) without rejection on privacy or background-mode grounds
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 38: Context-Aware Formatting
+**Goal**: AI cleanup adapts its tone and formatting to whatever app the user is dictating into — a code editor gets different output than an email client — without any network calls, and the user can override or disable this behaviour
+**Depends on**: Phase 35 (v2.4 shipped)
+**Requirements**: CTXFMT-01, CTXFMT-02, CTXFMT-03
+**Success Criteria** (what must be TRUE):
+  1. When the user dictates into a code editor (e.g., Xcode, VS Code), AI cleanup preserves identifiers, avoids sentence-capitalizing code tokens, and omits filler reformatting that would break code context
+  2. When the user dictates into a chat app or email client, AI cleanup formats the output as natural prose appropriate to that context
+  3. Active-app detection happens entirely on-device: no app name, window title, or text is sent to any network endpoint
+  4. A Settings toggle lets the user disable context-aware formatting entirely; a separate control lets them pin a specific context (overriding auto-detection) for the current session
+**Plans**: TBD
+
+### Phase 39: Voice Edit Commands
+**Goal**: User can dictate correction commands ("scratch that", "new paragraph", "capitalize last word") that are applied deterministically to the transcript — without the LLM being involved in command recognition
+**Depends on**: Phase 35 (v2.4 shipped)
+**Requirements**: VEDIT-01, VEDIT-02
+**Success Criteria** (what must be TRUE):
+  1. User says "scratch that" immediately after a dictation and the most-recent pasted text is removed from the active text field
+  2. User says "new paragraph" and a paragraph break is inserted at the insertion point
+  3. Edit commands are matched by a deterministic rule layer (not sent to the LLM), so command recognition has zero latency beyond the normal dictation transcription time
+  4. If the user dictates text that happens to contain command-like phrases as literal content, the distinction between command and literal is clear and documented (e.g., commands only trigger when spoken as a standalone utterance)
+**Plans**: TBD
+
+### Phase 40: Windows Feasibility Spike
+**Goal**: A written report exists that scopes a Windows port — covering ASR (whisper.cpp), LLM (llama.cpp), app shell, global hotkeys, text injection, and model sharing — with a recommendation and rough effort estimate; no production code is written
+**Depends on**: Nothing (fully independent research phase)
+**Requirements**: WIN-01
+**Success Criteria** (what must be TRUE):
+  1. The report answers: can the same GGUF model files be used on Windows without conversion?
+  2. The report specifies the minimum Windows API surface needed for push-to-talk + text-at-cursor injection and identifies any showstoppers
+  3. The report gives a rough effort estimate (e.g., person-weeks) and a clear go/no-go recommendation for a v3.0 Windows port
+**Plans**: TBD
+
+---
+
+### Phase 36 (archive — v2.5 candidate stub from v2.4): iOS Background Dictation Recording (v2.5 candidate — SPIKE-FIRST)
 **Goal**: A user can trigger dictation, leave Dicticus (or lock the screen), keep speaking while looking at what they're answering, stop from the Live Activity, and paste the result — all without reopening the app
 **Origin**: Found during Phase 33 UAT (2026-06-08). The dictation Live Activity implied background recording but iOS suspended the app and recording stopped (no `audio` background mode; elapsed ticker hardcoded to 0). Interim fix (commit 82f2860) removed the misleading Live Activity and finalizes-on-background; this phase builds the real feature.
 **Not public-release-blocking** — deferred to v2.5.
@@ -57,7 +130,7 @@ Additional v2.5 candidates: public release (notarized `macos-v2.4.0` DMG + Spark
   - Known friction: iOS has no API to auto-return the user to their previous app (Messages, etc.) — "return" is a manual swipe; and App Store review scrutinizes the `audio` background mode (defensible for a dictation app, not a rubber stamp).
 **Spike-first targets**: (1) can an AppIntent/Shortcut start the mic without a jarring app-switch; (2) the background-task transcription tail under real suspension timing.
 **Re-enable**: the dormant Live Activity (DictationLiveActivity.swift), `startLiveActivity()`, real elapsed timer, Stop control.
-**Requirements**: TBD (define at spec/discuss time)
+**Requirements**: IOSBG-01, IOSBG-02, IOSBG-03
 **Plans**: TBD
 
 ---
@@ -219,4 +292,54 @@ Additional v2.5 candidates: public release (notarized `macos-v2.4.0` DMG + Spark
 
 ---
 
-*Last updated: 2026-06-09 — v2.4 shipped (Phases 31-35). v2.5 next: Phase 36 (iOS Background Dictation, spike-first) + public release.*
+### Phase 31: Dictionary as Platform
+
+**Goal:** Ship a clean public dictionary default (zero personal entries in Release binary) with CSV/JSON import-export, merge strategies, offline starter packs, and documentation for the CSV-author workflow.
+
+**Requirements:** DICT-SPLIT-01..04, DICT-IO-01..04, TECHLEX-01..02
+
+**Plans:** all complete (completed 2026-06-06)
+
+---
+
+### Phase 32: Spoken Punctuation
+
+**Goal:** Deterministic pre-LLM spoken-punctuation collapse in Shared/: unambiguous tokens always collapse; conditional tokens only between identifier-shaped flanks. Cross-platform. In-app reference table.
+
+**Requirements:** PUNCT-01..04
+
+**Plans:** all complete (completed 2026-06-07)
+
+---
+
+### Phase 33: iOS First-Run & Onboarding Polish
+
+**Goal:** Fix cold-launch download flash, untruncated download copy, remove duplicate Action Button entry; add auto-presenting + re-triggerable 3-page onboarding wizard.
+
+**Requirements:** IOS-ONB-01..05
+
+**Plans:** all complete (completed 2026-06-07)
+
+---
+
+### Phase 34: V19E — R8 Over-Promotion Fix
+
+**Goal:** Tighten R8 EXCEPTION prompt wording + add `gateContentWords` set-membership gate to eliminate the kink→K3 / King Four→K4 word-loss class invisible to Levenshtein; full suite GREEN.
+
+**Requirements:** V19E-01..03
+
+**Plans:** all complete (completed 2026-06-08)
+
+---
+
+### Phase 35: UI Reorganization
+
+**Goal:** Decompose macOS popover into a fixed-height tabbed shell (Home/Dictionary/History) + 4-pane Settings window; promote iOS to 3-tab layout; dictionary sort user entries on top; Stage Manager fix; popover Quit button.
+
+**Requirements:** UIORG-01..04
+
+**Plans:** all complete (completed 2026-06-09, UAT approved)
+
+---
+
+*Last updated: 2026-06-09 — v2.5 roadmap created (Phases 36-40, 12 requirements).*

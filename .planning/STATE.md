@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: planning
-last_updated: "2026-06-09T19:29:26.862Z"
+last_updated: "2026-06-09T00:00:00.000Z"
 last_activity: 2026-06-09
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -15,93 +15,80 @@ progress:
 
 # Project State: Dicticus
 
-**Last Updated:** 2026-06-06 — v2.4 roadmap created (5 phases, 27 requirements)
-**Milestone:** v2.4 Public-Release Readiness + Dictionary as Platform
-**Previous milestone:** v2.3 Live-Capture Quality Pass — shipped 2026-06-06 (macOS 1.3.0, tag `macos-v1.3.0`)
+**Last Updated:** 2026-06-09 — v2.5 roadmap created (5 phases, 12 requirements)
+**Milestone:** v2.5 iOS Release & Context-Aware Dictation
+**Previous milestone:** v2.4 Public-Release Readiness + Dictionary as Platform — shipped 2026-06-09
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 36 — iOS Background Dictation (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-09 — Milestone v2.5 started
+Status: Roadmap created, planning Phase 36
+Last activity: 2026-06-09 — v2.5 roadmap created
 
 ### Next Action
 
-1. Cut `macos-v2.4.0` release (DMG + Sparkle appcast update on gh-pages) and `ios-v2.4.0` (TestFlight / device install)
-2. Start v2.5 planning: Phase 36 (iOS Background Dictation, spike-first) + public release + NSStatusItem refactor
-
-v2.4 completed phases:
-
-1. ✅ Phase 31: Dictionary Split + Import/Export + TECHLEX docs (BLOCKER) — DONE
-2. ✅ Phase 32: Spoken Punctuation (deterministic pre-LLM pass, cross-platform) — DONE
-3. ✅ Phase 33: iOS First-Run & Onboarding Polish — DONE
-4. ✅ Phase 34: V19E — R8 Over-Promotion Fix — DONE (2026-06-08)
-5. ✅ Phase 35: UI Reorganization — DONE (2026-06-09, UAT approved)
-
-**Residual from Phase 31:** iOS on-device verification of import/export + starter packs (covered by shared-code parity; both targets build) — fold into the next iOS device pass / Phase 33.
+1. Cut `macos-v2.4.0` release (DMG + Sparkle appcast update on gh-pages) and `ios-v2.4.0` (TestFlight / device install) — still pending from v2.4 closeout
+2. Run `/gsd:plan-phase 36` — iOS Background Dictation (spike-first, App-Review-aware)
 
 ## Phase Overview
 
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
-| 31. Dictionary as Platform | Public default split + CSV import/export + docs | DICT-SPLIT-01..04, DICT-IO-01..04, TECHLEX-01..02 | ✅ Complete (2026-06-06) |
-| 32. Spoken Punctuation | Deterministic pre-LLM punctuation collapse (Shared/) | PUNCT-01..04 | ✅ Complete (2026-06-07) |
-| 33. iOS First-Run & Onboarding | Fix flash glitch, truncation, duplicate; add wizard | IOS-ONB-01..05 | ✅ Complete (2026-06-07) |
-| 34. V19E — R8 Over-Promotion Fix | Tighten R8, add content-word gate | V19E-01..03 | ✅ Complete (2026-06-08) |
-| 35. UI Reorganization (discuss-first) | Declutter popover, promote dictionary, consolidate hotkeys | UIORG-01..04 | ✅ Complete (2026-06-09) |
+| 36. iOS Background Dictation | User can dictate, leave app / lock screen, and get a complete transcript — spike-first, App-Review-aware | IOSBG-01, IOSBG-02, IOSBG-03 | Not started |
+| 37. iOS Distribution | TestFlight + App Store install, Background Assets model download, privacy labels | IOSDIST-01, IOSDIST-02, IOSDIST-03 | Not started |
+| 38. Context-Aware Formatting | Active-app → AI-cleanup tone/format adaptation (macOS-primary, Shared/ cross-platform) | CTXFMT-01, CTXFMT-02, CTXFMT-03 | Not started |
+| 39. Voice Edit Commands | Deterministic spoken edit commands ("scratch that", "new paragraph", "capitalize X") | VEDIT-01, VEDIT-02 | Not started |
+| 40. Windows Feasibility Spike | Written feasibility report for Windows port; no shipping code | WIN-01 | Not started |
 
-## Key Decisions (v2.4)
+## Key Decisions (v2.5)
 
 | Decision | Rationale |
 |----------|-----------|
-| Phase 31 groups DICT-SPLIT + DICT-IO + TECHLEX | TECHLEX-01 is docs for the CSV workflow that only makes sense after import/export ships; DICT-SPLIT is unacceptable without import as the "empty default" remedy |
-| Phase 33 (iOS onboarding) sequenced before Phase 35 (UI reorg) | Onboarding bugs are concrete and decoupled; fixing them doesn't require IA decisions |
-| Phase 35 flagged discuss-first | IA questions (popover vs. floating window, iOS navigation pattern) cannot be pre-decided — must be resolved in the phase discussion |
-| Q-03 locked: mechanism B for Settings-open (35-02) | `NSApp.activate(ignoringOtherApps: true)` then `openSettings()` — both A and B verified on signed build; B chosen for documented `.accessory` first-click-foreground hardening; C rejected (Stage Manager conflict). ⌘, auto-registers; Settings coexists with dictionary/history WindowGroups. |
-| UIORG-02 complete (35-05) | All hotkey config consolidated into HotkeysPane — standard recorders (from HotkeySettingsView) + Fn modifier pickers + Re-register (from SettingsSection) in one Form with two labeled groups. HotkeySettingsView and SettingsSection deleted. |
-| SwissGermanFormRow extracted in AiCleanupPane (35-05) | SwissGermanToggleRow uses popover-padded HStack layout; Settings Form needs bare Toggle. Private struct with identical App-Group-scoped UserDefaults backing. |
-| V19E (Phase 34) independent | Quality track shares no files with dictionary/UI work; can ship in any window |
-| Cross-platform parity applies to Phases 31, 32 | DICT-SPLIT-03, DICT-IO-04, PUNCT-03 explicitly require iOS parity in the same phase |
-| SC3 harness not app-faithful (Phase 34) | score_v19e_corpus.py live mode applies Levenshtein-only gate against raw input — not the real app chain (rules-clean + gateContentWords + Levenshtein); measured 38.3% vs 55.6% floor is a measurement artifact; phase gated on test suite (443/435 GREEN) instead; harness rebuild tracked in .planning/backlog/ |
+| Phase 36 before Phase 37 | iOS distribution (App Review) depends on background dictation being settled; no point submitting without the feature |
+| Phases 38, 39, 40 independent | CTXFMT, VEDIT, WIN are fully decoupled from iOS work and from each other; can be planned and executed in any order or in parallel |
+| IOSBG-03 (spike) is Phase 36 plan 1, not a separate phase | The spike IS the safety gate for IOSBG-01/02 implementation; separating them into distinct phases would create a trivially-small phase and split coherent work |
+| WIN-01 is a research-only phase (no code) | Research report scopes the Windows port; production code is Future scope |
+| Context-aware formatting is macOS-primary | Active-app detection via `AXUIElement` / `NSWorkspace` is macOS-only; iOS equivalent (if any) derives from shared prompt path |
+| Cross-platform parity applies to Phase 38 (CTXFMT) | CTXFMT modifies the AI-cleanup prompt path in Shared/; per project convention, Shared/ changes ship macOS + iOS together |
 
 ## Accumulated Context
 
-### Architectural constraints
+### Architecture notes for v2.5
 
-- `DictionaryService.swift` in `Shared/` — any dictionary changes ship macOS + iOS together
-- Public build must not define `PERSONAL_LEXICON` flag — local xcconfig only, not in repo
-- `PersonalLexicon.json` is gitignored — Moritz's entries preserved locally, not shipped
-- `SpokenPunctuationCollapse` step lives in `Shared/Utilities/` (Phase 29 precedent for Shared/ deterministic steps)
-- Phase 35 (UI reorg): no pipeline/prompt/model changes — pure IA refactor; must respect DESIGN.md tokens
+- Phase 36: `UIBackgroundModes: audio` must be declared in iOS target Info.plist; AVAudioSession must remain active through the background task; `beginBackgroundTask` wrapper needed for post-stop transcription tail
+- Phase 36: `StopDictationIntent` and `DictationLiveActivity.swift` are dormant in the codebase (removed misleading Live Activity in interim fix commit 82f2860) — re-enable path is known
+- Phase 37: Background Assets framework (iOS 16+) is the preferred mechanism for the ~2.7 GB model download; ODR is the fallback; neither bundles the model in the binary
+- Phase 38: `NSWorkspace.shared.frontmostApplication` (macOS) gives the active app bundle ID; pass to `CleanupPrompt` as a context hint; no new network calls
+- Phase 39: Voice edit commands follow the spoken-punctuation precedent (Phase 32): deterministic pre-LLM layer in `Shared/Utilities/`; command recognition is a standalone utterance check, not inline with transcription
 
 ### Quality baselines to preserve
 
-- V19D 139-record corpus: 90.2% clean rate, 9.3% dictionary-hit baseline
-- V19E (Phase 34): 443 macOS + 435 iOS tests GREEN (incl. 5 testGateContentWords_* + V19E prompt tests); SC1 negatives pass (no K3/K4 collapse); dict-hit 37.0% unchanged
-- 443 macOS tests passing (Phase 34 wave 3, branch feature/phase-31-dictionary-platform)
-- Phase 35 (UI reorg): discuss-first gate; may defer to v2.5
+- 443 macOS XCTest passing (1 pre-existing failure `testBlocksUntilCleaned`)
+- 435 iOS XCTest passing
+- V19E content-word gate (`gateContentWords`) must remain active through all Shared/ changes
 
-### v2.4 resolved notes
+### Constraints active in v2.5
 
-- Phase 35 shipped 2026-06-09 — UI reorg complete, UAT approved
-- TECHLEX-02 shipped (3 bundled starter packs in Phase 31; precision bar cleared)
+- Strictly local: no audio, transcript, or app-name data sent to any server (CTXFMT-02 makes this explicit for Phase 38)
+- Cross-platform parity: Shared/ changes in Phase 38 ship macOS + iOS in the same phase
+- App-Review risk in Phase 36 and 37: document the spike findings and review justifications before submitting to App Store
 
 ## Session Continuity
 
-Last session: 2026-06-09T00:00:00.000Z
-Stopped at: Phase 35 Plan 07 — Phase 35 complete. UAT approved on Developer-ID-signed build. DESIGN.md updated. Conformance report closed.
-Next: Cut macos-v2.4.0 release OR begin Phase 36 (iOS Background Dictation, spike-first, v2.5 candidate)
+Last session: 2026-06-09
+Stopped at: v2.5 roadmap creation (this session)
+Next: Cut v2.4 public release, then plan Phase 36 (iOS Background Dictation)
 
 ---
 
-**(archived context below — v2.3 closeout)**
+**(archived context below — v2.4 closeout)**
 
-v2.3 shipped as macOS 1.3.0 (build 5, 2026-06-06). Phase 30 (PTT media auto-pause): ScriptingBridge pause tier (Music/Spotify) + CoreAudio/AppleScript mute-output fallback verified in signed-app UAT. Hardware-volume DACs documented as unsupported edge case for the mute fallback. Notarized DMG + Sparkle auto-update live.
+v2.4 shipped 2026-06-09. All 5 phases (31-35) complete. Phase 35 (UI Reorganization) UAT approved on Developer-ID-signed build. UIORG-01..04 verified. 453 macOS / 435 iOS tests GREEN. macOS v1.3.0 build 5 locally validated; public DMG + Sparkle + ios-v2.4.0 pending at milestone close.
 
 ## Deferred Items (acknowledged and deferred at v2.4 close — 2026-06-09)
 
-Total: **28** — predominantly historical items carried across milestones. None block v2.4 or the public release.
+Total: **28** — predominantly historical items carried across milestones. None block v2.5.
 
 | Category | Item / Slug | Status |
 |----------|-------------|--------|
@@ -132,15 +119,11 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Verification gap | Phase 33 — 33-VERIFICATION.md | human_needed |
 | Verification gap | Phase 34 — 34-VERIFICATION.md | human_needed |
 | Verification gap | Phase 35 — 35-VERIFICATION.md | human_needed |
-| Context question | Phase 35 — 35-CONTEXT.md (Q-01/Q-02/Q-03) | Q-01 (right-click Quit) and Q-03 (Settings scene) resolved in Phase 35; Q-02 (degraded-state placement) still open |
+| Context question | Phase 35 — 35-CONTEXT.md Q-02 | open (degraded-state placement — Q-01 and Q-03 resolved in Phase 35) |
 
 ## Operator Notes
 
 - `.planning/` is gitignored — no GSD commits target `.planning/*` files
 - Cross-platform parity per `feedback_cleanup_cross_platform_parity` — all Shared/ changes ship macOS + iOS together
 - English-first UAT acceptable per `project_usage_pattern_english_dominant`; German regressions validated via corpus
-- Installed macOS app: build 5 (macos-v1.3.0), Developer ID signed + notarized
-
-## Operator Next Steps
-
-- Start the next milestone with /gsd-new-milestone
+- Phase 36 is App-Review-risky: spike findings must be documented and justify the `UIBackgroundModes: audio` declaration before App Store submission

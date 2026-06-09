@@ -57,28 +57,28 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Which phases cover which requirements. Populated by the roadmapper.
+Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IOSBG-01 | — | Pending |
-| IOSBG-02 | — | Pending |
-| IOSBG-03 | — | Pending |
-| IOSDIST-01 | — | Pending |
-| IOSDIST-02 | — | Pending |
-| IOSDIST-03 | — | Pending |
-| CTXFMT-01 | — | Pending |
-| CTXFMT-02 | — | Pending |
-| CTXFMT-03 | — | Pending |
-| VEDIT-01 | — | Pending |
-| VEDIT-02 | — | Pending |
-| WIN-01 | — | Pending |
+| IOSBG-01 | Phase 36 | Pending |
+| IOSBG-02 | Phase 36 | Pending |
+| IOSBG-03 | Phase 36 | Pending |
+| IOSDIST-01 | Phase 37 | Pending |
+| IOSDIST-02 | Phase 37 | Pending |
+| IOSDIST-03 | Phase 37 | Pending |
+| CTXFMT-01 | Phase 38 | Pending |
+| CTXFMT-02 | Phase 38 | Pending |
+| CTXFMT-03 | Phase 38 | Pending |
+| VEDIT-01 | Phase 39 | Pending |
+| VEDIT-02 | Phase 39 | Pending |
+| WIN-01 | Phase 40 | Pending |
 
 **Coverage:**
 - v2.5 requirements: 12 total
-- Mapped to phases: 0 (roadmapper assigns phases)
-- Unmapped: 12 (pending roadmap)
+- Mapped to phases: 12
+- Unmapped: 0 — 100% coverage
 
 ---
 *Requirements defined: 2026-06-09*
-*Last updated: 2026-06-09 after v2.5 kickoff*
+*Last updated: 2026-06-09 — traceability populated by roadmapper (Phases 36-40)*
