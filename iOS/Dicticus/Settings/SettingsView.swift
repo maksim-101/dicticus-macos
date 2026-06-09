@@ -79,14 +79,17 @@ struct SettingsView: View {
                     .disabled(warmupService.isWarming)
                 }
 
-                Section {
-                    Link(destination: URL(string: "https://github.com/maksim-101/dicticus")!) {
-                        Label("Source Code", systemImage: "link")
-                    }
+                Section("What's New") {
                     ForEach(AppBuildInfo.recentChanges, id: \.self) { note in
                         Text(note)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section {
+                    Link(destination: URL(string: "https://github.com/maksim-101/dicticus")!) {
+                        Label("Source Code", systemImage: "link")
                     }
                 } header: {
                     Text("About")
