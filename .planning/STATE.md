@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Public-Release Readiness + Dictionary as Platform
-status: executing
-stopped_at: Phase 35 complete — UI reorganization shipped + UAT approved 2026-06-09
-last_updated: "2026-06-09T00:00:00.000Z"
-last_activity: 2026-06-09
+status: Awaiting next milestone
+stopped_at: Phase 35 Plan 07 — Phase 35 complete. UAT approved on Developer-ID-signed build. DESIGN.md updated. Conformance report closed.
+last_updated: "2026-06-09T17:55:27.211Z"
+last_activity: 2026-06-09 — Milestone v2.4 completed and archived
 progress:
   total_phases: 22
   completed_phases: 20
-  total_plans: 87
-  completed_plans: 87
-  percent: 100
+  total_plans: 80
+  completed_plans: 82
+  percent: 91
 ---
 
 # Project State: Dicticus
@@ -22,20 +22,18 @@ progress:
 
 ## Current Position
 
-Phase: 35 (ui-reorganization-discuss-first-candidate-to-defer-to-v2-5) — COMPLETE
-Plan: 7 of 7 — ALL PLANS COMPLETE
-Status: v2.4 milestone COMPLETE — all phases 31-35 done; UAT approved 2026-06-09
-Last activity: 2026-06-09
-
-Progress: [██████████] 100%
+Phase: v2.4 complete (2026-06-09); next: v2.5 planning
+Plan: —
+Status: v2.4 complete / v2.5 next
+Last activity: 2026-06-09 — Milestone v2.4 completed and archived; doc close-out done
 
 ### Next Action
 
-v2.4 is code-complete. Recommended next steps:
-1. Cut `macos-v2.4.0` release (DMG + Sparkle appcast update on gh-pages)
-2. Decide whether Phase 36 (iOS Background Dictation — v2.5 candidate, spike-first) starts now
+1. Cut `macos-v2.4.0` release (DMG + Sparkle appcast update on gh-pages) and `ios-v2.4.0` (TestFlight / device install)
+2. Start v2.5 planning: Phase 36 (iOS Background Dictation, spike-first) + public release + NSStatusItem refactor
 
 v2.4 completed phases:
+
 1. ✅ Phase 31: Dictionary Split + Import/Export + TECHLEX docs (BLOCKER) — DONE
 2. ✅ Phase 32: Spoken Punctuation (deterministic pre-LLM pass, cross-platform) — DONE
 3. ✅ Phase 33: iOS First-Run & Onboarding Polish — DONE
@@ -85,10 +83,10 @@ v2.4 completed phases:
 - 443 macOS tests passing (Phase 34 wave 3, branch feature/phase-31-dictionary-platform)
 - Phase 35 (UI reorg): discuss-first gate; may defer to v2.5
 
-### Known sequencing risk
+### v2.4 resolved notes
 
-- Phase 35 may slip to v2.5 without blocking public release — Phases 31-34 are sufficient for public-release readiness
-- TECHLEX-02 is evidence-gated (optional) — only ship the small tech-mishearing default lexicon if entries clear a precision bar
+- Phase 35 shipped 2026-06-09 — UI reorg complete, UAT approved
+- TECHLEX-02 shipped (3 bundled starter packs in Phase 31; precision bar cleared)
 
 ## Session Continuity
 
@@ -102,13 +100,40 @@ Next: Cut macos-v2.4.0 release OR begin Phase 36 (iOS Background Dictation, spik
 
 v2.3 shipped as macOS 1.3.0 (build 5, 2026-06-06). Phase 30 (PTT media auto-pause): ScriptingBridge pause tier (Music/Spotify) + CoreAudio/AppleScript mute-output fallback verified in signed-app UAT. Hardware-volume DACs documented as unsupported edge case for the mute fallback. Notarized DMG + Sparkle auto-update live.
 
-## Deferred Items (carried from v2.3)
+## Deferred Items (acknowledged and deferred at v2.4 close — 2026-06-09)
 
-| Category | Count | Notes |
-|----------|-------|-------|
-| UAT gaps | 11 | `human_verification` items in phase VERIFICATIONs — mostly closed via live-capture/debug-log evidence |
-| Verification gaps | 4 | Phases 27 & 28 verified `human_needed`, closed via debug-log evidence |
-| Phase 35 (UI reorg) | 1 | May slip to v2.5 — discuss-first gate applies |
+Total: **28** — predominantly historical items carried across milestones. None block v2.4 or the public release.
+
+| Category | Item / Slug | Status |
+|----------|-------------|--------|
+| Debug session | ai-cleanup-quality-regression | partially-resolved (2026-05-09) |
+| Debug session | log-analysis-2026-05-26 | unknown |
+| Debug session | log-analysis-2026-06-04 | unknown |
+| Debug session | recording-interruption-cleanup-quality | completed (2026-05-03) |
+| UAT gap | Phase 19 — 19-UAT-CATALOG.md | awaiting_user_signoff |
+| UAT gap | Phase 19 — 19-UAT-FINDINGS-postship.md | unknown (historical) |
+| UAT gap | Phase 19 — 19-UAT-FINDINGS.md | unknown (historical) |
+| UAT gap | Phase 20 — 20-UAT-FINDINGS.md | triaged-pending-20.06-plan (historical) |
+| UAT gap | Phase 20.06 — 20.06-04-UAT-RESULTS.md | unknown (historical) |
+| UAT gap | Phase 20.08 — 20.08-04-UAT-RESULTS.md | unknown (historical) |
+| UAT gap | Phase 20.08 — 20.08-05-UAT-RESULTS.md | pass-with-notes, user-accepted 2026-05-01 |
+| UAT gap | Phase 22 — 22-HUMAN-UAT.md | partial (1 open scenario) |
+| UAT gap | Phase 27 — 27-HUMAN-UAT.md | partial (5 open scenarios) |
+| UAT gap | Phase 30 — 30-02-UAT-RESULTS.md | unknown |
+| UAT gap | Phase 30 — 30-03-UAT-RESULTS.md | unknown |
+| UAT gap | Phase 31 — 31-HUMAN-UAT.md | passed |
+| UAT gap | Phase 32 — 32-HUMAN-UAT.md | passed |
+| UAT gap | Phase 33 — 33-HUMAN-UAT.md | resolved |
+| UAT gap | Phase 34 — 34-HUMAN-UAT.md | partial (3 open scenarios; SC3 harness non-app-faithful) |
+| Verification gap | Phase 17.5 — 17.5-VERIFICATION.md | human_needed (historical) |
+| Verification gap | Phase 22 — 22-VERIFICATION.md | human_needed |
+| Verification gap | Phase 27 — 27-VERIFICATION.md | human_needed (closed via debug-log evidence) |
+| Verification gap | Phase 28 — 28-VERIFICATION.md | human_needed (closed via debug-log evidence) |
+| Verification gap | Phase 31 — 31-VERIFICATION.md | human_needed |
+| Verification gap | Phase 33 — 33-VERIFICATION.md | human_needed |
+| Verification gap | Phase 34 — 34-VERIFICATION.md | human_needed |
+| Verification gap | Phase 35 — 35-VERIFICATION.md | human_needed |
+| Context question | Phase 35 — 35-CONTEXT.md (Q-01/Q-02/Q-03) | Q-01 (right-click Quit) and Q-03 (Settings scene) resolved in Phase 35; Q-02 (degraded-state placement) still open |
 
 ## Operator Notes
 
@@ -116,3 +141,7 @@ v2.3 shipped as macOS 1.3.0 (build 5, 2026-06-06). Phase 30 (PTT media auto-paus
 - Cross-platform parity per `feedback_cleanup_cross_platform_parity` — all Shared/ changes ship macOS + iOS together
 - English-first UAT acceptable per `project_usage_pattern_english_dominant`; German regressions validated via corpus
 - Installed macOS app: build 5 (macos-v1.3.0), Developer ID signed + notarized
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

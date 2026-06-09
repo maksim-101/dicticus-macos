@@ -8,7 +8,7 @@
 - ✅ **v2.1 Keyboard Extension & Polish** — Phases 17+ (shipped 2026-04-23)
 - ✅ **v2.2 Adaptive Cleanup & Stability** — Phases 21-26 (shipped 2026-05-22)
 - ✅ **v2.3 Live-Capture Quality Pass** — Phases 27-30 (shipped 2026-06-06, macOS 1.3.0) — [Archive](milestones/v2.3-ROADMAP.md)
-- 🔄 **v2.4 Public-Release Readiness + Dictionary as Platform** — Phases 31-35 (in progress)
+- ✅ **v2.4 Public-Release Readiness + Dictionary as Platform** — Phases 31-35 (shipped 2026-06-09) — [Archive](milestones/v2.4-ROADMAP.md)
 
 ---
 
@@ -22,125 +22,29 @@
 | 15. History & Dict | v2.0 | History View, Dictionary UI, FTS5 | ✅ Done | Success |
 | 16. Universal App | v2.0 | iPad Layout, WhatsNew, Launch Screen | ✅ Done | Success |
 | 17. Keyboard Extension | v2.1 | Custom iOS Keyboard with in-app dictation — text at cursor without app switching | ✅ Done | Success |
-
-## Upcoming Phases (v2.3 archive — see ROADMAP.md pre-v2.4 for full detail)
-
-| Phase | Milestone | Scope | Status | Result |
-|-------|-----------|-------|--------|--------|
 | 27. Dictionary Hallucination Guard | v2.3 | Fuzzy-pass guard, recorder enrichment, K7 brand adds | ✅ Done | 2026-05-27 |
 | 28. V19D Prompt Iteration | v2.3 | Clause preservation, contraction, dedup, number policy | ✅ Done | 2026-05-27 |
 | 29. ASR Post-Processing | v2.3 | Acronym collapse, spoken-letter lexicon, Zed fix | ✅ Done | 2026-05-29 |
 | 30. PTT Media Auto-Pause (macOS) | v2.3 | ScriptingBridge pause/resume + mute fallback | ✅ Done | 2026-06-06 |
+| 31. Dictionary as Platform | v2.4 | Public default split + CSV import/export + starter packs + docs | ✅ Done | 2026-06-06 |
+| 32. Spoken Punctuation | v2.4 | Deterministic pre-LLM punctuation collapse (Shared/) | ✅ Done | 2026-06-07 |
+| 33. iOS First-Run & Onboarding Polish | v2.4 | Fix flash, truncation, duplicate UI; guided wizard | ✅ Done | 2026-06-07 |
+| 34. V19E — R8 Over-Promotion Fix | v2.4 | Tighten R8, content-word preservation gate | ✅ Done | 2026-06-08 |
+| 35. UI Reorganization | v2.4 | macOS tabbed popover + 4-pane Settings; iOS 3-tab | ✅ Done | 2026-06-09 |
 
 ---
 
-## Milestone v2.4 — Public-Release Readiness + Dictionary as Platform
+## Upcoming: v2.5
 
-**Started:** 2026-06-06
-**Goal:** Make Dicticus shippable beyond personal use. Replace the developer-personal default dictionary with a curated public lexicon, add CSV import/export so the minimal default is acceptable, ship spoken punctuation (baseline expectation parity with native dictation), fix the iOS first-run experience, fix the K3/K4 over-promotion quality bug, and (if the IA is agreed) reorganize the macOS/iOS UI.
-**Total requirements:** 26 (DICT-SPLIT-01..04, DICT-IO-01..04, PUNCT-01..04, TECHLEX-01..02, IOS-ONB-01..05, UIORG-01..04, V19E-01..03)
+| Phase | Milestone | Scope | Status |
+|-------|-----------|-------|--------|
+| 36. iOS Background Dictation Recording | v2.5 (candidate) | Spike-first: background mic recording + Live Activity stop control | Backlog |
 
-### v2.4 Phases
-
-- [x] **Phase 31: Dictionary as Platform** - Split public vs. personal lexicon (public-release BLOCKER), ship CSV/JSON import/export, document the CSV-author workflow as the canonical tech-term recovery path (completed 2026-06-06; plans 3/3 + code-review fixes + UAT-driven polish; Release-binary leak check PASSED, UAT all green — see 31-HUMAN-UAT.md; branch feature/phase-31-dictionary-platform pushed)
-- [x] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together (completed 2026-06-07)
-- [x] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard (completed 2026-06-07)
-- [x] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track (completed 2026-06-08)
-- [x] **Phase 35: UI Reorganization (discuss-first)** - Declutter macOS popover, promote dictionary editing, consolidate hotkeys, iOS parity audit — completed 2026-06-09, UAT approved on Developer-ID-signed build
-
-### v2.4 Progress
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 31. Dictionary as Platform | 3/3 | Complete    | 2026-06-06 |
-| 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
-| 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
-| 34. V19E — R8 Over-Promotion Fix | 5/4 | Complete    | 2026-06-08 |
-| 35. UI Reorganization (discuss-first) | 7/7 | Complete    | 2026-06-09 |
+Additional v2.5 candidates: public release (notarized `macos-v2.4.0` DMG + Sparkle; `ios-v2.4.0`), menu-bar right-click→Quit (NSStatusItem refactor), Stage Manager ongoing watch.
 
 ---
 
 ## Phase Details
-
-### Phase 31: Dictionary as Platform
-**Goal**: Users own their dictionary — the public-release build ships a curated minimal default, developer-personal entries are gated, and any user can grow their lexicon by CSV-importing an AI-generated domain list
-**Depends on**: Phase 30 (complete)
-**Requirements**: DICT-SPLIT-01, DICT-SPLIT-02, DICT-SPLIT-03, DICT-SPLIT-04, DICT-IO-01, DICT-IO-02, DICT-IO-03, DICT-IO-04, TECHLEX-01, TECHLEX-02
-**Success Criteria** (what must be TRUE):
-  1. A release build of Dicticus ships a **truly empty** default dictionary — zero personal entries, zero baked-in universal entries; no personal keys appear as strings in the release binary (verified against a Release-config build, including a locally-built DMG)
-  2. A dev build (local-only `PERSONAL_LEXICON` flag) loads all ~120 current entries with behavior identical to today — clean-rate baseline preserved, no regression against the V19D 139-record corpus
-  3. User can export their full dictionary to CSV or JSON in one action (macOS: NSSavePanel; iOS: document picker)
-  4. User can import a CSV or JSON dictionary with a choice of merge strategy; malformed rows are rejected with line-number errors, not silently discarded
-  5. User can one-tap import bundled offline starter packs (tech mishearings + brand casing + general/mainstream terms) from Settings; imported entries are tagged `source=.imported` and use "existing wins" merge
-  6. Settings and/or onboarding copy explains that the dictionary starts empty by design and walks the user through both the starter packs and the "ask an AI to generate a CSV for your domain" workflow
-  7. Entries carry a `source` provenance field (`.default`/`.user`/`.imported`); dev builds reseed cleanly, release builds tag unknown persisted entries as `.user` and never delete them
-**Plans**: 3 plans (3 waves)
-- [x] 31-01-PLAN.md — Gating + provenance + migration: PERSONAL_LEXICON flag, empty public default, source field, leak-free migration
-- [x] 31-02-PLAN.md — Import/export engine + UI: RFC 4180 CSV/JSON, 3 merge strategies, line-numbered validation, native file pickers
-- [x] 31-03-PLAN.md — Starter packs + docs: 3 bundled offline packs, one-tap import, empty-by-design + CSV-author help copy
-
-### Phase 32: Spoken Punctuation
-**Goal**: Users can speak punctuation symbols reliably in both plain and cleanup modes — unambiguous tokens always collapse, conditional tokens (minus, dot, colon) collapse only between identifier-shaped flanks, matching the baseline expectation set by native macOS dictation
-**Depends on**: Phase 31 (preferred; ensures Shared/ is stable after the dictionary refactor)
-**Requirements**: PUNCT-01, PUNCT-02, PUNCT-03, PUNCT-04
-**Success Criteria** (what must be TRUE):
-  1. Speaking "Claude minus ops" produces `Claude-ops`; speaking "five minus three" leaves "five minus three" unchanged — the conditional-collapse heuristic fires only between identifier-shaped tokens
-  2. Unambiguous tokens (hyphen, slash, backslash, underscore, asterisk, semicolon, at sign, hash, dollar, caret, tilde, pipe) always collapse to their symbol in both plain and cleanup modes
-  3. The supported spoken-punctuation lexicon is listed in onboarding or help copy so users can discover it without trial and error
-  4. No prose or arithmetic false positives appear in a replay of the V19D 139-record corpus (the conditional gate preserves "the 60 plus rules", "colon vs. dash", meta-discussion usages)
-**Plans**: 2 plans
-- [x] 32-01-PLAN.md — collapseSpokenPunctuation step in Shared/ + pipeline wiring + unit tests (PUNCT-01/02/04)
-- [x] 32-02-PLAN.md — D-07 reference table UI on macOS + iOS (PUNCT-03)
-**UI hint**: yes
-
-### Phase 33: iOS First-Run & Onboarding Polish
-**Goal**: A first-time iOS user completes setup without confusion — the download screen is clear and untruncated at any device size, no phantom flash appears when the model is already present, duplicate UI is cleaned up, and a guided wizard orients users to the app after setup
-**Depends on**: Phase 30 (complete) — independent of Phases 31, 32, 34, 35
-**Requirements**: IOS-ONB-01, IOS-ONB-02, IOS-ONB-03, IOS-ONB-04, IOS-ONB-05
-**Success Criteria** (what must be TRUE):
-  1. On a device with the model already downloaded, cold-launching the app shows the home screen directly — no download screen flash, even briefly
-  2. On first install (model not present), the download screen copy reads clearly with no truncated labels at SE/mini/standard/Pro/Max device widths
-  3. After completing mic permission + model download, a guided onboarding wizard appears automatically and can be re-triggered from Settings at any time
-  4. Settings → Integration shows exactly one Action Button entry — the duplicate item is gone
-**Plans**: 2 plans
-  - [x] 33-01-PLAN.md — First-run bug fixes: relaunch flash (IOS-ONB-01), download-screen truncation (IOS-ONB-02), duplicate Action Button removal (IOS-ONB-05)
-  - [x] 33-02-PLAN.md — Onboarding wizard: 3-page paged tour + auto-present sequencing (IOS-ONB-03) + Settings re-entry (IOS-ONB-04)
-**UI hint**: yes
-
-### Phase 34: V19E — R8 Over-Promotion Fix
-**Goal**: AI cleanup no longer promotes real English words adjacent to number-words into identifier stems — "kink three" stays "kink three", "King Four" stays "King four", ordinary prose pairings are untouched — while the V19D 90.2% clean-rate baseline is preserved
-**Depends on**: Phase 30 (complete) — independent quality track, can run in any order relative to Phases 31-33
-**Requirements**: V19E-01, V19E-02, V19E-03
-**Success Criteria** (what must be TRUE):
-  1. "kink three", "King Four", "option one is", and "every two weeks" pass through cleanup unchanged (or with correct lowercase normalization) — the `kink→K3`, `King→K4` collapse class no longer occurs
-  2. A deterministic content-word-preservation gate rejects LLM output that drops a content word (≥4 chars, non-stop-word) present in the post-ITN input, falling back to post-ITN text
-  3. The V19D 139-record corpus clean rate does not drop below 90.2% and the 9.3% dictionary-hit baseline is preserved after shipping
-**Plans**: 4 plans (3 waves)
-- [x] 34-01-PLAN.md — Wave 0 test infrastructure: negative-case fixture, locate/assemble 139-record corpus + pin scorer, RED content-word-gate tests (both platforms)
-- [x] 34-02-PLAN.md — Track A: tighten R8 EXCEPTION (EN+DE) + negative few-shots + v19e version bump + CleanupPromptTests sync (V19E-01)
-- [x] 34-03-PLAN.md — Track B: content-word-preservation gate + stop-word/stem-allowlist + Step 3a wire-in + GREEN tests (V19E-02)
-- [x] 34-04-PLAN.md — Wave 3 regression gate: full-suite parity + SC1 negative matrix + SC3 corpus replay + CHANGELOG (V19E-01/03)
-
-### Phase 35: UI Reorganization (discuss-first; candidate to defer to v2.5)
-**Goal**: The macOS popover and iOS app are reorganized by frequency-of-use — dictionary editing is a top-level action, hotkey configuration is consolidated into a single section, and the overall surface feels like a focused tool rather than an accretion of features
-**Depends on**: Phase 31 (dictionary import/export UI must already exist before reorganizing the dictionary panel)
-**Requirements**: UIORG-01, UIORG-02, UIORG-03, UIORG-04
-**Success Criteria** (what must be TRUE):
-  1. Opening the macOS popover, a user can reach dictionary management (add, edit, import, export) without scrolling past unrelated controls
-  2. All hotkey configuration (standard KeyboardShortcuts + modifier hotkeys + Fn-key note) is in one consolidated section — no duplicate or scattered config blocks
-  3. iOS UI has been audited against the same IA principles and brought into parity, with the review findings documented before any changes are made
-  4. No existing user-visible behavior regresses: hotkey bindings fire, dictionary contents are preserved, history is accessible, DESIGN.md tokens are respected
-**Plans**: 7 plans in 4 waves
-- [x] 35-01-PLAN.md — Wave 0: pure HotkeyDisplay subline/VoiceOver formatter + XCTest (D-07 foundation)
-- [x] 35-02-PLAN.md — Wave 0: Q-03 Settings-open SPIKE on a signed build (locks the gear mechanism)
-- [x] 35-03-PLAN.md — Wave 1: macOS tabbed fixed-height popover (Home/Dictionary/History) + lifecycle re-attach
-- [x] 35-04-PLAN.md — Wave 1: iOS IA audit doc (UIORG-03 gate; precedes iOS code)
-- [x] 35-05-PLAN.md — Wave 2: macOS Settings window (4 panes) + hotkey consolidation + gear wiring (completed 2026-06-08)
-- [x] 35-06-PLAN.md — Wave 2: iOS 3-tab restructure + Settings reorder (parity)
-- [x] 35-07-PLAN.md — Wave 3: DESIGN.md D-15 update + D-16/D-17 HIG/UX/AX conformance report
-
-**Note on Phase 35:** The information architecture must be worked out at discuss-phase time, not pre-decided here. If the IA discussion surfaces blocking open questions (popover vs. floating window, tab-bar vs. nested-list on iOS, whether a fresh DESIGN.md pass is needed), Phase 35 may slip to v2.5 without blocking the v2.4 public release — the remaining four phases already satisfy the public-release goal.
-**UI hint**: yes
 
 ### Phase 36: iOS Background Dictation Recording (v2.5 candidate — SPIKE-FIRST)
 **Goal**: A user can trigger dictation, leave Dicticus (or lock the screen), keep speaking while looking at what they're answering, stop from the Live Activity, and paste the result — all without reopening the app
@@ -315,4 +219,4 @@
 
 ---
 
-*Last updated: 2026-06-06 — v2.4 roadmap created. 5 phases (31-35), 27 requirements, 100% coverage.*
+*Last updated: 2026-06-09 — v2.4 shipped (Phases 31-35). v2.5 next: Phase 36 (iOS Background Dictation, spike-first) + public release.*
