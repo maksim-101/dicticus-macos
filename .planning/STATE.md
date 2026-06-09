@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Public-Release Readiness + Dictionary as Platform
 status: executing
-stopped_at: Phase 35 Plan 05 complete (Settings window built, gear wired, HotkeySettingsView+SettingsSection retired)
-last_updated: "2026-06-08T22:20:00.000Z"
-last_activity: 2026-06-08
+stopped_at: Phase 35 complete — UI reorganization shipped + UAT approved 2026-06-09
+last_updated: "2026-06-09T00:00:00.000Z"
+last_activity: 2026-06-09
 progress:
   total_phases: 22
-  completed_phases: 19
-  total_plans: 80
-  completed_plans: 80
-  percent: 87
+  completed_phases: 20
+  total_plans: 87
+  completed_plans: 87
+  percent: 100
 ---
 
 # Project State: Dicticus
@@ -22,22 +22,25 @@ progress:
 
 ## Current Position
 
-Phase: 35 (ui-reorganization-discuss-first-candidate-to-defer-to-v2-5) — EXECUTING
-Plan: 5 of 7 (35-02, 35-03, 35-05 complete; next: 35-06 iOS IA reorganization)
-Status: Executing — 35-05 DONE (Settings window + gear wired, HotkeySettingsView+SettingsSection retired)
-Last activity: 2026-06-08
+Phase: 35 (ui-reorganization-discuss-first-candidate-to-defer-to-v2-5) — COMPLETE
+Plan: 7 of 7 — ALL PLANS COMPLETE
+Status: v2.4 milestone COMPLETE — all phases 31-35 done; UAT approved 2026-06-09
+Last activity: 2026-06-09
 
-Progress: [██████████] 99%
+Progress: [██████████] 100%
 
 ### Next Action
 
-Phase 35: UI Reorganization (discuss-first; may defer to v2.5). Remaining v2.4 sequence:
+v2.4 is code-complete. Recommended next steps:
+1. Cut `macos-v2.4.0` release (DMG + Sparkle appcast update on gh-pages)
+2. Decide whether Phase 36 (iOS Background Dictation — v2.5 candidate, spike-first) starts now
 
+v2.4 completed phases:
 1. ✅ Phase 31: Dictionary Split + Import/Export + TECHLEX docs (BLOCKER) — DONE
 2. ✅ Phase 32: Spoken Punctuation (deterministic pre-LLM pass, cross-platform) — DONE
 3. ✅ Phase 33: iOS First-Run & Onboarding Polish — DONE
 4. ✅ Phase 34: V19E — R8 Over-Promotion Fix — DONE (2026-06-08)
-5. Phase 35: UI Reorganization (discuss-first; may defer to v2.5)
+5. ✅ Phase 35: UI Reorganization — DONE (2026-06-09, UAT approved)
 
 **Residual from Phase 31:** iOS on-device verification of import/export + starter packs (covered by shared-code parity; both targets build) — fold into the next iOS device pass / Phase 33.
 
@@ -49,7 +52,7 @@ Phase 35: UI Reorganization (discuss-first; may defer to v2.5). Remaining v2.4 s
 | 32. Spoken Punctuation | Deterministic pre-LLM punctuation collapse (Shared/) | PUNCT-01..04 | ✅ Complete (2026-06-07) |
 | 33. iOS First-Run & Onboarding | Fix flash glitch, truncation, duplicate; add wizard | IOS-ONB-01..05 | ✅ Complete (2026-06-07) |
 | 34. V19E — R8 Over-Promotion Fix | Tighten R8, add content-word gate | V19E-01..03 | ✅ Complete (2026-06-08) |
-| 35. UI Reorganization (discuss-first) | Declutter popover, promote dictionary, consolidate hotkeys | UIORG-01..04 | Not started |
+| 35. UI Reorganization (discuss-first) | Declutter popover, promote dictionary, consolidate hotkeys | UIORG-01..04 | ✅ Complete (2026-06-09) |
 
 ## Key Decisions (v2.4)
 
@@ -89,9 +92,9 @@ Phase 35: UI Reorganization (discuss-first; may defer to v2.5). Remaining v2.4 s
 
 ## Session Continuity
 
-Last session: 2026-06-08T22:20:00.000Z
-Stopped at: Phase 35 Plan 05 — all 3 tasks complete (SettingsRoot + 4 panes + Settings scene + gear wired + HotkeySettingsView/SettingsSection retired)
-Next: Execute Phase 35 Plan 06 — iOS IA reorganization (3-tab ContentView + SettingsView reorder)
+Last session: 2026-06-09T00:00:00.000Z
+Stopped at: Phase 35 Plan 07 — Phase 35 complete. UAT approved on Developer-ID-signed build. DESIGN.md updated. Conformance report closed.
+Next: Cut macos-v2.4.0 release OR begin Phase 36 (iOS Background Dictation, spike-first, v2.5 candidate)
 
 ---
 

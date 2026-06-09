@@ -46,7 +46,7 @@
 - [x] **Phase 32: Spoken Punctuation** - Deterministic pre-LLM punctuation collapse in Shared/, shipping macOS + iOS together (completed 2026-06-07)
 - [x] **Phase 33: iOS First-Run & Onboarding Polish** - Fix relaunch flash glitch, download screen truncation, duplicate Action Button entry; add guided onboarding wizard (completed 2026-06-07)
 - [x] **Phase 34: V19E — R8 Over-Promotion Fix** - Tighten R8 EXCEPTION prompt, add content-word-preservation gate; independent quality track (completed 2026-06-08)
-- [ ] **Phase 35: UI Reorganization (discuss-first)** - Declutter macOS popover, promote dictionary editing, consolidate hotkeys, iOS parity audit — IA to be resolved at discuss-phase time; may defer to v2.5
+- [x] **Phase 35: UI Reorganization (discuss-first)** - Declutter macOS popover, promote dictionary editing, consolidate hotkeys, iOS parity audit — completed 2026-06-09, UAT approved on Developer-ID-signed build
 
 ### v2.4 Progress
 
@@ -56,7 +56,7 @@
 | 32. Spoken Punctuation | 2/2 | Complete    | 2026-06-07 |
 | 33. iOS First-Run & Onboarding Polish | 2/2 | Complete    | 2026-06-08 |
 | 34. V19E — R8 Over-Promotion Fix | 5/4 | Complete    | 2026-06-08 |
-| 35. UI Reorganization (discuss-first) | 6/7 | In Progress|  |
+| 35. UI Reorganization (discuss-first) | 7/7 | Complete    | 2026-06-09 |
 
 ---
 
@@ -132,12 +132,12 @@
   4. No existing user-visible behavior regresses: hotkey bindings fire, dictionary contents are preserved, history is accessible, DESIGN.md tokens are respected
 **Plans**: 7 plans in 4 waves
 - [x] 35-01-PLAN.md — Wave 0: pure HotkeyDisplay subline/VoiceOver formatter + XCTest (D-07 foundation)
-- [ ] 35-02-PLAN.md — Wave 0: Q-03 Settings-open SPIKE on a signed build (locks the gear mechanism)
+- [x] 35-02-PLAN.md — Wave 0: Q-03 Settings-open SPIKE on a signed build (locks the gear mechanism)
 - [x] 35-03-PLAN.md — Wave 1: macOS tabbed fixed-height popover (Home/Dictionary/History) + lifecycle re-attach
 - [x] 35-04-PLAN.md — Wave 1: iOS IA audit doc (UIORG-03 gate; precedes iOS code)
 - [x] 35-05-PLAN.md — Wave 2: macOS Settings window (4 panes) + hotkey consolidation + gear wiring (completed 2026-06-08)
 - [x] 35-06-PLAN.md — Wave 2: iOS 3-tab restructure + Settings reorder (parity)
-- [ ] 35-07-PLAN.md — Wave 3: DESIGN.md D-15 update + D-16/D-17 HIG/UX/AX conformance report
+- [x] 35-07-PLAN.md — Wave 3: DESIGN.md D-15 update + D-16/D-17 HIG/UX/AX conformance report
 
 **Note on Phase 35:** The information architecture must be worked out at discuss-phase time, not pre-decided here. If the IA discussion surfaces blocking open questions (popover vs. floating window, tab-bar vs. nested-list on iOS, whether a fresh DESIGN.md pass is needed), Phase 35 may slip to v2.5 without blocking the v2.4 public release — the remaining four phases already satisfy the public-release goal.
 **UI hint**: yes
