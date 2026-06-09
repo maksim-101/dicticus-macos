@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Dictionary pane of the popover: quick actions for the custom dictionary (UIORG-01).
+/// Dictionary pane of the popover: inline quick-add form + link to full manager.
 ///
-/// Exposes Add / Manage Full Dictionary / Import / Export without scrolling past unrelated
-/// controls. All four actions open the DictionaryView window (the existing Phase 31 engine
-/// is unchanged per UIORG-04). Add and Import/Export deep-link by opening the full manager
-/// where those controls live, rather than reimplementing the flow here.
+/// "+ Add Entry" reveals an inline form (Heard / Replace with fields + Save/Cancel)
+/// directly in the popover without opening the full manager window. On Save, the
+/// entry is written via DictionaryService.shared.setReplacement and the form collapses.
+///
+/// Import / Export remain in the full manager window only — they are not surfaced here
+/// to keep the popover height budget (Q-04, 320pt fixed) intact.
 struct DictionaryPane: View {
 
     @Environment(\.openWindow) private var openWindow
@@ -13,33 +15,81 @@ struct DictionaryPane: View {
     /// Entry count from the shared DictionaryService for the section header badge.
     @ObservedObject private var dictionaryService = DictionaryService.shared
 
+    @State private var showingAddForm = false
+    @State private var heardText = ""
+    @State private var replaceText = ""
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                // Section header with entry count badge
-                HStack {
-                    Text("Custom Dictionary")
-                        .font(.caption)
-                        .foregroundStyle(Color.secondary)
-                        .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 0) {
+            // Section header with entry count badge
+            HStack {
+                Text("Custom Dictionary")
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
+                    .textCase(.uppercase)
 
-                    Spacer()
+                Spacer()
 
-                    let count = dictionaryService.dictionary.count
-                    Text("\(count) \(count == 1 ? "entry" : "entries")")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
+                let count = dictionaryService.dictionary.count
+                Text("\(count) \(count == 1 ? "entry" : "entries")")
+                    .font(.caption2)
+                    .foregroundStyle(Color.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            Divider()
+
+            if showingAddForm {
+                // Inline add-entry form — fits within the fixed popover height
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Heard (original)", text: $heardText)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.subheadline)
+
+                    TextField("Replace with", text: $replaceText)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.subheadline)
+
+                    HStack(spacing: 8) {
+                        Button("Save") {
+                            let original = heardText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let replacement = replaceText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            DictionaryService.shared.setReplacement(for: original, with: replacement)
+                            collapseForm()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(heardText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityLabel("Save dictionary entry")
+
+                        Button("Cancel") {
+                            collapseForm()
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityLabel("Cancel adding entry")
+                    }
                 }
-
-                // + Add Entry — opens dictionary manager (Add row is always visible in DictionaryView)
-                Button("+ Add Entry") {
-                    openDictionaryWindow()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            } else {
+                // Default action area
+                VStack(alignment: .leading, spacing: 8) {
+                    Button("+ Add Entry") {
+                        showingAddForm = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Add dictionary entry")
                 }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
-                .accessibilityLabel("Add dictionary entry")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
 
-                // Manage Full Dictionary…
+            Divider()
+
+            // Manage Full Dictionary link + description
+            VStack(alignment: .leading, spacing: 6) {
                 Button("Manage Full Dictionary…") {
                     openDictionaryWindow()
                 }
@@ -47,30 +97,24 @@ struct DictionaryPane: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel("Open full dictionary manager")
 
-                // Import / Export row
-                HStack(spacing: 8) {
-                    Button("Import…") {
-                        openDictionaryWindow()
-                    }
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel("Import dictionary")
-
-                    Button("Export…") {
-                        openDictionaryWindow()
-                    }
-                    .buttonStyle(.bordered)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel("Export dictionary")
-                }
-
-                Text("Starter packs and spoken-punctuation reference are in the full manager.")
+                Text("Open the full dictionary to browse, edit, import/export, and add starter packs.")
                     .font(.caption)
                     .foregroundStyle(Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 12)
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private func collapseForm() {
+        heardText = ""
+        replaceText = ""
+        showingAddForm = false
     }
 
     private func openDictionaryWindow() {
