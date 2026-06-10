@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: Phase 36 re-scoped (deferred-delivery) — CONTEXT.md updated, ready to plan 02-04 replacement
-last_updated: "2026-06-10T07:54:48.091Z"
-last_activity: 2026-06-10 -- Phase 36 re-scope discussion complete (deferred-delivery CONTEXT)
+stopped_at: Completed 36-02-PLAN.md
+last_updated: "2026-06-10T12:58:49.347Z"
+last_activity: 2026-06-10 -- Phase 36 execution started
 progress:
   total_phases: 30
   completed_phases: 21
   total_plans: 91
-  completed_plans: 92
+  completed_plans: 94
   percent: 70
 ---
 
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36 (ios-background-dictation) — RE-SCOPED, READY TO PLAN
-Plan: 36-01 complete (spike); 36-02/03/04 superseded — replan against updated CONTEXT
-Status: Phase 36 re-scoped to deferred-delivery; CONTEXT.md updated 2026-06-10
-Last activity: 2026-06-10 -- Phase 36 re-scope discussion complete
+Phase: 36 (ios-background-dictation) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-10 -- Phase 36 execution started
 
 ### Next Action
 
@@ -80,8 +80,8 @@ Last activity: 2026-06-10 -- Phase 36 re-scope discussion complete
 
 ## Session Continuity
 
-Last session: 2026-06-10T07:54:48.086Z
-Stopped at: Phase 36 context gathered
+Last session: 2026-06-10T12:58:49.343Z
+Stopped at: Completed 36-02-PLAN.md
 Next: Cut v2.4 public release, then plan Phase 36 (iOS Background Dictation)
 
 ---
@@ -131,3 +131,14 @@ Total: **28** — predominantly historical items carried across milestones. None
 - Cross-platform parity per `feedback_cleanup_cross_platform_parity` — all Shared/ changes ship macOS + iOS together
 - English-first UAT acceptable per `project_usage_pattern_english_dominant`; German regressions validated via corpus
 - Phase 36 is App-Review-risky: spike findings must be documented and justify the `UIBackgroundModes: audio` declaration before App Store submission
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Notes |
+|-------|------|----------|-------|
+| Phase 36-ios-background-dictation P02 | 10 | 3 tasks | 8 files |
+
+## Decisions
+
+- [Phase ?]: Widget-autonomous Live Activity timer uses startedAt:Date + Text(timerInterval:) — app activity.update() is blocked in background audio mode
+- [Phase ?]: selectMode(wantsAiCleanup:llmReady:) static seam extracts D-13/D-23/D-26 cleanup mode selection for unit testing
