@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
-status: planning
-stopped_at: Phase 36 context gathered
-last_updated: "2026-06-10T06:36:25.440Z"
-last_activity: 2026-06-09 — v2.5 roadmap created
+status: executing
+stopped_at: Phase 36 spike (36-01) returned CONDITIONAL-GO — plans 02-04 superseded, re-scope needed
+last_updated: "2026-06-10T07:54:48.091Z"
+last_activity: 2026-06-10 -- Phase 36 spike complete (conditional-GO, deferred-delivery re-scope)
 progress:
   total_phases: 30
   completed_phases: 21
-  total_plans: 87
+  total_plans: 91
   completed_plans: 92
   percent: 70
 ---
@@ -22,22 +22,23 @@ progress:
 
 ## Current Position
 
-Phase: 36 — iOS Background Dictation (not started)
-Plan: —
-Status: Roadmap created, planning Phase 36
-Last activity: 2026-06-09 — v2.5 roadmap created
+Phase: 36 (ios-background-dictation) — SPIKE COMPLETE, NEEDS RE-SCOPE
+Plan: 36-01 complete (spike); 36-02/03/04 superseded
+Status: Phase 36 spike returned CONDITIONAL-GO (deferred-delivery re-scope)
+Last activity: 2026-06-10 -- Phase 36 spike complete (conditional-GO)
 
 ### Next Action
 
-1. ✅ macOS `1.4.0` shipped — GitHub release `macos-v1.4.0` (2026-06-09) live, Sparkle appcast advertises 1.4.0. iOS `ios-v2.4.0` (TestFlight / device install) still pending verification.
-2. Run `/gsd:plan-phase 36` — iOS Background Dictation (spike-first, App-Review-aware)
+1. **Re-scope Phase 36.** Spike (36-01) proved background audio capture + ASR (ANE) work, but iOS hard-blocks LLM cleanup (GPU/Metal) AND clipboard (UIPasteboard) from the background. Plans 02-04 (background finalize → cleanup → clipboard) cannot ship. Re-run `/gsd-discuss-phase 36` then `/gsd-plan-phase 36` for the deferred-delivery design (background capture → foreground cleanup + clipboard → "transcript ready" notification). See `36-SPIKE-FINDINGS.md` §Constraints.
+2. ✅ macOS `1.4.0` shipped — GitHub release `macos-v1.4.0` (2026-06-09) live. iOS `ios-v2.4.0` (TestFlight / device install) still pending verification.
 3. Backlog `999.1` (post-ASR / AI-cleanup robustness) captured 2026-06-10 from log sweep — promote via `/gsd-review-backlog` when ready.
+4. Backlog (new, 2026-06-10): Action Button → deep-link into Dicticus Settings (setup UX) — clarify exact intent + log via `/gsd-capture`.
 
 ## Phase Overview
 
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
-| 36. iOS Background Dictation | User can dictate, leave app / lock screen, and get a complete transcript — spike-first, App-Review-aware | IOSBG-01, IOSBG-02, IOSBG-03 | Not started |
+| 36. iOS Background Dictation | User can dictate, leave app / lock screen, and get a complete transcript — spike-first, App-Review-aware | IOSBG-01, IOSBG-02, IOSBG-03 | Spike done (cond-GO) — re-scope to deferred delivery |
 | 37. iOS Distribution | TestFlight + App Store install, Background Assets model download, privacy labels | IOSDIST-01, IOSDIST-02, IOSDIST-03 | Not started |
 | 38. Context-Aware Formatting | Active-app → AI-cleanup tone/format adaptation (macOS-primary, Shared/ cross-platform) | CTXFMT-01, CTXFMT-02, CTXFMT-03 | Not started |
 | 39. Voice Edit Commands | Deterministic spoken edit commands ("scratch that", "new paragraph", "capitalize X") | VEDIT-01, VEDIT-02 | Not started |
@@ -78,7 +79,7 @@ Last activity: 2026-06-09 — v2.5 roadmap created
 
 ## Session Continuity
 
-Last session: 2026-06-10T06:36:25.430Z
+Last session: 2026-06-10T07:54:48.086Z
 Stopped at: Phase 36 context gathered
 Next: Cut v2.4 public release, then plan Phase 36 (iOS Background Dictation)
 

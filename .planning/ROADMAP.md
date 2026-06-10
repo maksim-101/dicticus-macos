@@ -49,7 +49,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 36. iOS Background Dictation | 0/TBD | Not started | - |
+| 36. iOS Background Dictation | 1/4 | In Progress|  |
 | 37. iOS Distribution | 0/TBD | Not started | - |
 | 38. Context-Aware Formatting | 0/TBD | Not started | - |
 | 39. Voice Edit Commands | 0/TBD | Not started | - |
@@ -60,74 +60,98 @@
 ## Phase Details
 
 ### Phase 36: iOS Background Dictation
+
 **Goal**: User can start dictating on iOS, switch apps or lock the screen mid-dictation, and receive a complete accurate transcript when they stop — without data loss and without keeping Dicticus in the foreground
 **Depends on**: Phase 35 (v2.4 shipped)
 **Requirements**: IOSBG-01, IOSBG-02, IOSBG-03
 **App-Review risk**: HIGH — `UIBackgroundModes: audio` is scrutinized; spike validates the design before implementation commits to it
 **Success Criteria** (what must be TRUE):
+
   1. User starts dictation in Dicticus, switches to another app (or locks screen), and the orange mic indicator stays visible in the iOS status bar throughout
   2. User stops dictation via the Live Activity stop control (Dynamic Island / lock screen) without returning to the Dicticus app
   3. When the user next opens Dicticus (or the transcript completes in background), the full recording is transcribed with no audio data lost
   4. The background-recording design has been reviewed against App Store review guidelines and uses the correct `AVAudioSession` category with a clear user-facing justification documented in the spike
-**Plans**: TBD
+
+**Plans**: 4 plans (spike-first; plans 02-04 gated on the 36-01 spike GO)
+
+- [x] 36-01-PLAN.md — IOSBG-03 feasibility / App-Review spike (D-04 go/no-go gate)
+- [ ] 36-02-PLAN.md — Background audio foundation: .playAndRecord + UIBackgroundModes:audio, no-finalize-on-background, ContentState startedAt
+- [ ] 36-03-PLAN.md — Live Activity re-enable + Stop control + soft cap (D-01, D-03)
+- [ ] 36-04-PLAN.md — Transcript delivery: notification + clipboard + zero-data-loss safety net (D-02, D-02a)
+
 **UI hint**: yes
 
 ### Phase 37: iOS Distribution
+
 **Goal**: Any iOS user can install Dicticus from TestFlight (then the App Store), download the ASR model post-install with clear progress and consent, and trust that the app accurately represents its data practices to Apple and to them
 **Depends on**: Phase 36
 **Requirements**: IOSDIST-01, IOSDIST-02, IOSDIST-03
 **App-Review risk**: MEDIUM — privacy labels and microphone/background justifications must be accurate and specific to avoid rejection
 **Success Criteria** (what must be TRUE):
+
   1. A user with no Xcode or developer tools can install Dicticus on their iPhone by accepting a TestFlight invite (or App Store link)
   2. On first launch, the app presents the ~2.7 GB model download with its size stated, a progress indicator, and a consent step — the user is never surprised by a large download
   3. The app's App Store privacy label correctly states "Data Not Collected" (no audio/transcripts leave the device) and specifies microphone and background-audio usage in terms App Review accepts
   4. The app passes at least one complete App Review cycle (TestFlight or App Store) without rejection on privacy or background-mode grounds
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 38: Context-Aware Formatting
+
 **Goal**: AI cleanup adapts its tone and formatting to whatever app the user is dictating into — a code editor gets different output than an email client — without any network calls, and the user can override or disable this behaviour
 **Depends on**: Phase 35 (v2.4 shipped)
 **Requirements**: CTXFMT-01, CTXFMT-02, CTXFMT-03
 **Success Criteria** (what must be TRUE):
+
   1. When the user dictates into a code editor (e.g., Xcode, VS Code), AI cleanup preserves identifiers, avoids sentence-capitalizing code tokens, and omits filler reformatting that would break code context
   2. When the user dictates into a chat app or email client, AI cleanup formats the output as natural prose appropriate to that context
   3. Active-app detection happens entirely on-device: no app name, window title, or text is sent to any network endpoint
   4. A Settings toggle lets the user disable context-aware formatting entirely; a separate control lets them pin a specific context (overriding auto-detection) for the current session
+
 **Plans**: TBD
 
 ### Phase 39: Voice Edit Commands
+
 **Goal**: User can dictate correction commands ("scratch that", "new paragraph", "capitalize last word") that are applied deterministically to the transcript — without the LLM being involved in command recognition
 **Depends on**: Phase 35 (v2.4 shipped)
 **Requirements**: VEDIT-01, VEDIT-02
 **Success Criteria** (what must be TRUE):
+
   1. User says "scratch that" immediately after a dictation and the most-recent pasted text is removed from the active text field
   2. User says "new paragraph" and a paragraph break is inserted at the insertion point
   3. Edit commands are matched by a deterministic rule layer (not sent to the LLM), so command recognition has zero latency beyond the normal dictation transcription time
   4. If the user dictates text that happens to contain command-like phrases as literal content, the distinction between command and literal is clear and documented (e.g., commands only trigger when spoken as a standalone utterance)
+
 **Plans**: TBD
 
 ### Phase 40: Windows Feasibility Spike
+
 **Goal**: A written report exists that scopes a Windows port — covering ASR (whisper.cpp), LLM (llama.cpp), app shell, global hotkeys, text injection, and model sharing — with a recommendation and rough effort estimate; no production code is written
 **Depends on**: Nothing (fully independent research phase)
 **Requirements**: WIN-01
 **Success Criteria** (what must be TRUE):
+
   1. The report answers: can the same GGUF model files be used on Windows without conversion?
   2. The report specifies the minimum Windows API surface needed for push-to-talk + text-at-cursor injection and identifies any showstoppers
   3. The report gives a rough effort estimate (e.g., person-weeks) and a clear go/no-go recommendation for a v3.0 Windows port
+
 **Plans**: TBD
 
 ---
 
 ### Phase 36 (archive — v2.5 candidate stub from v2.4): iOS Background Dictation Recording (v2.5 candidate — SPIKE-FIRST)
+
 **Goal**: A user can trigger dictation, leave Dicticus (or lock the screen), keep speaking while looking at what they're answering, stop from the Live Activity, and paste the result — all without reopening the app
 **Origin**: Found during Phase 33 UAT (2026-06-08). The dictation Live Activity implied background recording but iOS suspended the app and recording stopped (no `audio` background mode; elapsed ticker hardcoded to 0). Interim fix (commit 82f2860) removed the misleading Live Activity and finalizes-on-background; this phase builds the real feature.
 **Not public-release-blocking** — deferred to v2.5.
 **Technical feasibility (established in discussion)**:
+
   - Background mic recording IS possible for the main app via `UIBackgroundModes: audio` + a keep-alive `AVAudioSession` — recording must be STARTED in the foreground, then continues into background/lock. (The keyboard-extension mic restriction is a separate, unrelated constraint.)
   - Stop without returning: Live Activity Stop control (Dynamic Island / lock screen) — `StopDictationIntent` already wired. Optional VAD silence auto-stop (`onSilenceDetected` already exists).
   - Clipboard without returning: `UIPasteboard` write is programmatic; wrap the post-stop transcribe tail in `beginBackgroundTask` so it completes while backgrounded.
   - Known friction: iOS has no API to auto-return the user to their previous app (Messages, etc.) — "return" is a manual swipe; and App Store review scrutinizes the `audio` background mode (defensible for a dictation app, not a rubber stamp).
+
 **Spike-first targets**: (1) can an AppIntent/Shortcut start the mic without a jarring app-switch; (2) the background-task transcription tail under real suspension timing.
 **Re-enable**: the dormant Live Activity (DictationLiveActivity.swift), `startLiveActivity()`, real elapsed timer, Stop control.
 **Requirements**: IOSBG-01, IOSBG-02, IOSBG-03
@@ -136,11 +160,13 @@
 ---
 
 ### Phase 19: AI Cleanup iOS
+
 **Goal:** Enable on-device AI cleanup of ASR transcriptions on iOS via llama.cpp with Metal acceleration — improving number/currency/date formatting and enforcing Swiss German orthography (ß→ss) without any network calls.
 
 **Requirements:** CLEAN-01, CLEAN-02
 
-**Plans:** 6 plans (6 / 6 complete — code-complete pending physical-device UAT)
+**Plans:** 1/4 plans executed
+
 - [x] 19-01-PLAN.md — Wave 0 test scaffolding (TDD red targets for Wave 1-4) — completed 2026-04-24
 - [x] 19-02-PLAN.md — SPM wiring + CleanupService extraction to Shared/ + Swiss ITN/prompt — completed 2026-04-24
 - [x] 19-03-PLAN.md — IOSModelDownloadService (URLSession delegate, pause/resume, backup exclusion) + device eligibility — completed 2026-04-24
@@ -151,11 +177,13 @@
 ---
 
 ### Phase 19.5: AI Cleanup CH-Determinism
+
 **Goal:** Make AI-cleanup output reliably Swiss-correct on iOS and macOS in a deterministic way: ASCII-apostrophe thousands separator, period decimal everywhere when Swiss toggle is ON, Helvetism prompt block, German-locale currency anti-flip pipeline (CHF↔EUR↔USD↔GBP), Swiss default ON migration, macOS toggle UI exposure, and the B2 Parakeet false-re-download hotfix.
 
 **Requirements:** None directly — parent CLEAN-01, CLEAN-02 already met by Phase 19. This phase tightens correctness from B5/B6/S7/S8 UAT findings + B2 regression hotfix.
 
 **Plans:** 5/5 plans complete
+
 - [x] 19.5-01-PLAN.md — B2 Parakeet warmup hotfix (D-D1)
 - [x] 19.5-02-PLAN.md — Swiss default migration + iOS default flip + macOS toggle UI (D-A1, D-A2, D-A3)
 - [x] 19.5-03-PLAN.md — New Shared utilities: SwissHelvetisms, CurrencyAntiFlip, SwissNumberFormatter (D-D2, D-B1a, D-B1c, D-C1, D-C2, D-C3)
@@ -165,11 +193,13 @@
 ---
 
 ### Phase 17: Keyboard Extension
+
 **Goal:** Implement a custom iOS keyboard extension with a QWERTZ layout and an integrated dictation button that bounces to the main app for recording and auto-inserts the result at the cursor.
 
 **Requirements:** KEYB-01, KEYB-02
 
 **Plans:**
+
 - [x] 17-01-PLAN.md — Foundation, Target Setup, and URL Scheme
 - [x] 17-02-PLAN.md — Keyboard UI (SwiftUI QWERTZ Layout)
 - [x] 17-03-PLAN.md — Dictation Loop and Result Delivery
@@ -178,11 +208,13 @@
 ---
 
 ### Phase 17.5: Darwin IPC Keyboard Dictation (PIVOTED)
+
 **Goal:** Enable the Dicticus keyboard extension's mic button to trigger dictation in the main app via Darwin notification IPC, with transcription inserted directly at the cursor via textDocumentProxy — user never leaves their current app.
 
 **Requirements:** KEYB-02 (text at cursor without app switching — keyboard extension approach)
 
 **Plans:** 3 plans
+
 - [x] 17.5-01-PLAN.md — Intent flag wiring + ViewModel shortcut-launch lifecycle (Action Button fallback)
 - [x] 17.5-02-PLAN.md — IPC Bridge (shared) + Host Bridge (main app) + DictationViewModel wiring
 - [x] 17.5-03-PLAN.md — Keyboard IPC Manager + Dictation Controller + UI updates
@@ -190,11 +222,13 @@
 ---
 
 ### Phase 20: AI Cleanup Demotion + UAT Visibility
+
 **Goal:** Demote the LLM cleanup stage from authoritative rewriter to optional polish layer. Move deterministic cleanup (filler removal, currency-fold, self-correction) into Swift; gate the LLM behind a Levenshtein verification step with a low-creativity prompt; expose raw vs. polished output in the iOS history detail view; replace the App-Group-container `fatalError` in HistoryService with graceful degradation so the app never crashes when entitlements are missing.
 
 **Requirements:** None directly — follow-on from Phase 19.5 UAT findings. Cross-platform parity: ships on macOS and iOS together.
 
 **Plans:** 5/5 plans executed
+
 - [x] 20-01-PLAN.md — Wave 0 RED test scaffolding
 - [x] 20-02-PLAN.md — Action 1 (Rein in LLM): temp 0.1, "Lightly edit" prompt, LevenshteinDistance utility, gateLLMOutput helper
 - [x] 20-03-PLAN.md — Action 2 (Rules-first deterministic): FillerWordRemover + SelfCorrectionResolver + currency-fold + RulesCleanupService
@@ -204,6 +238,7 @@
 ---
 
 ### Phase 20.06: AI Cleanup Behavioural Hotfix
+
 **Goal:** Close the gap between Phase 20's artifact-level success and its behavioural goal. Fix HELVETISMS regression, currency-fold idempotency, iOS history UX issues.
 
 **Plans:** 4 plans (+ in-phase fix) — all complete. macOS Release UAT 2026-04-27 ACCEPTED.
@@ -211,6 +246,7 @@
 ---
 
 ### Phase 20.08: LLM Swiss-Ification Suppression
+
 **Goal:** Stop the LLM from rewriting clean High German into Swiss German dialect. Two-pronged: dialect-suppression gate + empirical prompt restructure (V19C winner variant g15).
 
 **Plans:** 5/5 plans complete. macOS UAT 2026-05-01 ACCEPTED.
@@ -218,6 +254,7 @@
 ---
 
 ### Phase 19.7: macOS Hygiene
+
 **Goal:** Hotkey re-authorization flow, multi-install cleanup, in-app permission status indicator, app icon consistency.
 
 **Plans:** 4 plans (all complete)
@@ -225,6 +262,7 @@
 ---
 
 ### Phase 22: Resolver Regression Hotfix
+
 **Goal:** Stop SelfCorrectionResolver from eating user content as substring matches inside unrelated words.
 
 **Plans:** 2 plans — complete.
@@ -369,6 +407,7 @@ Findings to address (priority-ordered):
 _Observation (note only — gate currently catches it): LLM substitutes unfamiliar terms toward its own vocabulary — 2026-06-09 19:59 "schema change" → "Gemma change" (gate REJECTED → fell back to "schema", contained). Watch, not urgent._
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ---
