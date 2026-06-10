@@ -177,6 +177,16 @@ dicticus/                    ← this repo (Apple platforms)
 | Tags | `macos-vX.Y.Z` | `ios-vX.Y.Z` | own repo tags |
 | Build script | `scripts/build-dmg.sh` | `scripts/build-ipa.sh` | own repo |
 
+### Build & Test Tooling Routing
+
+- **Dev loop** (incremental builds, simulator boot/install/launch, screenshots, UI
+  checks): use the **xcodebuild MCP tools** (`mcp__xcodebuild__*`) — structured
+  errors instead of raw xcodebuild logs, and screenshots Claude can read for
+  visual verification.
+- **Release builds**: `scripts/build-dmg.sh` / `scripts/build-ipa.sh` **only** —
+  they encode the Developer-ID signing, custom keychain, and notarization setup.
+  Never replicate release signing via MCP or ad-hoc xcodebuild calls.
+
 ### Shared Code (macOS ↔ iOS)
 
 When iOS work begins, extract platform-independent services into `Shared/`:

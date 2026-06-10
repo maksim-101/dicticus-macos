@@ -8,6 +8,10 @@
 - **ALWAYS re-sign with Developer ID**: After building locally (e.g., via `xcodebuild`), the app must be re-signed using a valid Developer ID Application identity (e.g., `Developer ID Application: Moritz Wehrli (VTWHBCCP36)`).
 - **Cleanup build pollution**: Before re-signing the canonical `/Applications/Dicticus.app`, ensure all other copies of the app (e.g., in `DerivedData` or local `build/` folders) are removed to prevent macOS from confusing the active identity.
 
+### Build & Test Tooling Routing
+- **Dev loop** (incremental builds, simulator boot/install/launch, screenshots, UI checks): use the **xcodebuild MCP tools** — structured errors instead of raw xcodebuild logs, and screenshots the agent can read for visual verification.
+- **Release builds**: `scripts/build-dmg.sh` / `scripts/build-ipa.sh` **only** — they encode the Developer-ID signing, custom keychain, and notarization setup. Never replicate release signing via MCP or ad-hoc xcodebuild calls.
+
 ### Build & Install Workflow
 1. Build the target (Release or Debug-Recorder).
 2. Stop any running instances of Dicticus.
