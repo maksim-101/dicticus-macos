@@ -3,14 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: planning
-last_updated: "2026-06-09T00:00:00.000Z"
-last_activity: 2026-06-09
+stopped_at: Phase 36 context gathered
+last_updated: "2026-06-10T06:36:25.440Z"
+last_activity: 2026-06-09 — v2.5 roadmap created
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 30
+  completed_phases: 21
+  total_plans: 87
+  completed_plans: 92
+  percent: 70
 ---
 
 # Project State: Dicticus
@@ -77,8 +78,8 @@ Last activity: 2026-06-09 — v2.5 roadmap created
 
 ## Session Continuity
 
-Last session: 2026-06-09
-Stopped at: v2.5 roadmap creation (this session)
+Last session: 2026-06-10T06:36:25.430Z
+Stopped at: Phase 36 context gathered
 Next: Cut v2.4 public release, then plan Phase 36 (iOS Background Dictation)
 
 ---
