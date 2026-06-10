@@ -24,11 +24,14 @@ class DictationViewModel: ObservableObject {
             if transcriptionService != nil {
                 error = nil
             }
-            transcriptionService?.onSilenceDetected = { [weak self] in
-                Task { @MainActor in
-                    await self?.stopDictation()
-                }
-            }
+            // SPIKE (36-01 SIGKILL probe): silence auto-stop DISABLED so a brief pause can't end
+            // the recording before the ~50s background-audio SIGKILL zone is reached. Watch the
+            // com.dicticus.spike ticker for whether 10s ticks continue past 50s. Revert with the spike.
+            // transcriptionService?.onSilenceDetected = { [weak self] in
+            //     Task { @MainActor in
+            //         await self?.stopDictation()
+            //     }
+            // }
             // Check for pending intent if service just became available
             if transcriptionService != nil {
                 checkPendingIntent()
