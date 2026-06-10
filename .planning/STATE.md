@@ -28,8 +28,9 @@ Last activity: 2026-06-09 — v2.5 roadmap created
 
 ### Next Action
 
-1. Cut `macos-v2.4.0` release (DMG + Sparkle appcast update on gh-pages) and `ios-v2.4.0` (TestFlight / device install) — still pending from v2.4 closeout
+1. ✅ macOS `1.4.0` shipped — GitHub release `macos-v1.4.0` (2026-06-09) live, Sparkle appcast advertises 1.4.0. iOS `ios-v2.4.0` (TestFlight / device install) still pending verification.
 2. Run `/gsd:plan-phase 36` — iOS Background Dictation (spike-first, App-Review-aware)
+3. Backlog `999.1` (post-ASR / AI-cleanup robustness) captured 2026-06-10 from log sweep — promote via `/gsd-review-backlog` when ready.
 
 ## Phase Overview
 
