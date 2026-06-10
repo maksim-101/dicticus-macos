@@ -72,9 +72,14 @@ class DictationViewModel: ObservableObject {
         // with a real AVAudioSession-backed background capture + Stop control
         // (StopDictationIntent is already wired). See 33-HUMAN-UAT.md backlog.
 
-        // Activate AVAudioSession + start recording (inside IOSTranscriptionService)
+        // SPIKE (36-01 re-test): iOS 18 AudioRecordingIntent fatal-errors if a background
+        // audio session is active without a Live Activity. Start the existing (frozen-ticker)
+        // Live Activity so the SIGKILL probe can run a clean background session AND the user
+        // gets the Dynamic Island Stop control. Plan 02 supersedes this with the
+        // ContentState startedAt:Date timer migration — keep this minimal.
         state = .recording
         do {
+            try startLiveActivity()
             try transcriptionService?.startRecording()
         } catch {
             await endLiveActivity()
