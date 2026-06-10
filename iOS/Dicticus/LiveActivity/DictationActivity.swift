@@ -4,6 +4,6 @@ import Foundation
 struct DictationAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var isRecording: Bool
-        var elapsedSeconds: Int
+        var startedAt: Date
     }
 }

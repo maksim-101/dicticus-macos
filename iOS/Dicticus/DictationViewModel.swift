@@ -67,19 +67,10 @@ class DictationViewModel: ObservableObject {
             return
         }
 
-        // The Live Activity was removed here. It implied dictation kept recording
-        // after you leave the app, but with no `audio` background mode iOS suspends
-        // the app and recording stops — so the activity (with a frozen 0s ticker) was
-        // misleading. Interim behavior is finalize-on-background (see finalizeIfRecording).
-        // FUTURE (background-recording phase): re-introduce the Live Activity together
-        // with a real AVAudioSession-backed background capture + Stop control
-        // (StopDictationIntent is already wired). See 33-HUMAN-UAT.md backlog.
-
-        // SPIKE (36-01 re-test): iOS 18 AudioRecordingIntent fatal-errors if a background
-        // audio session is active without a Live Activity. Start the existing (frozen-ticker)
-        // Live Activity so the SIGKILL probe can run a clean background session AND the user
-        // gets the Dynamic Island Stop control. Plan 02 supersedes this with the
-        // ContentState startedAt:Date timer migration — keep this minimal.
+        // iOS 18 AudioRecordingIntent requires an active Live Activity when a background
+        // audio session is active (confirmed by spike run 1 fatal crash without one).
+        // The Live Activity uses startedAt:Date + Text(timerInterval:) for a widget-autonomous
+        // elapsed timer that ticks without app-driven activity.update() calls.
         state = .recording
         do {
             try startLiveActivity()
@@ -157,12 +148,9 @@ class DictationViewModel: ObservableObject {
         state = .idle
     }
 
-    /// Interim background behavior (option A). Without an `audio` background mode iOS
-    /// suspends the app when it leaves the foreground, so an in-progress recording can't
-    /// continue. Rather than leave a zombie recording, finalize what was captured —
-    /// stop, transcribe, copy — guarded by a background task so the async transcribe +
-    /// optional LLM cleanup completes before suspension.
-    /// FUTURE (background-recording phase): replace this with keep-recording.
+    /// Finalize a recording that was stopped from a background context (e.g. StopDictationIntent
+    /// invoked from the Live Activity). Wraps stopDictation() in a background task so the
+    /// async transcribe tail completes before iOS suspends the process.
     func finalizeIfRecording() {
         guard state == .recording else { return }
         finalizeBackgroundTask = UIApplication.shared.beginBackgroundTask(withName: "FinalizeDictation") { [weak self] in
@@ -180,14 +168,12 @@ class DictationViewModel: ObservableObject {
         finalizeBackgroundTask = .invalid
     }
 
-    // FUTURE (background-recording phase): not currently invoked — the Live Activity was
-    // removed from startDictation() because it falsely implied background recording.
     private func startLiveActivity() throws {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         currentActivity = try Activity.request(
             attributes: DictationAttributes(),
             content: ActivityContent(
-                state: DictationAttributes.ContentState(isRecording: true, elapsedSeconds: 0),
+                state: DictationAttributes.ContentState(isRecording: true, startedAt: Date.now),
                 staleDate: nil
             ),
             pushType: nil
@@ -197,7 +183,7 @@ class DictationViewModel: ObservableObject {
     private func endLiveActivity() async {
         await currentActivity?.end(
             ActivityContent(
-                state: DictationAttributes.ContentState(isRecording: false, elapsedSeconds: 0),
+                state: DictationAttributes.ContentState(isRecording: false, startedAt: Date.now),
                 staleDate: nil
             ),
             dismissalPolicy: .after(.now + 3)

@@ -2,11 +2,6 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 
-// FUTURE (background-recording phase): this Live Activity is currently DORMANT — the app
-// no longer calls Activity.request() (see DictationViewModel.startDictation), because
-// without an `audio` background mode iOS suspends the app and recording stops, making a
-// "Recording… 0s" activity misleading. Re-enable alongside real background capture +
-// a working elapsed timer + the Stop control below.
 struct DictationLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DictationAttributes.self) { context in
@@ -14,7 +9,7 @@ struct DictationLiveActivity: Widget {
                 Image(systemName: "mic.fill").foregroundColor(.red)
                 Text(context.state.isRecording ? "Recording\u{2026}" : "Processing\u{2026}")
                 Spacer()
-                Text("\(context.state.elapsedSeconds)s")
+                Text(timerInterval: context.state.startedAt...Date.distantFuture, countsDown: false)
                     .monospacedDigit()
             }
             .padding()
@@ -31,9 +26,9 @@ struct DictationLiveActivity: Widget {
                         Text("Tap to open Dicticus")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        
+
                         Spacer()
-                        
+
                         if context.state.isRecording {
                             Button(intent: StopDictationIntent()) {
                                 Image(systemName: "stop.fill")
@@ -49,7 +44,8 @@ struct DictationLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: "mic.fill").foregroundColor(.red)
             } compactTrailing: {
-                Text("\(context.state.elapsedSeconds)s").monospacedDigit()
+                Text(timerInterval: context.state.startedAt...Date.distantFuture, countsDown: false)
+                    .monospacedDigit()
             } minimal: {
                 Image(systemName: "mic.fill").foregroundColor(.red)
             }
