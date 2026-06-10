@@ -103,16 +103,37 @@ class IOSTranscriptionService: ObservableObject {
 
     // MARK: - Recording
 
+    // MARK: - Spike instrumentation (plan 36-01 — superseded by plan 36-02)
+    private static let spikeLog = OSLog(subsystem: "com.dicticus.spike", category: "background")
+    private var spikeBackgroundTimerTask: Task<Void, Never>?
+
     /// Start recording via AVAudioEngine.
     /// On iOS, this requires explicit AVAudioSession management.
     func startRecording() throws {
         guard state == .idle else { throw TranscriptionError.busy }
         sampleBuffer.clear()
 
+        // SPIKE: record entry timestamp for D-04 intent-invoke → mic-start latency measurement
+        os_log("startRecording() entry — t=%{public}.3f", log: Self.spikeLog, type: .info, Date().timeIntervalSinceReferenceDate)
+
         // iOS ONLY: activate AVAudioSession
+        // SPIKE: .playAndRecord (was .record) to enable background mic keep-alive observation
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .default)
+        try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
         try session.setActive(true)
+
+        // SPIKE: start 10-second-interval backgroundTimeRemaining logger for Pitfall 1 SIGKILL probe
+        spikeBackgroundTimerTask?.cancel()
+        spikeBackgroundTimerTask = Task { [weak self] in
+            guard self != nil else { return }
+            var tick = 0
+            while !Task.isCancelled {
+                let remaining = await MainActor.run { UIApplication.shared.backgroundTimeRemaining }
+                os_log("backgroundTimeRemaining tick=%{public}d remaining=%{public}.1f", log: Self.spikeLog, type: .info, tick, remaining)
+                tick += 1
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+            }
+        }
 
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
@@ -186,6 +207,8 @@ class IOSTranscriptionService: ObservableObject {
 
     func cancelRecording() {
         guard state == .recording else { return }
+        spikeBackgroundTimerTask?.cancel()
+        spikeBackgroundTimerTask = nil
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         sampleBuffer.clear()
@@ -197,6 +220,12 @@ class IOSTranscriptionService: ObservableObject {
 
     func stopRecordingAndTranscribe() async throws -> DicticusTranscriptionResult {
         guard state == .recording else { throw TranscriptionError.notRecording }
+
+        // SPIKE: log backgroundTimeRemaining at stop so the SIGKILL probe can bracket the window
+        let remainingAtStop = UIApplication.shared.backgroundTimeRemaining
+        os_log("stopRecordingAndTranscribe() entry — backgroundTimeRemaining=%{public}.1f", log: Self.spikeLog, type: .info, remainingAtStop)
+        spikeBackgroundTimerTask?.cancel()
+        spikeBackgroundTimerTask = nil
 
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)

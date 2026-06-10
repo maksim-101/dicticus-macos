@@ -46,6 +46,10 @@
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Dicticus needs microphone access to transcribe your speech. Your audio never leaves this device.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
