@@ -104,10 +104,13 @@ class DictationViewModel: ObservableObject {
             // AND a CleanupProvider has been injected AND the provider reports
             // loaded. This matches D-13/D-23 gating + graceful degradation
             // (D-26) when Step 4 LLM warmup has not completed yet.
-            let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
-            let wantsAiCleanup = appGroupDefaults.bool(forKey: "aiCleanupEnabled")
-            let llmReady = cleanupService?.isLoaded ?? false
-            let mode: DictationMode = (wantsAiCleanup && llmReady) ? .aiCleanup : .plain
+            // SPIKE (36-01 probe): force plain mode — iOS forbids llama.cpp Metal (GPU) work from the
+            // background, so skip LLM cleanup to isolate the audio keep-alive / SIGKILL measurement.
+            // Revert with the spike. Normal logic:
+            //   let wantsAiCleanup = (UserDefaults(suiteName: "group.com.dicticus") ?? .standard).bool(forKey: "aiCleanupEnabled")
+            //   let llmReady = cleanupService?.isLoaded ?? false
+            //   mode = (wantsAiCleanup && llmReady) ? .aiCleanup : .plain
+            let mode: DictationMode = .plain
 
             // Route through the shared pipeline:
             //   Dictionary -> ITN -> Swiss ITN -> [LLM cleanup] -> History.

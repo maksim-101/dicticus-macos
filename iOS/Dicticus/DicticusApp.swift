@@ -75,10 +75,10 @@ struct DicticusApp: App {
                     }
                 }
             } else if newPhase == .background {
-                // Interim (option A): no background-audio mode yet, so leaving the app
-                // can't keep recording. Finalize what was captured instead of leaving a
-                // zombie recording. FUTURE: background-recording phase replaces this.
-                viewModel.finalizeIfRecording()
+                // SPIKE (36-01 probe): finalize-on-background DISABLED so audio keep-alive can be
+                // measured in the background (UIBackgroundModes:audio + .playAndRecord + active Live
+                // Activity). Watch the com.dicticus.spike ticker for SIGKILL timing. Revert with the spike.
+                // viewModel.finalizeIfRecording()
             }
         }
         .onChange(of: warmupService.isReady) { _, isReady in
