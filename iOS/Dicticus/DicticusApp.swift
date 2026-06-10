@@ -75,10 +75,8 @@ struct DicticusApp: App {
                     }
                 }
             } else if newPhase == .background {
-                // SPIKE (36-01 probe): finalize-on-background DISABLED so audio keep-alive can be
-                // measured in the background (UIBackgroundModes:audio + .playAndRecord + active Live
-                // Activity). Watch the com.dicticus.spike ticker for SIGKILL timing. Revert with the spike.
-                // viewModel.finalizeIfRecording()
+                // Background recording continues — do not finalize.
+                // UIBackgroundModes:audio keeps the AVAudioSession alive.
             }
         }
         .onChange(of: warmupService.isReady) { _, isReady in
