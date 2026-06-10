@@ -404,6 +404,8 @@ Findings to address (priority-ordered):
 
 4. **(MED) Spoken "hyphen" → "-" is produced by the deterministic pre-LLM layer (post_itn: "actual-between") but the LLM pass DROPS it**, so the dash never reaches output. Also a literal-vs-command ambiguity (talking ABOUT the word "hyphen" shouldn't convert). Tension between Phase 32 deterministic spoken-punctuation and the LLM re-processing pass.
 
+5. **(MED) German "KI" (AI; spoken "kah-ee") transcribed as the name "Kai" ("K-A-I").** German-dictation homophone/abbreviation error from Parakeet (pre-LLM ASR, not a cleanup-gate issue). Natural fix is a dictionary entry "Kai"→"KI", BUT "Kai" is also a legitimate German name and word (quay) → a blind find-and-replace over-corrects. Needs context-anchoring, same tension as the Zed→"set" period-anchoring spike (`project_acronym_spacing_finding`) and the kink/King over-collapse (`project_v19d_r8_kink_king_bug`). Flagged from live German dictation 2026-06-10 (user-reported, not from the log sweep).
+
 _Observation (note only — gate currently catches it): LLM substitutes unfamiliar terms toward its own vocabulary — 2026-06-09 19:59 "schema change" → "Gemma change" (gate REJECTED → fell back to "schema", contained). Watch, not urgent._
 
 Plans:
@@ -412,4 +414,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-06-10 — backlog 999.1 added (post-ASR / AI-cleanup robustness, 4 findings from log sweep).*
+*Last updated: 2026-06-10 — backlog 999.1: +finding 5 (German "KI"→"Kai" ASR homophone, user-flagged). Now 5 findings.*
