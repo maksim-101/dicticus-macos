@@ -24,14 +24,11 @@ class DictationViewModel: ObservableObject {
             if transcriptionService != nil {
                 error = nil
             }
-            // SPIKE (36-01 SIGKILL probe): silence auto-stop DISABLED so a brief pause can't end
-            // the recording before the ~50s background-audio SIGKILL zone is reached. Watch the
-            // com.dicticus.spike ticker for whether 10s ticks continue past 50s. Revert with the spike.
-            // transcriptionService?.onSilenceDetected = { [weak self] in
-            //     Task { @MainActor in
-            //         await self?.stopDictation()
-            //     }
-            // }
+            transcriptionService?.onSilenceDetected = { [weak self] in
+                Task { @MainActor in
+                    await self?.stopDictation()
+                }
+            }
             // Check for pending intent if service just became available
             if transcriptionService != nil {
                 checkPendingIntent()
@@ -98,13 +95,9 @@ class DictationViewModel: ObservableObject {
             // AND a CleanupProvider has been injected AND the provider reports
             // loaded. This matches D-13/D-23 gating + graceful degradation
             // (D-26) when Step 4 LLM warmup has not completed yet.
-            // SPIKE (36-01 probe): force plain mode — iOS forbids llama.cpp Metal (GPU) work from the
-            // background, so skip LLM cleanup to isolate the audio keep-alive / SIGKILL measurement.
-            // Revert with the spike. Normal logic:
-            //   let wantsAiCleanup = (UserDefaults(suiteName: "group.com.dicticus") ?? .standard).bool(forKey: "aiCleanupEnabled")
-            //   let llmReady = cleanupService?.isLoaded ?? false
-            //   mode = (wantsAiCleanup && llmReady) ? .aiCleanup : .plain
-            let mode: DictationMode = .plain
+            let wantsAiCleanup = (UserDefaults(suiteName: "group.com.dicticus") ?? .standard).bool(forKey: "aiCleanupEnabled")
+            let llmReady = cleanupService?.isLoaded ?? false
+            let mode: DictationMode = Self.selectMode(wantsAiCleanup: wantsAiCleanup, llmReady: llmReady)
 
             // Route through the shared pipeline:
             //   Dictionary -> ITN -> Swiss ITN -> [LLM cleanup] -> History.
@@ -166,6 +159,11 @@ class DictationViewModel: ObservableObject {
         guard finalizeBackgroundTask != .invalid else { return }
         UIApplication.shared.endBackgroundTask(finalizeBackgroundTask)
         finalizeBackgroundTask = .invalid
+    }
+
+    /// Testable seam for cleanup mode selection (D-13 / D-23 gating).
+    static func selectMode(wantsAiCleanup: Bool, llmReady: Bool) -> DictationMode {
+        return (wantsAiCleanup && llmReady) ? .aiCleanup : .plain
     }
 
     private func startLiveActivity() throws {

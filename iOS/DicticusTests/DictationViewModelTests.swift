@@ -89,4 +89,35 @@ final class DictationViewModelTests: XCTestCase {
         XCTAssertTrue(vm.cleanupService?.isLoaded == true,
                       "Injected provider must be the same instance")
     }
+
+    // MARK: - Phase 36 Wave 2: cleanup mode toggle gate
+
+    /// D-13 / D-23: mode selection must follow the aiCleanupEnabled toggle and LLM readiness.
+    /// Uses DictationViewModel.selectMode() static seam to test without spinning up ASR or LLM.
+    func testCleanupModeRespectsAiCleanupToggle() {
+        // LLM ready + toggle ON → aiCleanup
+        XCTAssertEqual(
+            DictationViewModel.selectMode(wantsAiCleanup: true, llmReady: true),
+            .aiCleanup,
+            "When toggle is ON and LLM is loaded, mode must be .aiCleanup"
+        )
+        // LLM ready + toggle OFF → plain
+        XCTAssertEqual(
+            DictationViewModel.selectMode(wantsAiCleanup: false, llmReady: true),
+            .plain,
+            "When toggle is OFF, mode must be .plain regardless of LLM readiness"
+        )
+        // LLM NOT ready + toggle ON → plain (graceful degradation D-26)
+        XCTAssertEqual(
+            DictationViewModel.selectMode(wantsAiCleanup: true, llmReady: false),
+            .plain,
+            "When LLM is not loaded, mode must fall back to .plain (D-26 graceful degradation)"
+        )
+        // LLM NOT ready + toggle OFF → plain
+        XCTAssertEqual(
+            DictationViewModel.selectMode(wantsAiCleanup: false, llmReady: false),
+            .plain,
+            "When both toggle is OFF and LLM is not loaded, mode must be .plain"
+        )
+    }
 }

@@ -1,5 +1,6 @@
 import XCTest
 import FluidAudio
+import AVFoundation
 @testable import Dicticus
 
 @MainActor
@@ -71,6 +72,20 @@ final class IOSTranscriptionServiceTests: XCTestCase {
         let service = try await makeServiceOrSkip()
         XCTAssertTrue(service.useCustomDictionary)
         XCTAssertTrue(service.useITN)
+    }
+
+    // IOSBG-01 / 36-AVSESSION: startRecording() must use .playAndRecord so the mic session
+    // survives backgrounding (UIBackgroundModes:audio keep-alive requires this category).
+    func testStartRecordingUsesPlayAndRecordCategory() async throws {
+        let service = try await makeServiceOrSkip()
+        try service.startRecording()
+        XCTAssertEqual(
+            AVAudioSession.sharedInstance().category,
+            .playAndRecord,
+            "startRecording() must set AVAudioSession category to .playAndRecord for background keep-alive"
+        )
+        service.cancelRecording()
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func makeServiceOrSkip() async throws -> IOSTranscriptionService {

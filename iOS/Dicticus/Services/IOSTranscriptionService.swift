@@ -3,6 +3,7 @@ import SwiftUI
 import FluidAudio
 @preconcurrency import AVFoundation
 import NaturalLanguage
+import os
 
 /// Errors thrown by IOSTranscriptionService during the record-transcribe cycle.
 enum TranscriptionError: Error, Sendable {
