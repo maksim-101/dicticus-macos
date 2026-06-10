@@ -342,4 +342,35 @@
 
 ---
 
-*Last updated: 2026-06-09 — v2.5 roadmap created (Phases 36-40, 12 requirements).*
+## Backlog
+
+### Phase 999.1: Post-ASR / AI-Cleanup Robustness Pass (BACKLOG)
+
+**Goal:** [Captured for future planning]
+**Requirements:** TBD
+**Plans:** 0 plans
+**Source:** 4-day DebugRecorder log sweep (cleanup-2026-06-07 → 06-10, ~160 dictations). All findings are in the Shared/ cleanup pipeline → fix ships macOS + iOS together (cross-platform parity). Related: Phase 29 (acronym collapse), Phase 32 (spoken punctuation), Phase 34 (V19E content-word gate). Memory: `project_acronym_spacing_finding`, `project_ai_cleanup_self_correction_gap`.
+
+Findings to address (priority-ordered):
+
+1. **(HIGH — correctness/meaning-loss) LLM silently deletes content words; the V19E `gateContentWords` backstop passes the result, sometimes inverting meaning.**
+   - 2026-06-09 04:30 — "Just create a document, **no** need for you to access my Google Workspace." → "Just **need** for you to access my Google Workspace." (negation/meaning INVERTED — "create a document, no" dropped)
+   - 2026-06-10 20:04 — "do it in **a live project, actually,** and not a stale one" → "do it in and not a stale one"
+   - 2026-06-08 09:27 — "**plain** dictation" → "dictation"
+   - 2026-06-10 04:48 — "an actual **hyphen** between" → "an actual between"
+   - Root area: whole-text Levenshtein gate is too coarse for short local clause/word drops; `gateContentWords` not catching deletion-without-restatement. Same family as `project_ai_cleanup_self_correction_gap`.
+
+2. **(MED) Spelled-out single letters only collapse when SPACE-delimited.** User spells continuously; ASR inserts the delimiter, which may be space, comma, or hyphen. 2026-06-10: "M I M E"→"MIME" (good) but "M, I, M, E" (commas) and "H-I-N"/"M-I-M-E" (hyphens) NOT collapsed → "H-I-N1 M-I-M-E-Body". Fix: post-ASR acronym-collapse must normalize single-letter runs regardless of delimiter. Extends `project_acronym_spacing_finding` (space-delimited "N R S N A"→"NRSNA").
+
+3. **(MED) German indefinite article "einen" falsely promoted to numeral "1"** by the v19e identifier-adjacent number-promotion EXCEPTION. 2026-06-10: ASR "...mit H-I-N einen M-I-M-E-Body" → LLM "...mit H-I-N1 M-I-M-E-Body". The promotion rule must not treat German articles (eins/einen/eine) as promotable numbers when functioning as articles.
+
+4. **(MED) Spoken "hyphen" → "-" is produced by the deterministic pre-LLM layer (post_itn: "actual-between") but the LLM pass DROPS it**, so the dash never reaches output. Also a literal-vs-command ambiguity (talking ABOUT the word "hyphen" shouldn't convert). Tension between Phase 32 deterministic spoken-punctuation and the LLM re-processing pass.
+
+_Observation (note only — gate currently catches it): LLM substitutes unfamiliar terms toward its own vocabulary — 2026-06-09 19:59 "schema change" → "Gemma change" (gate REJECTED → fell back to "schema", contained). Watch, not urgent._
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+*Last updated: 2026-06-10 — backlog 999.1 added (post-ASR / AI-cleanup robustness, 4 findings from log sweep).*
