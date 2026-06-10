@@ -90,6 +90,45 @@ final class DictationViewModelTests: XCTestCase {
                       "Injected provider must be the same instance")
     }
 
+    // MARK: - Phase 36 Wave 3: stop controls + soft cap
+
+    /// Double-session guard: a second startDictation() call while state == .recording
+    /// must be a no-op (the existing guard state == .idle gate). This test drives state
+    /// directly to .recording (bypassing the full ASR stack) and asserts the guard holds.
+    func testDoubleSessionStartIsNoOp() async {
+        let vm = DictationViewModel()
+        // Force state to .recording to simulate an in-progress session
+        vm.state = .recording
+        // A second call to startDictation() must not proceed past the guard
+        await vm.startDictation()
+        // State must remain .recording — the guard returned early
+        XCTAssertEqual(vm.state, .recording,
+                       "startDictation() while recording must be a no-op (double-session guard)")
+    }
+
+    /// Soft-cap auto-finalize (D-03): with a tiny capFinalizeSeconds, the finalize task
+    /// must fire and transition the ViewModel out of .recording. Uses injectable interval
+    /// and forces state to .recording to bypass the full ASR stack.
+    func testSoftCapTimerFiresStopDictation() async {
+        let vm = DictationViewModel()
+        vm.capFinalizeSeconds = 0.05  // 50ms — tiny interval for test speed
+        vm.capWarningSeconds = 0.01   // must be < capFinalizeSeconds
+
+        // Force into recording state (mimics the path after startRecording() succeeds)
+        vm.state = .recording
+        vm.startCapTimers()
+
+        // Wait just over the finalize interval for the Task to fire
+        try? await Task.sleep(for: .seconds(0.3))
+
+        // The finalize task calls stopDictation(); guard state == .recording will pass
+        // (state is .recording), then cancelCapTimers(), then set state = .transcribing.
+        // stopDictation() will then fail at transcriptionService?.stopRecordingAndTranscribe()
+        // (service is nil → returns nil), set endLiveActivity() (no-op), state = .idle.
+        XCTAssertNotEqual(vm.state, .recording,
+                          "Soft-cap finalize task must transition ViewModel out of .recording")
+    }
+
     // MARK: - Phase 36 Wave 2: cleanup mode toggle gate
 
     /// D-13 / D-23: mode selection must follow the aiCleanupEnabled toggle and LLM readiness.

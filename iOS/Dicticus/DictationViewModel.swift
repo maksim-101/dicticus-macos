@@ -12,10 +12,21 @@ class DictationViewModel: ObservableObject {
         case transcribing
     }
 
-    @Published var state: State = .idle
+    @Published var state: State = .idle {
+        didSet {
+            // Publish isRecording flag to App Group defaults so DictateIntent
+            // can toggle-to-stop without opening the app a second time (D-01a).
+            let isRecording = state == .recording
+            DicticusIPCBridge.defaults?.set(isRecording, forKey: "isRecording")
+        }
+    }
     @Published var lastResult: String?
     @Published var error: String?
     @Published var isShortcutLaunch: Bool = false
+
+    // Soft-cap intervals — injectable so unit tests can use tiny values (D-03).
+    var capFinalizeSeconds: Double = 300  // 5:00 — auto-finalize
+    var capWarningSeconds: Double = 270   // 4:30 — pre-cap warning
 
 
     // Set by DicticusApp once warmup completes (property injection)
@@ -46,6 +57,8 @@ class DictationViewModel: ObservableObject {
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
     nonisolated(unsafe) private var notificationObservers: [NSObjectProtocol] = []
     private var finalizeBackgroundTask: UIBackgroundTaskIdentifier = .invalid
+    private var capWarningTask: Task<Void, Never>?
+    private var capFinalizeTask: Task<Void, Never>?
 
     func startDictation(fromShortcut: Bool = false) async {
         guard state == .idle else { return }
@@ -72,6 +85,7 @@ class DictationViewModel: ObservableObject {
         do {
             try startLiveActivity()
             try transcriptionService?.startRecording()
+            startCapTimers()
         } catch {
             await endLiveActivity()
             self.error = error.localizedDescription
@@ -81,6 +95,7 @@ class DictationViewModel: ObservableObject {
 
     func stopDictation() async {
         guard state == .recording else { return }
+        cancelCapTimers()
         state = .transcribing
 
         do {
@@ -164,6 +179,36 @@ class DictationViewModel: ObservableObject {
     /// Testable seam for cleanup mode selection (D-13 / D-23 gating).
     static func selectMode(wantsAiCleanup: Bool, llmReady: Bool) -> DictationMode {
         return (wantsAiCleanup && llmReady) ? .aiCleanup : .plain
+    }
+
+    // MARK: - Soft-cap timers (D-03)
+
+    func startCapTimers() {
+        cancelCapTimers()
+        capWarningTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .seconds(capWarningSeconds))
+            guard !Task.isCancelled else { return }
+            // Warning is best-effort foreground-only: activity.update() is blocked in
+            // background audio mode (RESEARCH Pitfall 4). The auto-finalize at 5:00
+            // is the load-bearing bound; the warning fires if the app is in foreground.
+            if UIApplication.shared.applicationState == .active {
+                self.error = "Recording will auto-stop soon (5-minute limit)."
+            }
+        }
+        capFinalizeTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .seconds(capFinalizeSeconds))
+            guard !Task.isCancelled else { return }
+            await self.stopDictation()
+        }
+    }
+
+    private func cancelCapTimers() {
+        capWarningTask?.cancel()
+        capWarningTask = nil
+        capFinalizeTask?.cancel()
+        capFinalizeTask = nil
     }
 
     private func startLiveActivity() throws {

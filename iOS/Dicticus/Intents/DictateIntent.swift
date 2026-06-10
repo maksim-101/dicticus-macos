@@ -14,9 +14,20 @@ struct DictateIntent: AudioRecordingIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        DicticusIPCBridge.defaults?.set(true, forKey: "pendingDictation")
-        DicticusIPCBridge.defaults?.set(true, forKey: "isShortcutLaunch")
-        NotificationCenter.default.post(name: .startDictation, object: nil)
+        // Action-Button toggle-to-stop (D-01a): if already recording, this
+        // press stops; otherwise it starts. The isRecording flag is written by
+        // DictationViewModel on every state change via App Group defaults.
+        // Note: the stop branch still brings the app forward (AudioRecordingIntent
+        // openAppWhenRun:true) — the lock-screen Live Activity Stop is the true
+        // no-reopen stop surface.
+        let isRecording = DicticusIPCBridge.defaults?.bool(forKey: "isRecording") ?? false
+        if isRecording {
+            NotificationCenter.default.post(name: .stopDictation, object: nil)
+        } else {
+            DicticusIPCBridge.defaults?.set(true, forKey: "pendingDictation")
+            DicticusIPCBridge.defaults?.set(true, forKey: "isShortcutLaunch")
+            NotificationCenter.default.post(name: .startDictation, object: nil)
+        }
         return .result()
     }
 }
