@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: Completed 36-02-PLAN.md
-last_updated: "2026-06-10T12:58:49.347Z"
+stopped_at: "Paused at 36-03 checkpoint:human-verify (Tasks 1+2 complete)"
+last_updated: "2026-06-10T13:05:21.894Z"
 last_activity: 2026-06-10 -- Phase 36 execution started
 progress:
   total_phases: 30
   completed_phases: 21
   total_plans: 91
-  completed_plans: 94
+  completed_plans: 95
   percent: 70
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36 (ios-background-dictation) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-10 -- Phase 36 execution started
 
@@ -80,8 +80,8 @@ Last activity: 2026-06-10 -- Phase 36 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-10T12:58:49.343Z
-Stopped at: Completed 36-02-PLAN.md
+Last session: 2026-06-10T13:05:21.890Z
+Stopped at: Paused at 36-03 checkpoint:human-verify (Tasks 1+2 complete)
 Next: Cut v2.4 public release, then plan Phase 36 (iOS Background Dictation)
 
 ---
@@ -137,8 +137,10 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
 | Phase 36-ios-background-dictation P02 | 10 | 3 tasks | 8 files |
+| Phase 36-ios-background-dictation P03 | 3 | 2 tasks | 4 files |
 
 ## Decisions
 
 - [Phase ?]: Widget-autonomous Live Activity timer uses startedAt:Date + Text(timerInterval:) — app activity.update() is blocked in background audio mode
 - [Phase ?]: selectMode(wantsAiCleanup:llmReady:) static seam extracts D-13/D-23/D-26 cleanup mode selection for unit testing
+- [Phase ?]: Root cause of Dynamic Island no-Stop: .bottom-only expanded Stop + no lock-screen button; fix: add Stop to lock-screen body, move expanded Stop to .trailing

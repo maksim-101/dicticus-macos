@@ -49,7 +49,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 36. iOS Background Dictation | 2/4 | In Progress|  |
+| 36. iOS Background Dictation | 3/4 | In Progress|  |
 | 37. iOS Distribution | 0/TBD | Not started | - |
 | 38. Context-Aware Formatting | 0/TBD | Not started | - |
 | 39. Voice Edit Commands | 0/TBD | Not started | - |
@@ -78,7 +78,7 @@
 
 - [x] 36-01-PLAN.md — IOSBG-03 feasibility / App-Review spike (CONDITIONAL-GO → deferred-delivery re-scope)
 - [x] 36-02-PLAN.md — Background-capture foundation: supersede spike scaffolding, no-finalize-on-background, ContentState `startedAt` + `Text(timerInterval:)`, restore silence auto-stop + toggle cleanup (IOSBG-01)
-- [ ] 36-03-PLAN.md — No-reopen stop controls: fix expanded/lock-screen Live Activity Stop, Action-Button toggle-to-stop, ~5-min soft cap (IOSBG-01 / D-01, D-01a, D-03)
+- [x] 36-03-PLAN.md — No-reopen stop controls: fix expanded/lock-screen Live Activity Stop, Action-Button toggle-to-stop, ~5-min soft cap (IOSBG-01 / D-01, D-01a, D-03)
 - [ ] 36-04-PLAN.md — Deferred delivery: background-aware persist (zero data loss), foreground auto-cleanup+copy+show, away-stop notification, multiple-pending queue (IOSBG-02 / D-02, D-02a, D-05)
 
 **UI hint**: yes
