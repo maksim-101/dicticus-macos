@@ -49,8 +49,14 @@ struct DicticusApp: App {
                     .environmentObject(viewModel)
                     .onOpenURL { url in
                         if url.scheme == "dicticus" && url.host == "dictate" {
+                            // WR-03: only set the App Group flag — do NOT also post .startDictation.
+                            // Posting both causes a double-start race: the notification fires
+                            // startDictation() at T=0, then scenePhase .active fires at T=~0
+                            // which calls handleForeground(pendingDictation:true) →
+                            // checkPendingIntent() → a second startDictation() at T=500ms.
+                            // Relying solely on the flag means the single scenePhase path owns
+                            // the start, with the 500ms sleep giving the audio session time to settle.
                             DicticusIPCBridge.defaults?.set(true, forKey: "pendingDictation")
-                            NotificationCenter.default.post(name: .startDictation, object: nil)
                         }
                     }
                     .sheet(isPresented: $showingOnboardingTour, onDismiss: {
