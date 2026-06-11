@@ -3,6 +3,10 @@ import SwiftUI
 import UIKit
 @preconcurrency import AVFAudio
 import UserNotifications
+#if DEBUG
+import os
+private let diagLog = Logger(subsystem: "com.dicticus.diag", category: "DictationViewModel")
+#endif
 
 @MainActor
 class DictationViewModel: ObservableObject {
@@ -19,6 +23,9 @@ class DictationViewModel: ObservableObject {
             // can toggle-to-stop without opening the app a second time (D-01a).
             let isRecording = state == .recording
             DicticusIPCBridge.defaults?.set(isRecording, forKey: DicticusIPCBridge.Key.isRecording)
+            #if DEBUG
+            diagLog.debug("[state.didSet] newState=\(String(describing: self.state), privacy: .public) isRecordingWritten=\(isRecording, privacy: .public)")
+            #endif
         }
     }
     @Published var lastResult: String?
@@ -99,11 +106,22 @@ class DictationViewModel: ObservableObject {
     private var capFinalizeTask: Task<Void, Never>?
 
     func startDictation(fromShortcut: Bool = false) async {
-        guard state == .idle else { return }
+        #if DEBUG
+        diagLog.debug("[startDictation] entry state=\(String(describing: self.state), privacy: .public) fromShortcut=\(fromShortcut, privacy: .public) serviceNil=\(self.transcriptionService == nil, privacy: .public)")
+        #endif
+        guard state == .idle else {
+            #if DEBUG
+            diagLog.debug("[startDictation] BAIL: state not idle (state=\(String(describing: self.state), privacy: .public))")
+            #endif
+            return
+        }
         isShortcutLaunch = fromShortcut
 
         // STEP 0: Ensure transcription service is available (model loaded)
         guard transcriptionService != nil else {
+            #if DEBUG
+            diagLog.debug("[startDictation] BAIL: transcriptionService is nil")
+            #endif
             self.error = "ASR model not loaded. Download it first."
             return
         }
@@ -111,6 +129,9 @@ class DictationViewModel: ObservableObject {
         // STEP 1: Request microphone permission
         let permissionGranted = await AVAudioApplication.requestRecordPermission()
         guard permissionGranted else {
+            #if DEBUG
+            diagLog.debug("[startDictation] BAIL: microphone permission denied")
+            #endif
             self.error = "Microphone access denied. Enable in Settings > Privacy > Microphone."
             return
         }
@@ -120,6 +141,9 @@ class DictationViewModel: ObservableObject {
         // The Live Activity uses startedAt:Date + Text(timerInterval:) for a widget-autonomous
         // elapsed timer that ticks without app-driven activity.update() calls.
         state = .recording
+        #if DEBUG
+        diagLog.debug("[startDictation] SUCCESS: reached state=.recording")
+        #endif
         do {
             // Persist start time so a freshly-launched process can detect a stale cap
             // and finalize-on-relaunch if the recording exceeded the cap while backgrounded (ADDENDUM B).
@@ -137,13 +161,24 @@ class DictationViewModel: ObservableObject {
     }
 
     func stopDictation() async {
-        guard state == .recording else { return }
+        #if DEBUG
+        diagLog.debug("[stopDictation] entry state=\(String(describing: self.state), privacy: .public) isBackgrounded=\(self.isBackgroundedProvider(), privacy: .public)")
+        #endif
+        guard state == .recording else {
+            #if DEBUG
+            diagLog.debug("[stopDictation] BAIL: guard state==.recording failed (state=\(String(describing: self.state), privacy: .public)) — no-op")
+            #endif
+            return
+        }
         cancelCapTimers()
         state = .transcribing
 
         // Determine whether we are backgrounded BEFORE any async work.
         // isBackgroundedProvider is injectable for unit tests (avoids UIApplication dependency).
         let isBackgrounded = isBackgroundedProvider()
+        #if DEBUG
+        diagLog.debug("[stopDictation] path=\(isBackgrounded ? "background" : "foreground", privacy: .public)")
+        #endif
 
         do {
             guard let result = try await transcriptionService?.stopRecordingAndTranscribe() else {
@@ -291,7 +326,12 @@ class DictationViewModel: ObservableObject {
     }
 
     private func startLiveActivity() throws {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let activitiesEnabled = ActivityAuthorizationInfo().areActivitiesEnabled
+        #if DEBUG
+        let preCount = Activity<DictationAttributes>.activities.count
+        diagLog.debug("[startLiveActivity] areActivitiesEnabled=\(activitiesEnabled, privacy: .public) currentActivityNil=\(self.currentActivity == nil, privacy: .public) existingActivities=\(preCount, privacy: .public)")
+        #endif
+        guard activitiesEnabled else { return }
 
         // ADDENDUM A: Reconcile orphaned Live Activities before requesting a new one.
         // Without this, a mid-recording termination leaves a permanent phantom "Recording…"
@@ -312,9 +352,15 @@ class DictationViewModel: ObservableObject {
             ),
             pushType: nil
         )
+        #if DEBUG
+        diagLog.debug("[startLiveActivity] requested activityId=\(self.currentActivity?.id ?? "nil", privacy: .public)")
+        #endif
     }
 
     private func endLiveActivity() async {
+        #if DEBUG
+        diagLog.debug("[endLiveActivity] currentActivityNil=\(self.currentActivity == nil, privacy: .public)")
+        #endif
         await currentActivity?.end(
             ActivityContent(
                 state: DictationAttributes.ContentState(isRecording: false, startedAt: Date.now),
@@ -323,13 +369,21 @@ class DictationViewModel: ObservableObject {
             dismissalPolicy: .after(.now + 3)
         )
         currentActivity = nil
+        #if DEBUG
+        diagLog.debug("[endLiveActivity] done — currentActivity cleared")
+        #endif
     }
 
     /// Reconcile orphaned Live Activities (ADDENDUM A).
     /// Called on launch (from DicticusApp) and before each new recording to prevent
     /// phantom "Recording…" banners from a previous process that terminated mid-recording.
     func reconcileOrphanedActivities() {
-        for activity in Activity<DictationAttributes>.activities {
+        let allActivities = Activity<DictationAttributes>.activities
+        let orphanCount = allActivities.filter { $0.id != currentActivity?.id }.count
+        #if DEBUG
+        diagLog.debug("[reconcileOrphanedActivities] total=\(allActivities.count, privacy: .public) orphans=\(orphanCount, privacy: .public) currentActivityId=\(self.currentActivity?.id ?? "nil", privacy: .public)")
+        #endif
+        for activity in allActivities {
             // An activity is orphaned if it's not backed by this process's currentActivity.
             // Any activity other than currentActivity is either a stale orphan or a
             // ghost from a prior process — end it immediately.
@@ -363,6 +417,9 @@ class DictationViewModel: ObservableObject {
     /// Factored into DictationViewModel (not kept in the View) so unit tests can drive it directly
     /// without depending on the real SwiftUI/App lifecycle.
     func handleForeground(pendingDictation: Bool) async {
+        #if DEBUG
+        diagLog.debug("[handleForeground] pendingDictation=\(pendingDictation, privacy: .public) state=\(String(describing: self.state), privacy: .public) → branch=\(pendingDictation ? "start" : "deliver+check", privacy: .public)")
+        #endif
         if pendingDictation {
             // New recording requested: skip delivery this cycle, start the session.
             // checkPendingIntent() consumes the pendingDictation flag and schedules startDictation()
@@ -466,6 +523,9 @@ class DictationViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            #if DEBUG
+            diagLog.debug("[observer] .startDictation fired state=\(String(describing: self?.state), privacy: .public)")
+            #endif
             Task { @MainActor in
                 await self?.startDictation()
             }
@@ -477,6 +537,9 @@ class DictationViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            #if DEBUG
+            diagLog.debug("[observer] .stopDictation fired state=\(String(describing: self?.state), privacy: .public)")
+            #endif
             Task { @MainActor in
                 await self?.stopDictation()
             }
@@ -488,10 +551,17 @@ class DictationViewModel: ObservableObject {
 
     func checkPendingIntent() {
         let shared = DicticusIPCBridge.defaults
-        if shared?.bool(forKey: "pendingDictation") == true {
+        let hasPending = shared?.bool(forKey: "pendingDictation") == true
+        #if DEBUG
+        diagLog.debug("[checkPendingIntent] pendingDictation=\(hasPending, privacy: .public) state=\(String(describing: self.state), privacy: .public)")
+        #endif
+        if hasPending {
             shared?.set(false, forKey: "pendingDictation")
             let shortcut = shared?.bool(forKey: "isShortcutLaunch") ?? false
             shared?.set(false, forKey: "isShortcutLaunch")
+            #if DEBUG
+            diagLog.debug("[checkPendingIntent] consumed flag — scheduling startDictation in 500ms fromShortcut=\(shortcut, privacy: .public)")
+            #endif
             Task {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 await self.startDictation(fromShortcut: shortcut)

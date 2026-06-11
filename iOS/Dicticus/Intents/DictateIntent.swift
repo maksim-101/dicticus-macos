@@ -1,5 +1,9 @@
 import AppIntents
 import Foundation
+#if DEBUG
+import os
+private let diagLog = Logger(subsystem: "com.dicticus.diag", category: "DictateIntent")
+#endif
 
 extension Notification.Name {
     static let startDictation = Notification.Name("com.dicticus.startDictation")
@@ -21,6 +25,11 @@ struct DictateIntent: AudioRecordingIntent {
         // openAppWhenRun:true) — the lock-screen Live Activity Stop is the true
         // no-reopen stop surface.
         let isRecording = DicticusIPCBridge.defaults?.bool(forKey: "isRecording") ?? false
+        #if DEBUG
+        let proc = ProcessInfo.processInfo.processName
+        let bundle = Bundle.main.bundleIdentifier ?? "unknown"
+        diagLog.debug("[DictateIntent.perform] process=\(proc, privacy: .public) bundle=\(bundle, privacy: .public) isRecording=\(isRecording, privacy: .public) → branch=\(isRecording ? "stop" : "start", privacy: .public)")
+        #endif
         if isRecording {
             NotificationCenter.default.post(name: .stopDictation, object: nil)
         } else {
