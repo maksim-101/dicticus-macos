@@ -103,7 +103,10 @@ class DictationViewModel: ObservableObject {
     }
 
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
-    nonisolated(unsafe) private var notificationObservers: [NSObjectProtocol] = []
+    // WR-04: notificationObservers is accessed only from @MainActor context; no need for
+    // nonisolated(unsafe) (which would disable Swift's concurrency check for this property
+    // and allow silent data races from any future background Task access).
+    private var notificationObservers: [NSObjectProtocol] = []
     private var finalizeBackgroundTask: UIBackgroundTaskIdentifier = .invalid
     private var capWarningTask: Task<Void, Never>?
     private var capFinalizeTask: Task<Void, Never>?
