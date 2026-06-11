@@ -96,8 +96,14 @@ struct DicticusApp: App {
                     }
                     // Deliver any transcript that was persisted while backgrounded (D-02 / D-05).
                     // This runs after warmup so the LLM cleanup service may already be available.
+                    // After delivery, check for a pending DictateIntent trigger so a second Action
+                    // Button press (while the app was already running) reliably starts a new session.
+                    // deliverPendingTranscriptsIfNeeded() guards on state==.idle, so if session 2 is
+                    // already starting (via the .startDictation NotificationCenter post) it is skipped
+                    // and checkPendingIntent() is still reached as the in-process fallback (Finding 1).
                     Task { @MainActor in
                         await viewModel.deliverPendingTranscriptsIfNeeded()
+                        viewModel.checkPendingIntent()
                     }
                 }
             } else if newPhase == .background {

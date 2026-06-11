@@ -38,7 +38,14 @@ class DictationViewModel: ObservableObject {
             }
             transcriptionService?.onSilenceDetected = { [weak self] in
                 Task { @MainActor in
-                    await self?.stopDictation()
+                    guard let self else { return }
+                    // Disable silence auto-stop while backgrounded (Finding 2).
+                    // The user may pause to think/read in another app; killing the recording
+                    // after 2.5 s of silence would discard in-progress dictation silently.
+                    // The ~5-min soft cap and the Live Activity Stop button bound backgrounded
+                    // recordings. Foreground silence auto-stop (2.5 s) is preserved.
+                    guard !self.isBackgroundedProvider() else { return }
+                    await self.stopDictation()
                 }
             }
             // Check for pending intent if service just became available
@@ -349,6 +356,13 @@ class DictationViewModel: ObservableObject {
     /// Instead, we run cleanup directly on the already-persisted entry's text and update the
     /// clipboard + lastResult without touching HistoryService — no duplicate, no data loss.
     func deliverPendingTranscriptsIfNeeded() async {
+        // Skip delivery if a recording/transcription is already in progress.
+        // This prevents a race where the .active scenePhase handler sets state=.transcribing
+        // while startDictation() (triggered by a second Action Button press) is waiting on
+        // guard state == .idle — the guard would fail and the second session would silently
+        // no-op, leaving an orphaned Live Activity as the only stop surface (Finding 1).
+        guard state == .idle else { return }
+
         guard let uuidString = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID),
               !uuidString.isEmpty,
               let uuid = UUID(uuidString: uuidString) else {
@@ -445,7 +459,7 @@ class DictationViewModel: ObservableObject {
         checkPendingIntent()
     }
 
-    private func checkPendingIntent() {
+    func checkPendingIntent() {
         let shared = DicticusIPCBridge.defaults
         if shared?.bool(forKey: "pendingDictation") == true {
             shared?.set(false, forKey: "pendingDictation")
