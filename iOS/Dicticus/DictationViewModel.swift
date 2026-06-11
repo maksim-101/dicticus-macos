@@ -564,6 +564,11 @@ class DictationViewModel: ObservableObject {
     }
 
     func setupNotificationObserver() {
+        // CR-03: re-entry guard — ContentView's .task {} can re-run on every view re-appear
+        // (sheet dismiss, tab switch). Without this guard each re-appear would add a second
+        // pair of observers, eventually producing duplicate startDictation/stopDictation calls.
+        guard notificationObservers.isEmpty else { return }
+
         let startObserver = NotificationCenter.default.addObserver(
             forName: .startDictation,
             object: nil,
