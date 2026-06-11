@@ -4,6 +4,7 @@ struct DictationView: View {
     @EnvironmentObject var viewModel: DictationViewModel
     @EnvironmentObject var warmupService: IOSModelWarmupService
     @State private var showingSettings = false
+    @State private var selectedBatchEntry: TranscriptionEntry?
 
     var body: some View {
         NavigationStack {
@@ -72,6 +73,50 @@ struct DictationView: View {
                         }
                     }
                     .padding(.horizontal)
+                }
+
+                // Batch list: shown when multiple background sessions completed since last open.
+                // The most-recent is already in `lastResult`; here we surface the full batch.
+                if viewModel.recentlyDelivered.count > 1 {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(viewModel.recentlyDelivered.count) new transcripts")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        VStack(spacing: 0) {
+                            ForEach(viewModel.recentlyDelivered) { entry in
+                                Button {
+                                    selectedBatchEntry = entry
+                                } label: {
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Text(entry.createdAt, style: .time)
+                                            .font(.caption.monospacedDigit())
+                                            .foregroundStyle(.secondary)
+                                            .frame(minWidth: 52, alignment: .leading)
+                                        Text(entry.text)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(2)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 12)
+                                }
+                                .buttonStyle(.plain)
+                                if entry != viewModel.recentlyDelivered.last {
+                                    Divider().padding(.leading, 72)
+                                }
+                            }
+                        }
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
+                    }
+                    .padding(.horizontal)
+                    .sheet(item: $selectedBatchEntry) { entry in
+                        NavigationStack {
+                            HistoryDetailView(entry: entry)
+                        }
+                        .environmentObject(HistoryService.shared)
+                    }
                 }
 
                 if let error = viewModel.error {
@@ -173,5 +218,27 @@ struct DictationView: View {
 #Preview {
     DictationView()
         .environmentObject(DictationViewModel())
+        .environmentObject(IOSModelWarmupService())
+}
+
+#Preview("Batch delivery — 3 new") {
+    let vm = DictationViewModel()
+    vm.lastResult = "The most recent dictation transcript goes here."
+    vm.recentlyDelivered = [
+        TranscriptionEntry(uuid: UUID(), text: "The most recent dictation transcript goes here.",
+                           rawText: "the most recent dictation transcript goes here",
+                           language: "en", mode: "plain",
+                           createdAt: Date(timeIntervalSinceNow: -30), confidence: 0.93),
+        TranscriptionEntry(uuid: UUID(), text: "Zweite Aufnahme mit etwas längerem Text der umbricht.",
+                           rawText: "zweite aufnahme mit etwas längerem text der umbricht",
+                           language: "de", mode: "plain",
+                           createdAt: Date(timeIntervalSinceNow: -120), confidence: 0.88),
+        TranscriptionEntry(uuid: UUID(), text: "First background session from earlier.",
+                           rawText: "first background session from earlier",
+                           language: "en", mode: "plain",
+                           createdAt: Date(timeIntervalSinceNow: -300), confidence: 0.91),
+    ]
+    return DictationView()
+        .environmentObject(vm)
         .environmentObject(IOSModelWarmupService())
 }
