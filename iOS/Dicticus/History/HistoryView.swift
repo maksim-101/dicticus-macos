@@ -59,9 +59,12 @@ struct HistoryRow: View {
         // pushed inward by the extra chevron column.
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(entry.createdAt, style: .date)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack(spacing: 4) {
+                    Text(entry.createdAt, style: .date)
+                    Text(entry.createdAt, style: .time)
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
                 Spacer()
                 Text(entry.language.uppercased())
                     .font(.caption2).bold()
