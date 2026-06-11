@@ -461,6 +461,7 @@ class DictationViewModel: ObservableObject {
             // Toggle ON + LLM ready: clean EACH pending entry and persist to History.
             // Entries already cleaned (mode == "cleanup") are skipped — idempotent retry.
             var cleanedEntries: [TranscriptionEntry] = []
+            var anyPersistFailed = false
             for entry in pendingEntries {
                 if entry.mode == "cleanup" {
                     // Already cleaned by a prior retry — no duplicate work.
@@ -475,7 +476,18 @@ class DictationViewModel: ObservableObject {
                 var updated = entry
                 updated.text = cleanedText
                 updated.mode = "cleanup"
-                HistoryService.shared.update(updated)
+                // CR-02: look up the persisted entry by UUID to guarantee id is the
+                // real SQLite rowid (in-memory `entry` may have been constructed without
+                // a save round-trip in edge cases). If the lookup fails, fall back to
+                // the in-memory copy — update() will log and return false if id == nil.
+                let persisted = HistoryService.shared.entries.first(where: { $0.uuid == entry.uuid })
+                if let persisted {
+                    updated.id = persisted.id
+                }
+                let persistOK = HistoryService.shared.update(updated)
+                if !persistOK {
+                    anyPersistFailed = true
+                }
                 cleanedEntries.append(updated)
             }
             // Reload so the in-memory entries list reflects persisted cleaned text.
@@ -490,9 +502,12 @@ class DictationViewModel: ObservableObject {
             recentlyDelivered = cleanedEntries.reversed()
             error = nil
 
-            // Delivery complete — clear both pending keys.
-            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
-            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+            // Only clear the pending list when every persist succeeded.
+            // If any persist failed, leave the list so the next foreground can retry.
+            if !anyPersistFailed {
+                defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+                defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+            }
 
         } else if !wantsAiCleanup {
             // Toggle OFF: plain is the final output. Deliver and clear the list.

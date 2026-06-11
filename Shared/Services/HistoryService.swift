@@ -226,7 +226,16 @@ class HistoryService: ObservableObject {
     /// Update an existing entry in place (used by foreground delivery to persist AI-cleaned text).
     /// The entry must already exist in the database (identified by its rowid `id`).
     /// Leaves `uuid`, `rawText`, `createdAt`, `language`, and `confidence` unchanged.
-    func update(_ entry: TranscriptionEntry) {
+    ///
+    /// Returns `true` if the update succeeded, `false` if the entry had no `id` or the
+    /// row was not found. The caller must treat `false` as a persist failure and NOT
+    /// advance state (e.g. clear pending list) as if delivery completed.
+    @discardableResult
+    func update(_ entry: TranscriptionEntry) -> Bool {
+        guard entry.id != nil else {
+            Self.log.error("update() called with nil id for uuid=\(entry.uuid) — skipping (no rowid)")
+            return false
+        }
         do {
             let entryToUpdate = entry
             try dbPool.write { db in
@@ -234,8 +243,10 @@ class HistoryService: ObservableObject {
             }
             Self.log.info("Updated history entry: \(entry.uuid) mode=\(entry.mode)")
             load()
+            return true
         } catch {
-            Self.log.error("Failed to update entry: \(error.localizedDescription)")
+            Self.log.error("Failed to update entry uuid=\(entry.uuid): \(error.localizedDescription)")
+            return false
         }
     }
 
