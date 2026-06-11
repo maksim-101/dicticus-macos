@@ -201,6 +201,11 @@ class IOSTranscriptionService: ObservableObject {
 
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
+        // Release the mic session on every exit path (success or throw). Without this the
+        // AVAudioSession stays active after a stop, and the next AudioRecordingIntent
+        // (Action Button session 2) fatal-asserts: "active audio session but without a
+        // Live Activity" (AppIntents PerformActionExecutorTask). Mirrors cancelRecording().
+        defer { try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation) }
         state = .transcribing
 
         defer { if state == .transcribing { state = .idle } }
