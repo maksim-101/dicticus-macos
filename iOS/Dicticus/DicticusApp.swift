@@ -152,9 +152,16 @@ struct DicticusApp: App {
                 // transcript was delivered as plain text (correct but un-cleaned). Now that the
                 // LLM is ready AND a pending UUID still exists, re-deliver with AI cleanup.
                 // deliverPendingTranscriptsIfNeeded() checks for the UUID; it's a no-op if already cleared.
-                if hasCompletedOnboarding,
-                   let pending = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID),
-                   !pending.isEmpty {
+                // Retry deferred delivery when the LLM becomes ready:
+                // - Check the list key (batch from Phase 36+ background stops).
+                // - Also check the legacy single key (older builds / one-element case).
+                // deliverPendingTranscriptsIfNeeded() is a no-op if the list is empty.
+                let hasPendingList = !(DicticusIPCBridge.defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)?.isEmpty ?? true)
+                let hasPendingLegacy: Bool = {
+                    guard let s = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID) else { return false }
+                    return !s.isEmpty
+                }()
+                if hasCompletedOnboarding, hasPendingList || hasPendingLegacy {
                     Task { @MainActor in
                         await viewModel.deliverPendingTranscriptsIfNeeded()
                     }

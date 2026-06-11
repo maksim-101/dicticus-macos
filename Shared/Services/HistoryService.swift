@@ -223,6 +223,22 @@ class HistoryService: ObservableObject {
         }
     }
 
+    /// Update an existing entry in place (used by foreground delivery to persist AI-cleaned text).
+    /// The entry must already exist in the database (identified by its rowid `id`).
+    /// Leaves `uuid`, `rawText`, `createdAt`, `language`, and `confidence` unchanged.
+    func update(_ entry: TranscriptionEntry) {
+        do {
+            let entryToUpdate = entry
+            try dbPool.write { db in
+                try entryToUpdate.update(db)
+            }
+            Self.log.info("Updated history entry: \(entry.uuid) mode=\(entry.mode)")
+            load()
+        } catch {
+            Self.log.error("Failed to update entry: \(error.localizedDescription)")
+        }
+    }
+
     func delete(id: Int64) {
         do {
             _ = try dbPool.write { db in

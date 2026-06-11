@@ -673,6 +673,192 @@ final class DictationViewModelTests: XCTestCase {
         vm.state = .idle  // cleanup
     }
 
+    // MARK: - Phase 36 Wave 4 final correctness pass (36-04): AI cleanup persisted on delivery
+
+    /// Toggle ON + LLM ready: two pending background entries are each cleaned,
+    /// their History rows updated to mode="cleanup" with cleaned text,
+    /// recentlyDelivered shows cleaned text, clipboard = cleaned most-recent,
+    /// pending list cleared.
+    func testBatchDeliveryWithCleanupPersistsToHistory() async {
+        final class MockCleanupService: CleanupProvider {
+            var isLoaded: Bool = true
+            func cleanup(text: String, language: String, dictionaryContext: [String: String]?) async -> String {
+                return "CLEANED:" + text
+            }
+        }
+
+        let vm = DictationViewModel()
+        vm.cleanupService = MockCleanupService()
+        var clipboardValue: String? = nil
+        vm.clipboardWriter = { text in clipboardValue = text }
+
+        let defaults = DicticusIPCBridge.defaults
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        // Set toggle ON in App Group defaults.
+        let testDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? .standard
+        testDefaults.set(true, forKey: "aiCleanupEnabled")
+
+        // Seed two plain History entries (oldest first).
+        let uuid1 = UUID()
+        let uuid2 = UUID()
+        let entry1 = TranscriptionEntry(uuid: uuid1, text: "first plain",
+                                        rawText: "first plain", language: "en",
+                                        mode: "plain",
+                                        createdAt: Date(timeIntervalSinceNow: -60),
+                                        confidence: 0.9)
+        let entry2 = TranscriptionEntry(uuid: uuid2, text: "second plain",
+                                        rawText: "second plain", language: "en",
+                                        mode: "plain", confidence: 0.9)
+        HistoryService.shared.save(entry1)
+        HistoryService.shared.save(entry2)
+
+        // Tag both as pending (oldest first).
+        defaults?.set([uuid1.uuidString, uuid2.uuidString],
+                      forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+
+        await vm.deliverPendingTranscriptsIfNeeded()
+
+        // Clipboard and lastResult must be the CLEANED most-recent.
+        XCTAssertEqual(clipboardValue, "CLEANED:second plain",
+                       "Clipboard must contain the AI-cleaned most-recent transcript")
+        XCTAssertEqual(vm.lastResult, "CLEANED:second plain",
+                       "lastResult must be the AI-cleaned most-recent transcript")
+
+        // recentlyDelivered must contain both entries with cleaned text, newest first.
+        XCTAssertEqual(vm.recentlyDelivered.count, 2,
+                       "recentlyDelivered must contain both cleaned entries")
+        XCTAssertEqual(vm.recentlyDelivered.first?.uuid, uuid2,
+                       "recentlyDelivered[0] must be newest entry (uuid2)")
+        XCTAssertEqual(vm.recentlyDelivered.first?.text, "CLEANED:second plain",
+                       "recentlyDelivered[0].text must be cleaned text")
+        XCTAssertEqual(vm.recentlyDelivered.first?.mode, "cleanup",
+                       "recentlyDelivered[0].mode must be 'cleanup'")
+        XCTAssertEqual(vm.recentlyDelivered.last?.text, "CLEANED:first plain",
+                       "recentlyDelivered[1].text must be cleaned text")
+
+        // History entries must be updated in place (same uuid, mode="cleanup").
+        let storedEntry2 = HistoryService.shared.entries.first(where: { $0.uuid == uuid2 })
+        XCTAssertNotNil(storedEntry2, "uuid2 must still exist in History (no duplicate, no delete)")
+        XCTAssertEqual(storedEntry2?.mode, "cleanup",
+                       "History entry for uuid2 must have mode='cleanup' after delivery")
+        XCTAssertEqual(storedEntry2?.text, "CLEANED:second plain",
+                       "History entry for uuid2 must have cleaned text after delivery")
+        // rawText must be preserved unchanged.
+        XCTAssertEqual(storedEntry2?.rawText, "second plain",
+                       "rawText must be unchanged — only text and mode are updated")
+
+        let storedEntry1 = HistoryService.shared.entries.first(where: { $0.uuid == uuid1 })
+        XCTAssertEqual(storedEntry1?.mode, "cleanup", "uuid1 must also be updated to mode='cleanup'")
+
+        // Pending list must be cleared.
+        let remaining = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        XCTAssertNil(remaining, "Pending list key must be cleared after batch cleanup delivery")
+
+        // Cleanup
+        testDefaults.removeObject(forKey: "aiCleanupEnabled")
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        for uuid in [uuid1, uuid2] {
+            if let id = HistoryService.shared.entries.first(where: { $0.uuid == uuid })?.id {
+                HistoryService.shared.delete(id: id)
+            }
+        }
+    }
+
+    /// Toggle OFF: entries stay plain (mode="plain"), list cleared.
+    func testBatchDeliveryWithToggleOffStaysPlain() async {
+        let vm = DictationViewModel()
+        var clipboardValue: String? = nil
+        vm.clipboardWriter = { text in clipboardValue = text }
+
+        let defaults = DicticusIPCBridge.defaults
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        // Set toggle OFF.
+        let testDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? .standard
+        testDefaults.set(false, forKey: "aiCleanupEnabled")
+
+        let uuid1 = UUID()
+        let entry1 = TranscriptionEntry(uuid: uuid1, text: "plain result",
+                                        rawText: "plain result", language: "en",
+                                        mode: "plain", confidence: 0.9)
+        HistoryService.shared.save(entry1)
+        defaults?.set([uuid1.uuidString], forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+
+        await vm.deliverPendingTranscriptsIfNeeded()
+
+        // Clipboard and lastResult must be the PLAIN text.
+        XCTAssertEqual(clipboardValue, "plain result",
+                       "Toggle OFF: clipboard must contain plain text (no cleanup)")
+        XCTAssertEqual(vm.lastResult, "plain result", "Toggle OFF: lastResult must be plain text")
+
+        // History entry must remain mode="plain" (not mutated).
+        let storedEntry = HistoryService.shared.entries.first(where: { $0.uuid == uuid1 })
+        XCTAssertEqual(storedEntry?.mode, "plain",
+                       "Toggle OFF: History entry must remain mode='plain' — not mutated")
+
+        // Pending list must be cleared (plain is the final output).
+        let remaining = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        XCTAssertNil(remaining, "Toggle OFF: pending list must be cleared after delivery")
+
+        // Cleanup
+        testDefaults.removeObject(forKey: "aiCleanupEnabled")
+        if let id = storedEntry?.id { HistoryService.shared.delete(id: id) }
+    }
+
+    /// Toggle ON + LLM NOT ready: entries delivered plain BUT the pending list is NOT
+    /// cleared — deferred for the LLM-ready retry.
+    func testBatchDeliveryWithToggleOnButLlmNotReadyDefersCleanup() async {
+        let vm = DictationViewModel()
+        // cleanupService is nil (LLM not injected yet) → llmReady = false.
+        vm.cleanupService = nil
+        var clipboardValue: String? = nil
+        vm.clipboardWriter = { text in clipboardValue = text }
+
+        let defaults = DicticusIPCBridge.defaults
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        // Set toggle ON.
+        let testDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? .standard
+        testDefaults.set(true, forKey: "aiCleanupEnabled")
+
+        let uuid1 = UUID()
+        let entry1 = TranscriptionEntry(uuid: uuid1, text: "pending plain",
+                                        rawText: "pending plain", language: "en",
+                                        mode: "plain", confidence: 0.9)
+        HistoryService.shared.save(entry1)
+        defaults?.set([uuid1.uuidString], forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+
+        await vm.deliverPendingTranscriptsIfNeeded()
+
+        // Clipboard gets the plain text for immediate UX.
+        XCTAssertEqual(clipboardValue, "pending plain",
+                       "Toggle ON + LLM not ready: clipboard must contain plain text for immediate UX")
+        XCTAssertEqual(vm.lastResult, "pending plain",
+                       "Toggle ON + LLM not ready: lastResult must be plain text for immediate UX")
+
+        // Pending list must NOT be cleared — LLM-ready retry will clean + persist later.
+        let remaining = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        XCTAssertNotNil(remaining,
+                        "Toggle ON + LLM not ready: pending list must NOT be cleared (deferred for retry)")
+        XCTAssertEqual(remaining?.count, 1,
+                        "Toggle ON + LLM not ready: pending list must still contain the UUID")
+
+        // History entry must remain mode="plain" (no cleanup ran yet).
+        let storedEntry = HistoryService.shared.entries.first(where: { $0.uuid == uuid1 })
+        XCTAssertEqual(storedEntry?.mode, "plain",
+                       "Toggle ON + LLM not ready: History entry must remain mode='plain' until retry")
+
+        // Cleanup
+        testDefaults.removeObject(forKey: "aiCleanupEnabled")
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        if let id = storedEntry?.id { HistoryService.shared.delete(id: id) }
+    }
+
     // MARK: - Phase 36 Wave 2: cleanup mode toggle gate
 
     /// D-13 / D-23: mode selection must follow the aiCleanupEnabled toggle and LLM readiness.

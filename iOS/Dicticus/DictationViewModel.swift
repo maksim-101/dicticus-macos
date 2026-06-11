@@ -450,15 +450,21 @@ class DictationViewModel: ObservableObject {
     /// Called from handleForeground() when no new recording is being started.
     ///
     /// Batch semantics: reads the full `pendingTranscriptUUIDs` list (appended by each background stop).
-    /// The most-recent entry (last in list) gets clipboard+lastResult and optional AI cleanup.
-    /// All entries are surfaced in `recentlyDelivered` for the home-screen batch list.
     ///
-    /// Design: TextProcessingService.process() would create a DUPLICATE History row if called here.
-    /// Instead, we run cleanup only on the most-recent entry's text and update clipboard + lastResult
-    /// without touching HistoryService — no duplicates, no data loss.
+    /// Toggle ON + LLM ready: each pending entry is cleaned via the LLM, the History row is
+    /// updated in place (same uuid/id, mode="cleanup"), and then the cleaned most-recent text
+    /// goes to clipboard + lastResult. The pending list is cleared.
     ///
-    /// Legacy migration: if only the old single `pendingTranscriptUUID` key is present (no list key),
-    /// treat it as a one-element list so pending transcripts from older builds are not lost.
+    /// Toggle OFF: all entries remain plain. Clipboard/lastResult/recentlyDelivered set to plain
+    /// most-recent. Pending list cleared.
+    ///
+    /// Toggle ON + LLM not ready: deliver plain to clipboard/lastResult/recentlyDelivered for
+    /// immediate UX, but do NOT clear the pending list — so the isLlmReady retry can clean and
+    /// persist once the LLM finishes warming up. Once an entry has mode="cleanup" it is skipped
+    /// by the retry (idempotent).
+    ///
+    /// Legacy migration: if only the old single `pendingTranscriptUUID` key is present (no list
+    /// key), treat it as a one-element list so pending transcripts from older builds are not lost.
     func deliverPendingTranscriptsIfNeeded() async {
         // Skip delivery if a recording/transcription is already in progress.
         // This prevents a race where the .active scenePhase handler sets state=.transcribing
@@ -496,40 +502,67 @@ class DictationViewModel: ObservableObject {
             return
         }
 
-        // Most-recent entry is the last one added (list is oldest→newest).
-        let mostRecent = pendingEntries.last!
-
-        // Show processing state while cleanup runs (D-02b).
+        // Show processing state while cleanup may run (D-02b).
         state = .transcribing
 
-        // Run cleanup respecting the toggle on the most-recent entry only.
-        // Because the background entry was persisted as plain text, we call cleanup directly
-        // rather than process() to avoid a duplicate row.
         let wantsAiCleanup = (UserDefaults(suiteName: "group.com.dicticus") ?? .standard).bool(forKey: "aiCleanupEnabled")
         let llmReady = cleanupService?.isLoaded ?? false
 
-        let delivered: String
         if wantsAiCleanup && llmReady, let cs = cleanupService {
-            // Run AI cleanup on the plain entry text (Dictionary+ITN was already applied backgrounded).
-            delivered = await cs.cleanup(
-                text: mostRecent.text,
-                language: mostRecent.language,
-                dictionaryContext: nil
-            )
+            // Toggle ON + LLM ready: clean EACH pending entry and persist to History.
+            // Entries already cleaned (mode == "cleanup") are skipped — idempotent retry.
+            var cleanedEntries: [TranscriptionEntry] = []
+            for entry in pendingEntries {
+                if entry.mode == "cleanup" {
+                    // Already cleaned by a prior retry — no duplicate work.
+                    cleanedEntries.append(entry)
+                    continue
+                }
+                let cleanedText = await cs.cleanup(
+                    text: entry.text,
+                    language: entry.language,
+                    dictionaryContext: nil
+                )
+                var updated = entry
+                updated.text = cleanedText
+                updated.mode = "cleanup"
+                HistoryService.shared.update(updated)
+                cleanedEntries.append(updated)
+            }
+            // Reload so the in-memory entries list reflects persisted cleaned text.
+            HistoryService.shared.load()
+
+            let mostRecentCleaned = cleanedEntries.last!
+            clipboardWriter(mostRecentCleaned.text)
+            lastResult = mostRecentCleaned.text
+            recentlyDelivered = cleanedEntries.reversed()
+            error = nil
+
+            // Delivery complete — clear both pending keys.
+            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        } else if !wantsAiCleanup {
+            // Toggle OFF: plain is the final output. Deliver and clear the list.
+            let mostRecent = pendingEntries.last!
+            clipboardWriter(mostRecent.text)
+            lastResult = mostRecent.text
+            recentlyDelivered = pendingEntries.reversed()
+            error = nil
+
+            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
         } else {
-            delivered = mostRecent.text
+            // Toggle ON + LLM not yet ready: deliver plain now for immediate UX,
+            // but leave the pending list intact so the isLlmReady retry can clean + persist.
+            let mostRecent = pendingEntries.last!
+            clipboardWriter(mostRecent.text)
+            lastResult = mostRecent.text
+            recentlyDelivered = pendingEntries.reversed()
+            error = nil
+            // DO NOT clear pendingTranscriptUUIDs — the LLM-ready retry needs it.
         }
-
-        // Write most-recent to clipboard and show ready to paste.
-        clipboardWriter(delivered)
-        lastResult = delivered
-        // Expose full batch (sorted newest first for display) so the home screen can list them.
-        recentlyDelivered = pendingEntries.reversed()
-        error = nil
-
-        // Clear both list and legacy pending tags — delivery is complete.
-        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
-        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
 
         state = .idle
     }
