@@ -1,10 +1,6 @@
 import SwiftUI
 import FluidAudio
 import ActivityKit
-#if DEBUG
-import os
-private let diagLog = Logger(subsystem: "com.dicticus.diag", category: "DicticusApp")
-#endif
 
 @main
 struct DicticusApp: App {
@@ -28,18 +24,8 @@ struct DicticusApp: App {
         // phantom "Recording…" banners stack indefinitely on the lock screen.
         // Also reset the isRecording App Group flag — if it's stale-true from a prior process,
         // DictateIntent toggle-to-stop would misfire (D-01a corollary).
-        #if DEBUG
-        let proc = ProcessInfo.processInfo.processName
-        let bundle = Bundle.main.bundleIdentifier ?? "unknown"
-        let staleIsRecording = DicticusIPCBridge.defaults?.bool(forKey: DicticusIPCBridge.Key.isRecording) ?? false
-        let activityCount = Activity<DictationAttributes>.activities.count
-        diagLog.debug("[DicticusApp.init] process=\(proc, privacy: .public) bundle=\(bundle, privacy: .public) staleIsRecording=\(staleIsRecording, privacy: .public) orphanedActivities=\(activityCount, privacy: .public)")
-        #endif
         Task { @MainActor in
             let activities = Activity<DictationAttributes>.activities
-            #if DEBUG
-            diagLog.debug("[DicticusApp.init reconcile] ending \(activities.count, privacy: .public) orphaned activities")
-            #endif
             for activity in activities {
                 await activity.end(
                     ActivityContent(
@@ -115,10 +101,6 @@ struct DicticusApp: App {
                     // handleForeground() owns the branch: when pendingDictation is set the new
                     // session wins and delivery is deferred; otherwise delivery runs first (D-02/D-05).
                     let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
-                    #if DEBUG
-                    let pendingUUID = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID) ?? ""
-                    diagLog.debug("[DicticusApp.scenePhase.active] pendingDictation=\(pendingDictation, privacy: .public) vmState=\(String(describing: viewModel.state), privacy: .public) pendingTranscriptUUID=\(pendingUUID.isEmpty ? "none" : "set", privacy: .public)")
-                    #endif
                     Task { @MainActor in
                         await viewModel.handleForeground(pendingDictation: pendingDictation)
                     }
