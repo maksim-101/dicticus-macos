@@ -481,7 +481,10 @@ class DictationViewModel: ObservableObject {
             // Reload so the in-memory entries list reflects persisted cleaned text.
             HistoryService.shared.load()
 
-            let mostRecentCleaned = cleanedEntries.last!
+            guard let mostRecentCleaned = cleanedEntries.last else {
+                // Defensive: loop produced no output (Task cancelled mid-cleanup?).
+                state = .idle; return
+            }
             clipboardWriter(mostRecentCleaned.text)
             lastResult = mostRecentCleaned.text
             recentlyDelivered = cleanedEntries.reversed()
@@ -493,7 +496,9 @@ class DictationViewModel: ObservableObject {
 
         } else if !wantsAiCleanup {
             // Toggle OFF: plain is the final output. Deliver and clear the list.
-            let mostRecent = pendingEntries.last!
+            guard let mostRecent = pendingEntries.last else {
+                state = .idle; return
+            }
             clipboardWriter(mostRecent.text)
             lastResult = mostRecent.text
             recentlyDelivered = pendingEntries.reversed()
@@ -505,7 +510,9 @@ class DictationViewModel: ObservableObject {
         } else {
             // Toggle ON + LLM not yet ready: deliver plain now for immediate UX,
             // but leave the pending list intact so the isLlmReady retry can clean + persist.
-            let mostRecent = pendingEntries.last!
+            guard let mostRecent = pendingEntries.last else {
+                state = .idle; return
+            }
             clipboardWriter(mostRecent.text)
             lastResult = mostRecent.text
             recentlyDelivered = pendingEntries.reversed()
