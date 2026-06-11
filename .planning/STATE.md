@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: "36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete — awaiting phase verification."
-last_updated: "2026-06-11T19:55:00.000Z"
-last_activity: 2026-06-11 -- Phase 36 execution started
+stopped_at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
+last_updated: "2026-06-11T18:26:47.676Z"
+last_activity: 2026-06-11
 progress:
   total_phases: 30
-  completed_phases: 21
+  completed_phases: 22
   total_plans: 91
-  completed_plans: 95
-  percent: 70
+  completed_plans: 96
+  percent: 73
 ---
 
 # Project State: Dicticus
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36 (ios-background-dictation) — EXECUTING (all 4 plans complete, awaiting phase verification)
-Plan: 4 of 4
+Phase: 36
+Plan: Not started
 Status: Executing Phase 36
-Last activity: 2026-06-11 -- Phase 36 plan 4 (deferred delivery) device-verified
+Last activity: 2026-06-11
 
 ### Next Action
 

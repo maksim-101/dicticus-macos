@@ -37,7 +37,7 @@
 
 ## Phases: v2.5 iOS Release & Context-Aware Dictation
 
-- [ ] **Phase 36: iOS Background Dictation** — Spike-first: validate App Review design, then implement background mic recording with Live Activity stop control
+- [x] **Phase 36: iOS Background Dictation** — Spike-first: validate App Review design, then implement background mic recording with Live Activity stop control (completed 2026-06-11)
 - [ ] **Phase 37: iOS Distribution** — Background Assets model download, privacy labels, TestFlight + App Store submission
 - [ ] **Phase 38: Context-Aware Formatting** — Active-app detection → AI-cleanup prompt adaptation (macOS-primary, cross-platform via Shared/)
 - [ ] **Phase 39: Voice Edit Commands** — Deterministic pre-LLM spoken edit commands ("scratch that", "new paragraph", "capitalize X")
@@ -49,7 +49,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 36. iOS Background Dictation | 4/4 | In Progress (awaiting verification) |  |
+| 36. iOS Background Dictation | 4/4 | Complete    | 2026-06-11 |
 | 37. iOS Distribution | 0/TBD | Not started | - |
 | 38. Context-Aware Formatting | 0/TBD | Not started | - |
 | 39. Voice Edit Commands | 0/TBD | Not started | - |
@@ -164,7 +164,8 @@ Unsequenced parking lot (999.x). Promote with `/gsd-review-backlog` when ready.
 
 **Goal:** [Captured for future planning] — harden ASR/LLM-cleanup output quality (scaffolding-tag leakage, self-correction dropping, number/ITN oddities).
 **Requirements:** TBD
-**Plans:** 0 plans — see `.planning/phases/999.1-post-asr-cleanup-robustness/999.1-BACKLOG.md` for accumulated items.
+**Plans:** 4/4 plans complete
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)

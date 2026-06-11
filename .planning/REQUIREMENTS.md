@@ -8,8 +8,8 @@
 ### iOS Background Dictation (IOSBG)
 
 - [x] **IOSBG-01**: User can keep a dictation recording running on iOS while switching apps or with the screen locked, with the system recording indicator visible.
-- [ ] **IOSBG-02**: A backgrounded dictation reliably finalizes and makes its transcript available (no data loss) when the user returns.
-- [ ] **IOSBG-03**: The background-recording design is validated against App Store review rules (clear user-facing purpose, correct AVAudioSession category) via a spike before implementation.
+- [x] **IOSBG-02**: A backgrounded dictation reliably finalizes and makes its transcript available (no data loss) when the user returns.
+- [x] **IOSBG-03**: The background-recording design is validated against App Store review rules (clear user-facing purpose, correct AVAudioSession category) via a spike before implementation.
 
 ### iOS Distribution (IOSDIST)
 
@@ -62,8 +62,8 @@ Which phases cover which requirements.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | IOSBG-01 | Phase 36 | Complete |
-| IOSBG-02 | Phase 36 | Pending |
-| IOSBG-03 | Phase 36 | Pending |
+| IOSBG-02 | Phase 36 | Complete |
+| IOSBG-03 | Phase 36 | Complete |
 | IOSDIST-01 | Phase 37 | Pending |
 | IOSDIST-02 | Phase 37 | Pending |
 | IOSDIST-03 | Phase 37 | Pending |
