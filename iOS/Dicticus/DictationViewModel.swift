@@ -347,10 +347,37 @@ class DictationViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Foreground deferred delivery (D-02 / D-02b / D-05)
+    // MARK: - Foreground handling (D-02 / D-02b / D-05 / Finding 1 second-session fix)
+
+    /// Central foreground handler called from DicticusApp's .active scenePhase event.
+    ///
+    /// Decision: when `pendingDictation` is true the user pressed the Action Button to start a
+    /// NEW recording. The new session WINS — delivery is deferred to the next idle foreground.
+    /// This eliminates the race where delivery sets state=.transcribing while startDictation()
+    /// waits on guard state==.idle, leaving the app permanently stuck at .transcribing (Finding 1).
+    ///
+    /// Session-1 transcript is never lost: it remains persisted in History and stays tagged via
+    /// pendingTranscriptUUID; deliverPendingTranscriptsIfNeeded() will deliver it on the NEXT
+    /// foreground where the user is NOT immediately requesting a new recording.
+    ///
+    /// Factored into DictationViewModel (not kept in the View) so unit tests can drive it directly
+    /// without depending on the real SwiftUI/App lifecycle.
+    func handleForeground(pendingDictation: Bool) async {
+        if pendingDictation {
+            // New recording requested: skip delivery this cycle, start the session.
+            // checkPendingIntent() consumes the pendingDictation flag and schedules startDictation()
+            // after its 500 ms sleep, at which point state will be .idle (delivery never ran).
+            checkPendingIntent()
+        } else {
+            // Normal idle foreground: deliver any transcript persisted while backgrounded,
+            // then check whether a pending intent arrived just before the phase transition.
+            await deliverPendingTranscriptsIfNeeded()
+            checkPendingIntent()
+        }
+    }
 
     /// Deliver the most-recent pending transcript (persisted while backgrounded) on foreground.
-    /// Called from DicticusApp when scenePhase transitions to .active.
+    /// Called from handleForeground() when no new recording is being started.
     ///
     /// Design: TextProcessingService.process() would create a DUPLICATE History row if called here.
     /// Instead, we run cleanup directly on the already-persisted entry's text and update the

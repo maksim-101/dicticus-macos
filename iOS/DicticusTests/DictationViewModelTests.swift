@@ -371,6 +371,100 @@ final class DictationViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Phase 36 Wave 4 second-session fix: handleForeground branch (Finding 1 root fix)
+
+    /// When pendingDictation is true (Action Button pressed for session 2),
+    /// handleForeground must NOT deliver the pending transcript this cycle.
+    /// The session-1 pending tag must survive so delivery happens on a future
+    /// idle foreground (no data loss).
+    ///
+    /// This test FAILS before the fix (delivery would run and set state=.transcribing),
+    /// and PASSES after (delivery is skipped; checkPendingIntent starts the new session).
+    func testHandleForegroundWithPendingDictationDefersDelivery() async {
+        let vm = DictationViewModel()
+
+        var clipboardWritten = false
+        vm.clipboardWriter = { _ in clipboardWritten = true }
+
+        // Seed a pending History entry + tag its UUID.
+        let testUUID = UUID()
+        let entry = TranscriptionEntry(
+            uuid: testUUID,
+            text: "session one result",
+            rawText: "session one result",
+            language: "en",
+            mode: "plain",
+            confidence: 0.9
+        )
+        HistoryService.shared.save(entry)
+        DicticusIPCBridge.defaults?.set(testUUID.uuidString,
+                                        forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        // Simulate Action Button press for session 2: pendingDictation is set in App Group.
+        DicticusIPCBridge.defaults?.set(true, forKey: "pendingDictation")
+
+        // Call handleForeground with pendingDictation=true (the session-2 foreground).
+        await vm.handleForeground(pendingDictation: true)
+
+        // Delivery must NOT have run: clipboard untouched, state still idle (not .transcribing).
+        XCTAssertFalse(clipboardWritten,
+                       "handleForeground(pendingDictation:true) must defer delivery — no clipboard write")
+        XCTAssertEqual(vm.state, .idle,
+                       "handleForeground(pendingDictation:true) must not set state=.transcribing (the stuck state)")
+
+        // Pending tag must survive (session-1 transcript preserved for next idle foreground).
+        let stillPending = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        XCTAssertEqual(stillPending, testUUID.uuidString,
+                       "Pending UUID must survive the session-2 foreground — no data loss (deliver later)")
+
+        // Cleanup — checkPendingIntent sets pendingDictation=false; clear UUID and History.
+        DicticusIPCBridge.defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        DicticusIPCBridge.defaults?.set(false, forKey: "pendingDictation")
+        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
+            HistoryService.shared.delete(id: id)
+        }
+    }
+
+    /// When pendingDictation is false (normal idle foreground), handleForeground
+    /// must deliver the pending transcript (run deliverPendingTranscriptsIfNeeded).
+    func testHandleForegroundWithoutPendingDictationDeliversTranscript() async {
+        let vm = DictationViewModel()
+
+        var clipboardValue: String? = nil
+        vm.clipboardWriter = { text in clipboardValue = text }
+
+        // Seed a pending History entry + tag its UUID.
+        let testUUID = UUID()
+        let entry = TranscriptionEntry(
+            uuid: testUUID,
+            text: "session one delivered",
+            rawText: "session one delivered",
+            language: "en",
+            mode: "plain",
+            confidence: 0.9
+        )
+        HistoryService.shared.save(entry)
+        DicticusIPCBridge.defaults?.set(testUUID.uuidString,
+                                        forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        // Ensure no pendingDictation flag is set (normal open, not Action Button).
+        DicticusIPCBridge.defaults?.set(false, forKey: "pendingDictation")
+
+        // Call handleForeground with pendingDictation=false.
+        await vm.handleForeground(pendingDictation: false)
+
+        // Delivery MUST have run: clipboard populated, pending tag cleared.
+        XCTAssertEqual(clipboardValue, "session one delivered",
+                       "handleForeground(pendingDictation:false) must deliver the pending transcript")
+        let stillPending = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        XCTAssertNil(stillPending,
+                     "Pending UUID must be cleared after successful delivery")
+
+        // Cleanup
+        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
+            HistoryService.shared.delete(id: id)
+        }
+    }
+
     // MARK: - Phase 36 Wave 4 follow-on: background silence auto-stop (Finding 2)
 
     /// Silence detected while backgrounded must NOT call stopDictation (auto-stop disabled in background).
