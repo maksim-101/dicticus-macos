@@ -47,11 +47,16 @@ struct DictationLiveActivity: Widget {
                         Text(timerInterval: context.state.startedAt...Date.distantFuture, countsDown: false)
                             .monospacedDigit()
                             .font(.caption)
+                            .fixedSize()  // timer is short — never let it expand at expense of label
                         Spacer()
                         Text("Tap to open Dicticus")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                            .layoutPriority(1)  // prefer label over spacer compression
                     }
+                    .padding(.horizontal, 4)  // keep content off the DI edges
                 }
             } compactLeading: {
                 Image(systemName: "mic.fill").foregroundColor(.red)
