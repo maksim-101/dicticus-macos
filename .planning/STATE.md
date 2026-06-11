@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: "Paused at 36-03 checkpoint:human-verify (Tasks 1+2 complete)"
-last_updated: "2026-06-10T13:05:21.894Z"
-last_activity: 2026-06-10 -- Phase 36 execution started
+stopped_at: "36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete — awaiting phase verification."
+last_updated: "2026-06-11T19:55:00.000Z"
+last_activity: 2026-06-11 -- Phase 36 execution started
 progress:
   total_phases: 30
   completed_phases: 21
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36 (ios-background-dictation) — EXECUTING
-Plan: 3 of 4
-Status: Ready to execute
-Last activity: 2026-06-10 -- Phase 36 execution started
+Phase: 36 (ios-background-dictation) — EXECUTING (all 4 plans complete, awaiting phase verification)
+Plan: 4 of 4
+Status: Executing Phase 36
+Last activity: 2026-06-11 -- Phase 36 plan 4 (deferred delivery) device-verified
 
 ### Next Action
 
@@ -80,9 +80,11 @@ Last activity: 2026-06-10 -- Phase 36 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-10T13:05:21.890Z
-Stopped at: Paused at 36-03 checkpoint:human-verify (Tasks 1+2 complete)
-Next: Cut v2.4 public release, then plan Phase 36 (iOS Background Dictation)
+Last session: 2026-06-11
+Stopped at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
+Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
+
+New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
 
 ---
 
@@ -144,3 +146,5 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase ?]: Widget-autonomous Live Activity timer uses startedAt:Date + Text(timerInterval:) — app activity.update() is blocked in background audio mode
 - [Phase ?]: selectMode(wantsAiCleanup:llmReady:) static seam extracts D-13/D-23/D-26 cleanup mode selection for unit testing
 - [Phase ?]: Root cause of Dynamic Island no-Stop: .bottom-only expanded Stop + no lock-screen button; fix: add Stop to lock-screen body, move expanded Stop to .trailing
+- [36-04]: Background stop forces mode=.plain (no GPU/LLM) — deferred to foreground. isLlmReady retry cleans+persists once LLM warms up.
+- [36-04]: Second-session crash root cause: AVAudioSession not deactivated after stop → next AudioRecordingIntent fatal-asserted invariant. Fix: setActive(false) on every exit path of stopRecordingAndTranscribe().
