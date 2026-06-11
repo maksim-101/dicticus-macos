@@ -547,6 +547,132 @@ final class DictationViewModelTests: XCTestCase {
                        "Silence auto-stop must transition state when in foreground")
     }
 
+    // MARK: - Phase 36 Wave 4 UX: batch tracking and delivery (36-04)
+
+    /// Two background stops must produce a pending list with two UUIDs.
+    func testTwoBackgroundStopsAppendTwoPendingUUIDs() async {
+        let defaults = DicticusIPCBridge.defaults
+
+        // Clear any pre-existing list.
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        // Simulate two entries saved in History, then append their UUIDs directly
+        // (mirrors what stopDictation() background path does after process() saves each entry).
+        let uuid1 = UUID()
+        let uuid2 = UUID()
+        let entry1 = TranscriptionEntry(uuid: uuid1, text: "first", rawText: "first",
+                                        language: "en", mode: "plain", confidence: 0.9)
+        let entry2 = TranscriptionEntry(uuid: uuid2, text: "second", rawText: "second",
+                                        language: "en", mode: "plain", confidence: 0.9)
+        HistoryService.shared.save(entry1)
+        HistoryService.shared.save(entry2)
+
+        // Replicate the list-append logic from stopDictation() background path.
+        var list = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
+        list.append(uuid1.uuidString)
+        defaults?.set(list, forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+
+        list = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
+        list.append(uuid2.uuidString)
+        defaults?.set(list, forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+
+        let stored = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
+        XCTAssertEqual(stored.count, 2, "Two background stops must append two UUIDs to the pending list")
+        XCTAssertTrue(stored.contains(uuid1.uuidString), "UUID1 must be in the pending list")
+        XCTAssertTrue(stored.contains(uuid2.uuidString), "UUID2 must be in the pending list")
+
+        // Cleanup
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        for entry in [entry1, entry2] {
+            if let id = HistoryService.shared.entries.first(where: { $0.uuid == entry.uuid })?.id {
+                HistoryService.shared.delete(id: id)
+            }
+        }
+    }
+
+    /// Foreground delivery with two pending UUIDs must populate recentlyDelivered,
+    /// set clipboard/lastResult to the most-recent, and clear the list key.
+    func testBatchDeliveryPopulatesRecentlyDelivered() async {
+        let vm = DictationViewModel()
+        var clipboardValue: String? = nil
+        vm.clipboardWriter = { text in clipboardValue = text }
+
+        let defaults = DicticusIPCBridge.defaults
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+
+        // Seed two History entries (oldest first, newest last — matches append order).
+        let uuid1 = UUID()
+        let uuid2 = UUID()
+        let entry1 = TranscriptionEntry(uuid: uuid1, text: "first session",
+                                        rawText: "first session", language: "en",
+                                        mode: "plain",
+                                        createdAt: Date(timeIntervalSinceNow: -60),
+                                        confidence: 0.9)
+        let entry2 = TranscriptionEntry(uuid: uuid2, text: "second session",
+                                        rawText: "second session", language: "en",
+                                        mode: "plain", confidence: 0.9)
+        HistoryService.shared.save(entry1)
+        HistoryService.shared.save(entry2)
+
+        // Tag both UUIDs in the pending list (oldest first).
+        defaults?.set([uuid1.uuidString, uuid2.uuidString],
+                      forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+
+        await vm.deliverPendingTranscriptsIfNeeded()
+
+        // Clipboard and lastResult must be the most-recent (uuid2).
+        XCTAssertEqual(clipboardValue, "second session",
+                       "Clipboard must contain the most-recent pending transcript")
+        XCTAssertEqual(vm.lastResult, "second session",
+                       "lastResult must be the most-recent pending transcript")
+
+        // recentlyDelivered must contain both entries (newest first for display).
+        XCTAssertEqual(vm.recentlyDelivered.count, 2,
+                       "recentlyDelivered must contain both pending entries")
+        XCTAssertEqual(vm.recentlyDelivered.first?.uuid, uuid2,
+                       "recentlyDelivered[0] must be newest entry (uuid2)")
+        XCTAssertEqual(vm.recentlyDelivered.last?.uuid, uuid1,
+                       "recentlyDelivered[1] must be oldest entry (uuid1)")
+
+        // Pending list key must be cleared.
+        let remaining = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        XCTAssertNil(remaining, "Pending list key must be cleared after batch delivery")
+
+        // Cleanup
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        for entry in [entry1, entry2] {
+            if let id = HistoryService.shared.entries.first(where: { $0.uuid == entry.uuid })?.id {
+                HistoryService.shared.delete(id: id)
+            }
+        }
+    }
+
+    /// Starting a new recording must clear recentlyDelivered so stale batch does not linger.
+    func testStartRecordingClearsRecentlyDelivered() async {
+        let vm = DictationViewModel()
+
+        // Seed recentlyDelivered with two fake entries.
+        let entry1 = TranscriptionEntry(uuid: UUID(), text: "old batch 1",
+                                        rawText: "old batch 1", language: "en",
+                                        mode: "plain", confidence: 0.9)
+        let entry2 = TranscriptionEntry(uuid: UUID(), text: "old batch 2",
+                                        rawText: "old batch 2", language: "en",
+                                        mode: "plain", confidence: 0.9)
+        vm.recentlyDelivered = [entry1, entry2]
+        XCTAssertEqual(vm.recentlyDelivered.count, 2, "Precondition: recentlyDelivered seeded with 2 entries")
+
+        // Transition to .recording — state.didSet clears recentlyDelivered.
+        vm.state = .recording
+
+        XCTAssertTrue(vm.recentlyDelivered.isEmpty,
+                      "Starting a new recording must clear recentlyDelivered")
+
+        vm.state = .idle  // cleanup
+    }
+
     // MARK: - Phase 36 Wave 2: cleanup mode toggle gate
 
     /// D-13 / D-23: mode selection must follow the aiCleanupEnabled toggle and LLM readiness.

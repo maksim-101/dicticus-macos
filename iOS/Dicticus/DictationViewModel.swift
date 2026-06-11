@@ -23,6 +23,11 @@ class DictationViewModel: ObservableObject {
             // can toggle-to-stop without opening the app a second time (D-01a).
             let isRecording = state == .recording
             DicticusIPCBridge.defaults?.set(isRecording, forKey: DicticusIPCBridge.Key.isRecording)
+            // Clear batch list when a new recording starts — stale batch must not linger
+            // across sessions (the new session will produce its own delivery batch).
+            if state == .recording {
+                recentlyDelivered = []
+            }
             #if DEBUG
             diagLog.debug("[state.didSet] newState=\(String(describing: self.state), privacy: .public) isRecordingWritten=\(isRecording, privacy: .public)")
             #endif
@@ -31,6 +36,11 @@ class DictationViewModel: ObservableObject {
     @Published var lastResult: String?
     @Published var error: String?
     @Published var isShortcutLaunch: Bool = false
+    /// Batch of transcripts delivered on the most-recent foreground return.
+    /// Populated by `deliverPendingTranscriptsIfNeeded()` when ≥1 background sessions completed.
+    /// The home screen shows a list when count > 1 (most-recent is already in `lastResult`).
+    /// Cleared when a new recording starts.
+    @Published var recentlyDelivered: [TranscriptionEntry] = []
 
     // Soft-cap intervals — injectable so unit tests can use tiny values (D-03).
     var capFinalizeSeconds: Double = 300  // 5:00 — auto-finalize
@@ -203,14 +213,17 @@ class DictationViewModel: ObservableObject {
                     confidence: Double(result.confidence)
                 )
 
-                // Tag the most-recent persisted entry as pending so foreground delivery can find it.
-                // TextProcessingService.process() calls HistoryService.save() internally and then
-                // HistoryService.load() — the new entry is now at .entries.first (createdAt DESC).
-                // We query the most-recent UUID here because process() doesn't surface the UUID.
-                // This is a deliberate trade-off to avoid invasive changes to process() signature.
+                // Append the most-recent persisted entry's UUID to the pending list.
+                // TextProcessingService.process() calls HistoryService.save() + load() —
+                // the new entry is now at .entries.first (createdAt DESC).
+                // We query the most-recent UUID here because process() doesn't surface it.
                 if let uuid = HistoryService.shared.entries.first?.uuid {
-                    DicticusIPCBridge.defaults?.set(uuid.uuidString,
-                                                    forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+                    let defaults = DicticusIPCBridge.defaults
+                    var list = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
+                    list.append(uuid.uuidString)
+                    defaults?.set(list, forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+                    // Also write the legacy single-key for any older build reading it.
+                    defaults?.set(uuid.uuidString, forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
                 }
 
                 // Post away-stop notification (D-02a) — only on background path.
@@ -433,12 +446,19 @@ class DictationViewModel: ObservableObject {
         }
     }
 
-    /// Deliver the most-recent pending transcript (persisted while backgrounded) on foreground.
+    /// Deliver all pending transcripts (persisted while backgrounded) on foreground.
     /// Called from handleForeground() when no new recording is being started.
     ///
+    /// Batch semantics: reads the full `pendingTranscriptUUIDs` list (appended by each background stop).
+    /// The most-recent entry (last in list) gets clipboard+lastResult and optional AI cleanup.
+    /// All entries are surfaced in `recentlyDelivered` for the home-screen batch list.
+    ///
     /// Design: TextProcessingService.process() would create a DUPLICATE History row if called here.
-    /// Instead, we run cleanup directly on the already-persisted entry's text and update the
-    /// clipboard + lastResult without touching HistoryService — no duplicate, no data loss.
+    /// Instead, we run cleanup only on the most-recent entry's text and update clipboard + lastResult
+    /// without touching HistoryService — no duplicates, no data loss.
+    ///
+    /// Legacy migration: if only the old single `pendingTranscriptUUID` key is present (no list key),
+    /// treat it as a one-element list so pending transcripts from older builds are not lost.
     func deliverPendingTranscriptsIfNeeded() async {
         // Skip delivery if a recording/transcription is already in progress.
         // This prevents a race where the .active scenePhase handler sets state=.transcribing
@@ -447,25 +467,44 @@ class DictationViewModel: ObservableObject {
         // no-op, leaving an orphaned Live Activity as the only stop surface (Finding 1).
         guard state == .idle else { return }
 
-        guard let uuidString = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID),
-              !uuidString.isEmpty,
-              let uuid = UUID(uuidString: uuidString) else {
+        let defaults = DicticusIPCBridge.defaults
+
+        // Resolve pending UUID list — support both new list key and legacy single-key.
+        var pendingUUIDStrings: [String] = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
+        if pendingUUIDStrings.isEmpty,
+           let legacyUUID = defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID),
+           !legacyUUID.isEmpty {
+            // Migrate legacy single key into a one-element list.
+            pendingUUIDStrings = [legacyUUID]
+        }
+
+        guard !pendingUUIDStrings.isEmpty else {
             return  // No pending — common foreground-stop case delivered inline.
         }
 
-        // Fetch the matching History entry (most-recent pending from the background stop).
-        // D-05: only the most-recent is auto-delivered; others remain queryable in History.
-        guard let entry = HistoryService.shared.entries.first(where: { $0.uuid == uuid }) else {
-            // Entry not found (shouldn't happen) — clear the stale tag and return.
-            DicticusIPCBridge.defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        // Resolve all pending entries from History (order: oldest first — matches append order).
+        let allEntries = HistoryService.shared.entries
+        let pendingEntries: [TranscriptionEntry] = pendingUUIDStrings.compactMap { uuidString in
+            guard let uuid = UUID(uuidString: uuidString) else { return nil }
+            return allEntries.first(where: { $0.uuid == uuid })
+        }
+
+        guard !pendingEntries.isEmpty else {
+            // No entries found — clear stale tags and return.
+            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+            defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
             return
         }
+
+        // Most-recent entry is the last one added (list is oldest→newest).
+        let mostRecent = pendingEntries.last!
 
         // Show processing state while cleanup runs (D-02b).
         state = .transcribing
 
-        // Run cleanup respecting the toggle. Because the background entry was persisted as
-        // plain text, we call cleanup directly rather than process() to avoid a duplicate row.
+        // Run cleanup respecting the toggle on the most-recent entry only.
+        // Because the background entry was persisted as plain text, we call cleanup directly
+        // rather than process() to avoid a duplicate row.
         let wantsAiCleanup = (UserDefaults(suiteName: "group.com.dicticus") ?? .standard).bool(forKey: "aiCleanupEnabled")
         let llmReady = cleanupService?.isLoaded ?? false
 
@@ -473,21 +512,24 @@ class DictationViewModel: ObservableObject {
         if wantsAiCleanup && llmReady, let cs = cleanupService {
             // Run AI cleanup on the plain entry text (Dictionary+ITN was already applied backgrounded).
             delivered = await cs.cleanup(
-                text: entry.text,
-                language: entry.language,
+                text: mostRecent.text,
+                language: mostRecent.language,
                 dictionaryContext: nil
             )
         } else {
-            delivered = entry.text
+            delivered = mostRecent.text
         }
 
-        // Write to clipboard and show ready to paste.
+        // Write most-recent to clipboard and show ready to paste.
         clipboardWriter(delivered)
         lastResult = delivered
+        // Expose full batch (sorted newest first for display) so the home screen can list them.
+        recentlyDelivered = pendingEntries.reversed()
         error = nil
 
-        // Clear the pending tag — delivery is complete.
-        DicticusIPCBridge.defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
+        // Clear both list and legacy pending tags — delivery is complete.
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
+        defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
 
         state = .idle
     }

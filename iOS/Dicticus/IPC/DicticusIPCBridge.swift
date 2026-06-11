@@ -29,7 +29,13 @@ enum DicticusIPCBridge {
         /// String (UUID): UUID of the most-recent History entry persisted while backgrounded.
         /// Set by `stopDictation()` on the background path; cleared by `deliverPendingTranscriptsIfNeeded()`.
         /// The UUID identifies the most-recent pending transcript for foreground delivery (D-02/D-05).
+        /// DEPRECATED in favour of pendingTranscriptUUIDs (list). Kept for legacy migration only.
         static let pendingTranscriptUUID = "pendingTranscriptUUID"
+        /// [String] (UUID list): ordered list of pending transcript UUIDs persisted while backgrounded.
+        /// Background stops APPEND to this list; foreground delivery reads the full batch and clears it.
+        /// Older entries toward index 0; newest toward the end (append order = session order).
+        /// Legacy single-key `pendingTranscriptUUID` is migrated to a one-element list on first read.
+        static let pendingTranscriptUUIDs = "pendingTranscriptUUIDs"
         /// Bool: true while a recording session is active. Written by DictationViewModel.state didSet.
         /// Read by DictateIntent.perform() to implement Action-Button toggle-to-stop (D-01a).
         static let isRecording = "isRecording"
