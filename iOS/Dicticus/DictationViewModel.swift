@@ -540,18 +540,6 @@ class DictationViewModel: ObservableObject {
 
     // MARK: - Notification (D-02a)
 
-    /// Post an away-stop "transcript ready" notification.
-    /// Called only on the background path of stopDictation() — NOT when stopping from inside the app.
-    /// Body contains NO transcript text (T-36-08 — information disclosure mitigation).
-    /// This default implementation delegates to the `notificationPoster` seam so unit tests
-    /// can capture title/body without OS notification infrastructure.
-    private func postTranscriptReadyNotification() async {
-        await notificationPoster(
-            "Dictation ready",
-            "Recording stopped — your transcript is waiting. Tap to open Dicticus."
-        )
-    }
-
     /// Request notification authorization just-in-time with .provisional (silent, no blocking dialog).
     /// Called from startDictation() so authorization is sought without blocking the capture/persist/deliver path.
     /// A denied/undetermined permission MUST NOT prevent persistence or foreground delivery.
