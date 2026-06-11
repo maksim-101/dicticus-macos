@@ -599,7 +599,7 @@ class DictationViewModel: ObservableObject {
         }
     }
 
-    deinit {
+    @MainActor deinit {
         for observer in notificationObservers {
             NotificationCenter.default.removeObserver(observer)
         }
