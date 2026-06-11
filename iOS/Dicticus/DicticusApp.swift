@@ -144,6 +144,13 @@ struct DicticusApp: App {
                     return !s.isEmpty
                 }()
                 if hasCompletedOnboarding, hasPendingList || hasPendingLegacy {
+                    // WR-01: skip delivery if the user is already starting a new recording.
+                    // The isLlmReady onChange can fire while an Action Button press is in
+                    // flight (pendingDictation=true in App Group). Delivery sets state=.transcribing
+                    // which then blocks startDictation()'s guard state==.idle — same stuck-state
+                    // bug that handleForeground(pendingDictation:) fixes for the scenePhase path.
+                    let pendingDictation = DicticusIPCBridge.defaults?.bool(forKey: "pendingDictation") ?? false
+                    guard !pendingDictation else { return }
                     Task { @MainActor in
                         await viewModel.deliverPendingTranscriptsIfNeeded()
                     }
