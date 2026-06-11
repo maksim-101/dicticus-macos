@@ -153,3 +153,18 @@
   - Stop without returning: Live Activity Stop control (Dynamic Island / lock screen) — `StopDictationIntent` already wired. Optional VAD silence auto-stop (`onSilenceDetected` already exists).
   - Clipboard without returning: `UIPasteboard` write is programmatic; wrap the post-stop transcribe tail in `beginBackgroundTask` so it completes while backgrounded.
   - Known friction: iOS has no API to auto-return the user to their previous app (Messages, etc.) — "return" is a manual swipe; and App Store review scrutinizes the `audio` background mode (defensible for a dictation app, not a rubber stamp).
+
+---
+
+## Backlog
+
+Unsequenced parking lot (999.x). Promote with `/gsd-review-backlog` when ready.
+
+### Phase 999.1: Post-ASR / AI-Cleanup Robustness (BACKLOG)
+
+**Goal:** [Captured for future planning] — harden ASR/LLM-cleanup output quality (scaffolding-tag leakage, self-correction dropping, number/ITN oddities).
+**Requirements:** TBD
+**Plans:** 0 plans — see `.planning/phases/999.1-post-asr-cleanup-robustness/999.1-BACKLOG.md` for accumulated items.
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
