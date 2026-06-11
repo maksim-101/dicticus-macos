@@ -1,5 +1,6 @@
 import SwiftUI
 import FluidAudio
+import ActivityKit
 
 @main
 struct DicticusApp: App {
@@ -16,6 +17,26 @@ struct DicticusApp: App {
     @State private var showingOnboardingTour = false
 
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // ADDENDUM A: On launch, reconcile any orphaned Live Activities left by a prior process
+        // that terminated mid-recording (crash, SIGKILL, memory pressure). Without this,
+        // phantom "Recording…" banners stack indefinitely on the lock screen.
+        // Also reset the isRecording App Group flag — if it's stale-true from a prior process,
+        // DictateIntent toggle-to-stop would misfire (D-01a corollary).
+        Task { @MainActor in
+            for activity in Activity<DictationAttributes>.activities {
+                await activity.end(
+                    ActivityContent(
+                        state: DictationAttributes.ContentState(isRecording: false, startedAt: Date.now),
+                        staleDate: nil
+                    ),
+                    dismissalPolicy: .immediate
+                )
+            }
+        }
+        DicticusIPCBridge.defaults?.set(false, forKey: DicticusIPCBridge.Key.isRecording)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -73,6 +94,11 @@ struct DicticusApp: App {
                     if warmupService.hasModels {
                         warmupService.warmup()
                     }
+                    // Deliver any transcript that was persisted while backgrounded (D-02 / D-05).
+                    // This runs after warmup so the LLM cleanup service may already be available.
+                    Task { @MainActor in
+                        await viewModel.deliverPendingTranscriptsIfNeeded()
+                    }
                 }
             } else if newPhase == .background {
                 // Background recording continues — do not finalize.
@@ -99,6 +125,17 @@ struct DicticusApp: App {
         .onChange(of: warmupService.isLlmReady) { _, isLlmReady in
             if isLlmReady, let cleanup = warmupService.cleanupServiceInstance {
                 viewModel.cleanupService = cleanup
+                // Retry deferred delivery: if .active fired before LLM was ready, the pending
+                // transcript was delivered as plain text (correct but un-cleaned). Now that the
+                // LLM is ready AND a pending UUID still exists, re-deliver with AI cleanup.
+                // deliverPendingTranscriptsIfNeeded() checks for the UUID; it's a no-op if already cleared.
+                if hasCompletedOnboarding,
+                   let pending = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID),
+                   !pending.isEmpty {
+                    Task { @MainActor in
+                        await viewModel.deliverPendingTranscriptsIfNeeded()
+                    }
+                }
             } else if !isLlmReady {
                 viewModel.cleanupService = nil
             }

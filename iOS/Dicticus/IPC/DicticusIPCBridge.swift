@@ -26,6 +26,16 @@ enum DicticusIPCBridge {
         static let latestTranscription = "latestTranscription"
         /// TimeInterval: heartbeat timestamp (1Hz, written by main app)
         static let sessionTimestamp = "session_timestamp"
+        /// String (UUID): UUID of the most-recent History entry persisted while backgrounded.
+        /// Set by `stopDictation()` on the background path; cleared by `deliverPendingTranscriptsIfNeeded()`.
+        /// The UUID identifies the most-recent pending transcript for foreground delivery (D-02/D-05).
+        static let pendingTranscriptUUID = "pendingTranscriptUUID"
+        /// Bool: true while a recording session is active. Written by DictationViewModel.state didSet.
+        /// Read by DictateIntent.perform() to implement Action-Button toggle-to-stop (D-01a).
+        static let isRecording = "isRecording"
+        /// TimeInterval (epoch): timestamp when the current/last recording was started.
+        /// Persisted to App Group so a freshly-launched process can detect a stale cap and finalize.
+        static let recordingStartedAt = "recordingStartedAt"
     }
 
     // MARK: - Darwin Notification Names
