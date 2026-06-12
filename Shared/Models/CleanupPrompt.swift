@@ -89,10 +89,21 @@ struct CleanupPrompt {
         if let dict = dictionaryContext, !dict.isEmpty {
             p += "Known terms — when these words or similar-sounding words appear, ensure they are spelled EXACTLY as shown:\n"
             for (original, replacement) in dict.sorted(by: { $0.key < $1.key }) {
-                if original == replacement {
-                    p += "  \(replacement)\n"
+                // WR-05 (Phase 36.1 Plan 07): sanitize dict keys and values before interpolation.
+                // sanitizeControlTokens strips Gemma turn-structure tokens (<start_of_turn>,
+                // <end_of_turn>, <bos>, <eos>, <|channel>) that would corrupt the model input.
+                // In addition, "In:" and "Out:" are few-shot frame markers — "In:" is an active
+                // stopSequence in CleanupService, so a dict value containing "In:" would silently
+                // truncate every Gemma completion where the dict key matches. Neutralize them
+                // here, scoped to dict values only (applied AFTER sanitizeControlTokens so the
+                // two strip passes are additive; dictated text at line 68 is unaffected because
+                // genuine dictation can legitimately contain these character sequences).
+                let safeOriginal = sanitizeDictValue(sanitizeControlTokens(original))
+                let safeReplacement = sanitizeDictValue(sanitizeControlTokens(replacement))
+                if safeOriginal == safeReplacement {
+                    p += "  \(safeReplacement)\n"
                 } else {
-                    p += "  \(original) -> \(replacement)\n"
+                    p += "  \(safeOriginal) -> \(safeReplacement)\n"
                 }
             }
             p += "\n"
@@ -223,6 +234,20 @@ struct CleanupPrompt {
         var result = text
         for token in ["<start_of_turn>", "<end_of_turn>", "<bos>", "<eos>", "<|channel>", "Thinking Process:", "Thinking Process"] {
             result = result.replacingOccurrences(of: token, with: "")
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    // WR-05 (Phase 36.1 Plan 07): neutralize few-shot frame markers in dict values only.
+    // "In:" is an active stopSequence in CleanupService — a dict value containing it would
+    // truncate every completion. "Out:" is the output frame opener. Neither should appear
+    // verbatim in user-managed dictionary entries. Applied on top of sanitizeControlTokens()
+    // inside the dict loop; NOT applied to dictated text to avoid clobbering legitimate user
+    // content like "In: formation" or "Out: put".
+    static func sanitizeDictValue(_ text: String) -> String {
+        var result = text
+        for marker in ["In:", "Out:"] {
+            result = result.replacingOccurrences(of: marker, with: "")
         }
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
