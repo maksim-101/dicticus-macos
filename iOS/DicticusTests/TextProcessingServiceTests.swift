@@ -115,18 +115,21 @@ final class TextProcessingServiceTests: XCTestCase {
     func testBlocksUntilCleaned() async {
         let mock = MockCleanupProvider()
         mock.artificialDelayMs = 250
-        mock.returnValue = "polished"
+        // "Hello world." is gate-compatible with input "hello world":
+        // all content words ≥4 chars ("hello", "world") survive lowercased in
+        // the output tokens, so gateContentWords returns llmOutput unchanged.
+        mock.returnValue = "Hello world."
         let service = TextProcessingService(cleanupService: mock)
 
         let start = Date()
         let output = await service.process(
-            text: "hello",
+            text: "hello world",
             language: "en",
             mode: .aiCleanup
         )
         let elapsed = Date().timeIntervalSince(start)
 
-        XCTAssertEqual(output, "polished",
+        XCTAssertEqual(output, "Hello world.",
                        "process() must return the cleaned value, not the raw input")
         XCTAssertGreaterThanOrEqual(elapsed, 0.2,
                                     "process() must block until cleanup completes (D-13)")
