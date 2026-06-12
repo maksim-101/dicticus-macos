@@ -38,6 +38,7 @@
 ## Phases: v2.5 iOS Release & Context-Aware Dictation
 
 - [x] **Phase 36: iOS Background Dictation** — Spike-first: validate App Review design, then implement background mic recording with Live Activity stop control (completed 2026-06-11)
+- [ ] **Phase 36.1: Cleanup Pipeline Quality** (INSERTED) — Spike-validated gate rework + number policy + v20 prompt; fixes wrong gate rejections, "102, three" merges, and LLM number re-styling
 - [ ] **Phase 37: iOS Distribution** — Background Assets model download, privacy labels, TestFlight + App Store submission
 - [ ] **Phase 38: Context-Aware Formatting** — Active-app detection → AI-cleanup prompt adaptation (macOS-primary, cross-platform via Shared/)
 - [ ] **Phase 39: Voice Edit Commands** — Deterministic pre-LLM spoken edit commands ("scratch that", "new paragraph", "capitalize X")
@@ -153,6 +154,33 @@
   - Stop without returning: Live Activity Stop control (Dynamic Island / lock screen) — `StopDictationIntent` already wired. Optional VAD silence auto-stop (`onSilenceDetected` already exists).
   - Clipboard without returning: `UIPasteboard` write is programmatic; wrap the post-stop transcribe tail in `beginBackgroundTask` so it completes while backgrounded.
   - Known friction: iOS has no API to auto-return the user to their previous app (Messages, etc.) — "return" is a manual swipe; and App Store review scrutinizes the `audio` background mode (defensible for a dictation app, not a rubber stamp).
+
+### Phase 36.1: Cleanup Pipeline Quality (INSERTED 2026-06-12 — spike 004–007 findings)
+
+**Goal**: Dictation output stops being randomly wrong in the known ways: the content-word gate keeps the LLM's good corrections instead of discarding ~2/3 of them, numbers follow one consistent policy with zero cross-boundary merges ("one, two, three" never becomes "102, three"), and the LLM can no longer re-style numbers or dictionary-chosen spellings — all validated against the spike-004 replay harness before shipping, macOS + iOS together (Shared/).
+**Requirements**: spike-findings-dicticus skill (references/cleanup-pipeline-fixes.md is the blueprint); .planning/spikes/WRAP-UP-SUMMARY.md
+**Depends on:** Phase 36
+**Plans:** 1/6 plans executed
+Plans:
+**Wave 1**
+
+- [x] 36.1-01-PLAN.md — Wave 0 test scaffolding: new gate V2.1 / ITN-guard / NumberRevert / artifact-strip fixtures + NumberRevertTests.swift & RulesCleanupServiceTests.swift (macOS + iOS, byte-identical)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 36.1-02-PLAN.md — [user Plan 1] gate V2.1 (Damerau-OSA + ALLCAPS + dictProtect) + stripPreamble punct fix (CleanupService.swift)
+- [ ] 36.1-03-PLAN.md — [user Plan 1] ITN boundary guard + magnitude guard + reference-noun digit promotion (ITNUtility.swift)
+- [ ] 36.1-04-PLAN.md — [user Plan 1] trailing Yeah/Mm-hmm artifact strip (RulesCleanupService.swift, AI-mode only)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 36.1-05-PLAN.md — [user Plan 1] NumberRevert post-LLM step (new Shared/Utilities/NumberRevert.swift) + applyWithTrace/dictProtect wiring (TextProcessingService.swift)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 36.1-06-PLAN.md — [user Plan 2] prompt v20 (voiceink-nonum); ship-gated on German regression suite + multi-seed harness (blocking human-verify)
+
+**Wave structure:** W1 = {01} · W2 = {02, 03, 04} (parallel, no file overlap) · W3 = {05} (needs gate signature from 02 + number forms from 03) · W4 = {06} (ships after deterministic number ownership lands)
 
 ---
 

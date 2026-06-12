@@ -4,14 +4,14 @@ milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
 stopped_at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
-last_updated: "2026-06-11T18:26:47.676Z"
-last_activity: 2026-06-11
+last_updated: "2026-06-12T14:26:27.611Z"
+last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
-  total_phases: 30
+  total_phases: 31
   completed_phases: 22
-  total_plans: 91
-  completed_plans: 96
-  percent: 73
+  total_plans: 97
+  completed_plans: 97
+  percent: 71
 ---
 
 # Project State: Dicticus
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36
-Plan: Not started
-Status: Executing Phase 36
-Last activity: 2026-06-11
+Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ### Next Action
 
@@ -58,6 +58,10 @@ Last activity: 2026-06-11
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 36.1 inserted (2026-06-12): Cleanup Pipeline Quality — implements spike 004–007 validated findings (gate V2.1 rework, ITN number guards + NumberRevert, v20 prompt). Inserted as decimal after Phase 36 because the user wants it shipped before iOS Distribution. Blueprint: skill spike-findings-dicticus, references/cleanup-pipeline-fixes.md.
+
 ### Architecture notes for v2.5
 
 - Phase 36: `UIBackgroundModes: audio` must be declared in iOS target Info.plist; AVAudioSession must remain active through the background task; `beginBackgroundTask` wrapper needed for post-stop transcription tail
@@ -80,7 +84,7 @@ Last activity: 2026-06-11
 
 ## Session Continuity
 
-Last session: 2026-06-11
+Last session: 2026-06-12T14:26:27.607Z
 Stopped at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
@@ -140,6 +144,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 |-------|------|----------|-------|
 | Phase 36-ios-background-dictation P02 | 10 | 3 tasks | 8 files |
 | Phase 36-ios-background-dictation P03 | 3 | 2 tasks | 4 files |
+| Phase 36.1-cleanup-pipeline-quality P01 | 5min | 3 tasks | 8 files |
 
 ## Decisions
 
