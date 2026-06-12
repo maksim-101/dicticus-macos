@@ -115,6 +115,51 @@ final class ITNUtilityTests: XCTestCase {
         let output = ITNUtility.applyITN(to: "1 dash zero 6", language: "en")
         XCTAssertEqual(output, "1-06")
     }
+
+    // MARK: - Phase 36.1 ITN guard fixtures (Wave 0 RED scaffolding)
+    //
+    // These fixtures assert behaviors that Plan 36.1-03 will implement.
+    // Until that plan lands, these tests will fail — that is the intended RED state.
+
+    func testITN_boundaryGuard_noCommaMerge() {
+        // Boundary guard: a number-merge window must not span clause punctuation.
+        // "one, two, three" must remain "one, two, three" — not collapse to "102, three".
+        let output = ITNUtility.applyITN(to: "one, two, three", language: "en")
+        XCTAssertEqual(output, "one, two, three",
+            "Phase 36.1: boundary guard — comma must terminate merge window, no cross-comma merge")
+    }
+
+    func testITN_magnitudeGuard_twentyMillion() {
+        // Magnitude guard: the count word converts but the magnitude word stays spelled.
+        // "twenty million" → "20 million" (NOT "20000000").
+        let output = ITNUtility.applyITN(to: "twenty million", language: "en")
+        XCTAssertEqual(output, "20 million",
+            "Phase 36.1: magnitude guard — twenty million must become 20 million, not 20000000")
+    }
+
+    func testITN_magnitudeGuard_lowCountStaysSpelled() {
+        // Magnitude guard: counts < 10 stay fully spelled even with a magnitude word.
+        // "four billion" stays "four billion".
+        let output = ITNUtility.applyITN(to: "four billion", language: "en")
+        XCTAssertEqual(output, "four billion",
+            "Phase 36.1: magnitude guard — four billion must stay spelled (count < 10 threshold)")
+    }
+
+    func testITN_referenceNoun_findingNumberEN() {
+        // Reference-noun promotion (EN): "finding number" prefix triggers digit promotion.
+        // "finding number three" → "finding number 3".
+        let output = ITNUtility.applyITN(to: "finding number three", language: "en")
+        XCTAssertEqual(output, "finding number 3",
+            "Phase 36.1: reference-noun promotion — finding number three must become finding number 3")
+    }
+
+    func testITN_referenceNoun_befundNummerDE() {
+        // Reference-noun promotion (DE): "Befund Nummer" prefix triggers digit promotion.
+        // "Befund Nummer drei" → "Befund Nummer 3".
+        let output = ITNUtility.applyITN(to: "Befund Nummer drei", language: "de")
+        XCTAssertEqual(output, "Befund Nummer 3",
+            "Phase 36.1: reference-noun promotion DE — Befund Nummer drei must become Befund Nummer 3")
+    }
 }
 
 // MARK: - Phase 28 D-03 (Plan 28-02): Single-digit identifier-adjacent promotion tests
