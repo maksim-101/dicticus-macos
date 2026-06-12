@@ -160,7 +160,7 @@
 **Goal**: Dictation output stops being randomly wrong in the known ways: the content-word gate keeps the LLM's good corrections instead of discarding ~2/3 of them, numbers follow one consistent policy with zero cross-boundary merges ("one, two, three" never becomes "102, three"), and the LLM can no longer re-style numbers or dictionary-chosen spellings — all validated against the spike-004 replay harness before shipping, macOS + iOS together (Shared/).
 **Requirements**: spike-findings-dicticus skill (references/cleanup-pipeline-fixes.md is the blueprint); .planning/spikes/WRAP-UP-SUMMARY.md
 **Depends on:** Phase 36
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed
 Plans:
 **Wave 1**
 
@@ -174,7 +174,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 36.1-05-PLAN.md — [user Plan 1] NumberRevert post-LLM step (new Shared/Utilities/NumberRevert.swift) + applyWithTrace/dictProtect wiring (TextProcessingService.swift)
+- [x] 36.1-05-PLAN.md — [user Plan 1] NumberRevert post-LLM step (new Shared/Utilities/NumberRevert.swift) + applyWithTrace/dictProtect wiring (TextProcessingService.swift)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 

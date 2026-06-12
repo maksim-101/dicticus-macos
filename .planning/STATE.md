@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: "Completed 36.1-04: ArtifactStrip in RulesCleanupService — RulesCleanupServiceTests GREEN on macOS + iOS"
-last_updated: "2026-06-12T14:54:14.708Z"
+stopped_at: "Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green"
+last_updated: "2026-06-12T15:13:22.791Z"
 last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
   total_phases: 31
   completed_phases: 22
   total_plans: 97
-  completed_plans: 100
+  completed_plans: 101
   percent: 71
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 36.1 execution started
 
@@ -84,8 +84,8 @@ Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-12T14:54:14.704Z
-Stopped at: Completed 36.1-04: ArtifactStrip in RulesCleanupService — RulesCleanupServiceTests GREEN on macOS + iOS
+Last session: 2026-06-12T15:13:22.787Z
+Stopped at: Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
 New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
@@ -148,6 +148,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.1-cleanup-pipeline-quality P02 | 4min | 2 tasks | 1 files |
 | Phase 36.1-cleanup-pipeline-quality P03 | 15min | 3 tasks | 2 files |
 | Phase 36.1-cleanup-pipeline-quality P04 | 5min | 2 tasks | 1 files |
+| Phase 36.1-cleanup-pipeline-quality P05 | 15min | 3 tasks | 2 files |
 
 ## Decisions
 
@@ -157,3 +158,5 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [36-04]: Background stop forces mode=.plain (no GPU/LLM) — deferred to foreground. isLlmReady retry cleans+persists once LLM warms up.
 - [36-04]: Second-session crash root cause: AVAudioSession not deactivated after stop → next AudioRecordingIntent fatal-asserted invariant. Fix: setActive(false) on every exit path of stopRecordingAndTranscribe().
 - [Phase ?]: [36.1-04]: ArtifactStrip confined to clean() AI-mode only; try! NSRegularExpression for compile-time pattern; named trail group prevents double-punctuation
+- [Phase ?]: [36.1-05]: NumberRevert ordinal strip fix — preserve trailing period so DE ordinals (vierten→4.) match inverse map
+- [Phase ?]: [36.1-05]: Step 3a.5 inside AI-cleanup branch only — NumberRevert compares baseline vs LLM output, only meaningful when LLM ran
