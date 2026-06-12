@@ -460,6 +460,102 @@ final class CleanupServiceTests: XCTestCase {
         XCTAssertEqual(result, llmOutput,
             "Phase 20.08 R3: dialect tokens already in raw baseline are speaker-said and must pass")
     }
+
+    // MARK: - Phase 36.1 V2.1 gate fixtures (Wave 0 RED scaffolding)
+    //
+    // These tests call the new 3-arg gateContentWords signature introduced in Plan 36.1-02.
+    // Until that plan lands, these tests will not compile — that is the intended RED state.
+
+    func testGateContentWords_osaClaude() {
+        // OSA clause: baseline "clawed" is Damerau-OSA distance 2 from output "Claude" —
+        // transposition counts 1, so the respelling is accepted.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "I said clawed the AI assistant",
+            llmOutput: "I said Claude the AI assistant",
+            dictProtected: []
+        )
+        XCTAssertEqual(result, "I said Claude the AI assistant",
+            "Phase 36.1: OSA clause — clawed→Claude (distance 2) must pass the gate")
+    }
+
+    func testGateContentWords_rejectsSchemaGemma() {
+        // OSA rejection guard: "schema"→"Gemma" is distance ≥ 3 — hallucination must be caught.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "the schema for this project",
+            llmOutput: "the Gemma for this project",
+            dictProtected: []
+        )
+        XCTAssertEqual(result, "the schema for this project",
+            "Phase 36.1: OSA rejection — schema→Gemma (distance ≥3) must reject")
+    }
+
+    func testGateContentWords_rejectsAllCapsLowercasing() {
+        // ALLCAPS reject: baseline "HIN" is all-uppercase; llmOutput lowercases to "hin" —
+        // pure lowercasing must be caught.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "send the HIN now",
+            llmOutput: "send the hin now",
+            dictProtected: []
+        )
+        XCTAssertEqual(result, "send the HIN now",
+            "Phase 36.1: ALLCAPS clause — HIN→hin (pure lowercasing) must reject")
+    }
+
+    func testGateContentWords_passesAllCapsMerge() {
+        // ALLCAPS merge exception: "G SD" merges into "GSD" — result is a larger ALLCAPS token.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "the G SD logs are here",
+            llmOutput: "the GSD logs are here",
+            dictProtected: []
+        )
+        XCTAssertEqual(result, "the GSD logs are here",
+            "Phase 36.1: ALLCAPS clause — G SD→GSD (merged into larger ALLCAPS) must pass")
+    }
+
+    func testGateContentWords_passesAllCapsRecase() {
+        // ALLCAPS recase exception: "IOS" recased to "iOS" keeps ≥1 uppercase letter.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "IOS build succeeded",
+            llmOutput: "iOS build succeeded",
+            dictProtected: []
+        )
+        XCTAssertEqual(result, "iOS build succeeded",
+            "Phase 36.1: ALLCAPS clause — IOS→iOS (recased, ≥1 uppercase retained) must pass")
+    }
+
+    func testGateContentWords_dictProtectSurvives() {
+        // dictProtect: llmOutput re-styles "E-Mail" to "email" — the dict-protected value
+        // must be preserved, so the gate reverts to rulesCleaned.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "please send the E-Mail today",
+            llmOutput: "please send the email today",
+            dictProtected: Set(["E-Mail"])
+        )
+        XCTAssertEqual(result, "please send the E-Mail today",
+            "Phase 36.1: dictProtect — E-Mail dropped by LLM must revert to rulesCleaned")
+    }
+
+    func testGateContentWords_discourseArtifactNotRequired() {
+        // Discourse artifact: "yeah" is a discourse artifact — the gate must not require
+        // it as a content word, so dropping it passes.
+        let result = CleanupService.gateContentWords(
+            rulesCleaned: "that looks great yeah",
+            llmOutput: "that looks great",
+            dictProtected: []
+        )
+        XCTAssertEqual(result, "that looks great",
+            "Phase 36.1: discourse artifact — trailing yeah not required as content word, must pass")
+    }
+
+    func testStripPreamble_dotPrefixedNameNotMerged() {
+        // stripPreamble punct fix: " .claude" must NOT be collapsed to ".claude".
+        // The fix regex requires punctuation followed by whitespace/end/bracket,
+        // so the dot in " .claude" (followed by a letter) is preserved.
+        let input = "edit the .claude directory"
+        let result = CleanupService.stripPreamble(input)
+        XCTAssertTrue(result.contains(" .claude"),
+            "Phase 36.1: punct fix — space before dot-prefixed name .claude must not be collapsed")
+    }
 }
 
 // MARK: - Phase 28 Plan 03: Contraction Gate Tests (Variant A Winner)
