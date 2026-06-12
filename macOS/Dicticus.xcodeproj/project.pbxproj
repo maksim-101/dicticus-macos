@@ -44,6 +44,7 @@
 		4CCD2B5B31FFBD03C2010FEA /* SwissHelvetisms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0251735010FF2B17E0BCF8CC /* SwissHelvetisms.swift */; };
 		4EBD2D2867D12C548A2E7593 /* ModelWarmupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EEB61470B43106AF1E43A7 /* ModelWarmupService.swift */; };
 		50123F64BFB0F378BE2DDBA4 /* SwissDialectForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2693EF50F5AB341997416B /* SwissDialectForms.swift */; };
+		50A1641658E5171B1B03AB33 /* NumberRevertTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FDEF7A735A7BAFE44B996F /* NumberRevertTests.swift */; };
 		51017BD7ADAAFBA9F68CF167 /* DictionaryPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF813C5993DCEF6F3C8181E /* DictionaryPane.swift */; };
 		574E4E248C246955EB16A0B8 /* ALLOWLIST_LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = B88951AA0AFEACDC69B96666 /* ALLOWLIST_LICENSE.md */; };
 		57611D4A88B30333096B5D29 /* SelfCorrectionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43BC013767531650EA0E31CE /* SelfCorrectionResolver.swift */; };
@@ -54,6 +55,7 @@
 		698CDD27BAFCFBC9D3E53EB9 /* HistoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F53F54165D5AFE6D0BC7F33 /* HistoryServiceTests.swift */; };
 		6C8F73BDB45903BE78483A79 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516F18D70F7720AD0779EA74 /* HotkeyManager.swift */; };
 		6DB82EEF1BC7ABFDDF4ADDA2 /* TextInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66BF5BACDC7437ABA6D177B9 /* TextInjector.swift */; };
+		6DEBC17167F8B80E4A666541 /* RulesCleanupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7962986824EC956B31EA20C /* RulesCleanupServiceTests.swift */; };
 		707548B3DD5BD5C30A385546 /* DictionaryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 606D5FDC1193F1A7D2D5302E /* DictionaryServiceTests.swift */; };
 		70DCDABAE3C47214349833EA /* CleanupCopyMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D667692C5EE7BB68CC659EE0 /* CleanupCopyMode.swift */; };
 		77E629F73BA61CF10EF8CAC5 /* SwissNumberFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F508FA7F203223AB4D05A0 /* SwissNumberFormatterTests.swift */; };
@@ -71,6 +73,7 @@
 		9BA32438B0BD5B32F6E6C80D /* ModelDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */; };
 		A00810BCC1BC17FBEAB33FC3 /* WarmupRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6356DF22A67C2BF0B6EF82B /* WarmupRow.swift */; };
 		A0385BB6074E417E83F5CEF4 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C9043851297290913B367BF0 /* Sparkle */; };
+		A3A4BEBDBF4D7D882DB83332 /* NumberRevert.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B244A45957C52A46272A38 /* NumberRevert.swift */; };
 		A8FD5249DDEECE32245985D4 /* starter-pack-tech.csv in Resources */ = {isa = PBXBuildFile; fileRef = DCA28F8F142CE72EB85279C5 /* starter-pack-tech.csv */; };
 		A9DD4C7F7B76CC7A2BB7627D /* HistoryPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D74823919FDBBD572E5BE7 /* HistoryPane.swift */; };
 		B101B619F1F099AE880125FB /* WindowAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53EB869E36D2DDA5A7536E9 /* WindowAccessor.swift */; };
@@ -123,6 +126,7 @@
 /* Begin PBXFileReference section */
 		00A6403E7E893BEB40EABCBD /* DicticusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DicticusApp.swift; sourceTree = "<group>"; };
 		0251735010FF2B17E0BCF8CC /* SwissHelvetisms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissHelvetisms.swift; sourceTree = "<group>"; };
+		02FDEF7A735A7BAFE44B996F /* NumberRevertTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberRevertTests.swift; sourceTree = "<group>"; };
 		0B0DBFAC77155F9B60ADB92F /* HotkeyDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyDisplay.swift; sourceTree = "<group>"; };
 		0C6B882CA480548A81B64E94 /* MediaPauseToggleRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPauseToggleRow.swift; sourceTree = "<group>"; };
 		0FF813C5993DCEF6F3C8181E /* DictionaryPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryPane.swift; sourceTree = "<group>"; };
@@ -201,6 +205,7 @@
 		C53EB869E36D2DDA5A7536E9 /* WindowAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAccessor.swift; sourceTree = "<group>"; };
 		CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelWarmupServiceTests.swift; sourceTree = "<group>"; };
 		D1E5718DD249C8651C7F1DB0 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
+		D4B244A45957C52A46272A38 /* NumberRevert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberRevert.swift; sourceTree = "<group>"; };
 		D52E7128C312E2EA67531500 /* HotkeyDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyDisplayTests.swift; sourceTree = "<group>"; };
 		D667692C5EE7BB68CC659EE0 /* CleanupCopyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCopyMode.swift; sourceTree = "<group>"; };
 		D6CF6C951598DD95DF8012E2 /* ITNUtilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ITNUtilityTests.swift; sourceTree = "<group>"; };
@@ -209,6 +214,7 @@
 		E33C8ABCB6D20C1919ADA580 /* ModelDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadService.swift; sourceTree = "<group>"; };
 		E42E060ECE60AB0017B697E7 /* DefaultLexicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultLexicon.swift; sourceTree = "<group>"; };
 		E6C74F55E49D9613F8A46172 /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
+		E7962986824EC956B31EA20C /* RulesCleanupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesCleanupServiceTests.swift; sourceTree = "<group>"; };
 		E8A0E6E52D5145B754E1607B /* KeyboardShortcuts+Names.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcuts+Names.swift"; sourceTree = "<group>"; };
 		EA2693EF50F5AB341997416B /* SwissDialectForms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwissDialectForms.swift; sourceTree = "<group>"; };
 		EB394C01FD05DE00F02EA889 /* HomePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePane.swift; sourceTree = "<group>"; };
@@ -255,6 +261,7 @@
 				B7D3DD0825432F368F7647AB /* FillerWordRemover.swift */,
 				BF52FB11E0C3E29DB9DD5308 /* ITNUtility.swift */,
 				28628EC17301483856068EDB /* LevenshteinDistance.swift */,
+				D4B244A45957C52A46272A38 /* NumberRevert.swift */,
 				43BC013767531650EA0E31CE /* SelfCorrectionResolver.swift */,
 				C454E415EBC55F52775B578C /* SwissDefaultMigration.swift */,
 				3D6CC095534291875D3293ED /* SwissNumberFormatter.swift */,
@@ -350,7 +357,9 @@
 				CD829A0298332D7F8F73B3FE /* ModelWarmupServiceTests.swift */,
 				B9ACE74779B554BB24700B58 /* ModifierHotkeyListenerTests.swift */,
 				143CC8A466EB55916F9E58E4 /* NotificationServiceTests.swift */,
+				02FDEF7A735A7BAFE44B996F /* NumberRevertTests.swift */,
 				6A066D94CA10532D0A572FA8 /* PermissionManagerTests.swift */,
+				E7962986824EC956B31EA20C /* RulesCleanupServiceTests.swift */,
 				ABA71A6F64C7DA9ED75C9FF1 /* SelfCorrectionResolverTests.swift */,
 				F926433A0A46692469E835A5 /* SwissDialectFormsTests.swift */,
 				49F508FA7F203223AB4D05A0 /* SwissNumberFormatterTests.swift */,
@@ -651,6 +660,7 @@
 				1208F945E6BABF2AFD3362B9 /* ModifierCombo.swift in Sources */,
 				E3A6345E30D9044A3B74F2C1 /* ModifierHotkeyListener.swift in Sources */,
 				C524718AC8111D53B30A01FD /* NotificationService.swift in Sources */,
+				A3A4BEBDBF4D7D882DB83332 /* NumberRevert.swift in Sources */,
 				DCE6FEB9117C3D3A4AC2893C /* OnboardingView.swift in Sources */,
 				D3C834B96567A3972B2AC116 /* PermissionManager.swift in Sources */,
 				2A0BC6A9E3318985B054375B /* PermissionRow.swift in Sources */,
@@ -693,7 +703,9 @@
 				D40E4EE4B8E09E3462AA5918 /* ModelWarmupServiceTests.swift in Sources */,
 				F02F9ADF3A14E1893A9FB86C /* ModifierHotkeyListenerTests.swift in Sources */,
 				651F32E3BC46F1B9053994C4 /* NotificationServiceTests.swift in Sources */,
+				50A1641658E5171B1B03AB33 /* NumberRevertTests.swift in Sources */,
 				1E25100633D4BAD07FA4144C /* PermissionManagerTests.swift in Sources */,
+				6DEBC17167F8B80E4A666541 /* RulesCleanupServiceTests.swift in Sources */,
 				EE60B4BDA6BFCEFA64F975AF /* SelfCorrectionResolverTests.swift in Sources */,
 				87A22847652809E518D36722 /* SwissDialectFormsTests.swift in Sources */,
 				77E629F73BA61CF10EF8CAC5 /* SwissNumberFormatterTests.swift in Sources */,
