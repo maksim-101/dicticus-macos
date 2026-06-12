@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
-status: executing
-stopped_at: "Phase 36.1 verification: gaps_found (6/8) — CR-01 + WR-05 need gap closure; all 6 plans executed, v20 ship-gate evidence green"
-last_updated: "2026-06-12T15:23:06.449Z"
-last_activity: 2026-06-12 -- Phase 36.1 execution started
+status: gaps_found (6/8 must-haves) — CR-01 sentence-final NumberRevert hole + WR-05 unsanitized dict values in prompt; gap closure pending
+stopped_at: "Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green"
+last_updated: "2026-06-12T19:38:03.718Z"
+last_activity: "2026-06-12 -- Phase 36.1 verified: gaps_found — run /gsd-plan-phase 36.1 --gaps"
 progress:
   total_phases: 31
   completed_phases: 23
