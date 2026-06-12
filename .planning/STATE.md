@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: "Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green"
-last_updated: "2026-06-12T19:40:32.206Z"
+stopped_at: Completed 36.1-07-PLAN.md — CR-01 + WR-05 closed, Phase 36.1 all 8 truths verified
+last_updated: "2026-06-12T19:54:39.475Z"
 last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
   total_phases: 31
-  completed_phases: 22
+  completed_phases: 23
   total_plans: 98
-  completed_plans: 102
-  percent: 71
+  completed_plans: 103
+  percent: 74
 ---
 
 # Project State: Dicticus
@@ -23,8 +23,8 @@ progress:
 ## Current Position
 
 Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 36.1
+Plan: 2 of 7
+Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ### Next Action
@@ -84,8 +84,8 @@ Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-12T15:23:06.440Z
-Stopped at: Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green
+Last session: 2026-06-12T19:54:39.471Z
+Stopped at: Completed 36.1-07-PLAN.md — CR-01 + WR-05 closed, Phase 36.1 all 8 truths verified
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
 New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
@@ -150,6 +150,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.1-cleanup-pipeline-quality P04 | 5min | 2 tasks | 1 files |
 | Phase 36.1-cleanup-pipeline-quality P05 | 15min | 3 tasks | 2 files |
 | Phase 36.1-cleanup-pipeline-quality P06 | 30min | 3 tasks | 3 files |
+| Phase 36.1-cleanup-pipeline-quality P07 | 11min | 2 tasks | 6 files |
 
 ## Decisions
 
@@ -161,3 +162,5 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase ?]: [36.1-04]: ArtifactStrip confined to clean() AI-mode only; try! NSRegularExpression for compile-time pattern; named trail group prevents double-punctuation
 - [Phase ?]: [36.1-05]: NumberRevert ordinal strip fix — preserve trailing period so DE ordinals (vierten→4.) match inverse map
 - [Phase ?]: [36.1-05]: Step 3a.5 inside AI-cleanup branch only — NumberRevert compares baseline vs LLM output, only meaningful when LLM ran
+- [Phase 36.1-07]: cardinalCore checks inverse[token] not inverse[stripped]: protects DE ordinals, exposes EN cardinals at sentence end
+- [Phase 36.1-07]: WR-05 In:/Out: neutralization scoped to sanitizeDictValue() (dict values only), not extended into sanitizeControlTokens() — avoids clobbering legitimate dictated text
