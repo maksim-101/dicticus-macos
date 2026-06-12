@@ -249,7 +249,7 @@ Architecture not yet mapped. Follow existing patterns found in the codebase.
 <!-- GSD:skills-start source:skills/ -->
 ## Project Skills
 
-No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, or `.github/skills/` with a `SKILL.md` index file.
+- **Spike findings for dicticus** (implementation patterns, constraints, gotchas from spikes 001–007: cleanup-pipeline fixes + test harness, macOS media pause, dictionary ASR-confusion rules) → `Skill("spike-findings-dicticus")`
 <!-- GSD:skills-end -->
 
 <!-- GSD:workflow-start source:GSD defaults -->
