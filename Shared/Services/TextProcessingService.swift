@@ -83,19 +83,18 @@ class TextProcessingService: ObservableObject {
         let dbgRawText = text
         #endif
 
-        // Step 1: Dictionary replacements
-        #if DEBUG_RECORDER
-        var dbgReplacements: [DictionaryService.Replacement] = []
-        var dbgBlocked: [DictionaryService.BlockedMatch] = []
+        // Step 1: Dictionary replacements.
+        // applyWithTrace is unconditional so dictTrace.replacements can be threaded
+        // into gateContentWords as dictProtected (Step 3a). apply(to:) is a thin
+        // wrapper anyway — no overhead difference (DictionaryService D-08).
         let dictTrace = dictionaryService.applyWithTrace(to: text)
         var processedText = dictTrace.text
-        dbgReplacements = dictTrace.replacements
-        dbgBlocked = dictTrace.blocked
+        #if DEBUG_RECORDER
+        var dbgReplacements = dictTrace.replacements
+        var dbgBlocked = dictTrace.blocked
         let dbgPostDict = processedText
         let dbgPostDictMs = Date().timeIntervalSince(dbgRawStart) * 1000.0
         let dbgItnStart = Date()
-        #else
-        var processedText = dictionaryService.apply(to: text)
         #endif
 
         // Step 1.5: Acronym fragment collapse + spoken-letter lexicon
@@ -257,7 +256,8 @@ class TextProcessingService: ObservableObject {
             }
             processedText = CleanupService.gateContentWords(
                 rulesCleaned: rulesCleanedText,
-                llmOutput: processedText
+                llmOutput: processedText,
+                dictProtected: Set(dictTrace.replacements.map { $0.to })
             )
 
             #if DEBUG_RECORDER
