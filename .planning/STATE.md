@@ -4,13 +4,13 @@ milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
 stopped_at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
-last_updated: "2026-06-12T14:34:37.775Z"
+last_updated: "2026-06-12T14:43:30.661Z"
 last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
   total_phases: 31
   completed_phases: 22
   total_plans: 97
-  completed_plans: 98
+  completed_plans: 99
   percent: 71
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 36.1 execution started
 
@@ -84,7 +84,7 @@ Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-12T14:34:37.771Z
+Last session: 2026-06-12T14:43:30.656Z
 Stopped at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
@@ -146,6 +146,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36-ios-background-dictation P03 | 3 | 2 tasks | 4 files |
 | Phase 36.1-cleanup-pipeline-quality P01 | 5min | 3 tasks | 8 files |
 | Phase 36.1-cleanup-pipeline-quality P02 | 4min | 2 tasks | 1 files |
+| Phase 36.1-cleanup-pipeline-quality P03 | 15min | 3 tasks | 2 files |
 
 ## Decisions
 
