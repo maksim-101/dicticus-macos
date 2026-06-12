@@ -78,4 +78,31 @@ final class NumberRevertTests: XCTestCase {
         XCTAssertEqual(result, output,
             "Phase 36.1: NumberRevert no-op — matching number forms must return output unchanged")
     }
+
+    // MARK: - sentence-final number revert (CR-01)
+
+    func testNumberRevert_sentenceFinal_wordToDigit_revertsWithPeriod() {
+        // Baseline has sentence-final word "eight." (period is sentence punctuation).
+        // LLM emitted "8." (terminal period attached — systematic in v20 few-shots).
+        // cardinalCore must expose "8." as cardinal "8" so Case B reverts to "eight."
+        let result = NumberRevert.apply(
+            baseline: "no actually eight.",
+            output: "no actually 8.",
+            language: "en"
+        ).text
+        XCTAssertEqual(result, "no actually eight.",
+            "Phase 36.1 CR-01: sentence-final digit '8.' must revert to baseline word 'eight.' with period preserved")
+    }
+
+    func testNumberRevert_sentenceFinal_digitToWord_revertsWithPeriod() {
+        // Baseline has sentence-final digit "8." (period is sentence punctuation).
+        // LLM re-spelled it to "eight." — Case C must revert to digit "8." with period.
+        let result = NumberRevert.apply(
+            baseline: "no actually 8.",
+            output: "no actually eight.",
+            language: "en"
+        ).text
+        XCTAssertEqual(result, "no actually 8.",
+            "Phase 36.1 CR-01: sentence-final word 'eight.' must revert to baseline digit '8.' with period preserved")
+    }
 }
