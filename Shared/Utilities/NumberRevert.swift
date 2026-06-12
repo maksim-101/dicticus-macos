@@ -70,12 +70,29 @@ public enum NumberRevert {
             t.trimmingCharacters(in: CharacterSet(charactersIn: ",!?;:()\"„\u{201C}\u{201D}\u{AB}\u{BB}"))
         }
 
+        // cardinalCore: strip a single trailing '.' from a token for cardinal counting /
+        // Case B revert — but only when the full token (with period) is NOT itself a
+        // known ordinal digit-form in the inverse map (i.e. inverse[token] == nil).
+        // This exposes EN sentence-final cardinal tokens like "8." as bare "8" without
+        // disturbing DE ordinals like "4." which ARE in the inverse map as lookup keys.
+        // (CR-01 fix: strip() excludes '.' to protect DE ordinals globally; cardinalCore
+        // is the targeted, ordinal-aware fallback layered on top of strip().)
+        func cardinalCore(_ token: String) -> String {
+            guard token.hasSuffix(".") else { return token }
+            // Only strip when the full token (with period) is NOT a known ordinal digit-form.
+            // "4." → inverse["4."] = ["vierten", "vierte", ...]  → NOT nil → keep "4." (protected)
+            // "8." → inverse["8."] == nil (no word maps to "8." in EN)  → return "8" (exposed)
+            guard inverse[token] == nil else { return token }
+            return String(token.dropLast())
+        }
+
         let baseTokens = tokens(baseline).map { strip($0).lowercased() }
         var baseWordCounts: [String: Int] = [:]   // spelled number-words in baseline
         var baseDigitCounts: [String: Int] = [:]  // pure-digit tokens in baseline
         for t in baseTokens {
-            if map[t] != nil { baseWordCounts[t, default: 0] += 1 }
-            if t.allSatisfy({ $0.isNumber }) && !t.isEmpty { baseDigitCounts[t, default: 0] += 1 }
+            let cardinal = cardinalCore(t)
+            if map[cardinal] != nil { baseWordCounts[cardinal, default: 0] += 1 }
+            if cardinal.allSatisfy({ $0.isNumber }) && !cardinal.isEmpty { baseDigitCounts[cardinal, default: 0] += 1 }
         }
 
         // Also track ordinal digit-forms (like "4.") that appear in the inverse map.
@@ -93,11 +110,12 @@ public enum NumberRevert {
         // First pass: tokens already in output consume the relevant budget.
         for t in tokens(output) {
             let core = strip(t).lowercased()
-            if core.allSatisfy({ $0.isNumber }) && !core.isEmpty, outDigitBudget[core, default: 0] > 0 {
-                outDigitBudget[core]! -= 1
+            let cardinal = cardinalCore(core)
+            if cardinal.allSatisfy({ $0.isNumber }) && !cardinal.isEmpty, outDigitBudget[cardinal, default: 0] > 0 {
+                outDigitBudget[cardinal]! -= 1
             }
-            if map[core] != nil, outWordBudget[core, default: 0] > 0 {
-                outWordBudget[core]! -= 1
+            if map[cardinal] != nil, outWordBudget[cardinal, default: 0] > 0 {
+                outWordBudget[cardinal]! -= 1
             }
             if inverse[core] != nil && core.last == ".", outOrdinalBudget[core, default: 0] > 0 {
                 outOrdinalBudget[core]! -= 1
@@ -128,13 +146,19 @@ public enum NumberRevert {
 
             // Case B: LLM introduced a bare digit not in baseline → revert to the spelled
             // word if a spelled word of the same value is unconsumed.
-            if !core.isEmpty, core.allSatisfy({ $0.isNumber }),
-               baseDigitCounts[lower, default: 0] == 0 {
-                if let words = inverse[lower] {
+            // cardinalCore exposes sentence-final tokens like "8." as "8" for the
+            // allSatisfy check and the inverse lookup. The trailing period (if any)
+            // is re-attached to the replacement so "8." → "eight." (CR-01 fix).
+            let cardinalLower = cardinalCore(lower)
+            let trailingPeriod = (lower != cardinalLower && lower.hasSuffix(".")) ? "." : ""
+            if !cardinalLower.isEmpty, cardinalLower.allSatisfy({ $0.isNumber }),
+               baseDigitCounts[cardinalLower, default: 0] == 0 {
+                if let words = inverse[cardinalLower] {
                     if let w = words.first(where: { outWordBudget[$0, default: 0] > 0 }) {
                         outWordBudget[w]! -= 1
-                        // restore original casing if it began the sentence
-                        let replacement = t.replacingOccurrences(of: core, with: matchCase(of: w, to: core))
+                        // restore original casing if it began the sentence; re-attach trailing period
+                        let reverted = matchCase(of: w, to: core) + trailingPeriod
+                        let replacement = t.replacingOccurrences(of: core, with: reverted)
                         changes.append(Change(from: t, to: replacement))
                         result.append(replacement)
                         continue
@@ -144,10 +168,17 @@ public enum NumberRevert {
 
             // Case C: LLM re-spelled a digit → revert to the digit if that digit is
             // missing from the output but present in baseline.
-            if let digit = map[lower], baseWordCounts[lower, default: 0] == 0,
+            // cardinalCore exposes sentence-final word tokens like "eight." as "eight"
+            // for the map lookup. The trailing period is re-attached to the digit so
+            // "eight." → "8." (CR-01 mirror direction fix).
+            let cardinalLowerC = cardinalCore(lower)
+            let trailingPeriodC = (lower != cardinalLowerC && lower.hasSuffix(".")) ? "." : ""
+            if let digit = map[cardinalLowerC], baseWordCounts[cardinalLowerC, default: 0] == 0,
                outDigitBudget[digit, default: 0] > 0 {
                 outDigitBudget[digit]! -= 1
-                let replacement = t.replacingOccurrences(of: core, with: digit)
+                let digitWithPeriod = digit + trailingPeriodC
+                // Replace the full core (which may include a trailing period) with digit form
+                let replacement = t.replacingOccurrences(of: core, with: digitWithPeriod)
                 changes.append(Change(from: t, to: replacement))
                 result.append(replacement)
                 continue
