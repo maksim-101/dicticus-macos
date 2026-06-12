@@ -9,7 +9,7 @@ struct ITNUtility {
         if language == "de" {
             normalized = applyGermanITN(to: text)
         } else {
-            normalized = applyEnglishITN(to: text)
+            normalized = applyEnglishITNWithMagnitudeGuard(text)
         }
         let rangeFixed = applyRangeHomophoneFix(to: normalized, language: language)
         // Phase 28 D-03 (Plan 28-02): single-digit identifier-adjacent promotion.
@@ -742,7 +742,52 @@ struct ITNUtility {
         return result
     }
 
-    private static func applyEnglishITN(to text: String) -> String {
+    // MARK: - Phase 36.1 Plan 03: Boundary guard + magnitude guard wrappers
+
+    /// Magnitude words masked during number parsing so only the count word converts.
+    /// "twenty million" → "20 million" (not "20000000").
+    private static let magnitudeWords = ["million", "billion", "millions", "billions",
+                                         "Million", "Millionen", "Milliarde", "Milliarden"]
+
+    /// Segments text at clause punctuation, calls `applyEnglishITNCore` per segment,
+    /// and rejoins. Prevents number-merge windows from spanning commas, semicolons,
+    /// periods, exclamation points, question marks, or colons.
+    private static func applyEnglishITNBoundaryGuarded(_ text: String) -> String {
+        var segments: [String] = []
+        var current = ""
+        for ch in text {
+            current.append(ch)
+            if ",;:.!?".contains(ch) {
+                segments.append(current)
+                current = ""
+            }
+        }
+        if !current.isEmpty { segments.append(current) }
+        return segments.map { seg in
+            let lead = seg.prefix(while: { $0 == " " })
+            let trail = seg.reversed().prefix(while: { $0 == " " })
+            let core = seg.trimmingCharacters(in: .whitespaces)
+            return lead + applyEnglishITNCore(core) + trail
+        }.joined()
+    }
+
+    /// Masks magnitude words (million/billion EN+DE) with private-use scalar sentinels
+    /// before the boundary-guarded ITN pass, then strips sentinels. This prevents
+    /// "twenty million" from expanding to "20000000" while still converting "20".
+    private static func applyEnglishITNWithMagnitudeGuard(_ text: String) -> String {
+        var masked = text
+        for w in magnitudeWords {
+            masked = masked.replacingOccurrences(of: "\\b\(w)\\b",
+                                                 with: "\u{E001}\(w)\u{E002}",
+                                                 options: [.regularExpression])
+        }
+        var out = applyEnglishITNBoundaryGuarded(masked)
+        out = out.replacingOccurrences(of: "\u{E001}", with: "")
+        out = out.replacingOccurrences(of: "\u{E002}", with: "")
+        return out
+    }
+
+    private static func applyEnglishITNCore(_ text: String) -> String {
         let locale = Locale(identifier: "en_US")
         let formatter = NumberFormatter()
         formatter.numberStyle = .spellOut
