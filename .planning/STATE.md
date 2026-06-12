@@ -33,7 +33,7 @@ Last activity: 2026-06-12 -- Phase 36.1 verified: gaps_found — run /gsd-plan-p
 2. ✅ macOS `1.4.0` shipped — GitHub release `macos-v1.4.0` (2026-06-09) live. iOS `ios-v2.4.0` (TestFlight / device install) still pending verification.
 3. Backlog `999.1` (post-ASR / AI-cleanup robustness) captured 2026-06-10 from log sweep — promote via `/gsd-review-backlog` when ready.
 4. Backlog (new, 2026-06-10): Action Button → deep-link into Dicticus Settings (setup UX) — clarify exact intent + log via `/gsd-capture`.
-5. ⚙️ GSD tiering check (2026-06-10): `model_overrides` was pruned from `.planning/config.json` (now relies on `model_profile: balanced` + `resolve_model_ids: true`). At the next phase execution, confirm `gsd-executor`/`gsd-verifier` actually ran on `claude-sonnet-4-6` (NOT inherited Opus) — the deferred empirical check. Steps + regression runbook in `.planning/NOTES-model-tiering.md`; delete both once confirmed.
+5. ✅ GSD tiering confirmed (2026-06-12, Phase 36.1 execution): `init.execute-phase` emitted explicit `claude-sonnet-4-6` for executor + verifier; all subagents dispatched on Sonnet. `NOTES-model-tiering.md` deleted as planned.
 
 ## Phase Overview
 
