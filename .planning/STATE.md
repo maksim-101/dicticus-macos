@@ -72,9 +72,9 @@ Last activity: 2026-06-12
 
 ### Quality baselines to preserve
 
-- 443 macOS XCTest passing (1 pre-existing failure `testBlocksUntilCleaned`)
-- 435 iOS XCTest passing
-- V19E content-word gate (`gateContentWords`) must remain active through all Shared/ changes
+- 471 macOS XCTest passing, 0 failures (`testBlocksUntilCleaned` fixture repaired 2026-06-12, commit a1aab45 — no accepted failures remain)
+- 482 iOS XCTest passing (8 device-only skips)
+- V2.1 content-word gate (`gateContentWords`, unconditional since 36.1-05) must remain active through all Shared/ changes
 
 ### Constraints active in v2.5
 
