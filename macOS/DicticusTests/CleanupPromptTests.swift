@@ -9,33 +9,62 @@ final class CleanupPromptTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Prompt Structure (V15)
+    // MARK: - Phase 36.1 v20: voiceink-nonum assertions (RED until Task 2)
 
-    func testV15PromptHeaderContainsRules() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        
-        XCTAssertTrue(prompt.contains("Task: Clean up the dictation below."), "Must contain task header")
-        XCTAssertTrue(prompt.contains("Rules:"), "Must contain rules label")
-        XCTAssertTrue(prompt.contains("Remove 'stalled' speech"), "Must contain stutter/fragment rule")
-        XCTAssertTrue(prompt.contains("PRESERVE substantive self-corrections"), "Must contain preservation rule")
-        XCTAssertTrue(prompt.contains("NEVER paraphrase"), "Must contain anti-paraphrase rule")
+    func testPhase361_V20_VersionTagIsV20() {
+        XCTAssertEqual(CleanupPrompt.currentVersion, "v20", "currentVersion must be 'v20' after voiceink-nonum prompt swap")
     }
+
+    func testPhase361_V20_ContainsFlatNumberProhibition() {
+        let enPrompt = CleanupPrompt.build(text: "test", language: "en")
+        let dePrompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(enPrompt.contains("Never change how numbers are written"),
+                      "v20 EN prompt must contain the single flat number prohibition")
+        XCTAssertTrue(dePrompt.contains("Zahlen niemals umformen"),
+                      "v20 DE prompt must contain the single flat number prohibition in German")
+    }
+
+    func testPhase361_V20_NoNumberConversionFewShot() {
+        let enPrompt = CleanupPrompt.build(text: "test", language: "en")
+        XCTAssertFalse(enPrompt.contains("forty one"),
+                       "v20 must NOT contain 'forty one' number-conversion few-shot")
+    }
+
+    func testPhase361_V20_HasCorrectedTextEnvelope() {
+        let enPrompt = CleanupPrompt.build(text: "test", language: "en")
+        let dePrompt = CleanupPrompt.build(text: "test", language: "de")
+        XCTAssertTrue(enPrompt.contains("<corrected_text>"),
+                      "v20 EN prompt must contain corrected_text envelope marker")
+        XCTAssertTrue(dePrompt.contains("<corrected_text>"),
+                      "v20 DE prompt must contain corrected_text envelope marker")
+    }
+
+    func testPhase361_V20_DictionaryWrapperSpelledExactly() {
+        let context = ["swiss quote": "Swissquote"]
+        let prompt = CleanupPrompt.build(text: "test", language: "en", dictionaryContext: context)
+        XCTAssertTrue(prompt.contains("spelled EXACTLY as shown"),
+                      "v20 dictionary wrapper must contain 'spelled EXACTLY as shown'")
+    }
+
+    func testPhase361_V20_DefaultInstructionReferencesV20() {
+        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("v20"),
+                      "defaultInstruction must reference v20 after prompt swap")
+    }
+
+    // MARK: - Prompt anchor tests (stable across v19e and v20)
 
     func testEnglishFewShotsPresent() {
         let prompt = CleanupPrompt.build(text: "test", language: "en")
-        
+
         XCTAssertTrue(prompt.contains("In: start start cleanly"), "Must contain stutter example")
         XCTAssertTrue(prompt.contains("Out: Start cleanly."), "Must contain stutter output")
-        XCTAssertTrue(prompt.contains("In: persist now or will is not or will it not"), "Must contain fragment example")
         XCTAssertTrue(prompt.contains("In: meeting at nine no actually eight"), "Must contain repair example")
     }
 
     func testGermanFewShotsPresent() {
         let prompt = CleanupPrompt.build(text: "test", language: "de")
 
-        // Phase 25.1-05: V19C German branch — updated few-shots (V15 stutter replaced by V19C native block).
         XCTAssertTrue(prompt.contains("In: das das Meeting ist um fünf"), "Must contain German repetition-disfluency example (V19C)")
-        XCTAssertTrue(prompt.contains("In: wir hatten am Montag besprochen dass wir das machen"), "Must contain German fragment example (V19C)")
         XCTAssertTrue(prompt.contains("In: meeting um neun nein eigentlich um acht"), "Must contain German self-correction example (V15 anchor preserved)")
     }
 
@@ -44,7 +73,6 @@ final class CleanupPromptTests: XCTestCase {
     func testDictionaryContextIncluded() {
         let context = ["swiss quote": "Swissquote"]
         let prompt = CleanupPrompt.build(text: "I use swiss quote", language: "en", dictionaryContext: context)
-        XCTAssertTrue(prompt.contains("Known terms:"), "Dictionary section must be included")
         XCTAssertTrue(prompt.contains("swiss quote -> Swissquote"), "Dictionary entry must be included")
     }
 
@@ -58,14 +86,6 @@ final class CleanupPromptTests: XCTestCase {
     func testContainsMixedLanguagesReturnsFalseForPureEnglish() {
         let text = "This is a completely English sentence about testing."
         XCTAssertFalse(CleanupPrompt.containsMixedLanguages(text), "Pure English must not be detected as mixed")
-    }
-
-    // MARK: - Default instruction metadata
-
-    func testDefaultInstructionString() {
-        let instruction = CleanupPrompt.defaultInstruction
-        XCTAssertTrue(instruction.contains("V19E"), "Default instruction must reference V19E version (Phase 34 R8 fix)")
-        XCTAssertTrue(instruction.contains("smart-verbatim"), "Default instruction must reference smart-verbatim policy")
     }
 
     // MARK: - User text placement
@@ -83,15 +103,6 @@ final class CleanupPromptTests: XCTestCase {
 
     // MARK: - Phase 25.1-02: XML envelope instruction (paper §6.2)
 
-    func testPhase251_V16PromptContainsCorrectedTextEnvelopeInstruction() {
-        let promptEn = CleanupPrompt.build(text: "test", language: "en")
-        let promptDe = CleanupPrompt.build(text: "test", language: "de")
-        XCTAssertTrue(promptEn.contains("Output format: Wrap your final cleaned output between <corrected_text> and </corrected_text> tags."),
-                      "EN prompt missing §6.2 envelope instruction")
-        XCTAssertTrue(promptDe.contains("Output format: Wrap your final cleaned output between <corrected_text> and </corrected_text> tags."),
-                      "DE prompt missing §6.2 envelope instruction")
-    }
-
     func testPhase251_V16PromptOutAnchorPrimesEnvelope() {
         let prompt = CleanupPrompt.build(text: "hello", language: "en")
         XCTAssertTrue(prompt.hasSuffix("Out: <corrected_text>"),
@@ -101,7 +112,7 @@ final class CleanupPromptTests: XCTestCase {
     // MARK: - Phase 25.1-04: V18C Rule 1 drop + disfluency few-shots
 
     func testPhase251_V18C_DropsRule1_PunctuationStillCorrect() {
-        // Rule 1 ("Fix capitalization and sentence punctuation") is dropped in V18C.
+        // Rule 1 ("Fix capitalization and sentence punctuation") was dropped in V18C.
         // Parakeet TDT v3 emits punctuation natively (paper §1); the rule was redundant.
         let prompt = CleanupPrompt.build(text: "test", language: "en")
         XCTAssertFalse(
@@ -183,7 +194,7 @@ final class CleanupPromptTests: XCTestCase {
     }
 
     func testPhase251_V19EnglishBranchUnchanged() {
-        // V19C only touches the de branch. English few-shots from V18C must still be present.
+        // German banner must NOT appear in English branch.
         let p = CleanupPrompt.build(text: "x", language: "en")
         XCTAssertTrue(p.contains("In: command i or and uh settings of the video player"),
                       "V18C Class C English few-shot must be preserved by V19C (English branch unchanged)")
@@ -199,35 +210,20 @@ final class CleanupPromptTests: XCTestCase {
         let prompt = CleanupPrompt.build(text: "test", language: "en")
         XCTAssertFalse(
             prompt.contains("let's see whether"),
-            "8a79e6b few-shot must be absent from V15 prompt."
+            "8a79e6b few-shot must be absent from v20 prompt."
         )
     }
 
-    // MARK: - Phase 28: V19D prompt content tests
+    // MARK: - Phase 28: V19D prompt content tests (anchors preserved in v20)
 
     func testPhase28_V19D_DropsTopicWordsLine() {
         let prompt = CleanupPrompt.build(text: "test", language: "en")
         XCTAssertFalse(prompt.contains("Domain topic words"), "V19D must NOT contain 'Domain topic words' line (LLM-PROMPT-AUDIT-01)")
     }
 
-    func testPhase28_V19D_RulesIncludesK4NumberPolicy() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("8."), "V19D EN prompt must contain Rule 8 (K4 number policy)")
-        // Rule 8 body must reference identifier-adjacent policy
-        let hasIdentifierAdjacentRef = prompt.contains("identifier-adjacent") || prompt.contains("capitalized stem")
-        XCTAssertTrue(hasIdentifierAdjacentRef, "V19D Rule 8 must reference 'identifier-adjacent' or 'capitalized stem' (LLM-NUM-01)")
-    }
-
-    func testPhase28_V19D_Rule8PreservesExistingDigits() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("Preserve digits"), "V19D EN Rule 8 must contain 'Preserve digits' clause (W-01 dual-defense)")
-        XCTAssertTrue(prompt.contains("already present"), "V19D EN Rule 8 must contain 'already present' clause (W-01 dual-defense)")
-    }
-
     func testPhase28_V19D_K2ClauseFewShotPresent() {
         let prompt = CleanupPrompt.build(text: "test", language: "en")
         XCTAssertTrue(prompt.contains("in the meantime"), "V19D EN prompt must contain 'in the meantime' K2-clause few-shot (LLM-CLAUSE-01)")
-        XCTAssertTrue(prompt.contains("as minimal as possible"), "V19D EN prompt must contain 'as minimal as possible' K2-clause few-shot (LLM-CLAUSE-01)")
     }
 
     func testPhase28_V19D_K2ContractionFewShotPresent() {
@@ -239,35 +235,11 @@ final class CleanupPromptTests: XCTestCase {
     func testPhase28_V19D_K5DedupFewShotsPresent() {
         let prompt = CleanupPrompt.build(text: "test", language: "en")
         XCTAssertTrue(prompt.contains("that that"), "V19D EN prompt must contain 'that that' K5-dedup few-shot (LLM-DEDUP-01)")
-        XCTAssertTrue(prompt.contains("for for"), "V19D EN prompt must contain 'for for' K5-dedup few-shot (LLM-DEDUP-01)")
-    }
-
-    func testPhase28_V19D_K4IdentifierFewShotPresent() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("E1"), "V19D EN prompt must contain 'E1' in K4-identifier few-shot (LLM-NUM-01)")
-        XCTAssertTrue(prompt.contains("M3"), "V19D EN prompt must contain 'M3' in K4-identifier few-shot (LLM-NUM-01)")
-    }
-
-    func testPhase28_V19D_K4ProseFewShotPresent() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("I have three meetings today"), "V19D EN prompt must contain 'I have three meetings today' K4-prose few-shot (LLM-NUM-01)")
     }
 
     func testPhase28_V19D_TheTheRegressionPreserved() {
         let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("the the"), "V19D EN prompt must still contain 'the the' Rule 3 example (D-09 regression guard)")
-    }
-
-    func testPhase28_V19D_GermanK4FewShotPresent() {
-        let prompt = CleanupPrompt.build(text: "test", language: "de")
-        XCTAssertTrue(prompt.contains("Version zwei"), "V19D DE prompt must contain 'Version zwei' K4-identifier few-shot (LLM-NUM-01 DE)")
-        XCTAssertTrue(prompt.lowercased().contains("version 2"), "V19D DE prompt must contain 'version 2' in K4-identifier few-shot output (LLM-NUM-01 DE)")
-    }
-
-    func testPhase28_V19D_GermanRegel8PreservesExistingDigits() {
-        let prompt = CleanupPrompt.build(text: "test", language: "de")
-        XCTAssertTrue(prompt.contains("Behalte"), "V19D DE Regel 8 must contain 'Behalte' (W-01 DE parity)")
-        XCTAssertTrue(prompt.contains("Ziffern"), "V19D DE Regel 8 must contain 'Ziffern' (W-01 DE parity)")
+        XCTAssertTrue(prompt.contains("the the"), "V19D EN prompt must still contain 'the the' stutter example (D-09 regression guard)")
     }
 
     func testPhase28_V19D_GermanK2ClauseFewShotPresent() {
@@ -281,41 +253,10 @@ final class CleanupPromptTests: XCTestCase {
         XCTAssertTrue(prompt.contains("für für"), "V19D DE prompt must contain 'für für' K5-dedup few-shot (LLM-DEDUP-01 DE)")
     }
 
-    func testPhase28_V19D_DefaultInstructionUpdated() {
-        // V19E: defaultInstruction now references V19E (Phase 34 R8 fix supersedes V19D label).
-        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("V19E"), "defaultInstruction must reference V19E (Phase 34 R8 fix)")
-        XCTAssertTrue(CleanupPrompt.defaultInstruction.contains("smart-verbatim"), "defaultInstruction must reference smart-verbatim policy")
-    }
-
     func testPhase28_V19D_ExistingAnchorsStillPresent() {
         let enPrompt = CleanupPrompt.build(text: "test", language: "en")
         let dePrompt = CleanupPrompt.build(text: "test", language: "de")
-        XCTAssertTrue(enPrompt.contains("meeting at forty one Penn"), "Phase 25 anchor 'meeting at forty one Penn' must survive V19D (regression guard)")
-        XCTAssertTrue(enPrompt.contains("command i"), "Class C anchor 'command i' must survive V19D (regression guard)")
-        XCTAssertTrue(dePrompt.contains("Regeln (auf Deutsch):"), "DE 'Regeln (auf Deutsch):' block must survive V19D (regression guard)")
-    }
-
-    // MARK: - Phase 34 V19E
-
-    func testV19E_R8NegativeFewShotsPresent() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("mark kink three"), "V19E EN prompt must contain 'kink three' negative few-shot (R8 over-promotion fix)")
-        XCTAssertTrue(prompt.contains("King four"), "V19E EN prompt must contain 'King four' negative few-shot (R8 over-promotion fix)")
-        XCTAssertTrue(prompt.contains("option one is the default"), "V19E EN prompt must contain 'option one is the default' negative few-shot (R8 over-promotion fix)")
-        XCTAssertTrue(prompt.contains("every two weeks"), "V19E EN prompt must contain 'every two weeks' negative few-shot (R8 over-promotion fix)")
-    }
-
-    func testV19E_R8ExceptionTightened() {
-        let prompt = CleanupPrompt.build(text: "test", language: "en")
-        XCTAssertTrue(prompt.contains("ALL-CAPS"), "V19E EN Rule 8 must contain ALL-CAPS discriminator (R8 over-promotion fix)")
-        XCTAssertTrue(prompt.contains("Do NOT promote ordinary capitalized words"), "V19E EN Rule 8 must contain ordinary-word exclusion clause")
-        XCTAssertFalse(prompt.contains("after a capitalized stem like 'E one'"), "V19E EN Rule 8 must not contain the loose V19D capitalized-stem wording")
-    }
-
-    func testV19E_GermanR8ExceptionTightened() {
-        let prompt = CleanupPrompt.build(text: "test", language: "de")
-        XCTAssertTrue(prompt.contains("VOLLSTÄNDIG in Großbuchstaben"), "V19E DE Regel 8 must contain ALL-CAPS discriminator in German (R8 over-promotion fix)")
-        XCTAssertTrue(prompt.contains("Keine gewöhnlichen großgeschriebenen Wörter"), "V19E DE Regel 8 must contain ordinary-word exclusion clause in German")
-        XCTAssertFalse(prompt.contains("nach einem großgeschriebenen Stamm wie 'E eins'"), "V19E DE Regel 8 must not contain the loose V19D capitalized-stem wording")
+        XCTAssertTrue(enPrompt.contains("command i"), "Class C anchor 'command i' must survive v20 (regression guard)")
+        XCTAssertTrue(dePrompt.contains("Regeln (auf Deutsch):"), "DE 'Regeln (auf Deutsch):' block must survive v20 (regression guard)")
     }
 }
