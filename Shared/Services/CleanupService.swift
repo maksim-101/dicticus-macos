@@ -545,10 +545,14 @@ class CleanupService: ObservableObject, CleanupProvider {
         let range = NSRange(result.startIndex..<result.endIndex, in: result)
         result = contractionRegex?.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "$1'$2") ?? result
 
-        // Fix spaces before punctuation (tokenizer artifact: "Hello , world" → "Hello, world")
-        for punct in [" .", " ,", " !", " ?", " ;", " :"] {
-            result = result.replacingOccurrences(of: punct, with: String(punct.last!))
-        }
+        // Fix spaces before punctuation (tokenizer artifact: "Hello , world" → "Hello, world").
+        // The lookahead (?=\s|$|["')\]]) is load-bearing: it prevents " .claude" (dot followed
+        // by a letter) from collapsing to ".claude", so dot-prefixed names survive (Pitfall 5).
+        let punctSpaceRegex = try? NSRegularExpression(
+            pattern: #"\s+([.,!?;:])(?=\s|$|["')\]])"#)
+        let punctRange = NSRange(result.startIndex..<result.endIndex, in: result)
+        result = punctSpaceRegex?.stringByReplacingMatches(
+            in: result, options: [], range: punctRange, withTemplate: "$1") ?? result
 
         // Step 2: Strip surrounding double quotation marks and non-standard quotes (CLEAN-01)
         let doubleQuotes = CharacterSet(charactersIn: "\"“”„«»")
