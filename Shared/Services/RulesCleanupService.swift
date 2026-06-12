@@ -27,6 +27,27 @@ public final class RulesCleanupService {
 
     public init() {}
 
+    // Media-bleed artifact regex — strips a trailing standalone "Yeah" / "Mm-hmm" / "Mhm"
+    // that appears after auto-stop fires too late. Pattern is $-anchored (no backtracking risk).
+    // try! is correct: pattern is a compile-time constant validated in spike ArtifactStrip.
+    private static let artifactRegex = try! NSRegularExpression(
+        pattern: #"(?:\s+(?:yeah|mm-hmm|mhm))(?<trail>[.!?]?)\s*$"#,
+        options: [.caseInsensitive])
+
+    private static func stripTrailingArtifact(_ s: String) -> String {
+        let r = NSRange(s.startIndex..<s.endIndex, in: s)
+        guard let m = artifactRegex.firstMatch(in: s, options: [], range: r) else { return s }
+        guard let range = Range(m.range, in: s) else { return s }
+        var head = String(s[s.startIndex..<range.lowerBound])
+        // Preserve terminal punctuation if head lacks one and the artifact carried it.
+        if let trailRange = Range(m.range(withName: "trail"), in: s),
+           !s[trailRange].isEmpty,
+           let last = head.last, !".!?".contains(last) {
+            head += String(s[trailRange])
+        }
+        return head
+    }
+
     /// Run the rules-first cleanup pipeline.
     ///
     /// - Parameters:
@@ -60,6 +81,9 @@ public final class RulesCleanupService {
         let collapsed = result
             .split(whereSeparator: { $0.isWhitespace })
             .joined(separator: " ")
-        return collapsed.trimmingCharacters(in: .whitespaces)
+        // Trailing-artifact strip — AI mode only (clean(...) is invoked only in
+        // the aiCleanup branch of TextProcessingService; plain mode is unaffected).
+        let stripped = RulesCleanupService.stripTrailingArtifact(collapsed)
+        return stripped.trimmingCharacters(in: .whitespaces)
     }
 }
