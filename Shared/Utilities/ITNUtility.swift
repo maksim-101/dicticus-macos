@@ -733,7 +733,10 @@ struct ITNUtility {
         }
 
         // Pattern B — DE version-class words (case-insensitive).
-        let versionClass = "(?i:version|modell|item|option|kapitel|schritt|phase|aufgabe|stufe|ebene|runde|rang|klasse|nummer|befund|punkt|frage|palette)"
+        // Note: "punkt" is intentionally excluded — "Punkt eins" (standalone "dot one")
+        // must not auto-promote; P3 applyNumericStructuralWords handles "N Punkt M" when
+        // flanked by digits on both sides.
+        let versionClass = "(?i:version|modell|item|option|kapitel|schritt|phase|aufgabe|stufe|ebene|runde|rang|klasse|nummer|befund|frage|palette)"
         let patternB = "\\b(\(versionClass))\\s+(\(digitWords))\\b"
         result = replaceStructural(result, pattern: patternB) { g in
             "\(g[1]) \(resolve(g[2]))"
