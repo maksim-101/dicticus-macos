@@ -160,7 +160,7 @@
 **Goal**: Dictation output stops being randomly wrong in the known ways: the content-word gate keeps the LLM's good corrections instead of discarding ~2/3 of them, numbers follow one consistent policy with zero cross-boundary merges ("one, two, three" never becomes "102, three"), and the LLM can no longer re-style numbers or dictionary-chosen spellings — all validated against the spike-004 replay harness before shipping, macOS + iOS together (Shared/).
 **Requirements**: spike-findings-dicticus skill (references/cleanup-pipeline-fixes.md is the blueprint); .planning/spikes/WRAP-UP-SUMMARY.md
 **Depends on:** Phase 36
-**Plans:** 1/6 plans executed
+**Plans:** 2/6 plans executed
 Plans:
 **Wave 1**
 
@@ -168,7 +168,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 36.1-02-PLAN.md — [user Plan 1] gate V2.1 (Damerau-OSA + ALLCAPS + dictProtect) + stripPreamble punct fix (CleanupService.swift)
+- [x] 36.1-02-PLAN.md — [user Plan 1] gate V2.1 (Damerau-OSA + ALLCAPS + dictProtect) + stripPreamble punct fix (CleanupService.swift)
 - [ ] 36.1-03-PLAN.md — [user Plan 1] ITN boundary guard + magnitude guard + reference-noun digit promotion (ITNUtility.swift)
 - [ ] 36.1-04-PLAN.md — [user Plan 1] trailing Yeah/Mm-hmm artifact strip (RulesCleanupService.swift, AI-mode only)
 
