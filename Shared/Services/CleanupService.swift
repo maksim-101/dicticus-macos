@@ -801,45 +801,158 @@ extension CleanupService {
         "eighth", "ninth", "tenth"
     ]
 
-    /// Content-word-preservation gate. Returns `rulesCleaned` (fallback) if
+    /// Extended number-word set for V2.1 gate (ported from Matrix005.swift GateV2.extraNumberWords).
+    /// Covers EN ordinals not in contentWordNumberWords, DE cardinals/ordinals, and numeric
+    /// connectors — prevents gate from reverting legitimate ITN promotions of these forms.
+    private static let contentWordGateExtraNumbers: Set<String> = [
+        "point", "comma",
+        "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth",
+        "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth",
+        "thirtieth", "fortieth", "fiftieth", "sixtieth", "seventieth",
+        "eightieth", "ninetieth", "hundredth",
+        "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht",
+        "neun", "zehn", "zwölf", "zwanzig", "dreissig", "dreißig", "vierzig",
+        "fünfzig", "sechzig", "siebzig", "achtzig", "neunzig", "hundert",
+        "tausend", "komma", "punkt",
+        "erste", "ersten", "erster", "erstes", "zweite", "zweiten", "dritte",
+        "dritten", "vierte", "vierten", "fünfte", "fünften", "sechste",
+        "sechsten", "siebte", "siebten", "achte", "achten", "neunte",
+        "neunten", "zehnte", "zehnten"
+    ]
+
+    /// Trailing discourse markers that the LLM may legitimately drop.
+    /// These are media-bleed / filler artifacts, not content words.
+    private static let contentWordGateDiscourseArtifacts: Set<String> = ["yeah", "okay", "mhm"]
+
+    /// Optimal-string-alignment (Damerau-OSA) distance: like Levenshtein but
+    /// adjacent transpositions cost 1 — "clawed"→"claude" scores 2, while
+    /// "schema"→"Gemma" stays ≥3. Do NOT replace with LevenshteinDistance.swift
+    /// (plain Levenshtein scores schema→Gemma as 2, causing false passes).
+    /// Ported verbatim from Matrix005.swift GateV2.damerauOSA (lines 120–137).
+    private static func damerauOSA(_ a: String, _ b: String) -> Int {
+        let aa = Array(a), bb = Array(b)
+        if aa.isEmpty { return bb.count }
+        if bb.isEmpty { return aa.count }
+        var d = [[Int]](repeating: [Int](repeating: 0, count: bb.count + 1), count: aa.count + 1)
+        for i in 0...aa.count { d[i][0] = i }
+        for j in 0...bb.count { d[0][j] = j }
+        for i in 1...aa.count {
+            for j in 1...bb.count {
+                let cost = aa[i - 1] == bb[j - 1] ? 0 : 1
+                d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+                if i > 1, j > 1, aa[i - 1] == bb[j - 2], aa[i - 2] == bb[j - 1] {
+                    d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
+                }
+            }
+        }
+        return d[aa.count][bb.count]
+    }
+
+    /// Case-preserving tokenizer using the same separator charset as
+    /// tokenizeForDialectGate — for the ALLCAPS-preservation clause.
+    /// Ported verbatim from Matrix005.swift GateV2.caseTokens (lines 141–147).
+    private static func caseTokens(_ s: String) -> [String] {
+        // Same base separators as tokenizeForDialectGate, plus "/" for paths.
+        let separators = CharacterSet.whitespacesAndNewlines
+            .union(CharacterSet(charactersIn: ".,!?;:/"))
+            .union(CharacterSet(charactersIn: "\""))
+            .union(CharacterSet(charactersIn: "\u{201E}\u{201C}\u{201D}\u{AB}\u{BB}"))
+            .union(CharacterSet(charactersIn: "()[]{}"))
+            .union(CharacterSet(charactersIn: "\u{2014}\u{2013}-"))
+        return s.unicodeScalars.split { separators.contains($0) }
+            .map { String(String.UnicodeScalarView($0)) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Content-word-preservation gate V2.1. Returns `rulesCleaned` (fallback) if
     /// `llmOutput` drops any required content word present in `rulesCleaned`.
     ///
-    /// A required content word is a token that is:
-    ///   - ≥ 4 characters (after lowercasing)
-    ///   - NOT in `contentWordStopWords`
-    ///   - NOT in `contentWordStemAllowlist`
+    /// V2.1 adds five PASS clauses (repetition, merge/substring, Damerau-OSA ≤2,
+    /// extended number-words, discourse artifacts) and two TIGHTEN clauses
+    /// (ALLCAPS preservation, dictProtect). Reduces wrong rejections from ~74 to
+    /// ~21 of 782 records while keeping all true-hallucination rejections.
     ///
-    /// Uses SET MEMBERSHIP, not Levenshtein, because whole-text edit-distance
-    /// misses local 8-char word-loss — that is the entire R8 bug (e.g.
-    /// "kink three" → "K3" has low overall distance but loses the content word
-    /// "kink" entirely).
+    /// Uses Damerau-OSA (NOT LevenshteinDistance.swift) — transpositions must cost
+    /// 1 so "clawed"→"Claude" passes (distance 2) while "schema"→"Gemma" rejects
+    /// (distance ≥3). Threshold is pinned at ≤2 — do not raise to 3.
     ///
-    /// Graceful degradation: empty `rulesCleaned`, empty `llmOutput`, or zero
-    /// required content words → returns `llmOutput` unchanged (mirrors
-    /// `gateLLMDialect` contract — no demotion on degenerate inputs).
+    /// Graceful degradation: empty `rulesCleaned` or empty `llmOutput` → returns
+    /// `llmOutput` unchanged (mirrors `gateLLMDialect` contract).
     ///
     /// - Parameters:
     ///   - rulesCleaned: deterministic Swift-side cleanup output (rules pass).
     ///   - llmOutput: post-stripPreamble LLM output.
+    ///   - dictProtected: dictionary-replacement values that must survive verbatim.
     /// - Returns: `llmOutput` when all content words are present; else `rulesCleaned`.
-    public static func gateContentWords(rulesCleaned: String, llmOutput: String) -> String {
+    public static func gateContentWords(
+        rulesCleaned: String,
+        llmOutput: String,
+        dictProtected: Set<String> = []
+    ) -> String {
         guard !rulesCleaned.isEmpty, !llmOutput.isEmpty else { return llmOutput }
 
         // tokenizeForDialectGate lowercases and splits on whitespace + punctuation.
         let baselineTokens = tokenizeForDialectGate(rulesCleaned)
-        let requiredContentWords: Set<String> = baselineTokens.reduce(into: []) { set, tok in
-            if tok.count >= 4,
-               !contentWordStopWords.contains(tok),
-               !contentWordStemAllowlist.contains(tok),
-               !contentWordNumberWords.contains(tok) {
-                set.insert(tok)
+        let outputTokens = tokenizeForDialectGate(llmOutput)
+        let outputTokenSet = Set(outputTokens)
+
+        // ALLCAPS preservation (Matrix005 lines 163–174):
+        // An all-uppercase token (≥2 chars, has letters) in the baseline must survive
+        // in exact casing — catches HIN→hin, dropped acronyms, symbol mangling.
+        let outCase = Set(caseTokens(llmOutput))
+        for t in caseTokens(rulesCleaned)
+        where t.count >= 2 && t == t.uppercased() && t != t.lowercased() && !outCase.contains(t) {
+            // exception 1: merged into a larger ALLCAPS token (G SD → GSD)
+            if outCase.contains(where: { $0 != t && $0 == $0.uppercased() && $0.contains(t) }) { continue }
+            // exception 2: recased but keeps ≥1 uppercase (IOS → iOS); pure lowercasing (HIN → hin) still rejects
+            if outCase.contains(where: { $0.lowercased() == t.lowercased() && $0 != $0.lowercased() }) { continue }
+            return rulesCleaned
+        }
+
+        // dictProtect (Matrix005 lines 179–183):
+        // A token from a dictionary replacement must survive exactly — user chose that spelling.
+        for prot in dictProtected {
+            for t in tokenizeForDialectGate(prot)
+            where t.count >= 3 && baselineTokens.contains(t) && !outputTokenSet.contains(t) {
+                return rulesCleaned
             }
         }
 
-        guard !requiredContentWords.isEmpty else { return llmOutput }
+        // youKnow bigram detection (Matrix005 lines 186–191):
+        // Both halves of "you know" are removable discourse filler.
+        var youKnow = false
+        if baselineTokens.count >= 2 {
+            for i in 0..<(baselineTokens.count - 1)
+            where baselineTokens[i] == "you" && baselineTokens[i + 1] == "know" { youKnow = true }
+        }
 
-        let outputTokenSet = Set(tokenizeForDialectGate(llmOutput))
-        for word in requiredContentWords where !outputTokenSet.contains(word) {
+        // Per-token PASS-clause loop (Matrix005 lines 193–226):
+        for (idx, tok) in baselineTokens.enumerated() {
+            guard tok.count >= 4,
+                  !contentWordStopWords.contains(tok),
+                  !contentWordStemAllowlist.contains(tok),
+                  !contentWordNumberWords.contains(tok),
+                  !contentWordGateExtraNumbers.contains(tok),
+                  !contentWordGateDiscourseArtifacts.contains(tok),
+                  !(tok == "know" && youKnow),
+                  !outputTokenSet.contains(tok) else { continue }
+
+            // (a) adjacent repetition / prefix false-start in the baseline
+            let prev = idx > 0 ? baselineTokens[idx - 1] : ""
+            let next = idx + 1 < baselineTokens.count ? baselineTokens[idx + 1] : ""
+            if prev == tok || next == tok { continue }
+            if next.count >= 4, next.hasPrefix(tok) || tok.hasPrefix(next) { continue }
+            if prev.count >= 4, prev.hasPrefix(tok) || tok.hasPrefix(prev) { continue }
+
+            // (b) merge/substring vs output tokens (anal⊂analysis, checked⊃check)
+            if outputTokens.contains(where: {
+                $0.contains(tok) || (tok.count >= 6 && $0.count >= 4 && tok.contains($0))
+            }) { continue }
+
+            // (c) Damerau-OSA ≤2 near-miss respelling (clawed→Claude, buck→bug)
+            // Do NOT use LevenshteinDistance.swift — transpositions must cost 1.
+            if outputTokens.contains(where: { $0.count >= 3 && damerauOSA($0, tok) <= 2 }) { continue }
+
             return rulesCleaned
         }
         return llmOutput
