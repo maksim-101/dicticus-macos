@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
-last_updated: "2026-06-12T14:43:30.661Z"
+stopped_at: "Completed 36.1-04: ArtifactStrip in RulesCleanupService — RulesCleanupServiceTests GREEN on macOS + iOS"
+last_updated: "2026-06-12T14:54:14.708Z"
 last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
   total_phases: 31
   completed_phases: 22
   total_plans: 97
-  completed_plans: 99
+  completed_plans: 100
   percent: 71
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-06-12 -- Phase 36.1 execution started
 
@@ -84,8 +84,8 @@ Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-12T14:43:30.656Z
-Stopped at: 36-04 DEVICE-VERIFIED (2026-06-11) — Background-aware stop + deferred delivery + away notification + batch list + deferred AI cleanup all verified on iPhone 17 Pro Max / iOS 26.5.1. Second-session crash (AVAudioSession not deactivated) fixed. DictationViewModelTests 34/34 green. Phase 36 plan 4/4 complete.
+Last session: 2026-06-12T14:54:14.704Z
+Stopped at: Completed 36.1-04: ArtifactStrip in RulesCleanupService — RulesCleanupServiceTests GREEN on macOS + iOS
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
 New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
@@ -147,6 +147,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.1-cleanup-pipeline-quality P01 | 5min | 3 tasks | 8 files |
 | Phase 36.1-cleanup-pipeline-quality P02 | 4min | 2 tasks | 1 files |
 | Phase 36.1-cleanup-pipeline-quality P03 | 15min | 3 tasks | 2 files |
+| Phase 36.1-cleanup-pipeline-quality P04 | 5min | 2 tasks | 1 files |
 
 ## Decisions
 
@@ -155,3 +156,4 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase ?]: Root cause of Dynamic Island no-Stop: .bottom-only expanded Stop + no lock-screen button; fix: add Stop to lock-screen body, move expanded Stop to .trailing
 - [36-04]: Background stop forces mode=.plain (no GPU/LLM) — deferred to foreground. isLlmReady retry cleans+persists once LLM warms up.
 - [36-04]: Second-session crash root cause: AVAudioSession not deactivated after stop → next AudioRecordingIntent fatal-asserted invariant. Fix: setActive(false) on every exit path of stopRecordingAndTranscribe().
+- [Phase ?]: [36.1-04]: ArtifactStrip confined to clean() AI-mode only; try! NSRegularExpression for compile-time pattern; named trail group prevents double-punctuation
