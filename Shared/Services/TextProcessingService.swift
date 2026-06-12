@@ -270,6 +270,15 @@ class TextProcessingService: ObservableObject {
                 ms: dbgGateMs
             )
             #endif
+
+            // Step 3a.5: NumberRevert — the deterministic layer owns number forms.
+            // Reverts any digit↔word changes the LLM introduced vs. the ITN baseline.
+            // rulesCleanedText is the post-ITN/rules snapshot; language is already in scope.
+            processedText = NumberRevert.apply(
+                baseline: rulesCleanedText,
+                output: processedText,
+                language: language
+            ).text
         }
 
         #if DEBUG_RECORDER
