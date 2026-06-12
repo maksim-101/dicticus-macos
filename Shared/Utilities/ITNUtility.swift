@@ -696,7 +696,7 @@ struct ITNUtility {
         }
 
         // Pattern B — version-class word prefix (case-insensitive).
-        let versionClass = "(?i:version|model|item|option|chapter|step|phase|task|level|stage|track|round|tier|grade)"
+        let versionClass = "(?i:version|model|item|option|chapter|step|phase|task|level|stage|track|round|tier|grade|number|finding|point|question|palette)"
         let patternB = "\\b(\(versionClass))\\s+(\(digitWords))\\b"
         result = replaceStructural(result, pattern: patternB) { g in
             "\(g[1]) \(resolve(g[2]))"
@@ -733,7 +733,7 @@ struct ITNUtility {
         }
 
         // Pattern B — DE version-class words (case-insensitive).
-        let versionClass = "(?i:version|modell|item|option|kapitel|schritt|phase|aufgabe|stufe|ebene|runde|rang|klasse)"
+        let versionClass = "(?i:version|modell|item|option|kapitel|schritt|phase|aufgabe|stufe|ebene|runde|rang|klasse|nummer|befund|punkt|frage|palette)"
         let patternB = "\\b(\(versionClass))\\s+(\(digitWords))\\b"
         result = replaceStructural(result, pattern: patternB) { g in
             "\(g[1]) \(resolve(g[2]))"
