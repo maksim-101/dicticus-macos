@@ -38,7 +38,7 @@
 ## Phases: v2.5 iOS Release & Context-Aware Dictation
 
 - [x] **Phase 36: iOS Background Dictation** — Spike-first: validate App Review design, then implement background mic recording with Live Activity stop control (completed 2026-06-11)
-- [ ] **Phase 36.1: Cleanup Pipeline Quality** (INSERTED) — Spike-validated gate rework + number policy + v20 prompt; fixes wrong gate rejections, "102, three" merges, and LLM number re-styling
+- [x] **Phase 36.1: Cleanup Pipeline Quality** (INSERTED) — Spike-validated gate rework + number policy + v20 prompt; fixes wrong gate rejections, "102, three" merges, and LLM number re-styling — COMPLETE 2026-06-12
 - [ ] **Phase 37: iOS Distribution** — Background Assets model download, privacy labels, TestFlight + App Store submission
 - [ ] **Phase 38: Context-Aware Formatting** — Active-app detection → AI-cleanup prompt adaptation (macOS-primary, cross-platform via Shared/)
 - [ ] **Phase 39: Voice Edit Commands** — Deterministic pre-LLM spoken edit commands ("scratch that", "new paragraph", "capitalize X")
@@ -160,7 +160,7 @@
 **Goal**: Dictation output stops being randomly wrong in the known ways: the content-word gate keeps the LLM's good corrections instead of discarding ~2/3 of them, numbers follow one consistent policy with zero cross-boundary merges ("one, two, three" never becomes "102, three"), and the LLM can no longer re-style numbers or dictionary-chosen spellings — all validated against the spike-004 replay harness before shipping, macOS + iOS together (Shared/).
 **Requirements**: spike-findings-dicticus skill (references/cleanup-pipeline-fixes.md is the blueprint); .planning/spikes/WRAP-UP-SUMMARY.md
 **Depends on:** Phase 36
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed — COMPLETE
 Plans:
 **Wave 1**
 
@@ -178,7 +178,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 36.1-06-PLAN.md — [user Plan 2] prompt v20 (voiceink-nonum); ship-gated on German regression suite + multi-seed harness (blocking human-verify)
+- [x] 36.1-06-PLAN.md — [user Plan 2] prompt v20 (voiceink-nonum); ship-gated on German regression suite + multi-seed harness (blocking human-verify) — APPROVED 2026-06-12
 
 **Wave structure:** W1 = {01} · W2 = {02, 03, 04} (parallel, no file overlap) · W3 = {05} (needs gate signature from 02 + number forms from 03) · W4 = {06} (ships after deterministic number ownership lands)
 

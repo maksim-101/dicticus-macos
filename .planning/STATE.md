@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: "Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green"
+stopped_at: "Completed 36.1-06: Prompt v20 voiceink-nonum shipped — ship-gate approved, macOS 467/467 + iOS 32/32 green, harness 0 numReverts"
 last_updated: "2026-06-12T15:23:06.449Z"
 last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
@@ -23,9 +23,9 @@ progress:
 ## Current Position
 
 Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
-Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 36.1 execution started
+Plan: 6 of 6 — COMPLETE
+Status: Phase complete
+Last activity: 2026-06-12 -- Phase 36.1 complete — all 6 plans shipped
 
 ### Next Action
 
@@ -149,6 +149,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.1-cleanup-pipeline-quality P03 | 15min | 3 tasks | 2 files |
 | Phase 36.1-cleanup-pipeline-quality P04 | 5min | 2 tasks | 1 files |
 | Phase 36.1-cleanup-pipeline-quality P05 | 15min | 3 tasks | 2 files |
+| Phase 36.1-cleanup-pipeline-quality P06 | 30min | 3 tasks | 3 files |
 
 ## Decisions
 
