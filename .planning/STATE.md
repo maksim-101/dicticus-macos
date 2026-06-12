@@ -4,8 +4,8 @@ milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
 stopped_at: Completed 36.1-07-PLAN.md — CR-01 + WR-05 closed, Phase 36.1 all 8 truths verified
-last_updated: "2026-06-12T19:54:39.475Z"
-last_activity: 2026-06-12 -- Phase 36.1 execution started
+last_updated: "2026-06-12T20:11:44.740Z"
+last_activity: 2026-06-12
 progress:
   total_phases: 31
   completed_phases: 23
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36.1 (cleanup-pipeline-quality) — EXECUTING
-Plan: 2 of 7
+Phase: 36.1
+Plan: Not started
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 36.1 execution started
+Last activity: 2026-06-12
 
 ### Next Action
 
