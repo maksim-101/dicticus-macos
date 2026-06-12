@@ -4,14 +4,14 @@ milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
 stopped_at: "Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green"
-last_updated: "2026-06-12T15:13:22.791Z"
+last_updated: "2026-06-12T15:23:06.449Z"
 last_activity: 2026-06-12 -- Phase 36.1 execution started
 progress:
   total_phases: 31
-  completed_phases: 22
+  completed_phases: 23
   total_plans: 97
-  completed_plans: 101
-  percent: 71
+  completed_plans: 102
+  percent: 74
 ---
 
 # Project State: Dicticus
@@ -84,7 +84,7 @@ Last activity: 2026-06-12 -- Phase 36.1 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-12T15:13:22.787Z
+Last session: 2026-06-12T15:23:06.440Z
 Stopped at: Completed 36.1-05: NumberRevert + applyWithTrace wiring — macOS 474/474 + iOS 485/485 green
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
