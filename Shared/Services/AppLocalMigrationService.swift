@@ -44,7 +44,6 @@ public enum AppLocalMigrationService {
         do {
             try migrate(
                 sourceContainerURL: sourceContainer,
-                sourceDefaults: sourceContainer != nil ? UserDefaults(suiteName: "group.com.dicticus") ?? .standard : .standard,
                 destDefaults: .standard,
                 destDBProvider: { destContainer }
             )
@@ -60,9 +59,17 @@ public enum AppLocalMigrationService {
 
     /// Shared implementation used by both `runIfNeeded()` (production) and
     /// `runForTesting(...)` (test seam). All external dependencies are injected.
+    ///
+    /// Source settings/dictionary are read by loading the container's preferences
+    /// PLIST FILE DIRECTLY at:
+    ///   `<sourceContainerURL>/Library/Preferences/group.com.dicticus.plist`
+    ///
+    /// This is necessary because `UserDefaults(suiteName: "group.com.dicticus")` does
+    /// NOT read the group container's plist when the app-groups entitlement is absent —
+    /// it silently reads/creates a separate plist in ~/Library/Preferences/ instead.
+    /// Reading the file directly (path-based, like the DB) bypasses this entitlement gate.
     private static func migrate(
         sourceContainerURL: URL?,
-        sourceDefaults: UserDefaults,
         destDefaults: UserDefaults,
         destDBProvider: () -> URL
     ) throws {
@@ -132,14 +139,28 @@ public enum AppLocalMigrationService {
             throw MigrationError.rowCountMismatch(source: sourceCount, dest: destCount)
         }
 
-        // STEP 4: Migrate dictionary and settings keys (do not clobber existing dest values).
-        let settingsKeys = ["customDictionaryMetadata", "dictionaryCaseSensitive",
-                            "useSwissGerman", "swissDefaultMigratedV2_1", "aiCleanupEnabled"]
-        for key in settingsKeys {
-            if destDefaults.object(forKey: key) == nil,
-               let value = sourceDefaults.object(forKey: key) {
-                destDefaults.set(value, forKey: key)
+        // STEP 4: Migrate dictionary and settings keys by reading the source container's
+        // preferences plist FILE DIRECTLY — not via UserDefaults(suiteName:), which would
+        // silently read/create ~/Library/Preferences/group.com.dicticus.plist (wrong file)
+        // when the app-groups entitlement is absent.
+        let srcPrefsURL = srcContainer
+            .appendingPathComponent("Library/Preferences/group.com.dicticus.plist")
+
+        if let srcPrefsDict = NSDictionary(contentsOf: srcPrefsURL) as? [String: Any] {
+            let settingsKeys = ["customDictionaryMetadata", "dictionaryCaseSensitive",
+                                "useSwissGerman", "swissDefaultMigratedV2_1", "aiCleanupEnabled"]
+            for key in settingsKeys {
+                if destDefaults.object(forKey: key) == nil,
+                   let value = srcPrefsDict[key] {
+                    destDefaults.set(value, forKey: key)
+                }
             }
+            log.info("[AppLocalMigration] Settings migrated from container plist.")
+        } else {
+            // Plist absent or unreadable — graceful no-op for settings; history DB migration
+            // already completed above. This is normal for fresh installs or containers without
+            // any persisted settings.
+            log.info("[AppLocalMigration] Source prefs plist absent or unreadable — settings migration skipped.")
         }
 
         // STEP 5: Verify dictionary is decodable if present.
@@ -179,23 +200,29 @@ public enum AppLocalMigrationService {
     /// Tests use this to avoid ever touching the real group container or
     /// UserDefaults.standard.
     ///
+    /// Source settings/dictionary are read from the plist file at:
+    ///   `<sourceContainerURL>/Library/Preferences/group.com.dicticus.plist`
+    ///
+    /// Tests must write this file directly into the source container directory
+    /// (using PropertyListSerialization or NSDictionary.write(to:)) before calling
+    /// this function — matching the same code path used in production.
+    ///
     /// - Parameter sourceContainerURL: Root of the source container directory.
     ///   The DB is expected at `<sourceContainerURL>/Database/History.sqlite`.
+    ///   The settings plist is expected at
+    ///   `<sourceContainerURL>/Library/Preferences/group.com.dicticus.plist`.
     ///   Pass nil or a non-existent URL to simulate a fresh install.
-    /// - Parameter sourceDefaults: UserDefaults suite for source settings keys.
     /// - Parameter destDefaults: UserDefaults suite for destination (receives the
     ///   migration-complete flag and migrated settings).
     /// - Parameter destDBProvider: Closure returning the root of the destination
     ///   container. The DB will be written to `<result>/Database/History.sqlite`.
     public static func runForTesting(
         sourceContainerURL: URL?,
-        sourceDefaults: UserDefaults,
         destDefaults: UserDefaults,
         destDBProvider: @escaping () -> URL
     ) throws {
         try migrate(
             sourceContainerURL: sourceContainerURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: destDBProvider
         )

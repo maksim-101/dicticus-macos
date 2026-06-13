@@ -4,26 +4,15 @@ import GRDB
 
 // Phase 36.3 Plan 01 — Wave 0 contract test (SC3 / SC4: migration service)
 //
-// AppLocalMigrationService is created in Plan 04. This file will fail to compile
-// until Plan 04 lands (intended RED state).
+// REGRESSION FIX (Plan 04 defect): The original implementation read source
+// settings/dictionary via UserDefaults(suiteName: "group.com.dicticus"), which
+// silently reads ~/Library/Preferences/group.com.dicticus.plist (wrong file)
+// when the app-groups entitlement is absent. Fix: read the container's preferences
+// plist FILE DIRECTLY at <sourceContainerURL>/Library/Preferences/group.com.dicticus.plist,
+// identical to how the DB is read as a file at <sourceContainerURL>/Database/History.sqlite.
 //
-// SEAM CONTRACT FOR PLAN 04:
-// The production `runIfNeeded()` hard-codes the real group container path and
-// UserDefaults.standard as the destination. Tests MUST NOT touch those real paths.
-// Plan 04 MUST expose a testing seam with the following signature:
-//
-//   #if DEBUG
-//   static func runForTesting(
-//       sourceContainerURL: URL?,
-//       sourceDefaults: UserDefaults,
-//       destDefaults: UserDefaults,
-//       destDBProvider: @escaping () -> URL
-//   ) throws
-//   #endif
-//
-// The seam mirrors `HistoryService.makeForTesting(containerURLProvider:)` —
-// it accepts all external dependencies as parameters so tests can run in an
-// isolated temp directory without ever reading ~/Library/Group Containers/.
+// Tests construct a real Library/Preferences/group.com.dicticus.plist in the temp
+// source container and assert the values land in destDefaults after migration.
 //
 // SC3 contract assertions (via runForTesting seam):
 //   (a) destination DB row count == source row count (SC4: no data loss)
@@ -46,7 +35,6 @@ final class AppLocalMigrationServiceTests: XCTestCase {
     private var destContainerURL: URL!
     private var sourceService: HistoryService!
     private var destService: HistoryService!
-    private var sourceDefaults: UserDefaults!
     private var destDefaults: UserDefaults!
 
     override func setUp() {
@@ -61,7 +49,6 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         // Use in-memory or file-based UserDefaults with unique suite names to avoid
         // touching UserDefaults.standard or the real group suite.
         let suiteID = UUID().uuidString
-        sourceDefaults = UserDefaults(suiteName: "com.dicticus.test.source.\(suiteID)")!
         destDefaults = UserDefaults(suiteName: "com.dicticus.test.dest.\(suiteID)")!
 
         // Create source service with temp container (mirrors HistoryServiceTests setUp).
@@ -73,9 +60,7 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         sourceService = nil
         destService = nil
         // Clean up UserDefaults suites.
-        sourceDefaults.removePersistentDomain(forName: sourceDefaults.description)
         destDefaults.removePersistentDomain(forName: destDefaults.description)
-        sourceDefaults = nil
         destDefaults = nil
         // Remove temp directory (mirrors HistoryServiceTests tearDown).
         if let tempDir {
@@ -85,6 +70,25 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         sourceContainerURL = nil
         destContainerURL = nil
         super.tearDown()
+    }
+
+    // MARK: - Plist Helper
+
+    /// Writes a settings dictionary as a plist file into the source container at the path
+    /// the migration reads: <sourceContainerURL>/Library/Preferences/group.com.dicticus.plist.
+    /// This mirrors the real group container layout and exercises the SAME file-reading
+    /// code path used in production — not UserDefaults(suiteName:).
+    private func writeSourcePlist(_ dict: [String: Any]) throws {
+        let prefsDir = sourceContainerURL
+            .appendingPathComponent("Library/Preferences", isDirectory: true)
+        try FileManager.default.createDirectory(at: prefsDir, withIntermediateDirectories: true)
+        let plistURL = prefsDir.appendingPathComponent("group.com.dicticus.plist")
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: dict,
+            format: .xml,
+            options: 0
+        )
+        try data.write(to: plistURL)
     }
 
     // MARK: - SC4: Row-count equality (no data loss)
@@ -102,18 +106,18 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         entries.forEach { sourceService.save($0) }
         XCTAssertEqual(sourceService.entries.count, 3, "Precondition: source has 3 rows")
 
-        // Seed a settings key in source defaults.
-        sourceDefaults.set(true, forKey: "useSwissGerman")
-        sourceDefaults.set(true, forKey: "aiCleanupEnabled")
+        // Write settings into the source container plist file (the production code path).
+        try writeSourcePlist([
+            "useSwissGerman": true,
+            "aiCleanupEnabled": true
+        ])
 
         let srcURL = sourceContainerURL!
         let destURL = destContainerURL!
 
         // Run migration via testing seam.
-        // AppLocalMigrationService is created in Plan 04 — RED until then.
         try AppLocalMigrationService.runForTesting(
             sourceContainerURL: srcURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: { destURL }
         )
@@ -144,7 +148,6 @@ final class AppLocalMigrationServiceTests: XCTestCase {
 
         try AppLocalMigrationService.runForTesting(
             sourceContainerURL: srcURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: { destURL }
         )
@@ -169,14 +172,15 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         let entry = TranscriptionEntry(text: "flag test", rawText: "flag test",
                                        language: "en", mode: "plain", confidence: 0.9)
         sourceService.save(entry)
-        sourceDefaults.set(true, forKey: "useSwissGerman")
+
+        // Write a settings key into the source plist.
+        try writeSourcePlist(["useSwissGerman": true])
 
         let srcURL = sourceContainerURL!
         let destURL = destContainerURL!
 
         try AppLocalMigrationService.runForTesting(
             sourceContainerURL: srcURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: { destURL }
         )
@@ -206,7 +210,6 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         // First run.
         try AppLocalMigrationService.runForTesting(
             sourceContainerURL: srcURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: { destURL }
         )
@@ -219,7 +222,6 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         // Second run — must be a no-op (flag is set, early return fires).
         try AppLocalMigrationService.runForTesting(
             sourceContainerURL: srcURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: { destURL }
         )
@@ -249,7 +251,6 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         XCTAssertNoThrow(
             try AppLocalMigrationService.runForTesting(
                 sourceContainerURL: srcURL,
-                sourceDefaults: sourceDefaults,
                 destDefaults: destDefaults,
                 destDBProvider: { destURL }
             ),
@@ -263,15 +264,33 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         )
     }
 
-    // MARK: - Settings keys transferred
+    // MARK: - Settings keys transferred from container plist (regression test for plist-file path)
 
-    /// The three settings keys (useSwissGerman, swissDefaultMigratedV2_1, aiCleanupEnabled)
-    /// must be copied from sourceDefaults to destDefaults during migration.
-    func testSettingsKeysCopiedToDestination() throws {
-        sourceDefaults.set(true, forKey: "useSwissGerman")
-        sourceDefaults.set(true, forKey: "swissDefaultMigratedV2_1")
-        sourceDefaults.set(false, forKey: "aiCleanupEnabled")
+    /// REGRESSION: The original implementation read sourceDefaults (UserDefaults suite), which
+    /// silently reads the wrong plist when the app-groups entitlement is absent.
+    /// This test verifies the fix: settings are read from the container plist FILE DIRECTLY
+    /// at <sourceContainerURL>/Library/Preferences/group.com.dicticus.plist.
+    ///
+    /// Constructs a real plist file in the source container, runs migration, and asserts
+    /// all settings keys land in destDefaults — proving the file-based code path works.
+    func testSettingsKeysCopiedFromContainerPlist() throws {
+        // Build a realistic dictionary payload (the failing case: 204 entries → JSON-encoded).
+        let dictEntries: [[String: String]] = (0..<204).map { i in
+            ["input": "word\(i)", "output": "Word\(i)", "id": UUID().uuidString]
+        }
+        let dictData = try JSONEncoder().encode(dictEntries)
 
+        // Write settings into the source container plist file — this is the ONLY way
+        // to pass settings to the migration after the fix. UserDefaults(suiteName:) is gone.
+        try writeSourcePlist([
+            "useSwissGerman": true,
+            "swissDefaultMigratedV2_1": true,
+            "aiCleanupEnabled": false,
+            "dictionaryCaseSensitive": true,
+            "customDictionaryMetadata": dictData
+        ])
+
+        // Seed source history DB so migration has a valid DB to copy.
         let entry = TranscriptionEntry(text: "settings test", rawText: "settings test",
                                        language: "en", mode: "plain", confidence: 0.9)
         sourceService.save(entry)
@@ -281,22 +300,113 @@ final class AppLocalMigrationServiceTests: XCTestCase {
 
         try AppLocalMigrationService.runForTesting(
             sourceContainerURL: srcURL,
-            sourceDefaults: sourceDefaults,
             destDefaults: destDefaults,
             destDBProvider: { destURL }
         )
 
         XCTAssertTrue(
             destDefaults.bool(forKey: "useSwissGerman"),
-            "useSwissGerman must be copied to destDefaults"
+            "useSwissGerman must be copied from container plist to destDefaults"
         )
         XCTAssertTrue(
             destDefaults.bool(forKey: "swissDefaultMigratedV2_1"),
-            "swissDefaultMigratedV2_1 must be copied to destDefaults"
+            "swissDefaultMigratedV2_1 must be copied from container plist to destDefaults"
+        )
+        // aiCleanupEnabled was explicitly false — must land as false (not missing).
+        // object(forKey:) returns nil when absent; we assert the key is present + false.
+        XCTAssertNotNil(
+            destDefaults.object(forKey: "aiCleanupEnabled"),
+            "aiCleanupEnabled must be present in destDefaults after migration"
         )
         XCTAssertFalse(
             destDefaults.bool(forKey: "aiCleanupEnabled"),
-            "aiCleanupEnabled (false) must be copied to destDefaults"
+            "aiCleanupEnabled (false) must be preserved as false in destDefaults"
+        )
+        XCTAssertTrue(
+            destDefaults.bool(forKey: "dictionaryCaseSensitive"),
+            "dictionaryCaseSensitive must be copied from container plist to destDefaults"
+        )
+
+        // Verify dictionary data is present and decodable — the 204-entry case.
+        guard let migratedData = destDefaults.data(forKey: "customDictionaryMetadata") else {
+            XCTFail("customDictionaryMetadata must be present in destDefaults after migration")
+            return
+        }
+        let migratedEntries = try JSONDecoder().decode([[String: String]].self, from: migratedData)
+        XCTAssertEqual(
+            migratedEntries.count, 204,
+            "All 204 dictionary entries must survive migration via container plist path"
+        )
+    }
+
+    // MARK: - No-clobber: existing dest values are not overwritten
+
+    /// Settings already present in destDefaults must NOT be overwritten by migration.
+    func testNoClobberExistingDestValues() throws {
+        // Pre-set a value in destDefaults (simulates a fresh install that already ran
+        // once with default values before the upgrade).
+        destDefaults.set(false, forKey: "useSwissGerman")
+
+        // Source plist has a different (true) value.
+        try writeSourcePlist(["useSwissGerman": true])
+
+        let entry = TranscriptionEntry(text: "no-clobber test", rawText: "no-clobber test",
+                                       language: "en", mode: "plain", confidence: 0.9)
+        sourceService.save(entry)
+
+        let srcURL = sourceContainerURL!
+        let destURL = destContainerURL!
+
+        try AppLocalMigrationService.runForTesting(
+            sourceContainerURL: srcURL,
+            destDefaults: destDefaults,
+            destDBProvider: { destURL }
+        )
+
+        // Pre-existing false must not be overwritten by the source's true.
+        XCTAssertFalse(
+            destDefaults.bool(forKey: "useSwissGerman"),
+            "No-clobber: existing destDefaults value must not be overwritten by migration"
+        )
+    }
+
+    // MARK: - Absent plist is a graceful no-op for settings (history DB still migrates)
+
+    /// When the source container exists and has a DB but NO Library/Preferences plist,
+    /// the history DB migration must still succeed and the completion flag must be set.
+    /// Settings are silently skipped — no crash, no failure.
+    func testAbsentPlistIsGracefulNoOpForSettings() throws {
+        // Seed source history DB only — do NOT write a plist file.
+        let entry = TranscriptionEntry(text: "no-plist test", rawText: "no-plist test",
+                                       language: "en", mode: "plain", confidence: 0.9)
+        sourceService.save(entry)
+
+        let srcURL = sourceContainerURL!
+        let destURL = destContainerURL!
+
+        // Must not throw even though there is no plist.
+        XCTAssertNoThrow(
+            try AppLocalMigrationService.runForTesting(
+                sourceContainerURL: srcURL,
+                destDefaults: destDefaults,
+                destDBProvider: { destURL }
+            ),
+            "Migration must not throw when source prefs plist is absent"
+        )
+
+        // Completion flag must still be set.
+        XCTAssertTrue(
+            destDefaults.bool(forKey: AppLocalMigrationService.migratedKey),
+            "Completion flag must be set even when source prefs plist is absent"
+        )
+
+        // History DB must still be migrated.
+        let dstURL = destContainerURL!
+        destService = HistoryService.makeForTesting(containerURLProvider: { dstURL })
+        destService.load()
+        XCTAssertEqual(
+            destService.entries.count, 1,
+            "History DB must be migrated even when source prefs plist is absent"
         )
     }
 }
