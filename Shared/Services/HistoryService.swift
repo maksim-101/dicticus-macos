@@ -94,8 +94,14 @@ class HistoryService: ObservableObject {
     /// can simulate the App-Group-missing path by returning nil without entitlements.
     private static func resolveStorage(provider: () -> URL?) -> StorageBackend {
 #if os(macOS)
-        // macOS always uses app-local Application Support — no group container needed.
-        // Eliminates the kTCCServiceSystemPolicyAppData prompt introduced in Sequoia 15.
+        // macOS primary path: app-local Application Support — eliminates the
+        // kTCCServiceSystemPolicyAppData TCC prompt (group.com.dicticus naming).
+        // When the provider returns a non-nil URL (test seam via makeForTesting),
+        // honour it so tests can exercise isolated temp containers without touching
+        // the real Application Support path.
+        if let injectedURL = provider() {
+            return .applicationSupport(injectedURL)
+        }
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let bundleID = Bundle.main.bundleIdentifier ?? "com.dicticus.fallback"
         return .applicationSupport(appSupport.appendingPathComponent(bundleID, isDirectory: true))
@@ -118,9 +124,15 @@ class HistoryService: ObservableObject {
     /// Default initializer used by the `shared` singleton — resolves the App Group
     /// container via the standard FileManager API.
     private convenience init() {
+#if os(macOS)
+        // macOS uses app-local storage unconditionally — always pass nil so the
+        // resolveStorage macOS path falls through to applicationSupportDirectory.
+        self.init(containerURLProvider: { nil })
+#else
         self.init(containerURLProvider: {
             FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.dicticus")
         })
+#endif
     }
 
     /// Designated initializer — accepts an injectable container-URL provider so
