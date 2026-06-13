@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
-status: executing
+status: verifying
 stopped_at: Phase 36.2 UI-SPEC approved
-last_updated: "2026-06-13T05:28:56.107Z"
+last_updated: "2026-06-13T06:25:51.405Z"
 last_activity: 2026-06-13 -- Phase 36.2 execution started
 progress:
   total_phases: 32
-  completed_phases: 23
+  completed_phases: 24
   total_plans: 101
-  completed_plans: 105
-  percent: 72
+  completed_plans: 106
+  percent: 75
 ---
 
 # Project State: Dicticus
@@ -24,7 +24,7 @@ progress:
 
 Phase: 36.2 (macos-local-build-signing-tcc-reliability-and-permission-los) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-13 -- Phase 36.2 execution started
 
 ### Next Action
@@ -84,7 +84,7 @@ Last activity: 2026-06-13 -- Phase 36.2 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-13T05:28:56.100Z
+Last session: 2026-06-13T06:25:51.401Z
 Stopped at: Phase 36.2 UI-SPEC approved
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
@@ -153,6 +153,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.1-cleanup-pipeline-quality P07 | 11min | 2 tasks | 6 files |
 | Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P01 | 30min | 3 tasks | 4 files |
 | Phase 36.2 P03 | 25min | 3 tasks | 2 files |
+| Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P02 | continuation-agent | 3 tasks | 3 files |
 
 ## Decisions
 
@@ -170,3 +171,5 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase ?]: D-05: Root cause of Dev ID key pruning inconclusive (reproduction not attempted); build-time guard accepted as durable mitigation
 - [Phase ?]: [36.2-03]: Input Monitoring routes to Privacy_ListenEvent; dead-end loop fixed
 - [Phase ?]: [36.2-03]: accessibilityElement(children: .ignore) scoped to status dot/headline HStack only — restores PermissionRow VoiceOver
+- [Phase ?]: Simpler and more robust than ps/pgrep for LS-registered bundle paths
+- [Phase ?]: Fixes multi-copy detection which was silently broken with wrong id

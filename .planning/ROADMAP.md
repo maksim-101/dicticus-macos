@@ -39,7 +39,7 @@
 
 - [x] **Phase 36: iOS Background Dictation** — Spike-first: validate App Review design, then implement background mic recording with Live Activity stop control (completed 2026-06-11)
 - [x] **Phase 36.1: Cleanup Pipeline Quality** (INSERTED) — Spike-validated gate rework + number policy + v20 prompt; fixes wrong gate rejections, "102, three" merges, and LLM number re-styling — 6/6 plans executed, verification gaps_found 2026-06-12 (CR-01 sentence-final NumberRevert, WR-05 dict-value sanitization) (completed 2026-06-12)
-- [ ] **Phase 36.2: macOS Build Reliability & Permission UX** (INSERTED 2026-06-13) — (1) Fix recurring local-build signing/TCC failures: Developer ID key pruning from the "permanent" custom keychain, `install-local.sh` relaunching a stale binary (40+ LaunchServices registrations), and the dead multi-copy detector (queries wrong bundle id `com.dicticus.macos` vs real `com.dicticus.app`). (2) Permission-loss UX: whenever mic / Accessibility / Input Monitoring goes missing at ANY time, surface clearly in the UI which permission is missing, with a correct System Settings deep link per permission (Accessibility AND Input Monitoring) instead of always linking to Accessibility. Sources: backlog/local-build-signing-tcc-reliability.md + backlog/permission-popover-misleading-cta.md
+- [x] **Phase 36.2: macOS Build Reliability & Permission UX** (INSERTED 2026-06-13) — (1) Fix recurring local-build signing/TCC failures: Developer ID key pruning from the "permanent" custom keychain, `install-local.sh` relaunching a stale binary (40+ LaunchServices registrations), and the dead multi-copy detector (queries wrong bundle id `com.dicticus.macos` vs real `com.dicticus.app`). (2) Permission-loss UX: whenever mic / Accessibility / Input Monitoring goes missing at ANY time, surface clearly in the UI which permission is missing, with a correct System Settings deep link per permission (Accessibility AND Input Monitoring) instead of always linking to Accessibility. Sources: backlog/local-build-signing-tcc-reliability.md + backlog/permission-popover-misleading-cta.md (completed 2026-06-13)
 - [ ] **Phase 37: iOS Distribution** — Background Assets model download, privacy labels, TestFlight + App Store submission
 - [ ] **Phase 38: Context-Aware Formatting** — Active-app detection → AI-cleanup prompt adaptation (macOS-primary, cross-platform via Shared/)
 - [ ] **Phase 39: Voice Edit Commands** — Deterministic pre-LLM spoken edit commands ("scratch that", "new paragraph", "capitalize X")
@@ -190,7 +190,7 @@ Plans:
 **Goal**: Installing a local macOS build stops being a fight with signing and TCC, and the app honestly tells the user which permission is missing. (1) Developer-ID signing identities survive reboot/wake/sync (or an automated pre-build guard restores them with zero interactive prompts); `install-local.sh` guarantees the freshly-installed `/Applications/Dicticus.app` is the process actually running (verified, not assumed) and warns on residual copies; the in-app multi-copy detector queries the real bundle id (`com.dicticus.app`) and is test-pinned. (2) When mic / Accessibility / Input Monitoring is missing at any time, the menu-bar popover names exactly which permission(s) are missing and deep-links each to its own System Settings pane — no always-Accessibility dead-end loop — with Input Monitoring explicitly surfaced.
 **Requirements**: backlog/local-build-signing-tcc-reliability.md + backlog/permission-popover-misleading-cta.md (macOS-only; dev-infra + permissions UX, not pipeline)
 **Depends on:** Phase 36.1
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 **Wave 1**
 
@@ -199,7 +199,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 36.2-02-PLAN.md — Track 1b: install-local.sh hardening (explicit-path relaunch, running-process verify, all-config prune, guard hook) + multi-copy detector bundle-id fix + test (D-07..D-11)
+- [x] 36.2-02-PLAN.md — Track 1b: install-local.sh hardening (explicit-path relaunch, running-process verify, all-config prune, guard hook) + multi-copy detector bundle-id fix + test (D-07..D-11)
 
 **Success Criteria** (what must be TRUE):
 
