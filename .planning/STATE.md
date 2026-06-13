@@ -4,13 +4,13 @@ milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
 stopped_at: Completed 36.3-01-PLAN.md
-last_updated: "2026-06-13T15:53:22.322Z"
+last_updated: "2026-06-13T16:09:25.913Z"
 last_activity: 2026-06-13 -- Phase 36.3 execution started
 progress:
   total_phases: 33
   completed_phases: 24
   total_plans: 105
-  completed_plans: 107
+  completed_plans: 108
   percent: 73
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36.3 (macos-app-group-removal-storage-migration) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-13 -- Phase 36.3 execution started
 
@@ -84,7 +84,7 @@ Last activity: 2026-06-13 -- Phase 36.3 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-13T15:53:22.315Z
+Last session: 2026-06-13T16:09:25.908Z
 Stopped at: Completed 36.3-01-PLAN.md
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
@@ -155,6 +155,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.2 P03 | 25min | 3 tasks | 2 files |
 | Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P02 | continuation-agent | 3 tasks | 3 files |
 | Phase 36.3-macos-app-group-removal-storage-migration P01 | 6min | 2 tasks | 5 files |
+| Phase 36.3 P02 | 12min | 2 tasks | 9 files |
 
 ## Decisions
 
