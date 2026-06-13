@@ -4,13 +4,13 @@ milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
 stopped_at: Phase 36.2 UI-SPEC approved
-last_updated: "2026-06-13T05:19:55.617Z"
+last_updated: "2026-06-13T05:23:44.023Z"
 last_activity: 2026-06-13 -- Phase 36.2 execution started
 progress:
   total_phases: 32
   completed_phases: 23
   total_plans: 101
-  completed_plans: 104
+  completed_plans: 105
   percent: 72
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36.2 (macos-local-build-signing-tcc-reliability-and-permission-los) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-06-13 -- Phase 36.2 execution started
 
@@ -84,7 +84,7 @@ Last activity: 2026-06-13 -- Phase 36.2 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-13T05:19:55.612Z
+Last session: 2026-06-13T05:23:44.018Z
 Stopped at: Phase 36.2 UI-SPEC approved
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
@@ -152,6 +152,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.1-cleanup-pipeline-quality P06 | 30min | 3 tasks | 3 files |
 | Phase 36.1-cleanup-pipeline-quality P07 | 11min | 2 tasks | 6 files |
 | Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P01 | 30min | 3 tasks | 4 files |
+| Phase 36.2 P03 | 25min | 3 tasks | 2 files |
 
 ## Decisions
 
@@ -167,3 +168,5 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase 36.1-07]: WR-05 In:/Out: neutralization scoped to sanitizeDictValue() (dict values only), not extended into sanitizeControlTokens() — avoids clobbering legitimate dictated text
 - [Phase ?]: D-02: Guard lives inside build scripts (user interactive terminal), never Claude-run — op Touch ID only works interactively
 - [Phase ?]: D-05: Root cause of Dev ID key pruning inconclusive (reproduction not attempted); build-time guard accepted as durable mitigation
+- [Phase ?]: [36.2-03]: Input Monitoring routes to Privacy_ListenEvent; dead-end loop fixed
+- [Phase ?]: [36.2-03]: accessibilityElement(children: .ignore) scoped to status dot/headline HStack only — restores PermissionRow VoiceOver
