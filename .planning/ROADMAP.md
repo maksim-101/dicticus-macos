@@ -190,7 +190,16 @@ Plans:
 **Goal**: Installing a local macOS build stops being a fight with signing and TCC, and the app honestly tells the user which permission is missing. (1) Developer-ID signing identities survive reboot/wake/sync (or an automated pre-build guard restores them with zero interactive prompts); `install-local.sh` guarantees the freshly-installed `/Applications/Dicticus.app` is the process actually running (verified, not assumed) and warns on residual copies; the in-app multi-copy detector queries the real bundle id (`com.dicticus.app`) and is test-pinned. (2) When mic / Accessibility / Input Monitoring is missing at any time, the menu-bar popover names exactly which permission(s) are missing and deep-links each to its own System Settings pane — no always-Accessibility dead-end loop — with Input Monitoring explicitly surfaced.
 **Requirements**: backlog/local-build-signing-tcc-reliability.md + backlog/permission-popover-misleading-cta.md (macOS-only; dev-infra + permissions UX, not pipeline)
 **Depends on:** Phase 36.1
-**Plans:** TBD
+**Plans:** 3 plans (2 waves)
+Plans:
+**Wave 1**
+
+- [ ] 36.2-01-PLAN.md — Track 1a: Developer-ID signing-guard helper + build-dmg.sh hook + root-cause findings doc + CLAUDE.md correction (D-01..D-05)
+- [ ] 36.2-03-PLAN.md — Track 2: per-missing-permission degraded popover + hotkey-fail message + CTA-to-pane mapping test (D-12..D-15)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 36.2-02-PLAN.md — Track 1b: install-local.sh hardening (explicit-path relaunch, running-process verify, all-config prune, guard hook) + multi-copy detector bundle-id fix + test (D-07..D-11)
 
 **Success Criteria** (what must be TRUE):
 
