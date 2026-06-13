@@ -185,6 +185,25 @@ Plans:
 
 ---
 
+### Phase 36.2: macOS Build Reliability & Permission UX (INSERTED 2026-06-13 — backlog dev-infra + UX)
+
+**Goal**: Installing a local macOS build stops being a fight with signing and TCC, and the app honestly tells the user which permission is missing. (1) Developer-ID signing identities survive reboot/wake/sync (or an automated pre-build guard restores them with zero interactive prompts); `install-local.sh` guarantees the freshly-installed `/Applications/Dicticus.app` is the process actually running (verified, not assumed) and warns on residual copies; the in-app multi-copy detector queries the real bundle id (`com.dicticus.app`) and is test-pinned. (2) When mic / Accessibility / Input Monitoring is missing at any time, the menu-bar popover names exactly which permission(s) are missing and deep-links each to its own System Settings pane — no always-Accessibility dead-end loop — with Input Monitoring explicitly surfaced.
+**Requirements**: backlog/local-build-signing-tcc-reliability.md + backlog/permission-popover-misleading-cta.md (macOS-only; dev-infra + permissions UX, not pipeline)
+**Depends on:** Phase 36.1
+**Plans:** TBD
+
+**Success Criteria** (what must be TRUE):
+
+  1. A documented, reproduced root cause for the Developer ID key (`B9CA1FF8…`, team VTWHBCCP36) disappearing from the custom keychain — not "re-imported and hoped"; signing identities survive reboot/wake/sync with zero manual re-import, OR an automated guard restores them non-interactively at build time.
+  2. `install-local.sh` quits all running copies, prunes or ignores competing LaunchServices registrations, relaunches by explicit path (not bundle id), and verifies the running process is `/Applications/Dicticus.app` before declaring success.
+  3. `PermissionManager.checkMultipleInstalls()` queries the correct bundle id `com.dicticus.app` and is covered by a test pinning it to the real `CFBundleIdentifier`, so the multi-copy banner fires when stale copies exist.
+  4. The degraded-state menu-bar popover names exactly which of mic / Accessibility / Input Monitoring is missing and routes each to its own System Settings pane; granting the surfaced permissions reaches the Ready state with no dead-end loop; Input Monitoring is explicitly surfaced.
+  5. A test asserts the popover CTA target matches the missing permission (extends `SystemSettingsURLTests` / `PermissionManagerTests`).
+
+**UI hint**: yes
+
+---
+
 ## Backlog
 
 Unsequenced parking lot (999.x). Promote with `/gsd-review-backlog` when ready.
