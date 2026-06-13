@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
-status: executing
-stopped_at: Phase 36.1 complete (executed/verified/secured/validated); Phase 36.2 inserted 2026-06-13, ready to plan
-last_updated: "2026-06-13T05:00:00.000Z"
+status: planning
+stopped_at: Phase 36.2 context gathered
+last_updated: "2026-06-13T04:29:37.536Z"
 last_activity: 2026-06-13
 progress:
-  total_phases: 31
+  total_phases: 32
   completed_phases: 23
   total_plans: 98
   completed_plans: 103
-  percent: 74
+  percent: 72
 ---
 
 # Project State: Dicticus
@@ -84,8 +84,8 @@ Last activity: 2026-06-13
 
 ## Session Continuity
 
-Last session: 2026-06-12T19:54:39.471Z
-Stopped at: Completed 36.1-07-PLAN.md — CR-01 + WR-05 closed, Phase 36.1 all 8 truths verified
+Last session: 2026-06-13T04:29:37.531Z
+Stopped at: Phase 36.2 context gathered
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
 New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
