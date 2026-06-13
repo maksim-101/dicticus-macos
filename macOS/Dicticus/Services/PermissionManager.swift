@@ -55,7 +55,7 @@ class PermissionManager: ObservableObject {
     @Published var inputMonitoringStatus: PermissionStatus = .pending
     @Published var hasCompletedOnboarding = false
 
-    /// Paths of all com.dicticus.macos bundles found on disk at launch time.
+    /// Paths of all com.dicticus.app bundles found on disk at launch time.
     /// Only populated by the once-per-launch checkMultipleInstalls() call;
     /// NOT refreshed by the 2s polling timer (D-07: mdfind every 2s would be wasteful).
     @Published var multipleDicticusCopies: [URL] = []
@@ -160,13 +160,13 @@ class PermissionManager: ObservableObject {
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Self.onboardingKey)
     }
 
-    /// Run `mdfind kMDItemCFBundleIdentifier == 'com.dicticus.macos'` once and publish the result.
+    /// Run `mdfind kMDItemCFBundleIdentifier == 'com.dicticus.app'` once and publish the result.
     /// Designed to be invoked from MenuBarView.onAppear, NOT from the 2s polling timer (D-07).
     /// Excludes nothing — the view layer decides which copies are "stale" vs "canonical".
     func checkMultipleInstalls() {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/mdfind")
-        task.arguments = ["kMDItemCFBundleIdentifier == 'com.dicticus.macos'"]
+        task.arguments = ["kMDItemCFBundleIdentifier == 'com.dicticus.app'"]
 
         let pipe = Pipe()
         task.standardOutput = pipe
