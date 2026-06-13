@@ -40,6 +40,10 @@ final class TextProcessingServiceTests: XCTestCase {
 
     var service: TextProcessingService!
     var dictionaryService: DictionaryService!
+    /// Isolated history so the pipeline's Step-4 save() never writes to the real
+    /// App Group database. Without this, every test run polluted (and the
+    /// HistoryServiceTests clearAll wiped) the user's live transcription history.
+    var testHistory: HistoryService!
 
     override func setUp() {
         super.setUp()
@@ -47,7 +51,15 @@ final class TextProcessingServiceTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: DictionaryService.dictionaryKey)
         dictionaryService = DictionaryService.shared
         dictionaryService.removeAll()
-        service = TextProcessingService(dictionaryService: dictionaryService, cleanupService: nil)
+        let historyContainer = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("TPSTests-\(UUID().uuidString)", isDirectory: true)
+        testHistory = HistoryService.makeForTesting(containerURLProvider: { historyContainer })
+        service = TextProcessingService(dictionaryService: dictionaryService, cleanupService: nil, historyService: testHistory)
+    }
+
+    override func tearDown() {
+        testHistory = nil
+        super.tearDown()
     }
 
     // MARK: - Pipeline order (dictionary → ITN)
@@ -78,7 +90,7 @@ final class TextProcessingServiceTests: XCTestCase {
     func testCleanupPath() async {
         let mock = MockCleanupProvider()
         mock.returnValue = "Hallo Welt, das ist ein Test."
-        let service = TextProcessingService(cleanupService: mock)
+        let service = TextProcessingService(cleanupService: mock, historyService: testHistory)
 
         let output = await service.process(
             text: "hallo welt das ist ein test",
@@ -95,7 +107,7 @@ final class TextProcessingServiceTests: XCTestCase {
 
     func testPlainModeSkipsCleanup() async {
         let mock = MockCleanupProvider()
-        let service = TextProcessingService(cleanupService: mock)
+        let service = TextProcessingService(cleanupService: mock, historyService: testHistory)
 
         let output = await service.process(
             text: "hallo welt",
@@ -119,7 +131,7 @@ final class TextProcessingServiceTests: XCTestCase {
         // all content words ≥4 chars ("hello", "world") survive lowercased in
         // the output tokens, so gateContentWords returns llmOutput unchanged.
         mock.returnValue = "Hello world."
-        let service = TextProcessingService(cleanupService: mock)
+        let service = TextProcessingService(cleanupService: mock, historyService: testHistory)
 
         let start = Date()
         let output = await service.process(
@@ -140,7 +152,7 @@ final class TextProcessingServiceTests: XCTestCase {
     func testCleanupSkippedWhenProviderNotLoaded() async {
         let mock = MockCleanupProvider()
         mock.isLoaded = false
-        let service = TextProcessingService(cleanupService: mock)
+        let service = TextProcessingService(cleanupService: mock, historyService: testHistory)
 
         _ = await service.process(text: "hello", language: "en", mode: .aiCleanup)
 
@@ -161,7 +173,7 @@ final class TextProcessingServiceTests: XCTestCase {
     func testDialectGateRunsBeforeLevenshteinAndDemotes() async {
         let mock = MockCleanupProvider()
         mock.returnValue = "uf de andere Siite"
-        let service = TextProcessingService(cleanupService: mock)
+        let service = TextProcessingService(cleanupService: mock, historyService: testHistory)
 
         let output = await service.process(
             text: "auf der anderen seite",
@@ -193,7 +205,7 @@ final class TextProcessingServiceTests: XCTestCase {
     /// unique probe substring so reruns do not produce false positives
     /// from prior runs' lines.
     func testPlainModeWritesDebugRecord() async throws {
-        let svc = TextProcessingService(cleanupService: nil)
+        let svc = TextProcessingService(cleanupService: nil, historyService: testHistory)
         let probe = "phase25-02-plain-probe-\(UUID().uuidString.prefix(8))"
 
         _ = await svc.process(text: probe, language: "en", mode: .plain, confidence: 1.0)
@@ -236,7 +248,7 @@ final class TextProcessingServiceTests: XCTestCase {
     func testAICleanupModeWritesDebugRecordWithModeAICleanup() async throws {
         let mock = MockCleanupProvider()
         mock.returnValue = "Polished output for phase25-02-ai-probe"
-        let svc = TextProcessingService(cleanupService: mock)
+        let svc = TextProcessingService(cleanupService: mock, historyService: testHistory)
         let probe = "phase25-02-ai-probe-\(UUID().uuidString.prefix(8))"
 
         _ = await svc.process(text: probe, language: "en", mode: .aiCleanup, confidence: 1.0)
@@ -275,7 +287,7 @@ final class TextProcessingServiceTests: XCTestCase {
 
     func testPhase251_LangUsedMirrorsLang() async throws {
         let probe = "phase251-lang-probe-\(UUID().uuidString.prefix(8))"
-        let svc = TextProcessingService(cleanupService: nil)
+        let svc = TextProcessingService(cleanupService: nil, historyService: testHistory)
 
         _ = await svc.process(text: probe, language: "de", mode: .plain, confidence: 1.0)
 
@@ -309,7 +321,7 @@ final class TextProcessingServiceTests: XCTestCase {
         let probeB = "phase251-emit-ai-\(UUID().uuidString.prefix(8))"
         let mock = MockCleanupProvider()
         mock.returnValue = "ai output \(probeB)"
-        let svc = TextProcessingService(cleanupService: mock)
+        let svc = TextProcessingService(cleanupService: mock, historyService: testHistory)
 
         _ = await svc.process(text: probeA, language: "en", mode: .plain, confidence: 1.0)
         _ = await svc.process(text: probeB, language: "en", mode: .aiCleanup, confidence: 1.0)
@@ -373,7 +385,7 @@ final class TextProcessingServiceRecorderTests: XCTestCase {
         dict.setReplacement(for: "Dicticos", with: "Dicticus")
 
         // Run the pipeline (plain mode — no LLM needed).
-        let service = TextProcessingService(dictionaryService: dict, cleanupService: nil)
+        let service = TextProcessingService(dictionaryService: dict, cleanupService: nil, historyService: testHistory)
         _ = await service.process(text: "Dicticos is great", language: "en", mode: .plain)
 
         // Allow the DebugRecorder actor a tick to record(_:).
