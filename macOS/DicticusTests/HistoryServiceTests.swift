@@ -6,11 +6,25 @@ import GRDB
 final class HistoryServiceTests: XCTestCase {
     
     var service: HistoryService!
-    
+    private var tempContainer: URL!
+
     override func setUp() {
         super.setUp()
-        service = HistoryService.shared
+        // CRITICAL: isolate from the real App Group database. Using HistoryService.shared
+        // here ran clearAll() against the user's live history and wiped it on every test
+        // run. makeForTesting + a unique temp container keeps tests fully isolated.
+        let container = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("HistoryServiceTests-\(UUID().uuidString)", isDirectory: true)
+        tempContainer = container
+        service = HistoryService.makeForTesting(containerURLProvider: { container })
         service.clearAll()
+    }
+
+    override func tearDown() {
+        service = nil
+        if let tempContainer { try? FileManager.default.removeItem(at: tempContainer) }
+        tempContainer = nil
+        super.tearDown()
     }
     
     func testSaveAndFetch() {
