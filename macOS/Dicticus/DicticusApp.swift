@@ -80,6 +80,7 @@ struct DicticusApp: App {
                     || (hotkeyManager.pipelineState == .transcribing)
                     || (hotkeyManager.pipelineState == .cleaning))
                 .task {
+                    AppLocalMigrationService.runIfNeeded()  // 36.3 — migrate group container → app-local (runs before any service init)
                     SwissDefaultMigration.runIfNeeded()  // D-A3 — must precede any useSwissGerman reader
                     // Check permissions at launch so iconName reads correct state immediately
                     // (prevents mic.slash showing when permissions are already granted but

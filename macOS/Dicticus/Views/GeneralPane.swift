@@ -5,7 +5,6 @@ import LaunchAtLogin
 ///
 /// Group "Startup & behavior": Launch at login + Media pause toggle.
 /// Group "History": Copy-mode (Raw/Polished) picker with footer.
-/// Diagnostic: App-Group fallback warning row (shown only when storage is degraded).
 /// Last row (Q-01 fallback): Quit Dicticus.
 ///
 /// Relocates controls from SettingsSection per UIORG-04 (bindings unchanged).
@@ -32,12 +31,6 @@ struct GeneralPane: View {
                 Text("Raw = unedited ASR. Polished = post-cleanup.")
             }
 
-            if !HistoryService.appGroupAvailable {
-                Section {
-                    appGroupFallbackWarningRow
-                }
-            }
-
             Section {
                 Button("Quit Dicticus") {
                     NSApplication.shared.terminate(nil)
@@ -57,19 +50,5 @@ struct GeneralPane: View {
         )
     }
 
-    private var appGroupFallbackWarningRow: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("History storage degraded")
-                    .font(.callout.weight(.semibold))
-                Text("Dicticus is using local app storage for transcription history. Reinstall the app if this is unexpected.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
+
 }
