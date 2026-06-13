@@ -83,6 +83,7 @@ struct HistoryPane: View {
                 Image(systemName: "chevron.right")
                     .foregroundStyle(Color.secondary)
             }
+            .contentShape(Rectangle())
             .font(.subheadline)
         }
         .buttonStyle(.plain)
