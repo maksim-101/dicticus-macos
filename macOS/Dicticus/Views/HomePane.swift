@@ -10,13 +10,17 @@ import KeyboardShortcuts
 /// re-renders on every KeyboardShortcuts rebind via NotificationCenter observation.
 /// Fn-combos from @EnvironmentObject modifierListener already republish via @Published.
 ///
-/// Degraded-state affordance (Q-02): the entire status block is tappable when Needs Permission,
-/// opening System Settings. Does NOT recreate PermissionRows / WarmupRow / multi-copy banner.
+/// Degraded-state block (D-12/13/14): when Needs Permission, shows one PermissionRow per
+/// missing permission, each with its own correct System Settings deep link. When all TCC
+/// permissions are granted but hotkey registration failed, shows a distinct hotkey message.
 struct HomePane: View {
 
     @EnvironmentObject var permissionManager: PermissionManager
     @EnvironmentObject var hotkeyManager: HotkeyManager
     @EnvironmentObject var modifierListener: ModifierHotkeyListener
+
+    // Used by the hotkey-registration-failed branch to open the Settings window (Hotkeys pane).
+    @Environment(\.openSettings) private var openSettings
 
     // Re-render the subline whenever a standard hotkey binding changes.
     @State private var shortcutChangeToken: AnyObject? = nil
@@ -55,31 +59,80 @@ struct HomePane: View {
 
         return Group {
             if needsPermission {
-                Button {
-                    SystemSettingsURL.open(SystemSettingsURL.accessibility)
-                } label: {
+                // D-12/D-13/D-14: per-missing-permission rows with correct deep links,
+                // or distinct hotkey-registration message when all TCC is granted.
+                VStack(alignment: .leading, spacing: 0) {
                     statusContent(
                         dotColor: dotColor,
                         glowColor: glowColor,
                         glowOpacity: glowOpacity,
-                        headline: headline,
-                        needsPermission: true
+                        headline: headline
                     )
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(voiceOverLabel(for: state))
+
+                    // D-14: all TCC granted but hotkey registration failed
+                    if permissionManager.allGranted && hotkeyManager.registrationFailed {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Hotkey registration failed.")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                            Text("Another app may be using the same key combination. Open Hotkeys settings to reassign.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button("Open Hotkeys Settings") {
+                                NSApp.activate(ignoringOtherApps: true)
+                                openSettings()
+                            }
+                            .controlSize(.small)
+                            .accessibilityLabel("Open Hotkeys Settings to reassign key combination")
+                        }
+                        .padding(.top, 8)
+                    } else {
+                        // D-12: one PermissionRow per MISSING permission, fixed order
+                        VStack(alignment: .leading, spacing: 8) {
+                            if permissionManager.microphoneStatus != .granted {
+                                PermissionRow(
+                                    title: "Microphone",
+                                    status: permissionManager.microphoneStatus,
+                                    grantAction: { Task { await permissionManager.requestMicrophone() } },
+                                    settingsURL: SystemSettingsURL.microphone,
+                                    showRestartHint: true
+                                )
+                            }
+                            if permissionManager.accessibilityStatus != .granted {
+                                PermissionRow(
+                                    title: "Accessibility",
+                                    status: permissionManager.accessibilityStatus,
+                                    grantAction: { permissionManager.requestAccessibility() },
+                                    settingsURL: SystemSettingsURL.accessibility,
+                                    showRestartHint: false
+                                )
+                            }
+                            if permissionManager.inputMonitoringStatus != .granted {
+                                PermissionRow(
+                                    title: "Input Monitoring",
+                                    status: permissionManager.inputMonitoringStatus,
+                                    grantAction: { permissionManager.requestInputMonitoring() },
+                                    settingsURL: SystemSettingsURL.inputMonitoring,
+                                    showRestartHint: false
+                                )
+                            }
+                        }
+                        .padding(.top, 8)
+                    }
                 }
-                .buttonStyle(.plain)
             } else {
                 statusContent(
                     dotColor: dotColor,
                     glowColor: glowColor,
                     glowOpacity: glowOpacity,
-                    headline: headline,
-                    needsPermission: false
+                    headline: headline
                 )
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(voiceOverLabel(for: state))
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(voiceOverLabel(for: state))
-        .accessibilityAddTraits(needsPermission ? .isButton : [])
     }
 
     @ViewBuilder
@@ -87,8 +140,7 @@ struct HomePane: View {
         dotColor: Color,
         glowColor: Color,
         glowOpacity: Double,
-        headline: String,
-        needsPermission: Bool
+        headline: String
     ) -> some View {
         HStack(alignment: .center, spacing: 12) {
             ZStack {
@@ -105,15 +157,9 @@ struct HomePane: View {
                     .font(.headline)
                     .foregroundStyle(dotColor)
 
-                if needsPermission {
-                    Text("Open System Settings →")
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: "#F5A524"))
-                } else {
-                    Text(sublineText)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(Color.secondary)
-                }
+                Text(sublineText)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(Color.secondary)
             }
         }
     }
