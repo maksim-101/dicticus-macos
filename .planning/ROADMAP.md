@@ -231,6 +231,25 @@ Plans:
 
 **UI hint**: no
 
+**Plans:** 4 plans (3 waves)
+
+Plans:
+
+**Wave 1**
+
+- [ ] 36.3-01-PLAN.md — Wave 0 test scaffolding: DicticusDefaults + Entitlement + AppLocalMigration + DictationViewModel-DI contract tests (SC1-SC5 red)
+- [ ] 36.3-03-PLAN.md — iOS DictationViewModel HistoryService injection + hermetic test refactor (SC5)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 36.3-02-PLAN.md — DicticusDefaults resolver + repoint all ~10 group-suite access points; macOS app-local, iOS unchanged (SC2)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 36.3-04-PLAN.md — Backup-first idempotent migration + launch wiring + entitlement removal (both files) + warning-row drop + on-device upgrade/fresh-install checkpoint (SC1/SC3/SC4/SC6)
+
+**Wave structure:** W1 = {01, 03} (parallel — Shared test scaffolding vs iOS-only DI, no file overlap) · W2 = {02} (needs DicticusDefaults test contract) · W3 = {04} (needs the macOS app-local resolver path from 02; migration reads OLD container before entitlement is gone)
+
 ---
 
 ## Backlog
