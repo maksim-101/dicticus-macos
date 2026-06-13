@@ -620,6 +620,11 @@ final class DictationViewModelTests: XCTestCase {
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
 
+        // SC5: use an isolated temp container so this test never touches the real DB.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let testHistoryService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
+
         // Simulate two entries saved in History, then append their UUIDs directly
         // (mirrors what stopDictation() background path does after process() saves each entry).
         let uuid1 = UUID()
@@ -628,8 +633,8 @@ final class DictationViewModelTests: XCTestCase {
                                         language: "en", mode: "plain", confidence: 0.9)
         let entry2 = TranscriptionEntry(uuid: uuid2, text: "second", rawText: "second",
                                         language: "en", mode: "plain", confidence: 0.9)
-        HistoryService.shared.save(entry1)
-        HistoryService.shared.save(entry2)
+        testHistoryService.save(entry1)
+        testHistoryService.save(entry2)
 
         // Replicate the list-append logic from stopDictation() background path.
         var list = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
@@ -648,10 +653,11 @@ final class DictationViewModelTests: XCTestCase {
         // Cleanup
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
         for entry in [entry1, entry2] {
-            if let id = HistoryService.shared.entries.first(where: { $0.uuid == entry.uuid })?.id {
-                HistoryService.shared.delete(id: id)
+            if let id = testHistoryService.entries.first(where: { $0.uuid == entry.uuid })?.id {
+                testHistoryService.delete(id: id)
             }
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     /// Foreground delivery with two pending UUIDs must populate recentlyDelivered,
