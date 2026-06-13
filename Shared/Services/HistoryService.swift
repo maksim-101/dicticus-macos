@@ -93,6 +93,13 @@ class HistoryService: ObservableObject {
     /// Resolve the storage backend. Provider closure is injectable so unit tests
     /// can simulate the App-Group-missing path by returning nil without entitlements.
     private static func resolveStorage(provider: () -> URL?) -> StorageBackend {
+#if os(macOS)
+        // macOS always uses app-local Application Support — no group container needed.
+        // Eliminates the kTCCServiceSystemPolicyAppData prompt introduced in Sequoia 15.
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.dicticus.fallback"
+        return .applicationSupport(appSupport.appendingPathComponent(bundleID, isDirectory: true))
+#else
         if let groupURL = provider() {
             return .appGroup(groupURL)
         }
@@ -103,6 +110,7 @@ class HistoryService: ObservableObject {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let bundleID = Bundle.main.bundleIdentifier ?? "com.dicticus.fallback"
         return .applicationSupport(appSupport.appendingPathComponent(bundleID, isDirectory: true))
+#endif
     }
 
     @Published private(set) var entries: [TranscriptionEntry] = []
