@@ -24,6 +24,7 @@ BUNDLE_ID="com.dicticus.app"
 CANONICAL_APP="/Applications/Dicticus.app"
 BUILD_APP="$PROJECT_DIR/build/Build/Products/Release/Dicticus.app"
 RECORDER_APP="$PROJECT_DIR/build/Build/Products/Debug-Recorder/Dicticus.app"
+DEBUG_APP="$PROJECT_DIR/build/Build/Products/Debug/Dicticus.app"
 SIGNING_ID="B9CA1FF8209D9B1BD4940F2D39C327EF836FD3C0" # Developer ID Moritz Wehrli
 ENTITLEMENTS="$PROJECT_DIR/Dicticus/Dicticus.entitlements"
 TRASH_DIR="$HOME/.Trash"
@@ -127,7 +128,7 @@ echo "=== Step 5c: Remove build artifacts to prevent LaunchServices identity con
 # exist simultaneously, macOS TCC sees conflicting signing identities for the
 # same bundle ID and invalidates permissions on every restart.
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
-for artifact in "$BUILD_APP" "$RECORDER_APP"; do
+for artifact in "$BUILD_APP" "$RECORDER_APP" "$DEBUG_APP"; do
     if [ -d "$artifact" ]; then
         echo "  Unregistering: $artifact"
         "$LSREGISTER" -u "$artifact" 2>/dev/null || true
@@ -137,6 +138,8 @@ for artifact in "$BUILD_APP" "$RECORDER_APP"; do
 done
 # Re-register ONLY the canonical signed copy
 "$LSREGISTER" -f "$CANONICAL_APP" 2>/dev/null || true
+
+source "$SCRIPT_DIR/_signing-guard.sh"
 
 echo "=== Step 6: Re-sign for TCC persistence ==="
 echo "  Signing with identity: $SIGNING_ID"
