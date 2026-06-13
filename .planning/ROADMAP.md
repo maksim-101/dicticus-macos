@@ -214,6 +214,25 @@ Plans:
 
 ---
 
+### Phase 36.3: macOS App-Group Removal & Storage Migration (INSERTED 2026-06-13 — 36.2 UAT follow-on)
+
+**Goal**: The recurring macOS "Dicticus.app wants to access data from other apps" (`kTCCServiceSystemPolicyAppData`) prompt is eliminated at its root by dropping the App Group on macOS, and the user's existing history, dictionary, and settings survive the switch with zero data loss. macOS reads/writes app-local storage (standard `UserDefaults` + Application Support); iOS keeps `group.com.dicticus` (Shortcuts/IPC still need it). A backup-first, idempotent one-time migration moves existing data from the group container to app-local on first launch of the new build.
+**Requirements**: Discovered during 36.2 UAT (the App-Group entitlement triggers the SystemPolicyAppData TCC prompt on every fresh install). Option B chosen — macOS has no keyboard-extension consumer, so the group is dead weight there; iOS retains it.
+**Depends on:** Phase 36.2
+
+**Success Criteria** (what must be TRUE):
+
+  1. The `com.apple.security.application-groups` entitlement is removed from `macOS/Dicticus/Dicticus.entitlements`, and a fresh macOS install no longer triggers the `kTCCServiceSystemPolicyAppData` ("access data from other apps") prompt.
+  2. `Shared/` storage is platform-conditional across all ~10 access points (DictionaryService, HistoryService, CleanupService, TextProcessingService, CleanupPrompt, SwissDefaultMigration, AiCleanupPane, SwissGermanToggleRow): macOS resolves app-local `UserDefaults` + Application Support; iOS resolves the `group.com.dicticus` container. iOS behavior is unchanged.
+  3. A backup-first, idempotent one-time migration moves the user's history (GRDB DB), dictionary (~17KB), and settings (Swiss toggle, prompt version) from the group container to app-local on macOS — re-running it is a no-op, and a backup of the source data exists before any move.
+  4. After migration, an existing user's history, dictionary entries, and settings are all present and correct in the app-local store (verified, not assumed); no data is lost.
+  5. iOS `DictationViewModelTests` is isolated from `HistoryService.shared` by making the iOS `DictationViewModel` accept an injected `HistoryService`.
+  6. Both platforms build and their test suites pass.
+
+**UI hint**: no
+
+---
+
 ## Backlog
 
 Unsequenced parking lot (999.x). Promote with `/gsd-review-backlog` when ready.
