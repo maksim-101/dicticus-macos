@@ -51,7 +51,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 36. iOS Background Dictation | 4/4 | Complete    | 2026-06-11 |
+| 36. iOS Background Dictation | 4/4 | Complete   | 2026-06-13 |
 | 37. iOS Distribution | 0/TBD | Not started | - |
 | 38. Context-Aware Formatting | 0/TBD | Not started | - |
 | 39. Voice Edit Commands | 0/TBD | Not started | - |
@@ -161,7 +161,7 @@
 **Goal**: Dictation output stops being randomly wrong in the known ways: the content-word gate keeps the LLM's good corrections instead of discarding ~2/3 of them, numbers follow one consistent policy with zero cross-boundary merges ("one, two, three" never becomes "102, three"), and the LLM can no longer re-style numbers or dictionary-chosen spellings — all validated against the spike-004 replay harness before shipping, macOS + iOS together (Shared/).
 **Requirements**: spike-findings-dicticus skill (references/cleanup-pipeline-fixes.md is the blueprint); .planning/spikes/WRAP-UP-SUMMARY.md
 **Depends on:** Phase 36
-**Plans:** 7/7 plans complete
+**Plans:** 4/4 plans complete
 Plans:
 **Wave 1**
 
@@ -190,7 +190,7 @@ Plans:
 **Goal**: Installing a local macOS build stops being a fight with signing and TCC, and the app honestly tells the user which permission is missing. (1) Developer-ID signing identities survive reboot/wake/sync (or an automated pre-build guard restores them with zero interactive prompts); `install-local.sh` guarantees the freshly-installed `/Applications/Dicticus.app` is the process actually running (verified, not assumed) and warns on residual copies; the in-app multi-copy detector queries the real bundle id (`com.dicticus.app`) and is test-pinned. (2) When mic / Accessibility / Input Monitoring is missing at any time, the menu-bar popover names exactly which permission(s) are missing and deep-links each to its own System Settings pane — no always-Accessibility dead-end loop — with Input Monitoring explicitly surfaced.
 **Requirements**: backlog/local-build-signing-tcc-reliability.md + backlog/permission-popover-misleading-cta.md (macOS-only; dev-infra + permissions UX, not pipeline)
 **Depends on:** Phase 36.1
-**Plans:** 3 plans (2 waves)
+**Plans:** 0/3 plans executed
 Plans:
 **Wave 1**
 

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
-status: planning
+status: executing
 stopped_at: Phase 36.2 UI-SPEC approved
-last_updated: "2026-06-13T04:56:42.077Z"
-last_activity: 2026-06-13 -- Phase 36.2 planning complete
+last_updated: "2026-06-13T05:06:25.378Z"
+last_activity: 2026-06-13 -- Phase 36.2 execution started
 progress:
   total_phases: 32
   completed_phases: 23
-  total_plans: 98
+  total_plans: 101
   completed_plans: 103
   percent: 72
 ---
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36.2 (next — not planned)
-Plan: Not started
-Status: 36.1 complete (executed/verified/secured/validated, 471/471 macOS + iOS green); 36.2 inserted 2026-06-13, ready to plan
-Last activity: 2026-06-13 -- Phase 36.2 planning complete
+Phase: 36.2 (macos-local-build-signing-tcc-reliability-and-permission-los) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 36.2
+Last activity: 2026-06-13 -- Phase 36.2 execution started
 
 ### Next Action
 
@@ -84,7 +84,7 @@ Last activity: 2026-06-13 -- Phase 36.2 planning complete
 
 ## Session Continuity
 
-Last session: 2026-06-13T04:37:38.207Z
+Last session: 2026-06-13T05:06:25.369Z
 Stopped at: Phase 36.2 UI-SPEC approved
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
