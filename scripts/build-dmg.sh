@@ -53,6 +53,11 @@ if [ ! -d "$APP_DIR/Dicticus.app" ]; then
     exit 1
 fi
 
+# Ensure the Developer ID key is present; auto-restore from 1Password if missing (D-02/D-03).
+# shellcheck source=scripts/_signing-guard.sh
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/_signing-guard.sh"
+
 # Re-sign the entire app bundle (including embedded frameworks) with the real identity.
 echo "=== Step 3: Re-sign app bundle with Developer ID ==="
 codesign --force --deep --sign "Developer ID Application" \
