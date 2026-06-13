@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: Completed 36.3-01-PLAN.md
-last_updated: "2026-06-13T16:09:25.913Z"
+stopped_at: Completed 36.3-03-PLAN.md
+last_updated: "2026-06-13T16:18:48.286Z"
 last_activity: 2026-06-13 -- Phase 36.3 execution started
 progress:
   total_phases: 33
   completed_phases: 24
   total_plans: 105
-  completed_plans: 108
+  completed_plans: 109
   percent: 73
 ---
 
@@ -23,7 +23,7 @@ progress:
 ## Current Position
 
 Phase: 36.3 (macos-app-group-removal-storage-migration) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-06-13 -- Phase 36.3 execution started
 
@@ -84,8 +84,8 @@ Last activity: 2026-06-13 -- Phase 36.3 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-13T16:09:25.908Z
-Stopped at: Completed 36.3-01-PLAN.md
+Last session: 2026-06-13T16:18:48.281Z
+Stopped at: Completed 36.3-03-PLAN.md
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
 New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
@@ -156,6 +156,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P02 | continuation-agent | 3 tasks | 3 files |
 | Phase 36.3-macos-app-group-removal-storage-migration P01 | 6min | 2 tasks | 5 files |
 | Phase 36.3 P02 | 12min | 2 tasks | 9 files |
+| Phase 36.3-macos-app-group-removal-storage-migration P03 | 10 | 2 tasks | 2 files |
 
 ## Decisions
 
@@ -177,3 +178,4 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase ?]: Fixes multi-copy detection which was silently broken with wrong id
 - [Phase ?]: [36.3-01]: Wave 0 tests in RED state — reference DicticusDefaults/AppLocalMigrationService/vm.historyService which are created in Plans 02-04
 - [Phase ?]: [36.3-01]: runForTesting() seam documented in AppLocalMigrationServiceTests — Plan 04 must expose this exact injectable signature
+- [Phase ?]: testTwoBackgroundStopsAppendTwoPendingUUIDs isolates from real DB via makeForTesting; remaining .shared refs in tests are comments/identity assertions
