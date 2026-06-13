@@ -244,13 +244,16 @@ class DictionaryService: ObservableObject {
 
     private func migrateOldFormat() {
         let oldKey = "customDictionary"
-        if let oldStored = UserDefaults.standard.dictionary(forKey: oldKey) as? [String: String] {
+        // Route through the storage seam (Self.defaults = DicticusDefaults.suite) so the
+        // read and remove target the correct store on both macOS (.standard) and iOS
+        // (group suite). Using UserDefaults.standard here would miss legacy iOS entries
+        // stored in the group suite.
+        if let oldStored = Self.defaults.dictionary(forKey: oldKey) as? [String: String] {
             for (original, replacement) in oldStored {
                 dictionary[original] = DictionaryMetadata(replacement: replacement, createdAt: Date())
             }
             save()
-            // Clean up old key
-            UserDefaults.standard.removeObject(forKey: oldKey)
+            Self.defaults.removeObject(forKey: oldKey)
         }
     }
 

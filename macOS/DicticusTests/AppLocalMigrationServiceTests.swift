@@ -273,10 +273,22 @@ final class AppLocalMigrationServiceTests: XCTestCase {
     ///
     /// Constructs a real plist file in the source container, runs migration, and asserts
     /// all settings keys land in destDefaults — proving the file-based code path works.
+    ///
+    /// CR-02 fix: dictionary fixture uses the REAL [String: DictionaryMetadata] JSON-object
+    /// format that DictionaryService.save() writes — not [[String:String]] (array) which the
+    /// app never produces. The migrated data is verified by counting top-level JSON keys.
     func testSettingsKeysCopiedFromContainerPlist() throws {
-        // Build a realistic dictionary payload (the failing case: 204 entries → JSON-encoded).
-        let dictEntries: [[String: String]] = (0..<204).map { i in
-            ["input": "word\(i)", "output": "Word\(i)", "id": UUID().uuidString]
+        // Build a realistic dictionary payload in the REAL app format: [String: DictionaryMetadata].
+        // DictionaryService.save() uses a plain JSONEncoder() (no custom date strategy),
+        // so DictionaryMetadata.createdAt encodes as a Unix timestamp Double.
+        var dictEntries: [String: DictionaryMetadata] = [:]
+        let fixedDate = Date(timeIntervalSinceReferenceDate: 800_000_000) // deterministic
+        for i in 0..<204 {
+            dictEntries["word\(i)"] = DictionaryMetadata(
+                replacement: "Word\(i)",
+                createdAt: fixedDate,
+                source: .imported
+            )
         }
         let dictData = try JSONEncoder().encode(dictEntries)
 
@@ -327,16 +339,20 @@ final class AppLocalMigrationServiceTests: XCTestCase {
             "dictionaryCaseSensitive must be copied from container plist to destDefaults"
         )
 
-        // Verify dictionary data is present and decodable — the 204-entry case.
+        // Verify dictionary data is present and round-trips as [String: DictionaryMetadata].
+        // Count via the real format to confirm all 204 entries survived migration.
         guard let migratedData = destDefaults.data(forKey: "customDictionaryMetadata") else {
             XCTFail("customDictionaryMetadata must be present in destDefaults after migration")
             return
         }
-        let migratedEntries = try JSONDecoder().decode([[String: String]].self, from: migratedData)
+        let migratedEntries = try JSONDecoder().decode([String: DictionaryMetadata].self, from: migratedData)
         XCTAssertEqual(
             migratedEntries.count, 204,
-            "All 204 dictionary entries must survive migration via container plist path"
+            "All 204 dictionary entries must survive migration via container plist path (real [String:DictionaryMetadata] format)"
         )
+        // Spot-check one entry round-trips correctly.
+        XCTAssertEqual(migratedEntries["word0"]?.replacement, "Word0",
+                       "Entry replacement must round-trip through migration unchanged")
     }
 
     // MARK: - No-clobber: existing dest values are not overwritten
@@ -367,6 +383,91 @@ final class AppLocalMigrationServiceTests: XCTestCase {
         XCTAssertFalse(
             destDefaults.bool(forKey: "useSwissGerman"),
             "No-clobber: existing destDefaults value must not be overwritten by migration"
+        )
+    }
+
+    // MARK: - CR-01: No-clobber guard on destination history DB
+
+    /// CR-01 (populated dest): When the destination DB already exists and contains rows,
+    /// the migration must NOT overwrite it with the group-container copy. The app-local store
+    /// is authoritative — it may be newer than the group container copy (fallback path).
+    func testNoClobberPopulatedDestDB() throws {
+        // Seed source with 2 entries.
+        let srcEntries = [
+            TranscriptionEntry(text: "source entry 1", rawText: "source entry 1",
+                               language: "en", mode: "plain", confidence: 0.9),
+            TranscriptionEntry(text: "source entry 2", rawText: "source entry 2",
+                               language: "en", mode: "plain", confidence: 0.9),
+        ]
+        srcEntries.forEach { sourceService.save($0) }
+
+        // Pre-populate destination DB with 3 entries (more than source — it is authoritative).
+        let destURL = destContainerURL!
+        let destHistService = HistoryService.makeForTesting(containerURLProvider: { destURL })
+        let destEntries = [
+            TranscriptionEntry(text: "dest entry 1", rawText: "dest entry 1",
+                               language: "en", mode: "plain", confidence: 0.9),
+            TranscriptionEntry(text: "dest entry 2", rawText: "dest entry 2",
+                               language: "en", mode: "plain", confidence: 0.9),
+            TranscriptionEntry(text: "dest entry 3", rawText: "dest entry 3",
+                               language: "en", mode: "plain", confidence: 0.9),
+        ]
+        destEntries.forEach { destHistService.save($0) }
+        XCTAssertEqual(destHistService.entries.count, 3, "Precondition: dest has 3 rows pre-migration")
+
+        let srcURL = sourceContainerURL!
+
+        try AppLocalMigrationService.runForTesting(
+            sourceContainerURL: srcURL,
+            destDefaults: destDefaults,
+            destDBProvider: { destURL }
+        )
+
+        // Destination DB must still have 3 rows — NOT overwritten with source's 2.
+        destHistService.load()
+        XCTAssertEqual(
+            destHistService.entries.count, 3,
+            "CR-01: populated dest DB (3 rows) must not be overwritten with source (2 rows)"
+        )
+        // Completion flag must be set.
+        XCTAssertTrue(
+            destDefaults.bool(forKey: AppLocalMigrationService.migratedKey),
+            "Completion flag must be set even when dest DB was preserved"
+        )
+    }
+
+    /// CR-01 (empty dest): When the destination DB is absent or empty, the migration
+    /// must proceed normally and copy the source rows.
+    func testMigratesWhenDestDBIsAbsent() throws {
+        // Seed source with 2 entries — destination DB does not exist.
+        let srcEntries = [
+            TranscriptionEntry(text: "migrated entry 1", rawText: "migrated entry 1",
+                               language: "en", mode: "plain", confidence: 0.9),
+            TranscriptionEntry(text: "migrated entry 2", rawText: "migrated entry 2",
+                               language: "en", mode: "plain", confidence: 0.9),
+        ]
+        srcEntries.forEach { sourceService.save($0) }
+
+        let srcURL = sourceContainerURL!
+        let destURL = destContainerURL!
+
+        // Destination DB must not exist before the test.
+        let destDBPath = destURL.appendingPathComponent("Database/History.sqlite").path
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destDBPath),
+                       "Precondition: dest DB must not exist before migration")
+
+        try AppLocalMigrationService.runForTesting(
+            sourceContainerURL: srcURL,
+            destDefaults: destDefaults,
+            destDBProvider: { destURL }
+        )
+
+        // Source rows must appear in the destination.
+        let destHistService = HistoryService.makeForTesting(containerURLProvider: { destURL })
+        destHistService.load()
+        XCTAssertEqual(
+            destHistService.entries.count, 2,
+            "CR-01 (empty dest): source rows must be copied to absent dest DB"
         )
     }
 

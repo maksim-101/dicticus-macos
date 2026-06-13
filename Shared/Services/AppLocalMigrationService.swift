@@ -117,26 +117,48 @@ public enum AppLocalMigrationService {
         log.info("[AppLocalMigration] Backup created at \(backupDir.path)")
 
         // STEP 2: Migrate history DB via GRDB online backup API (WAL-safe).
-        try FileManager.default.createDirectory(at: destDBDir, withIntermediateDirectories: true)
-        let sourceCount: Int = try {
-            let sourcePool = try DatabasePool(path: srcDBURL.path)
-            let destQueue = try DatabaseQueue(path: destDBURL.path)
-            try sourcePool.backup(to: destQueue)
-            return try sourcePool.read { db in
+        // No-clobber guard: if the destination DB already exists and contains rows,
+        // the app-local store is authoritative (user was already on the fallback path
+        // or a prior install already migrated). Do not overwrite it with the group copy.
+        let destDBExists = FileManager.default.fileExists(atPath: destDBURL.path)
+        let destExistingRowCount: Int = destDBExists ? (try {
+            let pool = try DatabasePool(path: destDBURL.path)
+            return try pool.read { db in
                 try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM transcriptionEntry") ?? 0
             }
-        }()
+        }()) : 0
 
-        // STEP 3: Verify destination DB is readable and row count matches.
-        let destCount: Int = try {
-            let destPool = try DatabasePool(path: destDBURL.path)
-            return try destPool.read { db in
-                try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM transcriptionEntry") ?? 0
+        let sourceCount: Int
+        let destCount: Int
+
+        if destDBExists && destExistingRowCount > 0 {
+            // Destination DB is populated — preserve it; skip the DB copy entirely.
+            log.info("[AppLocalMigration] Destination DB already populated (\(destExistingRowCount) rows) — preserving app-local store, skipping DB copy.")
+            sourceCount = destExistingRowCount
+            destCount = destExistingRowCount
+        } else {
+            // Destination DB is absent or empty — safe to copy from source.
+            try FileManager.default.createDirectory(at: destDBDir, withIntermediateDirectories: true)
+            sourceCount = try {
+                let sourcePool = try DatabasePool(path: srcDBURL.path)
+                let destQueue = try DatabaseQueue(path: destDBURL.path)
+                try sourcePool.backup(to: destQueue)
+                return try sourcePool.read { db in
+                    try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM transcriptionEntry") ?? 0
+                }
+            }()
+
+            // STEP 3: Verify destination DB is readable and row count matches.
+            destCount = try {
+                let destPool = try DatabasePool(path: destDBURL.path)
+                return try destPool.read { db in
+                    try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM transcriptionEntry") ?? 0
+                }
+            }()
+
+            guard destCount == sourceCount else {
+                throw MigrationError.rowCountMismatch(source: sourceCount, dest: destCount)
             }
-        }()
-
-        guard destCount == sourceCount else {
-            throw MigrationError.rowCountMismatch(source: sourceCount, dest: destCount)
         }
 
         // STEP 4: Migrate dictionary and settings keys by reading the source container's
@@ -163,21 +185,18 @@ public enum AppLocalMigrationService {
             log.info("[AppLocalMigration] Source prefs plist absent or unreadable — settings migration skipped.")
         }
 
-        // STEP 5: Verify dictionary is decodable if present.
-        if let dictData = destDefaults.data(forKey: "customDictionaryMetadata") {
-            let decoder = JSONDecoder()
-            // Attempt decode as array of basic dictionaries — if it throws, log but continue.
-            if (try? decoder.decode([[String: String]].self, from: dictData)) == nil &&
-               (try? decoder.decode([String: String].self, from: dictData)) == nil {
-                log.warning("[AppLocalMigration] Dictionary data present but not decodable as expected type — migration continues.")
-            }
-        }
-
-        // Determine dictionary entry count for logging.
+        // STEP 5: Verify dictionary is present and count its entries.
+        // The real storage format is [String: DictionaryMetadata] — a JSON object keyed
+        // by original term. Count top-level keys via JSONSerialization to avoid importing
+        // DictionaryService types here (decoupled layer boundary).
         let dictEntryCount: Int
-        if let dictData = destDefaults.data(forKey: "customDictionaryMetadata"),
-           let arr = try? JSONDecoder().decode([[String: String]].self, from: dictData) {
-            dictEntryCount = arr.count
+        if let dictData = destDefaults.data(forKey: "customDictionaryMetadata") {
+            if let obj = try? JSONSerialization.jsonObject(with: dictData) as? [String: Any] {
+                dictEntryCount = obj.count
+            } else {
+                log.warning("[AppLocalMigration] Dictionary data present but not decodable as [String: DictionaryMetadata] JSON object — migration continues.")
+                dictEntryCount = 0
+            }
         } else {
             dictEntryCount = 0
         }
