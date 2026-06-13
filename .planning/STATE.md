@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
 status: executing
-stopped_at: Completed 36.1-07-PLAN.md — CR-01 + WR-05 closed, Phase 36.1 all 8 truths verified
-last_updated: "2026-06-12T20:11:44.740Z"
-last_activity: 2026-06-12
+stopped_at: Phase 36.1 complete (executed/verified/secured/validated); Phase 36.2 inserted 2026-06-13, ready to plan
+last_updated: "2026-06-13T05:00:00.000Z"
+last_activity: 2026-06-13
 progress:
   total_phases: 31
   completed_phases: 23
@@ -22,14 +22,14 @@ progress:
 
 ## Current Position
 
-Phase: 36.1
+Phase: 36.2 (next — not planned)
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-12
+Status: 36.1 complete (executed/verified/secured/validated, 471/471 macOS + iOS green); 36.2 inserted 2026-06-13, ready to plan
+Last activity: 2026-06-13
 
 ### Next Action
 
-1. **Plan Phase 36 (deferred-delivery).** Re-scope discussion done — `36-CONTEXT.md` rewritten for capture-in-background / finish-on-foreground (D-01 stop + D-01a discoverable no-reopen stop, D-02 foreground auto-copy, D-02a away-stop notification, D-02b auto-clean on reopen, D-03 soft cap, D-05 queue-all, D-06 background constraints). Run `/gsd-plan-phase 36` to replace plans 02-04. Read `36-SPIKE-FINDINGS.md` (constraints) + `36-CONTEXT.md` first. Note: superseded plan files 36-02/03/04 still on disk — replan overwrites/replaces them.
+1. **Plan Phase 36.2 (next).** macOS Build Reliability & Permission UX — inserted 2026-06-13. Two tracks: (a) local-build signing/TCC reliability (Developer ID key pruning from the custom keychain, `install-local.sh` relaunching a stale binary, dead multi-copy detector querying wrong bundle id); (b) permission-loss UX — surface which of mic/Accessibility/Input-Monitoring is missing at ANY time, with a correct settings deep link per permission (Accessibility AND Input Monitoring). Sources: `backlog/local-build-signing-tcc-reliability.md` + `backlog/permission-popover-misleading-cta.md`. Run `/gsd-plan-phase 36.2`. Phase 36.1 debug-log UAT (v20 build installed 2026-06-13, commit 00132fa) runs in background — user reports in ~3-4 days.
 2. ✅ macOS `1.4.0` shipped — GitHub release `macos-v1.4.0` (2026-06-09) live. iOS `ios-v2.4.0` (TestFlight / device install) still pending verification.
 3. Backlog `999.1` (post-ASR / AI-cleanup robustness) captured 2026-06-10 from log sweep — promote via `/gsd-review-backlog` when ready.
 4. Backlog (new, 2026-06-10): Action Button → deep-link into Dicticus Settings (setup UX) — clarify exact intent + log via `/gsd-capture`.
