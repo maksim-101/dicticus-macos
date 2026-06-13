@@ -16,10 +16,14 @@ _ensure_signing_key() {
 
     echo "  Developer ID key missing from keychain. Attempting auto-restore via 1Password..."
 
-    # Fail loud if op is not authenticated — never continue silently (D-03 step 4)
-    if ! op whoami >/dev/null 2>&1; then
-        echo "ERROR: 1Password CLI not authenticated."
-        echo "  Run: eval \$(op signin) then re-run this script."
+    # Fail loud if 1Password is unreachable — never continue silently (D-03 step 4).
+    # NOTE: do NOT use `op whoami` here — under the 1Password desktop-app /
+    # system-auth (biometric) integration it reports "account is not signed in"
+    # even when `op read`/`op item get` work. `op account get` is the reliable
+    # liveness check across both classic-session and system-auth setups.
+    if ! op account get >/dev/null 2>&1; then
+        echo "ERROR: 1Password CLI cannot reach an account (locked or not integrated)."
+        echo "  Unlock 1Password (Touch ID) or run: eval \$(op signin), then re-run."
         exit 1
     fi
 
