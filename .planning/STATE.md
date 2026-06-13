@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: iOS Release & Context-Aware Dictation
-status: verifying
-stopped_at: Phase 36.2 UI-SPEC approved
-last_updated: "2026-06-13T06:25:51.405Z"
-last_activity: 2026-06-13 -- Phase 36.2 execution started
+status: executing
+stopped_at: Completed 36.3-01-PLAN.md
+last_updated: "2026-06-13T15:53:22.322Z"
+last_activity: 2026-06-13 -- Phase 36.3 execution started
 progress:
-  total_phases: 32
+  total_phases: 33
   completed_phases: 24
-  total_plans: 101
-  completed_plans: 106
-  percent: 75
+  total_plans: 105
+  completed_plans: 107
+  percent: 73
 ---
 
 # Project State: Dicticus
@@ -22,10 +22,10 @@ progress:
 
 ## Current Position
 
-Phase: 36.2 (macos-local-build-signing-tcc-reliability-and-permission-los) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-06-13 -- Phase 36.2 execution started
+Phase: 36.3 (macos-app-group-removal-storage-migration) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-13 -- Phase 36.3 execution started
 
 ### Next Action
 
@@ -84,8 +84,8 @@ Last activity: 2026-06-13 -- Phase 36.2 execution started
 
 ## Session Continuity
 
-Last session: 2026-06-13T06:25:51.401Z
-Stopped at: Phase 36.2 UI-SPEC approved
+Last session: 2026-06-13T15:53:22.315Z
+Stopped at: Completed 36.3-01-PLAN.md
 Next: Phase 36 verification (code review + verifier pass). Then Phase 37 (iOS Distribution).
 
 New capability this session: sim audio injection via BlackHole (memory `reference_sim_audio_injection_blackhole`) — feed audio into the sim mic to sustain recordings; unlocks app-faithful Live-Activity + ASR verification on-sim.
@@ -154,6 +154,7 @@ Total: **28** — predominantly historical items carried across milestones. None
 | Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P01 | 30min | 3 tasks | 4 files |
 | Phase 36.2 P03 | 25min | 3 tasks | 2 files |
 | Phase 36.2-macos-local-build-signing-tcc-reliability-and-permission-los P02 | continuation-agent | 3 tasks | 3 files |
+| Phase 36.3-macos-app-group-removal-storage-migration P01 | 6min | 2 tasks | 5 files |
 
 ## Decisions
 
@@ -173,3 +174,5 @@ Total: **28** — predominantly historical items carried across milestones. None
 - [Phase ?]: [36.2-03]: accessibilityElement(children: .ignore) scoped to status dot/headline HStack only — restores PermissionRow VoiceOver
 - [Phase ?]: Simpler and more robust than ps/pgrep for LS-registered bundle paths
 - [Phase ?]: Fixes multi-copy detection which was silently broken with wrong id
+- [Phase ?]: [36.3-01]: Wave 0 tests in RED state — reference DicticusDefaults/AppLocalMigrationService/vm.historyService which are created in Plans 02-04
+- [Phase ?]: [36.3-01]: runForTesting() seam documented in AppLocalMigrationServiceTests — Plan 04 must expose this exact injectable signature

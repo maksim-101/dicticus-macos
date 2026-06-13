@@ -231,13 +231,13 @@ Plans:
 
 **UI hint**: no
 
-**Plans:** 4 plans (3 waves)
+**Plans:** 1/4 plans executed
 
 Plans:
 
 **Wave 1**
 
-- [ ] 36.3-01-PLAN.md — Wave 0 test scaffolding: DicticusDefaults + Entitlement + AppLocalMigration + DictationViewModel-DI contract tests (SC1-SC5 red)
+- [x] 36.3-01-PLAN.md — Wave 0 test scaffolding: DicticusDefaults + Entitlement + AppLocalMigration + DictationViewModel-DI contract tests (SC1-SC5 red)
 - [ ] 36.3-03-PLAN.md — iOS DictationViewModel HistoryService injection + hermetic test refactor (SC5)
 
 **Wave 2** *(blocked on Wave 1)*
