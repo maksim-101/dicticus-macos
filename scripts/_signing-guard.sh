@@ -27,7 +27,8 @@ _ensure_signing_key() {
     trap 'rm -f "$_TMP_P12"' EXIT
 
     op read "op://TrueNAS/$_OP_ITEM/Certificates.p12" --out-file "$_TMP_P12"
-    # Password captured into a local variable only; never echoed or written to disk (T-36.2-02)
+    # Password captured into a function-local variable only; never echoed or written to disk (T-36.2-02)
+    local _PW
     _PW="$(op item get "$_OP_ITEM" --fields password --reveal)"
     # Import into the custom keychain — NOT login (iCloud-synced and therefore pruned) (D-04, T-36.2-03)
     security import "$_TMP_P12" \

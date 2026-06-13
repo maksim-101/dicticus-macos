@@ -170,7 +170,7 @@ echo "=== Step 7: Relaunch ==="
 open "$CANONICAL_APP"
 sleep 2
 RUNNING_PATH=$(lsappinfo info -only bundlepath -app Dicticus 2>/dev/null \
-    | sed 's/.*= "\(.*\)"/\1/' || true)
+    | sed 's/.*="\(.*\)"/\1/' || true)
 echo "  Running bundle path: $RUNNING_PATH"
 if [ "$RUNNING_PATH" != "$CANONICAL_APP" ]; then
     echo "WARNING: running Dicticus is not the canonical copy ($RUNNING_PATH)"
