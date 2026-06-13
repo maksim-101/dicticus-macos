@@ -1,6 +1,22 @@
 import XCTest
 @testable import Dicticus
 
+// Phase 36.3 Plan 01 — SC5: DictationViewModel.historyService injection seam.
+//
+// SC5 contract: DictationViewModel must expose a `var historyService: HistoryService`
+// property (defaulting to .shared) so tests can inject an isolated makeForTesting
+// instance. This is added in Plan 03.
+//
+// Until Plan 03 lands, two new tests below (`testHistoryServiceDefaultsToShared` and
+// `testHistoryServiceCanBeInjected`) will fail to compile — that is the intended RED state.
+//
+// All vm-owning tests that seed or read from HistoryService have been updated to route
+// through `vm.historyService` instead of `HistoryService.shared`. This ensures writes are
+// isolated to the injected temp container once Plan 03 provides the seam. Until then, these
+// tests also fail to compile (RED state). Tests that seed history WITHOUT a vm context
+// (e.g., testTwoBackgroundStopsAppendTwoPendingUUIDs) are intentionally left using
+// HistoryService.shared — they do not test vm routing.
+
 @MainActor
 final class DictationViewModelTests: XCTestCase {
     func testInitialStateIsIdle() {
@@ -88,6 +104,33 @@ final class DictationViewModelTests: XCTestCase {
                         "cleanupService seam must be writable for DicticusApp injection")
         XCTAssertTrue(vm.cleanupService?.isLoaded == true,
                       "Injected provider must be the same instance")
+    }
+
+    // MARK: - Phase 36.3 Plan 01: historyService injection seam (SC5)
+    // These tests reference vm.historyService — RED until Plan 03 adds the property.
+
+    /// SC5: historyService must default to .shared so production code routes to the real DB.
+    func testHistoryServiceDefaultsToShared() {
+        let vm = DictationViewModel()
+        XCTAssertTrue(
+            vm.historyService === HistoryService.shared,
+            "historyService seam must default to HistoryService.shared until DicticusApp injects it"
+        )
+    }
+
+    /// SC5: historyService must accept a makeForTesting instance (isolation seam for tests).
+    func testHistoryServiceCanBeInjected() {
+        let vm = DictationViewModel()
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let testService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
+        vm.historyService = testService
+        // Actions that previously used HistoryService.shared now route to testService.
+        // The key assertion: injected instance differs from .shared.
+        XCTAssertFalse(
+            vm.historyService === HistoryService.shared,
+            "Injected historyService must differ from .shared (isolation seam is functional)"
+        )
     }
 
     // MARK: - Phase 36 Wave 3: stop controls + soft cap
@@ -189,12 +232,16 @@ final class DictationViewModelTests: XCTestCase {
     /// the clipboard, set lastResult, and clear the pending tag.
     func testClipboardPopulatedAfterFinalize() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService so this test never touches the real DB.
+        // vm.historyService added in Plan 03 — RED until then.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
 
         var clipboardValue: String? = nil
         vm.clipboardWriter = { text in clipboardValue = text }
 
-        // Seed a History entry and tag its UUID as pending.
-        // Use HistoryService.shared directly (the same instance deliverPendingTranscriptsIfNeeded reads).
+        // Seed a History entry via injected service and tag its UUID as pending.
         let testUUID = UUID()
         let entry = TranscriptionEntry(
             uuid: testUUID,
@@ -204,7 +251,7 @@ final class DictationViewModelTests: XCTestCase {
             mode: "plain",
             confidence: 0.9
         )
-        HistoryService.shared.save(entry)
+        vm.historyService.save(entry)
 
         // Tag the pending UUID
         DicticusIPCBridge.defaults?.set(testUUID.uuidString,
@@ -219,10 +266,11 @@ final class DictationViewModelTests: XCTestCase {
         let pending = DicticusIPCBridge.defaults?.string(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
         XCTAssertNil(pending, "Pending tag must be cleared after delivery")
 
-        // Cleanup: remove the test entry from History to not pollute other tests
-        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
-            HistoryService.shared.delete(id: id)
+        // Cleanup: remove the test entry from History (temp container cleaned by process exit)
+        if let id = vm.historyService.entries.first(where: { $0.uuid == testUUID })?.id {
+            vm.historyService.delete(id: id)
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     /// deliverPendingTranscriptsIfNeeded() with no pending UUID must be a no-op.
@@ -335,6 +383,10 @@ final class DictationViewModelTests: XCTestCase {
     /// while startDictation() is waiting, causing it to bail on its guard state==.idle.
     func testDeliverPendingIsNoOpWhenNotIdle() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
 
         var clipboardWritten = false
         vm.clipboardWriter = { _ in clipboardWritten = true }
@@ -349,7 +401,7 @@ final class DictationViewModelTests: XCTestCase {
             mode: "plain",
             confidence: 0.9
         )
-        HistoryService.shared.save(entry)
+        vm.historyService.save(entry)
         DicticusIPCBridge.defaults?.set(testUUID.uuidString,
                                         forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
 
@@ -366,9 +418,10 @@ final class DictationViewModelTests: XCTestCase {
 
         // Cleanup
         DicticusIPCBridge.defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
-        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
-            HistoryService.shared.delete(id: id)
+        if let id = vm.historyService.entries.first(where: { $0.uuid == testUUID })?.id {
+            vm.historyService.delete(id: id)
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     // MARK: - Phase 36 Wave 4 second-session fix: handleForeground branch (Finding 1 root fix)
@@ -382,6 +435,10 @@ final class DictationViewModelTests: XCTestCase {
     /// and PASSES after (delivery is skipped; checkPendingIntent starts the new session).
     func testHandleForegroundWithPendingDictationDefersDelivery() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
 
         var clipboardWritten = false
         vm.clipboardWriter = { _ in clipboardWritten = true }
@@ -396,7 +453,7 @@ final class DictationViewModelTests: XCTestCase {
             mode: "plain",
             confidence: 0.9
         )
-        HistoryService.shared.save(entry)
+        vm.historyService.save(entry)
         DicticusIPCBridge.defaults?.set(testUUID.uuidString,
                                         forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
 
@@ -420,15 +477,20 @@ final class DictationViewModelTests: XCTestCase {
         // Cleanup — checkPendingIntent sets pendingDictation=false; clear UUID and History.
         DicticusIPCBridge.defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
         DicticusIPCBridge.defaults?.set(false, forKey: "pendingDictation")
-        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
-            HistoryService.shared.delete(id: id)
+        if let id = vm.historyService.entries.first(where: { $0.uuid == testUUID })?.id {
+            vm.historyService.delete(id: id)
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     /// When pendingDictation is false (normal idle foreground), handleForeground
     /// must deliver the pending transcript (run deliverPendingTranscriptsIfNeeded).
     func testHandleForegroundWithoutPendingDictationDeliversTranscript() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
 
         var clipboardValue: String? = nil
         vm.clipboardWriter = { text in clipboardValue = text }
@@ -443,7 +505,7 @@ final class DictationViewModelTests: XCTestCase {
             mode: "plain",
             confidence: 0.9
         )
-        HistoryService.shared.save(entry)
+        vm.historyService.save(entry)
         DicticusIPCBridge.defaults?.set(testUUID.uuidString,
                                         forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
         // Ensure no pendingDictation flag is set (normal open, not Action Button).
@@ -460,9 +522,10 @@ final class DictationViewModelTests: XCTestCase {
                      "Pending UUID must be cleared after successful delivery")
 
         // Cleanup
-        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
-            HistoryService.shared.delete(id: id)
+        if let id = vm.historyService.entries.first(where: { $0.uuid == testUUID })?.id {
+            vm.historyService.delete(id: id)
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     // MARK: - Phase 36 Wave 4 follow-on: background silence auto-stop (Finding 2)
@@ -595,6 +658,10 @@ final class DictationViewModelTests: XCTestCase {
     /// set clipboard/lastResult to the most-recent, and clear the list key.
     func testBatchDeliveryPopulatesRecentlyDelivered() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
         var clipboardValue: String? = nil
         vm.clipboardWriter = { text in clipboardValue = text }
 
@@ -613,8 +680,8 @@ final class DictationViewModelTests: XCTestCase {
         let entry2 = TranscriptionEntry(uuid: uuid2, text: "second session",
                                         rawText: "second session", language: "en",
                                         mode: "plain", confidence: 0.9)
-        HistoryService.shared.save(entry1)
-        HistoryService.shared.save(entry2)
+        vm.historyService.save(entry1)
+        vm.historyService.save(entry2)
 
         // Tag both UUIDs in the pending list (oldest first).
         defaults?.set([uuid1.uuidString, uuid2.uuidString],
@@ -644,10 +711,11 @@ final class DictationViewModelTests: XCTestCase {
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
         for entry in [entry1, entry2] {
-            if let id = HistoryService.shared.entries.first(where: { $0.uuid == entry.uuid })?.id {
-                HistoryService.shared.delete(id: id)
+            if let id = vm.historyService.entries.first(where: { $0.uuid == entry.uuid })?.id {
+                vm.historyService.delete(id: id)
             }
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     /// Starting a new recording must clear recentlyDelivered so stale batch does not linger.
@@ -688,6 +756,10 @@ final class DictationViewModelTests: XCTestCase {
         }
 
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
         vm.cleanupService = MockCleanupService()
         var clipboardValue: String? = nil
         vm.clipboardWriter = { text in clipboardValue = text }
@@ -711,8 +783,8 @@ final class DictationViewModelTests: XCTestCase {
         let entry2 = TranscriptionEntry(uuid: uuid2, text: "second plain",
                                         rawText: "second plain", language: "en",
                                         mode: "plain", confidence: 0.9)
-        HistoryService.shared.save(entry1)
-        HistoryService.shared.save(entry2)
+        vm.historyService.save(entry1)
+        vm.historyService.save(entry2)
 
         // Tag both as pending (oldest first).
         defaults?.set([uuid1.uuidString, uuid2.uuidString],
@@ -739,7 +811,7 @@ final class DictationViewModelTests: XCTestCase {
                        "recentlyDelivered[1].text must be cleaned text")
 
         // History entries must be updated in place (same uuid, mode="cleanup").
-        let storedEntry2 = HistoryService.shared.entries.first(where: { $0.uuid == uuid2 })
+        let storedEntry2 = vm.historyService.entries.first(where: { $0.uuid == uuid2 })
         XCTAssertNotNil(storedEntry2, "uuid2 must still exist in History (no duplicate, no delete)")
         XCTAssertEqual(storedEntry2?.mode, "cleanup",
                        "History entry for uuid2 must have mode='cleanup' after delivery")
@@ -749,7 +821,7 @@ final class DictationViewModelTests: XCTestCase {
         XCTAssertEqual(storedEntry2?.rawText, "second plain",
                        "rawText must be unchanged — only text and mode are updated")
 
-        let storedEntry1 = HistoryService.shared.entries.first(where: { $0.uuid == uuid1 })
+        let storedEntry1 = vm.historyService.entries.first(where: { $0.uuid == uuid1 })
         XCTAssertEqual(storedEntry1?.mode, "cleanup", "uuid1 must also be updated to mode='cleanup'")
 
         // Pending list must be cleared.
@@ -761,15 +833,20 @@ final class DictationViewModelTests: XCTestCase {
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUID)
         for uuid in [uuid1, uuid2] {
-            if let id = HistoryService.shared.entries.first(where: { $0.uuid == uuid })?.id {
-                HistoryService.shared.delete(id: id)
+            if let id = vm.historyService.entries.first(where: { $0.uuid == uuid })?.id {
+                vm.historyService.delete(id: id)
             }
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     /// Toggle OFF: entries stay plain (mode="plain"), list cleared.
     func testBatchDeliveryWithToggleOffStaysPlain() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
         var clipboardValue: String? = nil
         vm.clipboardWriter = { text in clipboardValue = text }
 
@@ -785,7 +862,7 @@ final class DictationViewModelTests: XCTestCase {
         let entry1 = TranscriptionEntry(uuid: uuid1, text: "plain result",
                                         rawText: "plain result", language: "en",
                                         mode: "plain", confidence: 0.9)
-        HistoryService.shared.save(entry1)
+        vm.historyService.save(entry1)
         defaults?.set([uuid1.uuidString], forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
 
         await vm.deliverPendingTranscriptsIfNeeded()
@@ -796,7 +873,7 @@ final class DictationViewModelTests: XCTestCase {
         XCTAssertEqual(vm.lastResult, "plain result", "Toggle OFF: lastResult must be plain text")
 
         // History entry must remain mode="plain" (not mutated).
-        let storedEntry = HistoryService.shared.entries.first(where: { $0.uuid == uuid1 })
+        let storedEntry = vm.historyService.entries.first(where: { $0.uuid == uuid1 })
         XCTAssertEqual(storedEntry?.mode, "plain",
                        "Toggle OFF: History entry must remain mode='plain' — not mutated")
 
@@ -806,7 +883,8 @@ final class DictationViewModelTests: XCTestCase {
 
         // Cleanup
         testDefaults.removeObject(forKey: "aiCleanupEnabled")
-        if let id = storedEntry?.id { HistoryService.shared.delete(id: id) }
+        if let id = storedEntry?.id { vm.historyService.delete(id: id) }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     /// Toggle ON + LLM NOT ready: entries delivered plain BUT the pending list is NOT
@@ -815,6 +893,10 @@ final class DictationViewModelTests: XCTestCase {
         let vm = DictationViewModel()
         // cleanupService is nil (LLM not injected yet) → llmReady = false.
         vm.cleanupService = nil
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
         var clipboardValue: String? = nil
         vm.clipboardWriter = { text in clipboardValue = text }
 
@@ -830,7 +912,7 @@ final class DictationViewModelTests: XCTestCase {
         let entry1 = TranscriptionEntry(uuid: uuid1, text: "pending plain",
                                         rawText: "pending plain", language: "en",
                                         mode: "plain", confidence: 0.9)
-        HistoryService.shared.save(entry1)
+        vm.historyService.save(entry1)
         defaults?.set([uuid1.uuidString], forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
 
         await vm.deliverPendingTranscriptsIfNeeded()
@@ -849,14 +931,15 @@ final class DictationViewModelTests: XCTestCase {
                         "Toggle ON + LLM not ready: pending list must still contain the UUID")
 
         // History entry must remain mode="plain" (no cleanup ran yet).
-        let storedEntry = HistoryService.shared.entries.first(where: { $0.uuid == uuid1 })
+        let storedEntry = vm.historyService.entries.first(where: { $0.uuid == uuid1 })
         XCTAssertEqual(storedEntry?.mode, "plain",
                        "Toggle ON + LLM not ready: History entry must remain mode='plain' until retry")
 
         // Cleanup
         testDefaults.removeObject(forKey: "aiCleanupEnabled")
         defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
-        if let id = storedEntry?.id { HistoryService.shared.delete(id: id) }
+        if let id = storedEntry?.id { vm.historyService.delete(id: id) }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     // MARK: - Phase 36-04 code review regressions (CR-03 / WR-01)
@@ -909,6 +992,10 @@ final class DictationViewModelTests: XCTestCase {
     /// the subsequent startDictation() hits guard state==.idle and silently no-ops.
     func testDeliverPendingSkipsWhenPendingDictationFlagSet() async {
         let vm = DictationViewModel()
+        // SC5: inject isolated HistoryService — vm.historyService added in Plan 03.
+        let tempContainer = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        vm.historyService = HistoryService.makeForTesting(containerURLProvider: { tempContainer })
         var clipboardWritten = false
         vm.clipboardWriter = { _ in clipboardWritten = true }
 
@@ -922,7 +1009,7 @@ final class DictationViewModelTests: XCTestCase {
             mode: "plain",
             confidence: 0.9
         )
-        HistoryService.shared.save(entry)
+        vm.historyService.save(entry)
         DicticusIPCBridge.defaults?.set([testUUID.uuidString],
                                         forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
 
@@ -943,9 +1030,10 @@ final class DictationViewModelTests: XCTestCase {
         // Cleanup
         DicticusIPCBridge.defaults?.removeObject(forKey: "pendingDictation")
         DicticusIPCBridge.defaults?.removeObject(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs)
-        if let id = HistoryService.shared.entries.first(where: { $0.uuid == testUUID })?.id {
-            HistoryService.shared.delete(id: id)
+        if let id = vm.historyService.entries.first(where: { $0.uuid == testUUID })?.id {
+            vm.historyService.delete(id: id)
         }
+        try? FileManager.default.removeItem(at: tempContainer)
     }
 
     // MARK: - Phase 36 Wave 2: cleanup mode toggle gate
