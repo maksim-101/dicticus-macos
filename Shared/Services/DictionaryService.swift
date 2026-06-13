@@ -87,7 +87,7 @@ class DictionaryService: ObservableObject {
     /// Whether matching should be case-sensitive.
     @Published var isCaseSensitive: Bool = false {
         didSet {
-            UserDefaults(suiteName: "group.com.dicticus")!.set(isCaseSensitive, forKey: Self.caseSensitiveKey)
+            Self.defaults.set(isCaseSensitive, forKey: Self.caseSensitiveKey)
         }
     }
 
@@ -100,11 +100,15 @@ class DictionaryService: ObservableObject {
     /// `DictionaryServiceHallucinationGuardTests.testAllowlistLoadedFromBundle`.
     internal var commonWordsForTests: Set<String> { commonWords }
 
+    /// Platform-conditional UserDefaults suite — single access point for all
+    /// DictionaryService persistence. On macOS: .standard; on iOS: group suite.
+    static var defaults: UserDefaults { DicticusDefaults.suite }
+
     /// Shared instance for use in TextProcessingService and DictionaryView.
     static let shared = DictionaryService()
 
     private init() {
-        self.isCaseSensitive = UserDefaults(suiteName: "group.com.dicticus")!.bool(forKey: Self.caseSensitiveKey)
+        self.isCaseSensitive = Self.defaults.bool(forKey: Self.caseSensitiveKey)
         self.commonWords = Self.loadCommonWords()
         load()
 
@@ -288,7 +292,7 @@ class DictionaryService: ObservableObject {
     }
 
     func load() {
-        if let data = UserDefaults(suiteName: "group.com.dicticus")!.data(forKey: Self.dictionaryKey),
+        if let data = Self.defaults.data(forKey: Self.dictionaryKey),
            let stored = try? JSONDecoder().decode([String: DictionaryMetadata].self, from: data) {
             dictionary = stored
         }
@@ -296,7 +300,7 @@ class DictionaryService: ObservableObject {
 
     func save() {
         if let data = try? JSONEncoder().encode(dictionary) {
-            UserDefaults(suiteName: "group.com.dicticus")!.set(data, forKey: Self.dictionaryKey)
+            Self.defaults.set(data, forKey: Self.dictionaryKey)
         }
     }
 

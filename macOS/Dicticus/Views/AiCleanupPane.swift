@@ -3,10 +3,9 @@ import SwiftUI
 /// Settings → AI Cleanup pane.
 ///
 /// Group "Model": model name row + LLM status + Configure Prompt button.
-/// Group "Language": Swiss German toggle (App-Group-scoped — group.com.dicticus).
+/// Group "Language": Swiss German toggle (app-local UserDefaults on macOS).
 ///
-/// Relocates content from AiCleanupInfoView + SwissGermanToggleRow per UIORG-04
-/// (bindings and App-Group requirements unchanged).
+/// Relocates content from AiCleanupInfoView + SwissGermanToggleRow per UIORG-04.
 struct AiCleanupPane: View {
     @EnvironmentObject var warmupService: ModelWarmupService
     @State private var showPromptEditor = false
@@ -61,10 +60,9 @@ struct AiCleanupPane: View {
 
 /// Swiss German toggle row styled for a Settings Form (LabeledContent layout).
 ///
-/// Backs the same App-Group-scoped `useSwissGerman` key as SwissGermanToggleRow.
-/// MUST use UserDefaults(suiteName: "group.com.dicticus") — never raw @AppStorage.
+/// Backs the `useSwissGerman` key in app-local UserDefaults on macOS.
 private struct SwissGermanFormRow: View {
-    private static let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus")!
+    private static let appGroupDefaults = UserDefaults.standard
 
     @State private var isOn: Bool = SwissGermanFormRow.currentValue()
 

@@ -219,8 +219,7 @@ class CleanupService: ObservableObject, CleanupProvider {
         // snapshot, a user toggling the setting during the 0.5-8 s inference
         // window could cause prompt/post-pass disagreement (prompt instructs
         // Swiss output but post-pass skips formatting, or vice versa).
-        let swissDefaults = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
-        let useSwissGerman = swissDefaults.bool(forKey: "useSwissGerman")
+        let useSwissGerman = DicticusDefaults.suite.bool(forKey: "useSwissGerman")
 
         let prompt = CleanupPrompt.build(
             text: text,

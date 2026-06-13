@@ -24,10 +24,9 @@ import Foundation
 public enum SwissDefaultMigration {
     public static let migratedKey = "swissDefaultMigratedV2_1"
     public static let toggleKey = "useSwissGerman"
-    public static let suiteName = "group.com.dicticus"
 
     public static func runIfNeeded() {
-        let suite = UserDefaults(suiteName: suiteName) ?? .standard
+        let suite = DicticusDefaults.suite
         guard !suite.bool(forKey: migratedKey) else { return }
         if suite.object(forKey: toggleKey) == nil {
             suite.set(true, forKey: toggleKey)

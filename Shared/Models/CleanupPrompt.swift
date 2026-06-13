@@ -60,10 +60,7 @@ struct CleanupPrompt {
         dictionaryContext: [String: String]? = nil,
         useSwissGerman: Bool? = nil
     ) -> String {
-        let swissEnabled: Bool = useSwissGerman ?? {
-            let suite = UserDefaults(suiteName: "group.com.dicticus") ?? UserDefaults.standard
-            return suite.bool(forKey: "useSwissGerman")
-        }()
+        let swissEnabled: Bool = useSwissGerman ?? DicticusDefaults.suite.bool(forKey: "useSwissGerman")
 
         let sanitizedText = sanitizeControlTokens(text)
         var p = ""

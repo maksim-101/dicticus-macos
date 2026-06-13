@@ -3,12 +3,10 @@ import SwiftUI
 /// Per Phase 19.5 D-A2: macOS exposure of the Swiss German toggle in the
 /// menu-bar dropdown, clustered with `AiCleanupInfoView`.
 ///
-/// Binds to the SAME AppGroup-scoped `useSwissGerman` key that iOS reads,
-/// so a single source of truth governs Swiss output on both platforms.
-/// MUST use `UserDefaults(suiteName: "group.com.dicticus")` — not raw
-/// `@AppStorage`, which targets the standard suite and silently desyncs.
+/// Reads/writes `useSwissGerman` via DicticusDefaults.suite (app-local on macOS,
+/// group container on iOS — platform-conditional via the resolver).
 struct SwissGermanToggleRow: View {
-    private static let appGroupDefaults = UserDefaults(suiteName: "group.com.dicticus")!
+    private static let appGroupDefaults = UserDefaults.standard
 
     @State private var isOn: Bool = SwissGermanToggleRow.currentValue()
 
