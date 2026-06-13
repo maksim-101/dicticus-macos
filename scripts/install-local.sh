@@ -13,7 +13,7 @@
 #   4. Wipes the specific Dicticus DerivedData folder to prevent identity confusion.
 #   5. Copies the freshly-built Release .app from macOS/build/ to /Applications/.
 #   6. Re-signs the app with Developer ID Moritz Wehrli (VTWHBCCP36) for TCC persistence.
-#   7. Re-launches via `open -a Dicticus`.
+#   7. Re-launches via explicit `open "$CANONICAL_APP"` path and verifies the running process.
 #
 # Dev-only — do not run on end-user machines.
 set -euo pipefail
@@ -167,7 +167,14 @@ codesign -vvv --deep --strict "$CANONICAL_APP" >/dev/null 2>&1 || {
 }
 
 echo "=== Step 7: Relaunch ==="
-open -a Dicticus
+open "$CANONICAL_APP"
+sleep 2
+RUNNING_PATH=$(lsappinfo info -only bundlepath -app Dicticus 2>/dev/null \
+    | sed 's/.*= "\(.*\)"/\1/' || true)
+echo "  Running bundle path: $RUNNING_PATH"
+if [ "$RUNNING_PATH" != "$CANONICAL_APP" ]; then
+    echo "WARNING: running Dicticus is not the canonical copy ($RUNNING_PATH)"
+fi
 
 echo ""
 echo "=== Done ==="
