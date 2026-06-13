@@ -46,4 +46,29 @@ final class SystemSettingsURLTests: XCTestCase {
         XCTAssertNotEqual(mic, inp)
         XCTAssertNotEqual(acc, inp)
     }
+
+    // D-15: CTA→pane mapping contract — each missing permission must map to its own
+    // exact System Settings URL. These pin what PermissionRow.settingsURL delivers
+    // to SystemSettingsURL.open(_:) for every missing-permission row.
+
+    func testMicrophoneSettingsURLMatchesExpectedAnchor() {
+        XCTAssertEqual(
+            SystemSettingsURL.microphone.absoluteString,
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+        )
+    }
+
+    func testAccessibilitySettingsURLMatchesExpectedAnchor() {
+        XCTAssertEqual(
+            SystemSettingsURL.accessibility.absoluteString,
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        )
+    }
+
+    func testInputMonitoringSettingsURLMatchesExpectedAnchor() {
+        XCTAssertEqual(
+            SystemSettingsURL.inputMonitoring.absoluteString,
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+        )
+    }
 }
