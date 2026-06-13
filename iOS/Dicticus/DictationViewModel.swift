@@ -102,6 +102,9 @@ class DictationViewModel: ObservableObject {
         try? await UNUserNotificationCenter.current().add(request)
     }
 
+    // Test seam: injectable HistoryService. Defaults to .shared; tests inject makeForTesting.
+    var historyService: HistoryService = .shared
+
     nonisolated(unsafe) private var currentActivity: Activity<DictationAttributes>?
     // WR-04: notificationObservers is accessed only from @MainActor context; no need for
     // nonisolated(unsafe) (which would disable Swift's concurrency check for this property
@@ -177,7 +180,8 @@ class DictationViewModel: ObservableObject {
                 // - NEVER write UIPasteboard — iOS hard-blocks backgrounded clipboard writes
                 // Force .plain so TextProcessingService runs only Dictionary→ITN (CPU, allowed).
                 // The entry is saved by TextProcessingService.process() itself.
-                let processor = TextProcessingService(cleanupService: nil)
+                let processor = TextProcessingService(cleanupService: nil,
+                                                       historyService: self.historyService)
                 _ = await processor.process(
                     text: result.text,
                     language: result.language,
@@ -189,7 +193,7 @@ class DictationViewModel: ObservableObject {
                 // TextProcessingService.process() calls HistoryService.save() + load() —
                 // the new entry is now at .entries.first (createdAt DESC).
                 // We query the most-recent UUID here because process() doesn't surface it.
-                if let uuid = HistoryService.shared.entries.first?.uuid {
+                if let uuid = self.historyService.entries.first?.uuid {
                     let defaults = DicticusIPCBridge.defaults
                     var list = defaults?.stringArray(forKey: DicticusIPCBridge.Key.pendingTranscriptUUIDs) ?? []
                     list.append(uuid.uuidString)
@@ -215,7 +219,8 @@ class DictationViewModel: ObservableObject {
                 // TextProcessingService.process() itself saves the TranscriptionEntry
                 // (Step 4 of the pipeline) so we MUST NOT call HistoryService here
                 // or every dictation would create a duplicate row.
-                let processor = TextProcessingService(cleanupService: cleanupService)
+                let processor = TextProcessingService(cleanupService: cleanupService,
+                                                       historyService: self.historyService)
                 let cleaned = await processor.process(
                     text: result.text,
                     language: result.language,
@@ -441,7 +446,7 @@ class DictationViewModel: ObservableObject {
         }
 
         // Resolve all pending entries from History (order: oldest first — matches append order).
-        let allEntries = HistoryService.shared.entries
+        let allEntries = self.historyService.entries
         let pendingEntries: [TranscriptionEntry] = pendingUUIDStrings.compactMap { uuidString in
             guard let uuid = UUID(uuidString: uuidString) else { return nil }
             return allEntries.first(where: { $0.uuid == uuid })
@@ -483,18 +488,18 @@ class DictationViewModel: ObservableObject {
                 // real SQLite rowid (in-memory `entry` may have been constructed without
                 // a save round-trip in edge cases). If the lookup fails, fall back to
                 // the in-memory copy — update() will log and return false if id == nil.
-                let persisted = HistoryService.shared.entries.first(where: { $0.uuid == entry.uuid })
+                let persisted = self.historyService.entries.first(where: { $0.uuid == entry.uuid })
                 if let persisted {
                     updated.id = persisted.id
                 }
-                let persistOK = HistoryService.shared.update(updated)
+                let persistOK = self.historyService.update(updated)
                 if !persistOK {
                     anyPersistFailed = true
                 }
                 cleanedEntries.append(updated)
             }
             // Reload so the in-memory entries list reflects persisted cleaned text.
-            HistoryService.shared.load()
+            self.historyService.load()
 
             guard let mostRecentCleaned = cleanedEntries.last else {
                 // Defensive: loop produced no output (Task cancelled mid-cleanup?).
