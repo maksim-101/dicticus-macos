@@ -27,24 +27,11 @@ final class SystemSettingsURLTests: XCTestCase {
                       "Accessibility URL must contain Privacy_Accessibility anchor, got: \(urlString)")
     }
 
-    func testInputMonitoringURLScheme() {
-        let url = SystemSettingsURL.inputMonitoring
-        XCTAssertEqual(url.scheme, "x-apple.systempreferences")
-    }
-
-    func testInputMonitoringURLContainsPrivacyAnchor() {
-        let urlString = SystemSettingsURL.inputMonitoring.absoluteString
-        XCTAssertTrue(urlString.contains("Privacy_ListenEvent"),
-                      "Input Monitoring URL must contain Privacy_ListenEvent anchor, got: \(urlString)")
-    }
 
     func testAllURLsAreDistinct() {
         let mic = SystemSettingsURL.microphone.absoluteString
         let acc = SystemSettingsURL.accessibility.absoluteString
-        let inp = SystemSettingsURL.inputMonitoring.absoluteString
         XCTAssertNotEqual(mic, acc)
-        XCTAssertNotEqual(mic, inp)
-        XCTAssertNotEqual(acc, inp)
     }
 
     // D-15: CTA→pane mapping contract — each missing permission must map to its own
@@ -65,10 +52,4 @@ final class SystemSettingsURLTests: XCTestCase {
         )
     }
 
-    func testInputMonitoringSettingsURLMatchesExpectedAnchor() {
-        XCTAssertEqual(
-            SystemSettingsURL.inputMonitoring.absoluteString,
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
-        )
-    }
 }

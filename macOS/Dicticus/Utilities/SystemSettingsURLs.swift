@@ -9,8 +9,6 @@ enum SystemSettingsURL {
         "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
     static let accessibility = URL(string:
         "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-    static let inputMonitoring = URL(string:
-        "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!
 
     /// Opens the given System Settings URL via NSWorkspace.
     /// Preferred over openSettings() environment action which is unreliable in menu bar apps.

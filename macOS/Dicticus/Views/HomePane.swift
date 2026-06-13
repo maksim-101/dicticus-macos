@@ -109,15 +109,6 @@ struct HomePane: View {
                                     showRestartHint: false
                                 )
                             }
-                            if permissionManager.inputMonitoringStatus != .granted {
-                                PermissionRow(
-                                    title: "Input Monitoring",
-                                    status: permissionManager.inputMonitoringStatus,
-                                    grantAction: { permissionManager.requestInputMonitoring() },
-                                    settingsURL: SystemSettingsURL.inputMonitoring,
-                                    showRestartHint: false
-                                )
-                            }
                         }
                         .padding(.top, 8)
                     }

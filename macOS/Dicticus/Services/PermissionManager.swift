@@ -1,7 +1,6 @@
 import SwiftUI
 import AVFoundation
 @preconcurrency import ApplicationServices
-import IOKit.hid
 
 /// Status of a single macOS permission.
 enum PermissionStatus: Equatable {
@@ -43,8 +42,8 @@ enum PermissionStatus: Equatable {
 private let axTrustedPromptKey: String =
     kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
 
-/// ObservableObject that checks and requests all three required macOS permissions:
-/// Microphone, Accessibility, and Input Monitoring.
+/// ObservableObject that checks and requests the required macOS permissions:
+/// Microphone and Accessibility.
 ///
 /// Polling every 2 seconds detects grants made in System Settings while the app is running.
 /// Timer uses `[weak self]` to prevent retain cycles (T-02-03 mitigation).
@@ -52,7 +51,6 @@ private let axTrustedPromptKey: String =
 class PermissionManager: ObservableObject {
     @Published var microphoneStatus: PermissionStatus = .pending
     @Published var accessibilityStatus: PermissionStatus = .pending
-    @Published var inputMonitoringStatus: PermissionStatus = .pending
     @Published var hasCompletedOnboarding = false
 
     /// Paths of all com.dicticus.app bundles found on disk at launch time.
@@ -64,17 +62,18 @@ class PermissionManager: ObservableObject {
 
     private var pollTimer: Timer?
 
-    /// True when all three required permissions are .granted.
+    /// True when the required permissions are .granted.
     ///
-    /// Input Monitoring IS required — `ModifierHotkeyListener` uses
-    /// `NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged)` which on
-    /// macOS 15+ is gated by Input Monitoring. KeyboardShortcuts (Carbon
-    /// RegisterEventHotKey) covers Accessibility but not the modifier-listener
-    /// path — both must be granted for hotkeys to fire reliably.
+    /// Only Microphone and Accessibility are required. The global modifier-key
+    /// listener (`NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged)`)
+    /// runs on Accessibility, and the `^⇧S`/`^⇧D` shortcuts use Carbon
+    /// `RegisterEventHotKey` (no permission). Input Monitoring is NOT needed:
+    /// `IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)` only ever reported it
+    /// "granted" because Accessibility is a superset, so requiring it added a
+    /// phantom requirement that could never be independently detected.
     var allGranted: Bool {
         microphoneStatus == .granted &&
-        accessibilityStatus == .granted &&
-        inputMonitoringStatus == .granted
+        accessibilityStatus == .granted
     }
 
     /// Check current permission states without triggering OS prompts.
@@ -93,16 +92,6 @@ class PermissionManager: ObservableObject {
         // both first-time prompts and re-requests via AXIsProcessTrustedWithOptions.
         let axTrusted = AXIsProcessTrusted()
         accessibilityStatus = axTrusted ? .granted : .pending
-
-        // Input Monitoring: IOHIDCheckAccess reflects current TCC state.
-        // Required by ModifierHotkeyListener's NSEvent.addGlobalMonitorForEvents(.flagsChanged).
-        let hidAccess = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
-        switch hidAccess {
-        case kIOHIDAccessTypeGranted: inputMonitoringStatus = .granted
-        case kIOHIDAccessTypeDenied:  inputMonitoringStatus = .denied
-        case kIOHIDAccessTypeUnknown: inputMonitoringStatus = .pending
-        default:                      inputMonitoringStatus = .pending
-        }
     }
 
     /// Trigger the OS microphone permission prompt. Updates status after user responds.
@@ -118,15 +107,6 @@ class PermissionManager: ObservableObject {
         // Use the module-level cached key (avoids Swift 6 concurrency error on C global)
         let options: NSDictionary = [axTrustedPromptKey: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
-        // Do not update status here — polling picks it up within 2 seconds
-    }
-
-    /// Trigger the OS Input Monitoring permission prompt.
-    /// IOHIDRequestAccess shows the system prompt; the result is not immediate —
-    /// the user must approve in System Settings. Polling via startPolling()
-    /// will detect the change.
-    func requestInputMonitoring() {
-        _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
         // Do not update status here — polling picks it up within 2 seconds
     }
 
