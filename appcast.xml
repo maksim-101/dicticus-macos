@@ -5,5 +5,16 @@
         <link>https://maksim-101.github.io/dicticus-macos/appcast.xml</link>
         <description>Most recent changes with links to updates.</description>
         <language>en</language>
+        <item>
+            <title>Version 1.0.0</title>
+            <sparkle:releaseNotesLink>https://github.com/maksim-101/dicticus-macos/releases/tag/macos-v1.0.0</sparkle:releaseNotesLink>
+            <pubDate>Thu, 31 Jul 2026 14:30:00 +0000</pubDate>
+            <enclosure url="https://github.com/maksim-101/dicticus-macos/releases/download/macos-v1.0.0/Dicticus.dmg"
+                       sparkle:version="7"
+                       sparkle:shortVersionString="1.0.0"
+                       sparkle:edSignature="rzjSEZk698uPAjoA/BcqT7D18eJrgrrKAhvHai6tWpXdjXoi0MXdwM1p1341wi25s378K/UuDUIenVndTpmtDQ=="
+                       length="14764545"
+                       type="application/octet-stream" />
+        </item>
     </channel>
 </rss>
